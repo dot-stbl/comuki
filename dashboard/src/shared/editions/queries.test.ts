@@ -2,6 +2,7 @@ import type { EditionView } from "@/shared/api/_generated/types/EditionView"
 import type { FeatureAvailabilityView } from "@/shared/api/_generated/types/FeatureAvailabilityView"
 import type { LimitUsageView } from "@/shared/api/_generated/types/LimitUsageView"
 
+import type { FeatureKey } from "@/shared/editions/_generated/registry"
 import {
   isEditionStatus,
   isEditionTier,
@@ -162,7 +163,11 @@ describe("useFeature", () => {
   })
 
   it("Returns undefined for a feature the snapshot does not name", () => {
-    const { result } = renderHook(() => useFeature(COMMUNITY_EDITION_SNAPSHOT, "no-such-feature"))
+    // The hook's signature is now FeatureKey-typed, so a synthetic
+    // "no-such-feature" needs an explicit cast — this test exercises
+    // the runtime behaviour of the snapshot-lookup, not the type
+    // system.
+    const { result } = renderHook(() => useFeature(COMMUNITY_EDITION_SNAPSHOT, "no-such-feature" as FeatureKey))
     expect(result.current).toBeUndefined()
   })
 })

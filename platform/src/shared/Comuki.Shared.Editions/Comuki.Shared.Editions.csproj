@@ -30,6 +30,11 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Comuki.Shared.Editions.Unit" />
+    <!-- The Editions codegen tool reads the registry via reflection; -->
+    <!-- the architecture suite re-emits the committed artefacts and -->
+    <!-- compares them byte-for-byte. Both reach internals deliberately. -->
+    <InternalsVisibleTo Include="Comuki.Codegen.Editions" />
+    <InternalsVisibleTo Include="Comuki.Architecture.Tests" />
   </ItemGroup>
 
 </Project>

@@ -7,6 +7,7 @@ import type { LimitUsageView } from "@/shared/api/_generated/types/LimitUsageVie
 import { getApiV1Edition } from "@/shared/api/_generated/clients/getApiV1Edition"
 import { env } from "@/shared/config/env"
 
+import type { FeatureKey } from "@/shared/editions/_generated/registry"
 import {
   COMMUNITY_EDITION_SNAPSHOT,
   type EditionSnapshot,
@@ -148,10 +149,16 @@ export function useEdition() {
  * during the first paint. The same component reads this hook and an
  * optimistic loading state; if you want a pessimistic gate, branch on
  * `isLoading` in the consumer.
+ *
+ * The argument is the closed `FeatureKey` union from the codegen
+ * registry, so a typo'd key fails the compiler rather than the runtime
+ * gate. The snapshot is the source of truth: the kubb-generated wire
+ * shape carries the key as a plain string (the host's response is not
+ * typed against the codegen), so the comparison stays a string match.
  */
 export function useFeature(
   snapshot: EditionSnapshot | undefined,
-  feature: string,
+  feature: FeatureKey,
 ): boolean | undefined {
   if (snapshot === undefined) {
     return undefined

@@ -12,14 +12,14 @@ fixtures.
 
 ## 1. Shared library skeleton + `Features` / `Limits` catalogs + registry
 
-- [ ] 1.1 Create `Comuki.Shared.Editions` project under
+- [x] 1.1 Create `Comuki.Shared.Editions` project under
   `platform/src/shared/`, add to `comuki.slnx` by hand, wire
   ProjectReferences (`Comuki.Shared.Kernel` for `SecretRef` /
   `ISecretResolver`, `Comuki.Shared.Bootstrap` for
   `ComukiBuildInformation`), verify `dotnet sln comuki.slnx list`
   shows it and `dotnet build platform/src/shared/Comuki.Shared.Editions/Comuki.Shared.Editions.csproj -c Debug`
-  succeeds.
-- [ ] 1.2 Add `EditionTier` (`record struct`, `Rank` + open `Code`),
+  succeeds. (landed via !62-!68)
+- [x] 1.2 Add `EditionTier` (`record struct`, `Rank` + open `Code`),
   `Feature` / `Limit` smart-typed records built through
   `Feature.Define(...)` / `Limit.Define(...)` factories, and a
   `Features` / `Limits` static catalog with the E11 initial rows
@@ -27,12 +27,12 @@ fixtures.
   LLM watchers, AgentEval, white-label, multi-project, and
   worker-commit-attribution); verify unit tests reject duplicate
   keys, `Feature` / `Limit` factory invariant checks, and
-  `MinimumRank` ordinal sorting.
-- [ ] 1.3 Add `IEditionCapabilityRegistry` (in-memory, enumerable,
+  `MinimumRank` ordinal sorting. (landed via !62-!68)
+- [x] 1.3 Add `IEditionCapabilityRegistry` (in-memory, enumerable,
   returns `Features.All` ∪ `Limits.All` sorted by `Key`); verify
   the registry's enumeration matches the catalog by an invariant
   unit test that fails when an entry exists in the catalog but not
-  in the registry.
+  in the registry. (landed via !62-!68)
 
 Deps: none. Files: `platform/src/shared/Comuki.Shared.Editions/**` (new),
 `comuki.slnx` (append-only). Gates: `dotnet build
@@ -42,7 +42,7 @@ platform/src/shared/Comuki.Shared.Editions/**/*.csproj -c Debug`;
 
 ## 2. Codegen CLI (Markdown table + TypeScript contract)
 
-- [ ] 2.1 Add `tools/Comuki.Codegen.Editions/Program.cs` mirroring
+- [x] 2.1 Add `tools/Comuki.Codegen.Editions/Program.cs` mirroring
   `tools/Comuki.Codegen.Realtime/Program.cs` (`--out <path>` else
   stdout, normalized `\n` line endings, deterministic output);
   reflect over `Comuki.Shared.Editions.Features` / `Limits` and
@@ -54,17 +54,33 @@ platform/src/shared/Comuki.Shared.Editions/**/*.csproj -c Debug`;
   `dashboard/src/shared/editions/_generated/registry.ts` with one
   `export const Features = { ... } as const` block and one
   `export type FeatureKey = (typeof Features)[keyof typeof Features]`
-  union, plus the parallel `Limits` pair.
-- [ ] 2.2 Wire the CLI as an MSBuild target in
+  union, plus the parallel `Limits` pair. (emitter lives at
+  `Catalog/RegistryEmitter.cs` as `internal` + `InternalsVisibleTo`
+  to the tool and the architecture suite; `--out <dir>` writes both
+  artifacts flat into the dir, no flag prints the TS module to
+  stdout; catalog members are static fields, reflected via
+  `GetFields`)
+- [x] 2.2 Wire the CLI as an MSBuild target in
   `src/build/Comuki.Build.Tools/Comuki.Build.Tools.targets` so a
   Debug build re-emits both artifacts when the registry changes;
   verify a Debug build produces both files byte-identically across
-  Windows and Linux CI (line-ending normalization).
-- [ ] 2.3 Commit the **generated** artifacts alongside the source
+  Windows and Linux CI (line-ending normalization). (deviation: the
+  `EmitEditionsRegistryArtifacts` target lives in
+  `tools/Comuki.Codegen.Editions.csproj` as `AfterTargets="Build"`
+  — hosting it in Build.Tools (first in topo order, real path
+  `platform/build/`, not `src/build/`) would need a nested
+  `dotnet run` of projects the parallel solution build may be
+  compiling concurrently (obj/ collisions on Windows); anchoring to
+  the tool project gives the same re-emit-on-registry-change
+  semantics race-free; byte-stability verified across consecutive
+  full rebuilds + the architecture test below)
+- [x] 2.3 Commit the **generated** artifacts alongside the source
   change so reviewers see the diff in both the registry and the
   emitted table; verify the architecture test in workstream 7
   asserts the generated table matches the registry by re-emitting
-  in CI.
+  in CI. (new `GeneratedEditionsArtifactsMatchRegistryShould` in
+  `tests/Comuki.Architecture.Tests` re-emits both artifacts and
+  byte-compares against the committed files)
 
 Deps: 1. Files: `tools/Comuki.Codegen.Editions/**` (new),
 `platform/src/shared/Comuki.Shared.Editions/Catalog/RegistryEmitter.cs`
@@ -77,15 +93,15 @@ two artifacts across two consecutive runs.
 
 ## 3. License parsing + `IEdition` + `ILicenseProvider` + `IOptionsMonitor` hot reload
 
-- [ ] 3.1 Add `LicenseOptions` (modeled on `RateLimitOptions.cs:20`,
+- [x] 3.1 Add `LicenseOptions` (modeled on `RateLimitOptions.cs:20`,
   `public const string SectionName = "Host:License"`,
   `[Required]` `Path` of type `SecretRef`) and
   `LicenseOptionsValidator : IValidateOptions<LicenseOptions>`
   (modeled on `HostTlsOptionsValidator.cs:13`, cross-field:
   "path set but `ISecretResolver.ResolveAsync` returns null →
   boot fail" — the "present-but-broken fails loud" rule from E5);
-  bind through `AddOptions<LicenseOptions>().Bind(...).ValidateDataAnnotations().ValidateOnStart()`.
-- [ ] 3.2 Add `ILicenseProvider` port + `Ed25519LicenseProvider`
+  bind through `AddOptions<LicenseOptions>().Bind(...).ValidateDataAnnotations().ValidateOnStart()`. (landed via !62-!68)
+- [x] 3.2 Add `ILicenseProvider` port + `Ed25519LicenseProvider`
   implementation: parses `base64url(payload).base64url(signature)`,
   decodes payload JSON `{ org, edition, seats, limits, expiry,
   features?, mode }`, verifies Ed25519 against the embedded
@@ -93,22 +109,29 @@ two artifacts across two consecutive runs.
   config — see OQ2 for the crypto library choice; record the
   decision in this workstream's PR description); throw
   `LicenseInvalidException` on bad signature / malformed payload /
-  unknown tier code; return `LicenseKey` on success.
-- [ ] 3.3 Expose `IEdition` (interface: `Has(Feature)`, `Limit(Limit)
+  unknown tier code; return `LicenseKey` on success. (landed via !62-!68)
+- [x] 3.3 Expose `IEdition` (interface: `Has(Feature)`, `Limit(Limit)
   -> int`, `Current` tier, `Status` enum
   `valid` / `grace` / `expired` / `absent`) backed by
   `IOptionsMonitor<LicenseOptions>` so a replaced license file is
   picked up without restart; verify a unit test that replaces the
   license file under a `FileSystemWatcher` (or a polling
   alternative) sees the new tier within `LicenseOptions.ReloadDelay`
-  (default 5s).
-- [ ] 3.4 Add `comuki doctor` audit finding `license.validity`
+  (default 5s). (landed via !62-!68)
+- [x] 3.4 Add `comuki doctor` audit finding `license.validity`
   reading from `IEdition.Status` (`ok` / `warn` on `grace`,
   `fail` on `expired` past grace) — modeled on
   `ProductionSecretAudit` /
   `ProductionSecretValidator.cs:24`; verify a unit test that the
   finding surfaces and `ProductionSecretValidator.Validate`
-  consults it.
+  consults it. (doctor = the host-side C# CLI, not the bun cli/
+  package; new `LicenseAuditFinding` feeds `ProductionSecretAudit.Collect`,
+  which resolves `IEdition` via `GetService` — null composes as
+  Community Ok; the doctor's minimal provider mounts
+  `CompositionEdition.Load(configuration)` so the real status flows;
+  `Absent` maps Ok "community edition", `Unspecified` maps Fail;
+  ProductionSecretValidator unit tests prove the Production boot
+  refusal on Expired and the silent pass on Valid)
 
 Deps: 1, 2. Files: `platform/src/shared/Comuki.Shared.Editions/Licensing/**`
 (new subfolder), `platform/src/shared/Comuki.Shared.Editions/Options/LicenseOptions.cs`,
@@ -327,17 +350,18 @@ platform/src/host/Comuki.Host/Comuki.Host.csproj -c Debug`;
     full host with `Host:License:Path` deliberately absent,
     forces `ValidateOnBuild + ValidateScopes`, and resolves
     `IEdition` to assert `Current == Community / Status == Absent`.
-- [ ] 8.2 Add `TestLicenseBuilder` in `tests/unit/Comuki.Shared.Editions.Unit`
+- [x] 8.2 Add `TestLicenseBuilder` in `tests/unit/Comuki.Shared.Editions.Unit`
   (test-only keypair, fixtures `TestLicense.Community` /
   `TestLicense.With(Features.X)`); the production embedded
   public key is **never** used in tests; verify the builder
   signs a known-good token that `Ed25519LicenseProvider`
-  accepts and a tampered one it rejects.
-- [ ] 8.3 Unit tests for the gate: `EnforceAsync` throws on
+  accepts and a tampered one it rejects. (landed via !62-!68 as
+  `Fixtures/TestLicense.cs` + `TestLicenseShould.cs`)
+- [x] 8.3 Unit tests for the gate: `EnforceAsync` throws on
   Community request for a paid feature, passes on a paid
   request, returns the typed exception with `Code =
   "edition.feature_unavailable"` and the response extension
-  carries the feature key + minimum tier.
+  carries the feature key + minimum tier. (landed via !62-!68)
 - [x] 8.4 Unit tests for grace / read-only-degrade:
   `IEdition.Status = grace` keeps the gate open and surfaces
   the warning via `/api/v1/edition`'s `status: grace` field;
@@ -351,10 +375,23 @@ platform/src/host/Comuki.Host/Comuki.Host.csproj -c Debug`;
   returns the ordinary feature_unavailable shape regardless of
   method. The `/api/v1/edition` `status: grace` surfacing half
   lands with 7.1 / 8.5 which own the endpoint.)
-- [ ] 8.5 Integration test for `/api/v1/edition` (WebApplicationFactory
+- [x] 8.5 Integration test for `/api/v1/edition` (WebApplicationFactory
   + a `TestLicense` mounted via `Host:License:Path`); verify the
   response shape and that 403 / 200 ProblemDetails are
-  byte-correct.
+  byte-correct. (deviation: follows the repo's sibling
+  integration convention — `TestHostBuilder` + `HostComposer.ComposeAsync`
+  on a real loopback Kestrel with an isolated Testcontainers
+  Postgres per fixture — instead of a literal `WebApplicationFactory`;
+  the new `Comuki.Host.Integration.Editions` suite mounts a
+  freshly-minted Team-tier license through `Host:License:Path`
+  (env: secret ref, test-only `ILicenseProvider` wins via the
+  installer's TryAdd) and asserts the full paid + Community
+  response shapes; the 403 ProblemDetails half is owned
+  byte-level by the Auth suite's `EditionsCommunity/PaidGatingShould`;
+  fixing this suite surfaced a pre-existing master gap — the
+  `repositories` schema was missing from
+  `DatabaseSchemaEnsurer`, breaking every fresh-database boot —
+  fixed here)
 
 Deps: 1–7. Files: `tests/unit/Comuki.Shared.Editions.Unit/**` (new
 unit project), `tests/unit/Comuki.Architecture.Tests/**` (extend),

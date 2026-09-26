@@ -53,6 +53,8 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
 
     private string workerToken = null!;
 
+    private IConfiguration configuration = null!;
+
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {
@@ -64,7 +66,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         // per-test container gave it.
         await postgres.ResetDatabaseAsync();
 
-        var configuration = new ConfigurationBuilder()
+        configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Orchestration:Lease:LeaseTtl"] = "00:02:00",
@@ -131,6 +133,13 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
     [Fact]
     public async Task RunOneWorkItemThroughFakePiEndToEndAsync()
     {
+        // The crown test (T3.5) and the fast-completing-worker regression
+        // proof for issue #152. Now that TestWorkerHost.StartAsync mirrors
+        // production's Http1AndHttp2-REST + dedicated-Http2-gRPC topology,
+        // TestFakePi's single-digit-ms run lands the FULL event set
+        // (StageStart, text + tool activity, StageReport) via the worker
+        // gRPC bidi stream before REST /complete closes the lease — every
+        // worker.reported entry proves the stream actually negotiated.
         var (runId, workItemId) = await SeedQueuedItemAsync(/*lang=json,strict*/ """{"goal":"do the thing"}""");
 
         var loop = translatorProvider.GetRequiredService<TranslatorLoop>();
@@ -151,6 +160,53 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         timeline.ShouldContain(static entry => entry.Type == "worker.reported" && entry.PayloadJson.Contains("Bash", StringComparison.Ordinal), "tool activity is journaled");
         timeline.ShouldContain(static entry => entry.Type == "worker.reported" && entry.PayloadJson.Contains("(fake pi done)", StringComparison.Ordinal), "StageReport with the authoritative result is journaled");
         timeline.ShouldContain(static entry => entry.Type == "work_item.status_changed" && entry.PayloadJson.Contains("Succeeded", StringComparison.Ordinal), "completion is journaled");
+    }
+
+    [Fact]
+    public async Task LoseStreamedEventsWhenTheGrpcListenerIsSharedWithRestAsync()
+    {
+        var (runId, workItemId) = await SeedQueuedItemAsync(/*lang=json,strict*/ """{"goal":"characterize the shared-listener bug"}""");
+
+        // Characterizes issue #152's exact root cause (see
+        // TestWorkerHost.StartWithSharedListenerAsync's remarks): a single
+        // shared Http1AndHttp2 listener never negotiates HTTP/2 for the
+        // worker gRPC bidi stream, so no worker.reported entry lands at
+        // all — only the REST-driven work_item.status_changed does. This
+        // guards against ever silently reintroducing a shared listener.
+        await using var sharedListenerHost = await TestWorkerHost.StartWithSharedListenerAsync(services =>
+        {
+            services.AddSingleton(TimeProvider.System);
+            services
+                .AddOrchestrationPersistence(postgres.ConnectionString)
+                .AddOrchestrationQueue(configuration)
+                .AddOrchestrationApplication()
+                .AddWorkerRuntime(configuration);
+            services.AddSingleton<Shared.Kernel.Secrets.ISecretResolver>(
+                new Shared.Kernel.Secrets.CompositeSecretResolver(
+                    [new Shared.Kernel.Secrets.EnvSecretProvider()]));
+            services.AddProxyApplication(configuration);
+            services.AddComukiWorkers();
+            services.AddSingleton<IWorkerPoolState, NoopWorkerPoolState>();
+        });
+        var sharedToken = sharedListenerHost.GetService<WorkerTokenIssuer>().Issue(WorkerId.New());
+
+        await using var provider = BuildTranslatorProvider(
+            ResolveTestFakePiPath(), sharedListenerHost.BaseAddress, sharedListenerHost.GrpcAddress, sharedToken);
+        var loop = provider.GetRequiredService<TranslatorLoop>();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        var ran = await loop.TryRunOnceAsync(timeout.Token);
+
+        ran.ShouldBeTrue("the seeded item should have been claimed");
+
+        var item = await LoadItemAsync(workItemId);
+        item.Status.ShouldBe(WorkItemStatus.Succeeded, "REST /complete still lands over its own connection even though the shared listener drops gRPC");
+
+        var timeline = await ReadTimelineAsync(runId);
+        timeline.ShouldContain(
+            static entry => entry.Type == "work_item.status_changed" && entry.PayloadJson.Contains("Succeeded", StringComparison.Ordinal));
+        timeline.ShouldNotContain(
+            static entry => entry.Type == "worker.reported",
+            "a shared Http1AndHttp2 listener never negotiates HTTP/2 for the worker gRPC stream — this is issue #152's exact mechanism");
     }
 
     [Fact]
@@ -198,6 +254,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         using var claimDocument = JsonDocument.Parse(await claim.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         var proxyBaseUrl = claimDocument.RootElement.GetProperty("proxyBaseUrl").GetString();
         var virtualKey = claimDocument.RootElement.GetProperty("virtualKey").GetString();
+        var generation = claimDocument.RootElement.GetProperty("generation").GetInt32();
         proxyBaseUrl.ShouldBe("http://127.0.0.1:9", "the configured WorkerBaseUrl, trailing slash trimmed");
         virtualKey.ShouldNotBeNullOrWhiteSpace();
 
@@ -209,9 +266,12 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         var claimedTimeline = await ReadTimelineAsync(runId);
         claimedTimeline.ShouldNotContain(entry => entry.PayloadJson.Contains(virtualKey!, StringComparison.Ordinal), "the raw minted token is never journaled");
 
+        // W1 generation fencing: complete echoes the claimed generation —
+        // a body without it binds to 0 and the guarded SQL rejects the
+        // call as an ownership miss (409 work-item.not-owner).
         using var complete = await client.PostAsync(
             $"/workers/{workItemId}/complete",
-            new StringContent(/*lang=json,strict*/ """{"resultJson":"{\"ok\":true}"}""", System.Text.Encoding.UTF8, "application/json"),
+            new StringContent(/*lang=json,strict*/ $$"""{"resultJson":"{\"ok\":true}","generation":{{generation}}}""", System.Text.Encoding.UTF8, "application/json"),
             TestContext.Current.CancellationToken);
         complete.StatusCode.ShouldBe(System.Net.HttpStatusCode.NoContent);
 
@@ -251,11 +311,16 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
 
     private ServiceProvider BuildTranslatorProvider(string piExecutable)
     {
+        return BuildTranslatorProvider(piExecutable, host.BaseAddress, host.GrpcAddress, workerToken);
+    }
+
+    private static ServiceProvider BuildTranslatorProvider(string piExecutable, Uri baseAddress, Uri grpcAddress, string token)
+    {
         var options = new TranslatorOptions
         {
-            OrchestratorBaseUrl = host.BaseAddress,
-            OrchestratorGrpcUrl = host.GrpcAddress,
-            WorkerToken = workerToken,
+            OrchestratorBaseUrl = baseAddress,
+            OrchestratorGrpcUrl = grpcAddress,
+            WorkerToken = token,
             ProfileKey = ProfileKey,
             ProfilesRef = ProfilesRef,
             WorkerImage = Image,

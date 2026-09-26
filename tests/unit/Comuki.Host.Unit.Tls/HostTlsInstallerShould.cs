@@ -1,6 +1,11 @@
+using System.Globalization;
 using Comuki.Host.Security.Tls;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Xunit;
 
@@ -155,6 +160,51 @@ public sealed class HostTlsInstallerShould
         using var app = BuildApplication();
 
         app.Urls.ShouldNotContain(static url => url.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact(DisplayName = "Given TLS enabled AND an explicit REST listener already bound (Program.cs's new shape, issue #152), when the app starts, then both the HTTP and HTTPS listeners actually come up")]
+    public async Task KeepBothListenersWhenExplicitEndpointsAlreadyExistAsync()
+    {
+        using var app = await WithCleanHostingEnvironment(async () =>
+        {
+            var restPort = FreeTcpPort();
+            var httpsPort = FreeTcpPort();
+            var builder = WebApplication.CreateBuilder();
+            builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Host:Tls:Enabled"] = "true",
+                ["Host:Tls:HttpsPort"] = httpsPort.ToString(CultureInfo.InvariantCulture),
+                ["Host:Tls:UseDevCertificate"] = "true",
+                ["server:port"] = restPort.ToString(CultureInfo.InvariantCulture),
+            });
+            // The same shape Program.cs now uses: an explicit REST listener
+            // bound BEFORE AddComukiTls runs, so AddComukiTls must add its
+            // HTTPS listener explicitly too (not via UseUrls, which would be
+            // silently ignored once any explicit endpoint exists).
+            builder.WebHost.ConfigureKestrel(server =>
+                server.ListenAnyIP(restPort, listen => listen.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2));
+            builder.AddComukiTls();
+            var built = builder.Build();
+            await built.StartAsync(TestContext.Current.CancellationToken);
+            return built;
+        });
+
+        var addresses = app.Services.GetRequiredService<IServer>()
+            .Features.Get<IServerAddressesFeature>()!.Addresses;
+
+        addresses.ShouldContain(static address => address.StartsWith("http://", StringComparison.OrdinalIgnoreCase));
+        addresses.ShouldContain(static address => address.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+
+        await app.DisposeAsync();
+    }
+
+    private static int FreeTcpPort()
+    {
+        var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return port;
     }
 
     private static WebApplication BuildApplication(params (string Key, string Value)[] pairs)

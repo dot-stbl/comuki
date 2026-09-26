@@ -56,9 +56,17 @@ public static class WorkerRuntimeExtensions
 
     /// <summary>Maps the worker gRPC service and the worker REST endpoints.</summary>
     /// <param name="app"></param>
-    public static void MapWorkerRuntime(this WebApplication app)
+    /// <param name="workerGrpcPort">
+    /// When set, scopes the gRPC endpoint to this port only (issue #152 —
+    /// Program.cs's dedicated worker-gRPC listener). Null in every
+    /// existing test fixture that composes its own single-purpose or
+    /// split-listener host — those already dedicate the whole listener to
+    /// gRPC (or a different port from REST), so the restriction is
+    /// redundant there.
+    /// </param>
+    public static void MapWorkerRuntime(this WebApplication app, int? workerGrpcPort = null)
     {
-        app.MapWorkerGrpc();
+        app.MapWorkerGrpc(workerGrpcPort);
         app.MapWorkerRest();
     }
 
@@ -68,9 +76,14 @@ public static class WorkerRuntimeExtensions
     /// mapping REST without its handlers fails parameter binding per request.
     /// </summary>
     /// <param name="app"></param>
-    public static void MapWorkerGrpc(this WebApplication app)
+    /// <param name="workerGrpcPort">See <see cref="MapWorkerRuntime"/>.</param>
+    public static void MapWorkerGrpc(this WebApplication app, int? workerGrpcPort = null)
     {
-        app.MapGrpcService<WorkerGrpcService>();
+        var conventions = app.MapGrpcService<WorkerGrpcService>();
+        if (workerGrpcPort is { } port)
+        {
+            conventions.RequireHost($"*:{port}");
+        }
     }
 
     /// <summary>Maps the worker REST claim/heartbeat/complete/fail surface.</summary>

@@ -25,17 +25,17 @@ Gates: `dotnet build platform/src/modules/Repositories/**/*.csproj -c Debug`.
 
 ## 2. Repository, RepositoryPolicy, RepositoryCredentialRef domain + persistence
 
-- [ ] 2.1 Implement `Repository` (url, host, default branch), `RepositoryPolicy`
+- [x] 2.1 Implement `Repository` (url, host, default branch), `RepositoryPolicy`
   (protected branches, required checks, approvers), `RepositoryCredentialRef`
   (integration ref, default access `write`|`read`) aggregates per
   `design.md`'s entity block; verify unit tests reject a duplicate
   `(host, url)` registration and cover `effective = min(attachment.access,
   credential.DefaultAccess)` resolution as a pure function.
-- [ ] 2.2 Add EF configurations + `dotnet ef` generated migration (never
+- [x] 2.2 Add EF configurations + `dotnet ef` generated migration (never
   hand-edit) for `repositories`, `repository_policies`,
   `repository_credential_refs`; verify migrator creates the schema and the
   model snapshot matches.
-- [ ] 2.3 Implement `IRepositoryStore` port + EF store; verify integration
+- [x] 2.3 Implement `IRepositoryStore` port + EF store; verify integration
   test (Testcontainers) round-trips create/get/list.
 
 Deps: 1. Files: `platform/src/modules/Repositories/Comuki.Modules.Repositories.Domain/**`,

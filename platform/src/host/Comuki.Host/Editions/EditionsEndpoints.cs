@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Editions.Gating;
@@ -13,23 +12,25 @@ namespace Comuki.Host.Editions;
 /// endpoint is intentionally absent any permission / feature / role gates.
 /// The response carries the live tier code and the current license
 /// status (<c>valid</c> / <c>grace</c> / <c>expired</c> / <c>absent</c>);
-/// <see cref="ExpiresAt"/> is omitted from the JSON entirely (not null)
-/// when the license is absent, so a Community reader can branch on the
-/// property's presence rather than its value.
+/// <see cref="ExpiresAt"/> is always present on the wire — null when the
+/// license is absent — so the property's contract (required+nullable)
+/// matches what the OpenAPI document declares and generated zod on the
+/// FE expects. The page projects <c>null</c> to <c>undefined</c> at the
+/// wire→snapshot boundary and still branches on presence there.
 /// </summary>
 /// <param name="Tier">Lowercase tier code the license names, or <c>"community"</c> when absent.</param>
 /// <param name="Status">One of <c>valid</c> / <c>grace</c> / <c>expired</c> / <c>absent</c>.</param>
 /// <param name="Features">Every registered feature, with <c>available</c> reflecting the current edition.</param>
 /// <param name="Limits">Every registered limit, with <c>cap</c> from the tier and <c>current</c> from the matching <c>ILimitUsageProvider</c>.</param>
 /// <param name="Version">Lowercase assembly version (<c>ComukiBuildInformation.Version</c>) the host boots from.</param>
-/// <param name="ExpiresAt">ISO-8601 UTC expiry from the verified license; omitted when <c>Status</c> is <c>absent</c>.</param>
+/// <param name="ExpiresAt">ISO-8601 UTC expiry from the verified license; <c>null</c> when <c>Status</c> is <c>absent</c>. Always present on the wire.</param>
 public sealed record EditionView(
     string Tier,
     string Status,
     IReadOnlyList<FeatureAvailabilityView> Features,
     IReadOnlyList<LimitUsageView> Limits,
     string Version,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DateTimeOffset? ExpiresAt);
+    DateTimeOffset? ExpiresAt);
 
 /// <summary>
 /// One feature's availability at the current edition. The view is honest
@@ -37,7 +38,7 @@ public sealed record EditionView(
 /// <c>available</c> is <c>false</c> — so the dashboard can render the
 /// right disabled/locked affordance without a second call to the catalog.
 /// </summary>
-/// <param name="Key">The closed-vocabulary feature key (dot.case; the same string the gate attribute carries).</param>
+/// <param name="Key">The closed-vocabulary feature key (lowercase kebab-case slug; the same string the gate attribute carries).</param>
 /// <param name="Available">True when the current <see cref="IEdition.Has"/> covers this key.</param>
 public sealed record FeatureAvailabilityView(string Key, bool Available);
 
@@ -48,7 +49,7 @@ public sealed record FeatureAvailabilityView(string Key, bool Available);
 /// refusing to answer, because the gate is the source of truth for
 /// enforcement and the view is read-only.
 /// </summary>
-/// <param name="Key">The closed-vocabulary limit key (dot.case; the same string the gate attribute carries).</param>
+/// <param name="Key">The closed-vocabulary limit key (lowercase kebab-case slug; the same string the gate attribute carries).</param>
 /// <param name="Current">Currently-observed usage (best-effort from the matching provider, or 0).</param>
 /// <param name="Cap">Effective numeric cap at the current tier.</param>
 public sealed record LimitUsageView(string Key, int Current, int Cap);
@@ -84,15 +85,25 @@ public static class EditionsEndpoints
             .Select(feature => new FeatureAvailabilityView(feature.Key.Value, edition.Has(feature)))
             .ToArray();
 
-        var providersByKey = limitProviders.ToDictionary(
-            static provider => provider.LimitKey.Value,
-            StringComparer.Ordinal);
+        // The gate (EditionGate.EvaluateLimitAsync) tolerates duplicate
+        // providers by picking the first registered one — first-wins via
+        // FirstOrDefault over registration order. ToDictionary would 500 on
+        // duplicates, so this view does the same: first registered provider
+        // per key wins, late registrations are silently ignored. Mirrors the
+        // gate's selection semantics so a host that registers the same
+        // key twice (a wiring duplication, not a contract change) sees the
+        // same provider on both paths.
+        var providerByKey = new Dictionary<string, ILimitUsageProvider>(StringComparer.Ordinal);
+        foreach (var provider in limitProviders)
+        {
+            providerByKey.TryAdd(provider.LimitKey.Value, provider);
+        }
 
         var limits = new List<LimitUsageView>(registry.Limits.Count);
         foreach (var limit in registry.Limits)
         {
             var current = 0;
-            if (providersByKey.TryGetValue(limit.Key.Value, out var provider))
+            if (providerByKey.TryGetValue(limit.Key.Value, out var provider))
             {
                 current = await provider.CurrentAsync(cancellationToken);
             }

@@ -4,7 +4,7 @@
   "properties": {
     "key": {
       "type": "string",
-      "description": "The closed-vocabulary limit key (dot.case; the same string the gate attribute carries)."
+      "description": "The closed-vocabulary limit key (lowercase kebab-case slug; the same string the gate attribute carries)."
     },
     "current": {
       "pattern": "^-?(?:0|[1-9]\\d*)$",

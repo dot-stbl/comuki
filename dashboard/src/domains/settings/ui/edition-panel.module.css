@@ -1,11 +1,15 @@
 /* The edition panel — the same hairline data-surface the platform-settings
    panel uses. The reading is "what we know", not "what you can do", so
    each row is a label / value pair without action affordances. The
-   feature list inside the FeatureGate renders every paid capability
-   alongside its gate mark (Check / Lock) so a Community reader can
-   see which capabilities are present (none paid) and which would
-   appear under a paid license; the gate wraps the whole list and
-   collapses it to the locked affordance when the gate closes. */
+   capability matrix renders every paid capability alongside its gate
+   mark (Check / Lock) so a Community reader can see which capabilities
+   are present (none paid) and which would appear under a paid license;
+   the matrix is NOT wrapped in a FeatureGate — that would collapse the
+   whole list to the locked affordance, contradicting the honest
+   reading the panel is meant to carry. The gate lives on the one
+   piece where it IS the honest reading: the multi-repo action row,
+   which the gate collapses to its locked fallback when the feature is
+   not in the current edition. */
 
 .hint {
   margin: 0;
@@ -31,6 +35,13 @@
   font-family: var(--font-mono);
   font-size: 0.85em;
   text-transform: lowercase;
+}
+
+.labelIcon {
+  inline-size: 1em;
+  block-size: 1em;
+  vertical-align: -0.15em;
+  margin-inline-end: var(--s2);
 }
 
 .value {

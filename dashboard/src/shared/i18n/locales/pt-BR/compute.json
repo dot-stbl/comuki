@@ -1,0 +1,129 @@
+{
+  "actions": {
+    "retry": "Tentar novamente"
+  },
+  "errors": {
+    "unknown": "Erro desconhecido",
+    "changeFailed": "A mudança falhou."
+  },
+  "page": {
+    "title": "Compute",
+    "summary": "<providers/> provedores · <workers/> workers de pé · <takes/>",
+    "summaryTakes": "<kind/> recebe novos arranques",
+    "summaryNothing": "nada recebe novos arranques",
+    "summaryStranded": "<count/> ociosos num rótulo que nada casa",
+    "loading": "Carregando o registro",
+    "errorTitle": "Compute não carregou",
+    "failureTail": "Nada se moveu — o registro voltou a como estava."
+  },
+  "providers": {
+    "section": "Provedores",
+    "note": "Docker para dev e compose, Kubernetes para prod — as duas implementações de <code>IComputeProvider</code> que o v1 tem. Uma recebe novos arranques; as demais seguram os arrendamentos que já entregaram.",
+    "emptyFiltered": "nenhum provedor corresponde aos filtros atuais",
+    "empty": "nenhum provedor de compute está registrado",
+    "count": "{{count}} exibidos",
+    "column": {
+      "kind": "tipo",
+      "endpoint": "endpoint",
+      "state": "estado",
+      "newStarts": "novos arranques",
+      "pools": "pools",
+      "workers": "workers",
+      "allocatable": "alocável",
+      "note": "nota",
+      "actions": "ações"
+    },
+    "allKinds": "todos os tipos",
+    "allStates": "todos os estados",
+    "filterPlaceholder": "filtrar endpoint, nota…",
+    "takingWork": "recebe trabalho",
+    "noAnswer": "sem resposta",
+    "handWork": "Entregar novos arranques a este provedor",
+    "handWorkAria": "Entregar novos arranques a {{endpoint}}"
+  },
+  "pools": {
+    "section": "Pools",
+    "note": "O escalonamento é consciente de cota mais a api de capacidade do provedor, então cada pool tem dois tetos com dois donos diferentes. O marcado <tag>vinculante</tag> é o que recusa o próximo contêiner — o outro é o que lhe sobrava.",
+    "empty": "nenhum pool está configurado"
+  },
+  "card": {
+    "on": "em",
+    "unknown": "desconhecido",
+    "noReading": "sem leitura",
+    "slotFree": "slot livre",
+    "slotsFree": "slots livres",
+    "trackQuota": "cota",
+    "trackAllocatable": "alocável",
+    "binding": "vinculante",
+    "noAnswer": "sem resposta",
+    "full": "cheio",
+    "free": "{{room}} livres",
+    "up": "de pé",
+    "idle": "ociosos",
+    "sentences": {
+      "noAnswer": "a api de capacidade não respondeu — nenhum teto é legível para este pool",
+      "bothFull": "cota e cluster estão ambos cheios — nada pode arrancar aqui",
+
+      "both": "cota e cluster concordam — lugar para {{slots}}",
+      "quotaFull": "a cota é o teto — nada pode arrancar, e o cluster ainda tem {{slots}} livres",
+      "quota": "a cota é o teto — lugar para {{slots}}, com {{spare}} livres no cluster",
+      "clusterFull": "o cluster é o teto — nada pode arrancar, e a cota ainda permite {{slots}}",
+      "cluster": "o cluster é o teto — lugar para {{slots}}, com {{spare}} restantes sob a cota"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — criado por tarefa",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "one": "{{count}} slot",
+      "other": "{{count}} slots"
+    }
+  },
+  "versions": {
+    "section": "Versões de workers",
+    "note": "Um worker é rotulado por digest de imagem <em>e</em> git-ref de perfis. Mudar qualquer um só afeta um novo arranque — um worker ocioso noutro rótulo nunca casa com um item, e é assim que um pool cheio fica ao lado de uma fila crescendo.",
+    "emptyFiltered": "nenhum rótulo corresponde aos filtros atuais",
+    "empty": "nenhum worker está de pé",
+    "count": "{{count}} exibidas",
+    "countStranded": "{{count}} ociosos nunca casados · ",
+    "column": {
+      "label": "rótulo do worker",
+      "matching": "casa",
+      "workers": "workers",
+      "idle": "ocioso",
+      "oldestUp": "mais velho de pé",
+      "why": "por quê",
+      "actions": "ações"
+    },
+    "filterPlaceholder": "filtrar digest, profiles ref…",
+    "allLabels": "todos os rótulos",
+    "newStarts": "novos arranques",
+    "neverMatched": "nunca casa",
+    "strandedTitle": "{{count}} ociosos num rótulo que nada casa — eles não pegarão um item",
+    "retireTooltip": "Aposentar os workers ociosos neste rótulo",
+    "retireAria": "Aposentar {{count}} workers ociosos em {{label}}",
+    "retireTitle": "Aposentar os workers ociosos neste rótulo?",
+    "retireBody": "{{label}} — {{idle}} contêineres ociosos são derrubados. Os {{rest}} que ainda seguram um arrendamento continuam até seu item pousar.",
+    "retireConfirm": "Aposentar ociosos",
+    "retireCancel": "Deixá-los de pé",
+    "reason": {
+
+      "both": "a imagem e o profiles ref mudaram os dois",
+      "image": "um release atrás na imagem",
+      "profiles": "mesma imagem, o profiles ref mudou"
+    }
+  },
+  "boards": {
+    "section": "Painéis",
+    "note": "Os painéis do grafana, dobrados para cá da tela que antes os possuía. Abrem numa nova aba e não são embutidos aqui de propósito: métricas de infra e a timeline própria de uma execução são lidas em relógios diferentes por gente com perguntas diferentes, e uma superfície que mostrasse ambas ensinaria a procurar a história de uma execução num painel de métricas, onde só metade dela está. A história de uma execução está em <code>/runs</code>. Um painel cobre todos os projetos de uma vez, e as definições são versionadas com a plataforma — o guia sob a lista diz como conectar uma instalação que ainda não tem nada.",
+    "loading": "Carregando os painéis",
+    "errorTitle": "Os painéis não carregaram"
+  },
+  "state": {
+    "active": "ativo",
+    "draining": "drenando",
+    "standby": "em espera",
+    "unreachable": "inalcançável"
+  }
+}

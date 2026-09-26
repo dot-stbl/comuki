@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Boxes,
   BookOpen,
@@ -70,10 +71,13 @@ function iconFor(name: string): ComponentType<{ className?: string }> {
 }
 
 /** How far back a dependency sits, in the reader's terms rather than in maths. */
-function distanceOf(dependency: ItemDependency): string {
+function distanceOf(
+  dependency: ItemDependency,
+  t: ReturnType<typeof useTranslation>["t"]
+): string {
   return dependency.span <= 1
-    ? "previous column"
-    : `${dependency.span} columns back`
+    ? t("inspector.distancePrevious")
+    : t("inspector.distanceBack", { count: dependency.span })
 }
 
 interface SectionProps {
@@ -125,14 +129,15 @@ interface WaitsOnProps {
  * means "the column beside it".
  */
 function WaitsOn({ waitsOn, onSelect }: WaitsOnProps) {
+  const { t } = useTranslation("runs")
   if (waitsOn.length === 0) {
-    return <p className={styles.none}>Nothing — this item starts the plan.</p>
+    return <p className={styles.none}>{t("inspector.waitsOnNone")}</p>
   }
 
   return (
     <ul className={styles.deps}>
       {waitsOn.map((dependency) => {
-        const distance = distanceOf(dependency)
+        const distance = distanceOf(dependency, t)
         const long = isLongEdge(dependency)
         const body = (
           <>
@@ -163,7 +168,12 @@ function WaitsOn({ waitsOn, onSelect }: WaitsOnProps) {
               className={cn(styles.dep, long && styles.depLong)}
               data-test="work-item-dependency"
               data-item={dependency.item.id}
-              aria-label={`Show ${dependency.item.label}, ${dependency.item.profile}, ${dependency.item.status}, ${distance}.`}
+              aria-label={t("inspector.dependencyAria", {
+                label: dependency.item.label,
+                profile: dependency.item.profile,
+                status: dependency.item.status,
+                distance,
+              })}
               onClick={() => onSelect(dependency.item.id)}
             >
               {body}
@@ -184,6 +194,7 @@ export function WorkItemInspectorPanel({
   onSelect,
   className,
 }: WorkItemInspectorProps) {
+  const { t } = useTranslation("runs")
   const longCount = waitsOn.filter(isLongEdge).length
 
   return (
@@ -201,35 +212,33 @@ export function WorkItemInspectorPanel({
             <span aria-hidden="true">·</span>
             <span>{info.role}</span>
             <span aria-hidden="true">·</span>
-            <span>
-              item {index} of {total}
-            </span>
+            <span>{t("inspector.itemOf", { index, total })}</span>
           </p>
         </div>
         <StatusBadge status={item.status} className={styles.badge} />
       </header>
 
       <dl className={styles.figures}>
-        <Figure name="env" value={info.env} />
-        <Figure name="tokens" value={info.tokens} />
-        <Figure name="cost" value={`$${info.cost}`} />
-        <Figure name="started" value={item.startedAt ?? "—"} />
+        <Figure name={t("inspector.env")} value={info.env} />
+        <Figure name={t("inspector.tokens")} value={info.tokens} />
+        <Figure name={t("inspector.cost")} value={`$${info.cost}`} />
+        <Figure name={t("inspector.started")} value={item.startedAt ?? "—"} />
       </dl>
 
       <div className={styles.panes}>
         <div className={styles.pane}>
           <Section
-            title="waits on"
+            title={t("inspector.waitsOn")}
             note={
               longCount > 0
-                ? `${longCount} more than one column back`
+                ? t("inspector.waitsOnLong", { count: longCount })
                 : undefined
             }
           >
             <WaitsOn waitsOn={waitsOn} onSelect={onSelect} />
           </Section>
 
-          <Section title="input — what fed it">
+          <Section title={t("inspector.input")}>
             <ul className={styles.chips}>
               {info.inputs.map((entry) => {
                 const Icon = iconFor(entry.icon)
@@ -249,7 +258,7 @@ export function WorkItemInspectorPanel({
             </ul>
           </Section>
 
-          <Section title="log" note="append-only">
+          <Section title={t("inspector.log")} note={t("inspector.appendOnly")}>
             <ol className={styles.log}>
               {info.events.map((event, eventIndex) => (
                 <li
@@ -267,7 +276,7 @@ export function WorkItemInspectorPanel({
 
         <div className={styles.pane}>
           {info.gate ? (
-            <Section title="verification gate">
+            <Section title={t("inspector.gate")}>
               <ul className={styles.chips}>
                 {info.gate.map((check) => (
                   <li key={check.name}>
@@ -280,7 +289,7 @@ export function WorkItemInspectorPanel({
             </Section>
           ) : null}
 
-          <Section title="output — what it produced">
+          <Section title={t("inspector.output")}>
             {info.files ? (
               <div className={styles.files}>
                 {info.files.map((file) => (
@@ -341,7 +350,7 @@ export function WorkItemInspectorPanel({
                 })}
               </ul>
             ) : (
-              <p className={styles.none}>Nothing yet.</p>
+              <p className={styles.none}>{t("inspector.outputNone")}</p>
             )}
           </Section>
         </div>

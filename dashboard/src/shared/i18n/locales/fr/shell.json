@@ -1,0 +1,139 @@
+{
+  "locale": {
+    "label": "Langue"
+  },
+  "nav": {
+    "intake": "Réception",
+    "observe": "Observer",
+    "configure": "Configurer",
+    "platform": "Plateforme",
+    "inbox": "Boîte",
+    "liveRuns": "Runs en direct",
+    "queue": "File",
+    "approvals": "Approbations",
+    "cost": "Coûts",
+    "sources": "Sources",
+    "knowledge": "Connaissances",
+    "settings": "Réglages",
+    "projects": "Projets",
+    "identity": "Identité",
+    "compute": "Calcul",
+    "models": "Modèles"
+  },
+  "crumb": {
+    "platform": "plateforme",
+    "projects": "projets",
+    "attention": "garde",
+    "liveRuns": "exécutions en direct",
+    "tasks": "tâches",
+    "queue": "file",
+    "observe": "observer",
+    "identity": "identité",
+    "sources": "sources",
+    "approvals": "approbations",
+    "configure": "configurer",
+    "console": "console",
+    "onboard": "intégration",
+    "knowledge": "connaissances",
+    "models": "modèles",
+    "compute": "compute"
+  },
+  "topbar": {
+    "home": "Comuki — accueil",
+    "newRun": "Nouveau run",
+    "github": "github",
+    "githubOpens": "Comuki sur GitHub — s'ouvre dans un nouvel onglet"
+  },
+  "page": {
+    "breadcrumb": "Fil d'ariane",
+    "showRail": "Afficher le rail de navigation",
+    "hideRail": "Masquer le rail de navigation",
+    "resizeRail": "Redimensionner le rail de navigation"
+  },
+  "account": {
+    "label": "Compte",
+    "named": "Compte — {{name}}",
+    "settings": "Réglages",
+    "apiKeys": "Clés api",
+    "profile": "Profil",
+    "signOut": "Se déconnecter"
+  },
+  "appearance": {
+    "label": "Apparence",
+    "current": "Apparence — {{mode}}",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
+  "palette": {
+    "label": "Palette",
+    "current": "Palette — {{name}}"
+  },
+  "live": {
+    "demo": "Démo",
+    "polling": "Interrogation",
+    "mockOnly": "Travail sur des données synthétiques — bun run dev:real pour basculer",
+    "mockAndDown": "Travail sur des données synthétiques, backend injoignable",
+    "down": "Backend injoignable — dernier état connu affiché",
+    "pollingDown": "Les mises à jour en direct sont tombées — cet écran se rafraîchit toutes les {{seconds}} s à la place"
+  },
+  "search": {
+    "open": "Rechercher — {{chord}}",
+    "label": "Rechercher dans Comuki",
+    "placeholder": "collez un id ou nommez un écran…",
+    "results": "Résultats",
+    "empty": "rien ici ne répond à ça",
+    "keys": {
+      "move": "↑↓ choisir",
+      "open": "enter ouvrir",
+      "close": "esc fermer"
+    },
+    "band": {
+      "resolved": "aller à",
+      "section": "sections",
+      "act": "actions",
+      "handoff": "recherche"
+    },
+    "kind": {
+      "run": "run",
+      "workItem": "item de travail",
+      "worker": "worker",
+      "approval": "approbation",
+      "project": "projet",
+      "app": "app",
+      "person": "personne",
+      "apiKey": "clé api",
+      "image": "image",
+      "section": "section",
+      "act": "action",
+      "search": "recherche"
+    },
+    "act": {
+      "newTask": "Nouvelle tâche",
+      "newTaskHint": "poser un ticket dans le backlog",
+      "newProject": "Nouveau projet",
+      "newProjectHint": "enregistrer un projet",
+      "newUser": "Nouvel utilisateur",
+      "newUserHint": "inviter une personne",
+      "newApiKey": "Nouvelle clé api",
+      "newApiKeyHint": "émettre une clé",
+      "grantRole": "Attribuer un rôle",
+      "grantRoleHint": "donner l'accès à quelqu'un"
+    },
+    "resolvedHint": {
+      "liveRuns": "dans les runs en direct",
+      "claimQueue": "dans la file de réclamations",
+      "workerPool": "dans le pool de workers",
+      "approvals": "dans les approbations",
+      "image": "workers sur cette image",
+      "apiKeys": "dans les clés api",
+      "people": "dans les personnes",
+      "app": "runs de cette app"
+    },
+    "handoffHint": {
+      "runs": "dans les runs en direct",
+      "queue": "dans la file",
+      "inbox": "dans la boîte"
+    }
+  }
+}

@@ -7,7 +7,16 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { ADMISSION_MODES } from "@/domains/sources/model/providers"
@@ -779,5 +788,27 @@ describe("leaving with something typed and not saved", () => {
     fireEvent.click(screen.getByRole("link", { name: "sources" }))
     await waitFor(() => expect(here(router)).toBe("/sources"))
     expect(screen.queryByText("Leave without saving?")).toBeNull()
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the page's own
+   words — sections, facts, the rotation act — arrive in russian while the
+   connection's values stay as they were. Language resets after the case so
+   the file's other readings keep their en posture. */
+describe("the source's own page in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the regions and the facts in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    mount(["/sources", "/sources/src_gh_comuki"])
+
+    expect(await screen.findByText("что это за подключение")).toBeTruthy()
+    expect(screen.getByText("watch и фильтр")).toBeTruthy()
+    expect(screen.getByText("провайдер")).toBeTruthy()
   })
 })

@@ -1,6 +1,10 @@
 import { SquareKanban } from "lucide-react"
 
-import type { Provider } from "@/domains/sources/model/providers"
+import {
+  intakeNote,
+  providerLabel,
+  type Provider,
+} from "@/domains/sources/model/providers"
 import { BrandIcon, type ProviderCardOption } from "@/shared/ui"
 
 import styles from "./provider-card-options.module.css"
@@ -16,6 +20,10 @@ import styles from "./provider-card-options.module.css"
  * where the mark does not already say it, and the one line that tells this
  * card apart from the one above it.
  *
+ * The words resolve through the registry's readers rather than off the row
+ * itself, so they localise at the map edge (`dashboard-i18n` D11) and every
+ * consumer of this helper reads the active locale without knowing about it.
+ *
  * A sources-domain helper rather than a kit one for the reason the registry
  * itself is: the kit knows the *shape* of a card, and the product's provider
  * table is the product's fact. The tasks domain reaches for it the same way
@@ -26,7 +34,7 @@ export function providerCardOptions(
 ): ProviderCardOption[] {
   return providers.map((provider) => ({
     value: provider.key,
-    label: provider.label,
+    label: providerLabel(provider.key),
     mark:
       provider.brand === null ? (
         /* Sized by the class to sit exactly where the kit's own scale puts a
@@ -43,7 +51,8 @@ export function providerCardOptions(
        own container for native) keeps its visible name. The name never
        leaves the radio's `aria-label`, so the group reads the same either
        way. */
-    name: provider.brand === provider.key ? undefined : provider.label,
-    note: provider.intakeNote,
+    name:
+      provider.brand === provider.key ? undefined : providerLabel(provider.key),
+    note: intakeNote(provider.key),
   }))
 }

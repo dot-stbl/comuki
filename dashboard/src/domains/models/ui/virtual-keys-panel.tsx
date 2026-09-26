@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { expiredKeys, keyOrder, keysNearCap } from "@/domains/models/model/keys"
 import type { ModelEndpoint, VirtualKey } from "@/domains/models/model/types"
@@ -51,6 +52,7 @@ export function VirtualKeysPanel({
   onOpen,
 }: VirtualKeysPanelProps) {
   const session = useSession()
+  const { t } = useTranslation("models")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
@@ -66,8 +68,9 @@ export function VirtualKeysPanel({
         onRevoke,
         onOpen,
         session,
+        t,
       }),
-    [endpoints, enforced, revokingId, onRevoke, onOpen, session]
+    [endpoints, enforced, revokingId, onRevoke, onOpen, session, t]
   )
 
   const rows = useMemo(
@@ -79,8 +82,8 @@ export function VirtualKeysPanel({
   const expired = useMemo(() => expiredKeys(rows).length, [rows])
 
   const emptyLabel = hasActiveFilters(filters)
-    ? "no keys match the current filters"
-    : "no spend key has been issued"
+    ? t("keys.emptyFiltered")
+    : t("keys.empty")
 
   return (
     <>
@@ -93,9 +96,9 @@ export function VirtualKeysPanel({
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="keys-count">
-              {expired > 0 ? `${expired} expired · ` : ""}
-              {nearCap > 0 ? `${nearCap} near the cap · ` : ""}
-              {rows.length} shown
+              {expired > 0 ? t("keys.countExpired", { count: expired }) : ""}
+              {nearCap > 0 ? t("keys.countNearCap", { count: nearCap }) : ""}
+              {t("keys.count", { count: rows.length })}
             </span>
           }
         />

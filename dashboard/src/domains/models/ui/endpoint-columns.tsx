@@ -1,4 +1,8 @@
-import { wireLabel } from "@/domains/models/model/keys"
+import {
+  wireLabel,
+  sharedModelsT,
+  type ModelsTranslator,
+} from "@/domains/models/model/keys"
 import type { EndpointState, ModelEndpoint } from "@/domains/models/model/types"
 import { rankSort, type DataColumn } from "@/shared/ui"
 
@@ -26,11 +30,13 @@ const stateSort = rankSort({ degraded: 0, ok: 1, disabled: 2 })
  * whether a model can be reached at all: a worker's provider config and the
  * lead's chat client both speak exactly these two protocols.
  */
-export function createEndpointColumns(): DataColumn<ModelEndpoint>[] {
+export function createEndpointColumns(
+  t: ModelsTranslator = sharedModelsT
+): DataColumn<ModelEndpoint>[] {
   return [
     {
       accessorKey: "name",
-      header: "endpoint",
+      header: t("endpoints.column.endpoint"),
       cell: ({ row }) => (
         <span className={styles.strong}>{row.original.name}</span>
       ),
@@ -39,7 +45,7 @@ export function createEndpointColumns(): DataColumn<ModelEndpoint>[] {
         pinned: true,
         filter: {
           kind: "text",
-          placeholder: "filter endpoint, url, model…",
+          placeholder: t("endpoints.filterPlaceholder"),
           match: (endpoint, needle) =>
             `${endpoint.name} ${endpoint.baseUrl} ${endpoint.models.join(" ")} ${endpoint.note}`
               .toLowerCase()
@@ -49,43 +55,45 @@ export function createEndpointColumns(): DataColumn<ModelEndpoint>[] {
     },
     {
       accessorKey: "wire",
-      header: "wire",
+      header: t("endpoints.column.wire"),
       cell: ({ row }) => <WireBadge wire={row.original.wire} />,
       meta: {
         width: 128,
         filter: {
           kind: "select",
-          placeholder: "all wires",
+          placeholder: t("endpoints.allWires"),
           options: [
-            { value: "openai", label: wireLabel("openai") },
-            { value: "anthropic", label: wireLabel("anthropic") },
+            { value: "openai", label: wireLabel("openai", t) },
+            { value: "anthropic", label: wireLabel("anthropic", t) },
           ],
         },
       },
     },
     {
       accessorKey: "baseUrl",
-      header: "base url",
+      header: t("endpoints.column.baseUrl"),
       cell: ({ row }) => (
         <span className={styles.strong} title={row.original.baseUrl}>
           {row.original.baseUrl}
         </span>
       ),
-      meta: { width: 280, label: "base url" },
+      meta: { width: 280, label: t("endpoints.column.baseUrl") },
     },
     {
       accessorKey: "state",
-      header: "state",
-      cell: ({ row }) => <EndpointStateBadge state={row.original.state} />,
+      header: t("endpoints.column.state"),
+      cell: ({ row }) => (
+        <EndpointStateBadge state={row.original.state} t={t} />
+      ),
       sortFn: stateSort,
       meta: {
         width: 116,
         filter: {
           kind: "select",
-          placeholder: "all states",
+          placeholder: t("endpoints.allStates"),
           options: ENDPOINT_STATES.map((state) => ({
             value: state,
-            label: state,
+            label: t(`state.${state}`, { defaultValue: state }),
           })),
         },
       },
@@ -93,7 +101,7 @@ export function createEndpointColumns(): DataColumn<ModelEndpoint>[] {
     {
       id: "models",
       accessorFn: (endpoint) => endpoint.models.join(" "),
-      header: "models",
+      header: t("endpoints.column.models"),
       cell: ({ row }) => (
         <span className={styles.models} title={row.original.models.join(", ")}>
           {row.original.models.map((model, index) => (
@@ -108,17 +116,17 @@ export function createEndpointColumns(): DataColumn<ModelEndpoint>[] {
           ))}
         </span>
       ),
-      meta: { width: 200, label: "models" },
+      meta: { width: 200, label: t("endpoints.column.models") },
     },
     {
       accessorKey: "note",
-      header: "note",
+      header: t("endpoints.column.note"),
       cell: ({ row }) => (
         <span className={styles.note} title={row.original.note}>
           {row.original.note}
         </span>
       ),
-      meta: { label: "note" },
+      meta: { label: t("endpoints.column.note") },
     },
   ]
 }

@@ -1,0 +1,52 @@
+{
+  "actions": {
+    "retry": "再試行"
+  },
+  "registry": {
+    "title": "承認",
+    "summary": {
+      "other": "<count/> 件が決定待ち"
+    },
+    "errorTitle": "承認を読み込めませんでした"
+  },
+  "errors": {
+    "unknown": "不明なエラー"
+  },
+  "decide": {
+    "approvedToast": "承認しました",
+    "rejectedToast": "拒否しました",
+    "openedToast": "レビューを開きました",
+    "refused": "決定は届きませんでした。",
+    "tail": "キューは元のまま — run はまだ待っています。"
+  },
+  "empty": {
+    "title": "キューは空です",
+    "description": "人を待っているものはありません。"
+  },
+  "card": {
+    "details": "詳細",
+    "hide": "隠す",
+    "review": "レビュー",
+    "reject": "拒否",
+    "approve": "承認",
+    "reviewAria": "{{app}} の{{noun}}をレビュー",
+    "rejectAria": "{{app}} の{{noun}}を拒否",
+    "approveAria": "{{app}} の{{noun}}を承認",
+    "planHead": "計画 — ワークアイテムグラフ",
+    "assumptionsFallback": "プランナーの前提",
+    "paneBaseline": "ベースライン",
+    "paneNew": "新規"
+  },
+  "type": {
+    "plan": "計画",
+    "deploy": "デプロイ",
+    "baseline": "ベースライン",
+    "gate": "ゲート",
+    "learning": "ルール"
+  },
+  "risk": {
+    "high": "高",
+    "medium": "中",
+    "low": "低"
+  }
+}

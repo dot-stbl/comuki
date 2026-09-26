@@ -1,0 +1,171 @@
+{
+  "actions": {
+    "retry": "Tentar novamente"
+  },
+  "errors": {
+    "unknown": "Erro desconhecido"
+  },
+  "workStatus": {
+    "queued": "enfileirado",
+    "running": "em execução",
+    "blocked": "bloqueado",
+    "failed": "falhou",
+    "cancelled": "cancelado",
+    "succeeded": "concluído"
+  },
+  "workerState": {
+    "busy": "ocupado",
+    "idle": "livre",
+    "draining": "esvaziando",
+    "offline": "offline"
+  },
+  "registry": {
+    "title": "Fila e workers",
+    "summary": "<queued/> na fila · <stalled/> sem resgate há mais de cinco minutos · <total/> workers, <idle/> livres · <lost/> sem pulso",
+    "errorTitle": "A fila não carregou",
+    "loading": "Carregando a fila",
+    "expandPool": "Expandir o pool",
+    "collapsePool": "Recolher o pool",
+    "resizePool": "Redimensionar o pool de workers"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "nada enfileirado neste perfil",
+      "filtered": "nenhum item de trabalho corresponde aos filtros atuais",
+      "none": "a fila está vazia"
+    },
+    "shown": {
+      "one": "{{count}} exibido",
+      "other": "{{count}} exibidos"
+    },
+    "waitingTooLong": {
+      "one": "{{count}} espera demais · ",
+      "other": "{{count}} esperam demais · "
+    }
+  },
+  "queueColumn": {
+    "status": "status",
+    "item": "item",
+    "run": "execução",
+    "project": "projeto",
+    "profile": "perfil",
+    "step": "passo",
+    "claimedBy": "resgatado por",
+    "age": "idade",
+    "allStatuses": "todos os status",
+    "allProjects": "todos os projetos",
+    "allProfiles": "todos os perfis",
+    "filterPlaceholder": "filtrar item, execução, passo…"
+  },
+  "ageMeter": {
+    "stalled": "enfileirado há mais de {{limit}} — nenhum worker deste perfil o resgatou"
+  },
+  "lease": {
+    "noHeartbeat": "sem leitura de pulso — o lease expira e o item volta para a fila",
+    "lostHeartbeat": "sem pulso há {{quiet}} — o lease expira e o item volta para a fila"
+  },
+  "depth": {
+    "label": "Profundidade da fila por dia",
+    "figure": "<today/> na fila agora · a semana rodou <week/>",
+    "deepest": " · hoje é o dia mais profundo da semana",
+    "chartLabel": "Profundidade da fila por dia, itens aguardando resgate. Hoje {{today}} na fila; a semana rodou de {{weekMin}} a {{weekMax}}.",
+    "chartLabelDeepest": "Profundidade da fila por dia, itens aguardando resgate. Hoje {{today}} na fila — o dia mais profundo de uma semana que rodou de {{weekMin}} a {{weekMax}}."
+  },
+  "poolStrip": {
+    "expandEmpty": "Expandir o pool. Não há workers de pé.",
+    "expand": "Expandir o pool. {{total}} workers: {{busy}} ocupados, {{draining}} esvaziando, {{idle}} livres."
+  },
+  "workerColumn": {
+    "state": "estado",
+    "worker": "worker",
+    "project": "projeto",
+    "profile": "perfil",
+    "currentWork": "trabalho atual",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "imagem",
+    "lease": "lease",
+    "up": "de pé",
+    "actions": "ações",
+    "idle": "livre",
+    "allStates": "todos os estados",
+    "allProjects": "todos os projetos",
+    "allProfiles": "todos os perfis",
+    "allProviders": "todos os provedores",
+    "filterPlaceholder": "filtrar worker, handle, imagem…",
+    "drain": "Esvaziar",
+    "forceStop": "Parada forçada",
+    "drainWorker": "Esvaziar {{id}}",
+    "forceStopWorker": "Parada forçada de {{id}}"
+  },
+  "workersPanel": {
+    "count": "{{shown}} de {{total}} workers",
+    "fallback": "O pool não aceitou.",
+    "tail": "Nada mudou — o worker está como estava.",
+    "stopTitle": "Parada forçada deste worker?",
+    "stopIdle": "{{id}} está livre. O contêiner é derrubado agora, e o scale levanta outro quando houver trabalho para ele.",
+    "stopBusy": "{{id}} está segurando \"{{label}}\" na execução {{runId}}. O contêiner é derrubado agora, o lease é liberado, e o item volta para a fila para outro worker resgatar.",
+    "stopConfirm": "Parada forçada",
+    "stopCancel": "Deixar rodando"
+  },
+  "workerEmpty": {
+    "clearFilters": "Limpar filtros",
+    "filteredTitle": "Nenhum worker corresponde aos filtros",
+    "filteredDescription": {
+      "one": "O pool está de pé — <pool/> worker{{where}} está rodando, só que não são estes.",
+      "other": "O pool está de pé — <pool/> workers{{where}} estão rodando, só que não são estes."
+    },
+    "backlogTitle": "Ainda sem workers",
+    "backlogDescription": {
+      "one": "min idle = <zero/>{{where}}, então o pool fica vazio até haver trabalho. Agora há: <backlog/> item enfileirado e sem resgate. O scale levantará um worker para pegá-lo.",
+      "other": "min idle = <zero/>{{where}}, então o pool fica vazio até haver trabalho. Agora há: <backlog/> itens enfileirados e sem resgate. O scale levantará um worker para pegá-los."
+    },
+    "atRestTitle": "Sem workers — e sem querer nenhum",
+    "atRestDescription": "min idle = <zero/>{{where}} e nada está enfileirado. Um pool vazio é o estado de descanso configurado aqui, não uma queda — um contêiner é criado por tarefa e derrubado depois dela.",
+    "underTargetTitle": "O pool está abaixo da meta",
+    "underTargetDescription": {
+      "one": "min idle = <minIdle/>{{where}} e nenhum worker está de pé. Este não é um estado de descanso: o compute não os está levantando, e <backlog/> item esperará até que levante.",
+      "other": "min idle = <minIdle/>{{where}} e nenhum worker está de pé. Este não é um estado de descanso: o compute não os está levantando, e <backlog/> itens esperarão até que levante."
+    },
+    "onProject": " em {{project}}"
+  },
+  "worker": {
+    "loading": "Carregando o worker",
+    "errorTitle": "O pool não carregou",
+    "fallback": "O pool não aceitou.",
+    "tail": "Nada mudou — o worker está como estava.",
+    "live": "ao vivo",
+    "container": "contêiner",
+    "currentWork": "trabalho atual",
+    "leaseLeft": "lease restante",
+    "leaseNone": "nada resgatado, então não há lease para defender",
+    "sinceHeartbeat": "desde o pulso",
+    "heartbeatStale": "velho após {{limit}}",
+    "up": "de pé",
+    "upNote": "desde que o contêiner subiu",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "imagem",
+    "imageNote": "todo contêiner nesta imagem",
+    "profile": "perfil",
+    "profileNote": "o eixo no qual um resgate corresponde",
+    "project": "projeto",
+    "workNote": "Segurando um item que a fila não mandou com esta resposta.",
+    "idle": "livre",
+    "idleNote": "Não segura nada e pode resgatar o próximo item que corresponder ao seu perfil.",
+    "tornDownTitle": "Este contêiner já era",
+    "tornDownDescription": "<id/> foi derrubado enquanto esta página estava aberta. Um contêiner parado não é guardado — não há registro para o qual voltar, nem deveria haver. Workers são levantados para o trabalho à frente deles e removidos quando ele termina ou alguém os para; isto é o pool se comportando como configurado, não uma falha.",
+    "tornDownHolding": "Ele segurava <label/>. Esse trabalho não foi com ele: o lease foi liberado e o item voltou para a fila para outro worker resgatar.",
+    "tornDownIdle": "Ele estava livre quando foi — não segurava nada e nada voltou para a fila.",
+    "tornDownItem": "{{id}}",
+    "poolLink": "fila e workers",
+    "notFoundTitle": "Nenhum worker chamado <id/>",
+    "notFoundDescription": "Nada no pool responde a esse id. Workers são efêmeros — um é levantado para um pedaço de trabalho e removido depois —, então um id do log de ontem, um marcador antigo ou um link que perdeu o rabo todos caem aqui, e nenhum deles significa que algo está errado.",
+    "notFoundLook": "procurar {{id}} no pool",
+    "stopTitle": "Parada forçada deste worker?",
+    "stopIdle": "<id/> está livre. O contêiner é derrubado agora, e o scale levanta outro quando houver trabalho para ele.",
+    "stopBusy": "<id/> está segurando <label/> na execução <run/>. O contêiner é derrubado agora, o lease é liberado, e o item volta para a fila para outro worker resgatar.",
+    "stopConfirm": "Parada forçada",
+    "stopCancel": "Deixar rodando"
+  }
+}

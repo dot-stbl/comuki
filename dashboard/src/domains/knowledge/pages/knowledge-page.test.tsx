@@ -11,6 +11,7 @@ import {
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
+import { i18n, loadLocale } from "@/shared/i18n"
 import { ThemeProvider } from "@/app/theme-provider"
 import { Route as KnowledgeRoute } from "@/routes/knowledge"
 import { Route as VerifyRoute } from "@/routes/verify"
@@ -415,5 +416,27 @@ describe("the route that used to be a screen", () => {
     ).toBe(true)
     expect(find('[data-test="tab-gate"]')).toBeNull()
     expect(panels()).toHaveLength(0)
+  })
+})
+
+describe("the knowledge screen in russian", () => {
+  it("renders the title, the tabs and the revision reading in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    try {
+      renderScreen({ roles: ["platform-admin"] })
+
+      expect(
+        await screen.findByRole("heading", { name: "Знания" })
+      ).toBeTruthy()
+      // The strip offers both sections, in russian.
+      expect(await screen.findByText("библиотека")).toBeTruthy()
+      expect(screen.getByText("гейт")).toBeTruthy()
+      // The revision section's title reads in russian too.
+      expect(screen.getByText("действующая ревизия")).toBeTruthy()
+    } finally {
+      await i18n.changeLanguage("en")
+    }
   })
 })

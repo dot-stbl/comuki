@@ -1,0 +1,93 @@
+{
+  "errors": {
+    "unknown": "未知错误"
+  },
+  "actions": {
+    "retry": "重试"
+  },
+  "header": {
+    "title": "当班",
+    "crumb": "当班",
+    "summary": {
+      "other": "<owed/> 需要你 · <running/> 执行中 · <total/> 个运行"
+    },
+    "errorTitle": "当班视图没有加载出来",
+    "errorTail": "{{detail}} — 在它加载出来之前，此屏幕上的任何内容都无法说明是否有决定在等你。"
+  },
+  "notice": {
+    "fallback": "决定失败了。",
+    "tail": "{{detail}} 没有任何改变 — 运行已回到原状。"
+  },
+  "verdict": {
+    "clear": "没有需要你的事",
+    "owed": {
+      "other": "个运行在等待决定"
+    },
+    "swarmEmpty": "集群为空 — 队列里没有，飞行中没有。",
+    "moving": "<running/> 执行中 · <queued/> 排队中 — 集群在自己运转。"
+  },
+  "attention": {
+    "section": "需要你",
+    "column": {
+      "run": "运行",
+      "project": "项目",
+      "task": "任务",
+      "step": "步骤",
+      "inStep": "处于步骤"
+    },
+    "status": {
+      "escalated": "已升级",
+      "failed": "已失败",
+      "waiting": "等待中"
+    },
+    "reason": {
+      "escalated": "从集群升级给某个人",
+      "failed": "停在了一道校验关口",
+      "waiting": "在等一个人"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "批准",
+    "stop": "停止",
+    "open": "打开",
+    "approveRun": "批准 {{title}}",
+    "stopRun": "停止 {{title}}",
+    "openRun": "打开 {{title}}",
+    "more": "还有 {{count}} 个 — 打开实时运行"
+  },
+  "list": {
+    "waitingOnPlan": "在等一个计划",
+    "timeInStep": "步骤耗时"
+  },
+  "running": {
+    "section": "当前执行中",
+    "note": "{{running}} 飞行中 · {{queued}} 排队中",
+    "empty": "没有在飞行中的。",
+    "more": "还有 {{count}} 个在飞行中 — 打开实时运行"
+  },
+  "outcomes": {
+    "loading": "正在加载本周结果",
+    "failed": "当班背后的这一周没有加载出来，没有可对照的历史。此屏幕上的其他内容不依赖它 — 下面飞行中的内容就是实时读数。",
+    "reading": "今日至今完成 <today/> · 本周 <week/> · 失败 <failed/>",
+    "chartLabel": "按天的运行结果。今日至今完成 {{today}}，本周 {{week}}，其中失败 {{failed}}。",
+    "status": {
+      "success": "成功",
+      "failed": "失败",
+      "escalated": "升级"
+    }
+  },
+  "shortcuts": {
+    "section": "快捷入口",
+    "newRun": "新建运行",
+    "newRunNote": "从收件箱取一个工单",
+    "liveRuns": "实时运行",
+    "liveRunsNote": "整个集群，带流程板和筛选器",
+    "approvals": "审批",
+    "approvalsNote": "排队等决定的计划"
+  },
+  "stopDialog": {
+    "title": "停止这个运行？",
+    "body": "{{title}} — 容器将被拆除，租约被释放。已合并的工作保留。",
+    "confirm": "停止",
+    "cancel": "继续运行"
+  }
+}

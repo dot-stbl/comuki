@@ -1,5 +1,6 @@
 import { Ban, Cpu, Users, X } from "lucide-react"
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components"
+import { useTranslation } from "react-i18next"
 
 import { formatCost } from "@/domains/runs/model/format"
 import {
@@ -69,6 +70,7 @@ export function KeyDetailSheet({
   open,
   onOpenChange,
 }: KeyDetailSheetProps) {
+  const { t } = useTranslation("models")
   const projectKey = (projectId: string) =>
     projectOf(session, projectId)?.key ?? projectId
   // Resolved once: the route line and its hover say the same endpoint, and a
@@ -93,12 +95,12 @@ export function KeyDetailSheet({
                   </Heading>
                   <p className={styles.summary}>{entry.label}</p>
                 </div>
-                <Tooltip content="Close — escape">
+                <Tooltip content={t("sheet.closeTooltip")}>
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     data-test="key-detail-close"
-                    aria-label="Close the key"
+                    aria-label={t("sheet.closeAria")}
                     onClick={() => onOpenChange(false)}
                   >
                     <X aria-hidden="true" />
@@ -107,13 +109,15 @@ export function KeyDetailSheet({
               </header>
 
               <div className={styles.marks}>
-                <KeyStateBadge entry={entry} />
+                <KeyStateBadge entry={entry} t={t} />
                 {endpoint ? (
                   <span className={styles.route} title={endpoint.baseUrl}>
-                    {endpoint.name} · {wireLabel(endpoint.wire)}
+                    {endpoint.name} · {wireLabel(endpoint.wire, t)}
                   </span>
                 ) : (
-                  <span className={styles.route}>route not known here</span>
+                  <span className={styles.route}>
+                    {t("sheet.routeNotKnown")}
+                  </span>
                 )}
               </div>
 
@@ -122,22 +126,24 @@ export function KeyDetailSheet({
                   byte for byte — its own comment said so out loud — which is
                   two files that would have taken a correction one at a time. */}
               <FactList layout="split" size="sm">
-                <Fact name="issued">{createdReading(entry)}</Fact>
-                <Fact name="last used">{lastUsedReading(entry)}</Fact>
-                <Fact name="expires">{expiryReading(entry)}</Fact>
-                <Fact name="scope">{scopeReading(entry, projectKey)}</Fact>
+                <Fact name={t("sheet.issued")}>{createdReading(entry, t)}</Fact>
+                <Fact name={t("sheet.lastUsed")}>
+                  {lastUsedReading(entry, t)}
+                </Fact>
+                <Fact name={t("sheet.expires")}>{expiryReading(entry, t)}</Fact>
+                <Fact name={t("sheet.scope")}>
+                  {scopeReading(entry, projectKey, t)}
+                </Fact>
               </FactList>
 
               <SpendSection entry={entry} enforced={enforced} />
 
               <section className={styles.section}>
-                <h3 className={styles.sectionName}>grants</h3>
+                <h3 className={styles.sectionName}>{t("sheet.grants")}</h3>
                 {entry.grants === null ? (
-                  <p className={styles.absent}>not recorded on this wire</p>
+                  <p className={styles.absent}>{t("sheet.notRecorded")}</p>
                 ) : entry.grants.length === 0 ? (
-                  <p className={styles.absent}>
-                    issued to nobody in particular
-                  </p>
+                  <p className={styles.absent}>{t("sheet.issuedToNobody")}</p>
                 ) : (
                   <ul className={styles.list}>
                     {entry.grants.map((grant) => (
@@ -147,7 +153,7 @@ export function KeyDetailSheet({
                       >
                         <Users className={styles.rowIcon} aria-hidden="true" />
                         <span className={styles.rowValue}>
-                          {grantReading(grant, projectKey)}
+                          {grantReading(grant, projectKey, t)}
                         </span>
                       </li>
                     ))}
@@ -156,15 +162,15 @@ export function KeyDetailSheet({
               </section>
 
               <section className={styles.section}>
-                <h3 className={styles.sectionName}>may reach</h3>
+                <h3 className={styles.sectionName}>{t("sheet.mayReach")}</h3>
                 {entry.models.length === 0 ? (
                   // The wire's empty allow-list means *every* model is
                   // permitted — the row says so, and so does the drawer.
                   <p
                     className={styles.absent}
-                    title="empty allow-list — every model permitted"
+                    title={t("sheet.everyModelTitle")}
                   >
-                    every model on the endpoint
+                    {t("sheet.everyModel")}
                   </p>
                 ) : (
                   <ul className={styles.list}>
@@ -187,9 +193,7 @@ export function KeyDetailSheet({
                     session={session}
                   />
                 ) : (
-                  <p className={styles.stopped}>
-                    this key has already stopped — there is nothing to revoke
-                  </p>
+                  <p className={styles.stopped}>{t("sheet.alreadyStopped")}</p>
                 )}
               </footer>
             </>
@@ -219,8 +223,9 @@ function FooterRevoke({
   // The row's act, in the drawer's footer: same permission, same confirm,
   // same caveat. A button with its word rather than a glyph — the footer has
   // the room the row never did, and an irreversible act should say itself.
+  const { t } = useTranslation("models")
   return (
-    <Tooltip content={denial ?? "Irreversible — asks first"}>
+    <Tooltip content={denial ?? t("sheet.irreversible")}>
       <Button
         variant="destructive"
         data-test="key-detail-revoke"
@@ -229,7 +234,7 @@ function FooterRevoke({
         onClick={() => onRevoke(entry)}
       >
         <Ban aria-hidden="true" />
-        Revoke this key
+        {t("sheet.revoke")}
       </Button>
     </Tooltip>
   )
@@ -252,12 +257,13 @@ function SpendSection({
   entry: VirtualKey
   enforced: boolean
 }) {
+  const { t } = useTranslation("models")
   if (entry.spendDaily === null) {
     return (
       <section className={styles.section}>
-        <h3 className={styles.sectionName}>spend</h3>
+        <h3 className={styles.sectionName}>{t("sheet.spend")}</h3>
         <KeyBudgetMeter entry={entry} enforced={enforced} />
-        <p className={styles.absent}>not metered on this wire</p>
+        <p className={styles.absent}>{t("sheet.notMetered")}</p>
       </section>
     )
   }
@@ -271,22 +277,25 @@ function SpendSection({
   if (total === null || average === null || peak === null || total === 0) {
     return (
       <section className={styles.section}>
-        <h3 className={styles.sectionName}>spend</h3>
+        <h3 className={styles.sectionName}>{t("sheet.spend")}</h3>
         <KeyBudgetMeter entry={entry} enforced={enforced} />
-        <p className={styles.absent}>no spend recorded</p>
+        <p className={styles.absent}>{t("sheet.noSpend")}</p>
       </section>
     )
   }
 
-  const reading =
-    `${formatCost(total)} over the last ${days.length} days · ` +
-    `${formatCost(average)} a day · heaviest ${peak.label} at ${formatCost(peak.usd)}`
-  const staleness =
-    silent > 0 ? ` · no spend recorded in the last ${silent} days` : ""
+  const reading = t("sheet.reading", {
+    total: formatCost(total),
+    days: days.length,
+    average: formatCost(average),
+    day: peak.label,
+    peak: formatCost(peak.usd),
+  })
+  const staleness = silent > 0 ? t("sheet.silentDays", { count: silent }) : ""
 
   return (
     <section className={styles.section}>
-      <h3 className={styles.sectionName}>spend</h3>
+      <h3 className={styles.sectionName}>{t("sheet.spend")}</h3>
       <KeyBudgetMeter entry={entry} enforced={enforced} />
       <p className={styles.figure}>{reading + staleness}</p>
       <BarSeries
@@ -298,7 +307,7 @@ function SpendSection({
           label: day.label,
           segments: [{ value: day.usd }],
         }))}
-        label={`Spend by day, dollars. ${reading}${staleness}.`}
+        label={t("sheet.chartLabel", { reading: reading + staleness })}
       />
     </section>
   )

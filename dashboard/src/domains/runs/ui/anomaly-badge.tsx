@@ -1,4 +1,5 @@
 import type { KeyboardEvent, MouseEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { AnomalyFlag } from "@/domains/runs/model/types"
 import { ANOMALY_MULTIPLIER } from "@/domains/runs/model/anomaly"
@@ -40,8 +41,13 @@ export function AnomalyBadge({
   "data-test": dataTest = "anomaly-badge",
   className,
 }: AnomalyBadgeProps) {
-  const label = `${flag.multiplier}× median`
-  const tip = `Cost ${flag.multiplier}× this project's median of $${flag.medianCost.toFixed(2)} — exceeds the ${ANOMALY_MULTIPLIER}× threshold. Click for breakdown.`
+  const { t } = useTranslation("runs")
+  const label = t("anomaly.badgeLabel", { multiplier: flag.multiplier })
+  const tip = t("anomaly.badgeTip", {
+    multiplier: flag.multiplier,
+    median: `$${flag.medianCost.toFixed(2)}`,
+    threshold: ANOMALY_MULTIPLIER,
+  })
 
   function handleClick(event: MouseEvent<HTMLSpanElement>) {
     if (!onActivate) {
@@ -68,7 +74,7 @@ export function AnomalyBadge({
       <span
         role="button"
         tabIndex={onActivate ? 0 : -1}
-        aria-label={`Cost anomaly — ${label}. Open breakdown.`}
+        aria-label={t("anomaly.badgeAria", { label })}
         className={cn(styles.badge, className)}
         data-test={dataTest}
         data-multiplier={flag.multiplier}

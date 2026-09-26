@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { PROVIDERS } from "@/domains/sources/model/providers"
 import type { ProviderKey } from "@/domains/sources/model/types"
 import { providerCardOptions } from "@/domains/sources/ui/provider-card-options"
@@ -38,9 +40,10 @@ export function TaskSourceCards({
   disabled = false,
   "data-test": dataTest,
 }: TaskSourceCardsProps) {
+  const { t } = useTranslation("tasks")
   return (
     <ProviderCards
-      label="source"
+      label={t("create.sourceLabel")}
       name="task-source"
       value={value}
       disabled={disabled}

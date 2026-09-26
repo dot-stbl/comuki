@@ -1,0 +1,52 @@
+{
+  "actions": {
+    "retry": "重试"
+  },
+  "registry": {
+    "title": "审批",
+    "summary": {
+      "other": "<count/> 个等待决策"
+    },
+    "errorTitle": "审批加载失败"
+  },
+  "errors": {
+    "unknown": "未知错误"
+  },
+  "decide": {
+    "approvedToast": "已批准",
+    "rejectedToast": "已拒绝",
+    "openedToast": "已打开复审",
+    "refused": "决策未生效。",
+    "tail": "队列保持原样 — run 仍在等待。"
+  },
+  "empty": {
+    "title": "队列为空",
+    "description": "没有等待人的东西。"
+  },
+  "card": {
+    "details": "详情",
+    "hide": "隐藏",
+    "review": "复审",
+    "reject": "拒绝",
+    "approve": "批准",
+    "reviewAria": "复审 {{app}} 的{{noun}}",
+    "rejectAria": "拒绝 {{app}} 的{{noun}}",
+    "approveAria": "批准 {{app}} 的{{noun}}",
+    "planHead": "计划 — 工作项图",
+    "assumptionsFallback": "规划者假设",
+    "paneBaseline": "基线",
+    "paneNew": "新版"
+  },
+  "type": {
+    "plan": "计划",
+    "deploy": "部署",
+    "baseline": "基线",
+    "gate": "门禁",
+    "learning": "规则"
+  },
+  "risk": {
+    "high": "高",
+    "medium": "中",
+    "low": "低"
+  }
+}

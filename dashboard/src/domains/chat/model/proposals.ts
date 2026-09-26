@@ -7,6 +7,8 @@ import {
   type Session,
 } from "@/shared/session"
 
+import type { ChatTranslator } from "./commands"
+import { sharedChatT } from "./commands"
 import type { Proposal, ProposalAct } from "./types"
 
 /**
@@ -31,7 +33,11 @@ export const PROPOSAL_PERMISSION: Record<ProposalAct, Permission> = {
   "settings.debug": "settings.live",
 }
 
-/** The two halves of the question, in the words they keep. */
+/**
+ * The two halves of the question, in the words they keep. The registry holds
+ * the EN words; the reader below resolves them through the `chat` catalogue
+ * with these as `defaultValue` (D11 map-edge rule).
+ */
 export const PROPOSAL_WORDS: Record<
   ProposalAct,
   { confirm: string; refuse: string }
@@ -40,6 +46,24 @@ export const PROPOSAL_WORDS: Record<
   "run.stop": { confirm: "Stop", refuse: "Leave running" },
   "plan.approve": { confirm: "Approve", refuse: "Reject" },
   "settings.debug": { confirm: "Turn on", refuse: "Leave off" },
+}
+
+/**
+ * The two controls' words for an act, in the active locale. Per-act rather
+ * than shared, because the halves are a pair that names its act — "Leave
+ * running" is only the refusal of stopping.
+ */
+export function proposalWords(
+  act: ProposalAct,
+  t: ChatTranslator = sharedChatT
+): { confirm: string; refuse: string } {
+  const words = PROPOSAL_WORDS[act]
+  return {
+    confirm: t(`proposal.words.${act}.confirm`, {
+      defaultValue: words.confirm,
+    }),
+    refuse: t(`proposal.words.${act}.refuse`, { defaultValue: words.refuse }),
+  }
 }
 
 const ALLOWED: PermissionCheck = { allowed: true, denial: null }
@@ -54,12 +78,13 @@ const ALLOWED: PermissionCheck = { allowed: true, denial: null }
  */
 export function proposalCheck(
   session: Session,
-  proposal: Proposal
+  proposal: Proposal,
+  t: ChatTranslator = sharedChatT
 ): PermissionCheck {
   const permission = PROPOSAL_PERMISSION[proposal.act]
 
   if (!proposal.projectId) {
-    return { allowed: false, denial: "needs a project to act in" }
+    return { allowed: false, denial: t("proposal.needsProjectDenial") }
   }
 
   if (can(session, permission, proposal.projectId)) {

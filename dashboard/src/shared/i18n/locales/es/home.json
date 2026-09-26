@@ -1,0 +1,95 @@
+{
+  "errors": {
+    "unknown": "error desconocido"
+  },
+  "actions": {
+    "retry": "reintentar"
+  },
+  "header": {
+    "title": "Turno",
+    "crumb": "turno",
+    "summary": {
+      "one": "<owed/> lo necesita · <running/> ejecutándose · <total/> ejecuciones",
+      "other": "<owed/> lo necesitan · <running/> ejecutándose · <total/> ejecuciones"
+    },
+    "errorTitle": "El turno no cargó",
+    "errorTail": "{{detail}} — hasta que cargue, nada en esta pantalla puede decir si se debe una decisión."
+  },
+  "notice": {
+    "fallback": "La decisión falló.",
+    "tail": "{{detail}} Nada cambió — la ejecución volvió a como estaba."
+  },
+  "verdict": {
+    "clear": "Nada lo necesita",
+    "owed": {
+      "one": "ejecución espera una decisión",
+      "other": "ejecuciones esperan una decisión"
+    },
+    "swarmEmpty": "El enjambre está vacío — nada en cola, nada en vuelo.",
+    "moving": "<running/> ejecutándose · <queued/> en cola — el enjambre se mueve solo."
+  },
+  "attention": {
+    "section": "Lo necesita",
+    "column": {
+      "run": "ejecución",
+      "project": "proyecto",
+      "task": "tarea",
+      "step": "paso",
+      "inStep": "en paso"
+    },
+    "status": {
+      "escalated": "escalada",
+      "failed": "fallida",
+      "waiting": "en espera"
+    },
+    "reason": {
+      "escalated": "elevada del enjambre a una persona",
+      "failed": "detenida en una puerta de verificación",
+      "waiting": "esperando a un humano"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "Aprobar",
+    "stop": "Detener",
+    "open": "Abrir",
+    "approveRun": "Aprobar {{title}}",
+    "stopRun": "Detener {{title}}",
+    "openRun": "Abrir {{title}}",
+    "more": "y {{count}} más — abrir ejecuciones en vivo"
+  },
+  "list": {
+    "waitingOnPlan": "esperando un plan",
+    "timeInStep": "tiempo en paso"
+  },
+  "running": {
+    "section": "Ejecutándose ahora",
+    "note": "{{running}} en vuelo · {{queued}} en cola",
+    "empty": "Nada está en vuelo.",
+    "more": "{{count}} más en vuelo — abrir ejecuciones en vivo"
+  },
+  "outcomes": {
+    "loading": "Cargando los resultados de la semana",
+    "failed": "La semana detrás de este turno no cargó, no hay historial con qué comparar. Nada más en esta pantalla depende de ello — lo que está en vuelo abajo es la lectura en vivo.",
+    "reading": "<today/> terminadas hoy · <week/> esta semana · <failed/> fallidas",
+    "chartLabel": "Resultados de ejecuciones por día. {{today}} terminadas hoy, {{week}} esta semana, {{failed}} de ellas fallidas.",
+    "status": {
+      "success": "éxito",
+      "failed": "fallida",
+      "escalated": "escalada"
+    }
+  },
+  "shortcuts": {
+    "section": "Atajos",
+    "newRun": "nueva ejecución",
+    "newRunNote": "tomar un ticket de la bandeja",
+    "liveRuns": "ejecuciones en vivo",
+    "liveRunsNote": "todo el enjambre, con el tablero de flujo y filtros",
+    "approvals": "aprobaciones",
+    "approvalsNote": "planes en cola para una decisión"
+  },
+  "stopDialog": {
+    "title": "¿Detener esta ejecución?",
+    "body": "{{title}} — el contenedor se derriba y el lease se libera. El trabajo ya fusionado queda.",
+    "confirm": "Detener",
+    "cancel": "Seguir ejecutando"
+  }
+}

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import type { KnowledgeEntry } from "@/domains/knowledge/model/types"
 import { cn } from "@/shared/lib/utils"
 
@@ -28,6 +30,7 @@ export function KnowledgeEntryRow({
   selected,
   onSelect,
 }: KnowledgeEntryRowProps) {
+  const { t } = useTranslation("knowledge")
   return (
     <button
       type="button"
@@ -56,7 +59,7 @@ export function KnowledgeEntryRow({
         <span className={styles.sep} aria-hidden="true">
           ·
         </span>
-        <span>updated {entry.updated}</span>
+        <span>{t("entries.updated", { updated: entry.updated })}</span>
       </span>
     </button>
   )

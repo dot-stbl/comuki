@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Check, ChevronDown, Eye, Image, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type {
   Approval,
@@ -13,7 +14,6 @@ import { can, needsLabel, projectOf, useSession } from "@/shared/session"
 import { Button, Surface, Tooltip } from "@/shared/ui"
 
 import { ApprovalRiskBadge, ApprovalTypeBadge } from "./approval-badges"
-import { APPROVAL_TYPE_META } from "./approval-type-meta"
 import styles from "./approval-card.module.css"
 
 /** The two panes a baseline decision compares. Fictional until the store lands. */
@@ -46,6 +46,7 @@ export function ApprovalCard({
   onAction,
   busy = false,
 }: ApprovalCardProps) {
+  const { t } = useTranslation("approvals")
   const [open, setOpen] = useState(false)
   const session = useSession()
 
@@ -67,7 +68,7 @@ export function ApprovalCard({
       }
   const { data: runs = [] } = useRunsQuery()
   const run = runs.find((item) => item.id === approval.runId)
-  const { noun } = APPROVAL_TYPE_META[approval.type]
+  const noun = t(`type.${approval.type}`)
 
   // A gate the wire escalated carries no plan graph, no panes and no planner
   // assumptions — a disclosure that opens on nothing is a button that lies
@@ -110,7 +111,7 @@ export function ApprovalCard({
               aria-hidden="true"
               className={cn(styles.chevron, open && styles.chevronOpen)}
             />
-            {open ? "Hide" : "Details"}
+            {open ? t("card.hide") : t("card.details")}
           </Button>
         ) : null}
 
@@ -123,7 +124,7 @@ export function ApprovalCard({
             its place and says what is missing instead of disappearing — and it
             is `denied`, never `disabled`, because a disabled control fires no
             pointer events and its explanation would never arrive. */}
-        <Tooltip content={decide.denial ?? "Review"}>
+        <Tooltip content={decide.denial ?? t("card.review")}>
           <Button
             type="button"
             size="icon-sm"
@@ -131,13 +132,13 @@ export function ApprovalCard({
             disabled={busy}
             denied={decide.denial}
             data-test="approval-review"
-            aria-label={`Review the ${noun} for ${approval.app}`}
+            aria-label={t("card.reviewAria", { noun, app: approval.app })}
             onClick={() => onAction(approval.id, "review")}
           >
             <Eye aria-hidden="true" />
           </Button>
         </Tooltip>
-        <Tooltip content={decide.denial ?? "Reject"}>
+        <Tooltip content={decide.denial ?? t("card.reject")}>
           <Button
             type="button"
             size="icon-sm"
@@ -145,20 +146,20 @@ export function ApprovalCard({
             disabled={busy}
             denied={decide.denial}
             data-test="approval-reject"
-            aria-label={`Reject the ${noun} for ${approval.app}`}
+            aria-label={t("card.rejectAria", { noun, app: approval.app })}
             onClick={() => onAction(approval.id, "reject")}
           >
             <X aria-hidden="true" />
           </Button>
         </Tooltip>
-        <Tooltip content={decide.denial ?? "Approve"}>
+        <Tooltip content={decide.denial ?? t("card.approve")}>
           <Button
             type="button"
             size="icon-sm"
             disabled={busy}
             denied={decide.denial}
             data-test="approval-approve"
-            aria-label={`Approve the ${noun} for ${approval.app}`}
+            aria-label={t("card.approveAria", { noun, app: approval.app })}
             onClick={() => onAction(approval.id, "approve")}
           >
             <Check aria-hidden="true" />
@@ -170,7 +171,7 @@ export function ApprovalCard({
         <div className={styles.detail} data-test="approval-detail">
           {approval.type === "plan" && run ? (
             <section className={styles.region}>
-              <h3 className={styles.regionHead}>Plan — work item graph</h3>
+              <h3 className={styles.regionHead}>{t("card.planHead")}</h3>
               {/* The plan preview has nothing to select, so the graph is drawn
                   as static content and sizes itself from the columns rather
                   than from a height this surface does not have. */}
@@ -178,16 +179,20 @@ export function ApprovalCard({
                 items={run.workItems}
                 current={run.current}
                 fit="content"
-                label="Plan — work item graph"
+                label={t("card.planHead")}
               />
             </section>
           ) : null}
 
           {approval.type === "baseline" ? (
             <div className={styles.panes}>
-              {BASELINE_PANES.map((label) => (
-                <figure key={label} className={styles.pane}>
-                  <figcaption className={styles.paneHead}>{label}</figcaption>
+              {BASELINE_PANES.map((pane) => (
+                <figure key={pane} className={styles.pane}>
+                  <figcaption className={styles.paneHead}>
+                    {pane === "baseline"
+                      ? t("card.paneBaseline")
+                      : t("card.paneNew")}
+                  </figcaption>
                   <span className={styles.paneBody}>
                     <Image className={styles.paneIcon} aria-hidden="true" />
                   </span>
@@ -199,7 +204,7 @@ export function ApprovalCard({
           {approval.assumptions.length > 0 ? (
             <section className={styles.region}>
               <h3 className={styles.regionHead}>
-                {approval.assumptionsHeading ?? "Planner assumptions"}
+                {approval.assumptionsHeading ?? t("card.assumptionsFallback")}
               </h3>
               <ul className={styles.assumptions}>
                 {approval.assumptions.map((item) => (

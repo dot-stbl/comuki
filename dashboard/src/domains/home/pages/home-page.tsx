@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -54,6 +55,8 @@ const RUNNING_SHOWN = 8
  * a viewport has to invent something to fill it with.
  */
 export function HomePage() {
+  const { t } = useTranslation("home")
+  const { t: tShell } = useTranslation("shell")
   const { data = [], isLoading, isError, error, refetch } = useRunsQuery()
   const outcomes = useOutcomesQuery()
 
@@ -100,18 +103,34 @@ export function HomePage() {
     <AppShell
       header={
         <PageHeader
-          breadcrumbs={[{ label: "attention" }]}
-          title="Attention"
+          breadcrumbs={[{ label: tShell("crumb.attention") }]}
+          title={t("header.title")}
           summary={
-            <>
-              <span className={owed > 0 ? styles.warn : styles.strong}>
-                {owed}
-              </span>{" "}
-              {owed === 1 ? "needs" : "need"} you ·{" "}
-              <span className={styles.strong}>{reading.running.length}</span>{" "}
-              running · <span className={styles.strong}>{reading.total}</span>{" "}
-              runs
-            </>
+            /* The figures are values and the words are prose, so the emphasis
+               rides slot elements and the sentence — plural form included —
+               belongs to the locale. The counts stringify: a Trans slot
+               holding a falsy child (a bare `0`) renders empty, and zero is
+               a reading, not a blank. */
+            <Trans
+              ns="home"
+              i18nKey="header.summary"
+              count={owed}
+              components={{
+                owed: (
+                  <span className={owed > 0 ? styles.warn : styles.strong}>
+                    {String(owed)}
+                  </span>
+                ),
+                running: (
+                  <span className={styles.strong}>
+                    {String(reading.running.length)}
+                  </span>
+                ),
+                total: (
+                  <span className={styles.strong}>{String(reading.total)}</span>
+                ),
+              }}
+            />
           }
         />
       }
@@ -129,24 +148,20 @@ export function HomePage() {
         {isError ? (
           <ScreenState
             kind="error"
-            title="Couldn't load the shift"
+            title={t("header.errorTitle")}
             /* The host's own sentence rather than the transport's, and then
                the consequence — this screen's whole job is to answer "am I
                needed", and a screen that cannot answer has to say so. */
-            description={
-              <>
-                {requestFailureMessage(error, "Unknown error")} — until this
-                loads, nothing on this screen can be trusted to say whether a
-                decision is owed.
-              </>
-            }
+            description={t("header.errorTail", {
+              detail: requestFailureMessage(error, t("errors.unknown")),
+            })}
             data-test="home-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="home-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -166,12 +181,13 @@ export function HomePage() {
                 left-rule recipe beside it. */}
             {failure ? (
               <Notice tone="bad" data-test="home-failure">
-                {requestFailureMessage(failure, "The decision failed.")} Nothing
-                changed — the run is back as it was.
+                {t("notice.tail", {
+                  detail: requestFailureMessage(failure, t("notice.fallback")),
+                })}
               </Notice>
             ) : null}
 
-            <Section id="needs-you" title="Needs you">
+            <Section id="needs-you" title={t("attention.section")}>
               <AttentionVerdict
                 count={owed}
                 mix={reading.mix}
@@ -194,12 +210,11 @@ export function HomePage() {
 
             <Section
               id="running-now"
-              title="Running now"
-              note={
-                <>
-                  {reading.running.length} in flight · {reading.queued} queued
-                </>
-              }
+              title={t("running.section")}
+              note={t("running.note", {
+                running: reading.running.length,
+                queued: reading.queued,
+              })}
             >
               {/* The week behind the shift, above the rows: this section is
                   already the screen's second question ("what is the swarm
@@ -217,7 +232,7 @@ export function HomePage() {
               <RunningNow runs={running} total={reading.running.length} />
             </Section>
 
-            <Section id="shortcuts" title="Shortcuts">
+            <Section id="shortcuts" title={t("shortcuts.section")}>
               <HomeShortcuts />
             </Section>
           </>
@@ -227,14 +242,10 @@ export function HomePage() {
       <ConfirmDialog
         open={stopping !== null}
         danger
-        title="Stop this run?"
-        body={
-          stopping
-            ? `${stopping.title} — the container is torn down and the lease released. Work already merged stays.`
-            : ""
-        }
-        confirmLabel="Stop run"
-        cancelLabel="Keep running"
+        title={t("stopDialog.title")}
+        body={stopping ? t("stopDialog.body", { title: stopping.title }) : ""}
+        confirmLabel={t("stopDialog.confirm")}
+        cancelLabel={t("stopDialog.cancel")}
         onConfirm={() => {
           if (stopping) {
             cancel.mutate(stopping.id)

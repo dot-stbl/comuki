@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useMemo, useRef, useState } from "react"
 import type { KeyboardEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { WorkItem } from "@/domains/runs/model/types"
 import {
@@ -56,19 +57,21 @@ interface NodeMarks {
   current: boolean
 }
 
+type RunsGraphTranslator = ReturnType<typeof useTranslation>["t"]
+
 /**
  * The marks in reading order. The long-edge mark comes first on purpose: a
  * blocked node has a dashed border and a current node has its own slot, but a
  * dependency that skips a column has nothing else carrying it, so it is the
  * one that has to survive the line running out of room.
  */
-function noteOf(marks: NodeMarks): string {
+function noteOf(marks: NodeMarks, t: RunsGraphTranslator): string {
   const parts: string[] = []
   if (marks.long.length > 0) {
-    parts.push(`depends on ${marks.long.length} earlier`)
+    parts.push(t("graph.dependsOnEarlier", { count: marks.long.length }))
   }
   if (marks.blocked) {
-    parts.push("blocked")
+    parts.push(t("graph.blocked"))
   }
   return parts.join(" · ")
 }
@@ -79,25 +82,30 @@ function noteOf(marks: NodeMarks): string {
  * only imply, the distant dependencies and the reason it is stuck, are spelled
  * out rather than left to a hover.
  */
-function describe(item: WorkItem, marks: NodeMarks): string {
+function describe(
+  item: WorkItem,
+  marks: NodeMarks,
+  t: RunsGraphTranslator
+): string {
   const parts = [`${item.label}.`, `${item.profile}, ${item.status}.`]
 
   if (marks.current) {
-    parts.push("the run is standing here.")
+    parts.push(t("graph.standingHere"))
   }
   if (marks.blocked === "failed") {
-    parts.push("blocked by a failure upstream.")
+    parts.push(t("graph.blockedByFailure"))
   }
   if (marks.blocked === "escalated") {
-    parts.push("blocked by an escalation upstream.")
+    parts.push(t("graph.blockedByEscalation"))
   }
   if (marks.long.length > 0) {
     const named = marks.long
       .map((entry) => `${entry.item.label} (${entry.item.profile})`)
       .join(", ")
-    const plural = marks.long.length === 1 ? "" : "s"
     parts.push(
-      `depends on ${marks.long.length} item${plural} more than one column back: ${named}.`
+      marks.long.length === 1
+        ? t("graph.longEdges", { count: 1, named })
+        : t("graph.longEdgesPlural", { count: marks.long.length, named })
     )
   }
 
@@ -118,7 +126,15 @@ interface GraphNodeProps {
   onTrace: (itemId: string | null) => void
 }
 
-function NodeBody({ item, marks }: { item: WorkItem; marks: NodeMarks }) {
+function NodeBody({
+  item,
+  marks,
+  t,
+}: {
+  item: WorkItem
+  marks: NodeMarks
+  t: RunsGraphTranslator
+}) {
   return (
     <>
       <span
@@ -135,9 +151,11 @@ function NodeBody({ item, marks }: { item: WorkItem; marks: NodeMarks }) {
       <span className={styles.meta}>
         <span className={styles.profile}>{item.profile}</span>
         <span className={styles.state}>{item.status}</span>
-        {marks.current ? <span className={styles.here}>here</span> : null}
+        {marks.current ? (
+          <span className={styles.here}>{t("graph.here")}</span>
+        ) : null}
       </span>
-      <span className={styles.note}>{noteOf(marks)}</span>
+      <span className={styles.note}>{noteOf(marks, t)}</span>
     </>
   )
 }
@@ -154,7 +172,8 @@ function GraphNode({
   onSelect,
   onTrace,
 }: GraphNodeProps) {
-  const note = noteOf(marks)
+  const { t } = useTranslation("runs")
+  const note = noteOf(marks, t)
   // Two lines of label is enough for most of the plans the brain writes and
   // not for all of them; the pointer always gets the whole string.
   const title = note ? `${item.label} — ${note}` : item.label
@@ -173,7 +192,7 @@ function GraphNode({
         data-blocked={marks.blocked}
         title={title}
       >
-        <NodeBody item={item} marks={marks} />
+        <NodeBody item={item} marks={marks} t={t} />
       </div>
     )
   }
@@ -191,7 +210,7 @@ function GraphNode({
       data-trace={trace}
       data-long={traceLong ? "" : undefined}
       aria-pressed={selected}
-      aria-label={describe(item, marks)}
+      aria-label={describe(item, marks, t)}
       tabIndex={tabbable ? 0 : -1}
       title={title}
       onClick={() => onSelect(item.id)}
@@ -200,7 +219,7 @@ function GraphNode({
       onFocus={() => onTrace(item.id)}
       onBlur={() => onTrace(null)}
     >
-      <NodeBody item={item} marks={marks} />
+      <NodeBody item={item} marks={marks} t={t} />
     </button>
   )
 }
@@ -211,9 +230,10 @@ export function RunGraph({
   selected,
   onSelect,
   fit = "fill",
-  label = "Run graph. Arrow keys move between work items.",
+  label,
   className,
 }: RunGraphProps) {
+  const { t } = useTranslation("runs")
   const ref = useRef<HTMLDivElement>(null)
   const [traced, setTraced] = useState<string | null>(null)
 
@@ -287,7 +307,7 @@ export function RunGraph({
   )
 
   if (items.length === 0) {
-    return <p className={styles.empty}>No work items in this plan.</p>
+    return <p className={styles.empty}>{t("graph.empty")}</p>
   }
 
   const last = graph.columns.length - 1
@@ -298,7 +318,7 @@ export function RunGraph({
       className={cn(styles.graph, styles[fit], className)}
       data-test="run-graph"
       role="group"
-      aria-label={label}
+      aria-label={label ?? t("graph.group")}
       onKeyDown={onSelect ? onKeyDown : undefined}
     >
       {graph.columns.map((column, columnIndex) => (
@@ -310,7 +330,9 @@ export function RunGraph({
           >
             {/* Reserved on every column, filled where the plan branches. */}
             <span className={styles.head}>
-              {column.parallel ? `${column.items.length} parallel` : null}
+              {column.parallel
+                ? t("graph.parallel", { count: column.items.length })
+                : null}
             </span>
 
             <div

@@ -1,0 +1,169 @@
+{
+  "actions": {
+    "retry": "Tentar novamente",
+    "close": "Fechar"
+  },
+  "errors": {
+    "unknown": "Erro desconhecido",
+    "changeFailed": "A mudança falhou."
+  },
+  "page": {
+    "title": "Modelos",
+    "modelsErrorTitle": "Os modelos não carregaram",
+    "keysErrorTitle": "As chaves de gasto não carregaram",
+    "failureTail": "Nada se moveu — o registro voltou a como estava.",
+    "summaryProxyOn": "<endpoints/> endpoints · <keys/> chaves de gasto · proxy <proxy/>",
+    "summaryProxyOff": "<endpoints/> endpoints · <keys/> chaves de gasto · proxy <proxy/>, nada medido",
+    "summaryNearCap": "<count/> perto do teto",
+    "summaryExpired": "<count/> expiradas"
+  },
+  "proxy": {
+    "section": "Proxy",
+    "note": "Um salto fino e opcional à frente dos upstreams. É ele quem emite uma chave de gasto, a segura num orçamento, mede uma execução e puxa uma chave quando seu arrendamento acaba — então o interruptor dele decide se as três seções abaixo são configuração ou imposição.",
+    "on": "ligado",
+    "off": "desligado",
+    "since": "desde {{when}}",
+    "sentenceOn": "As chaves de gasto são verificadas, os orçamentos são impostos e cada execução é medida",
+    "sentenceOff": "os workers recebem uma url e uma chave injetadas diretamente — as chaves de gasto não são verificadas, os orçamentos não são impostos e nada é medido",
+    "immutableSentence": "as chaves virtuais são semeadas da configuração e imutáveis em runtime — o gasto é medido no proxy, não reportado aqui",
+    "turnOff": "desligar o proxy",
+    "turnOn": "ligar o proxy",
+    "costPerRun": "custo por execução",
+    "spend": "gasto",
+    "runs": "execuções",
+    "burnByHour": "consumo por hora",
+    "burnNothing": "Gasto por hora: nada medido.",
+    "burnLabel": "Gasto por hora ao longo do dia medido, pico {{peak}} às {{hour}}.",
+    "burnPeak": "pico {{peak}} às {{hour}}",
+    "windowOver": "sobre ",
+    "windowStale": "última medição sobre ",
+    "windowNotCurrent": " — não atual",
+    "offConfirmTitle": "Desligar o proxy?",
+    "offConfirmBody": "Os workers recebem uma url e uma chave injetadas diretamente. As chaves de gasto deixam de ser verificadas, cada orçamento abaixo deixa de ser imposto, e nenhuma execução é medida até que seja ligado de volta.",
+    "offConfirm": "Desligar",
+    "offCancel": "Deixar ligado"
+  },
+  "endpoints": {
+    "section": "Endpoints upstream",
+    "note": "Dois fios, compatível com openai e compatível com anthropic, e nada mais. Os workers pegam uma url e uma chave pela config do provedor; o lead e o chat pegam os mesmos endpoints por um cliente de chat. Uma url auto-hospedada é uma linha comum.",
+    "emptyFiltered": "nenhum endpoint corresponde aos filtros atuais",
+    "empty": "nenhum endpoint upstream está configurado",
+    "count": "{{count}} exibidos",
+    "column": {
+      "endpoint": "endpoint",
+      "wire": "fio",
+      "baseUrl": "url base",
+      "state": "estado",
+      "models": "modelos",
+      "note": "nota"
+    },
+    "filterPlaceholder": "filtrar endpoint, url, modelo…",
+    "allWires": "todos os fios",
+    "allStates": "todos os estados"
+  },
+  "keys": {
+    "section": "Chaves de gasto",
+    "note": "Uma chave carrega sua própria rota, teto, lista de modelos, escopo e TTL — então uma vazada compra um único endpoint, os modelos nomeados nele, o que sobra de um orçamento, até um dia que o detentor não controla. O segredo é mostrado uma vez na emissão e nunca mais.",
+    "noteUnenforced": " Com o proxy desligado, nada disso é verificado.",
+    "emptyFiltered": "nenhuma chave corresponde aos filtros atuais",
+    "empty": "nenhuma chave de gasto foi emitida",
+    "countExpired": "{{count}} expiradas · ",
+    "countNearCap": "{{count}} perto do teto · ",
+    "count": "{{count}} exibidas",
+    "column": {
+      "key": "chave",
+      "whatFor": "para quê",
+      "scope": "escopo",
+      "route": "rota",
+      "mayReach": "pode alcançar",
+      "spentOfCap": "gasto do teto",
+      "expires": "expira",
+      "state": "estado",
+      "actions": "ações"
+    },
+    "filterPlaceholder": "filtrar chave, rótulo, modelo…",
+    "allScopes": "todos os escopos",
+    "allRoutes": "todas as rotas",
+    "allStates": "todos os estados",
+    "openAria": "Abrir detalhes de {{prefix}}",
+    "allModels": "todos os modelos",
+    "allModelsTitle": "allow-list vazia — todo modelo permitido",
+    "revokeTooltip": "Revogar esta chave",
+    "revokeAria": "Revogar {{prefix}}",
+    "revokeConfirmTitle": "Revogar esta chave?",
+    "revokeConfirmBody": "{{prefix}} · {{label}} — a chave para de funcionar imediatamente e não pode ser trazida de volta. Um worker que a segura a perde com o arrendamento, no meio da execução.",
+    "revokeRestartNote": " O armazém de chaves é semeado da configuração — um reinício do host ressuscita esta chave até que sua linha Proxy:VirtualKeys seja removida.",
+    "revokeConfirm": "Revogar chave",
+    "revokeCancel": "Manter a chave"
+  },
+  "routing": {
+    "section": "Papel para modelo",
+    "note": "A plataforma fala em papéis, nunca em fabricantes: o lead planeja, escreve contratos, revisa resultados e repara uma execução falha; o worker roda passos de perfil num contêiner. É aqui que um papel se torna um modelo físico, e o único lugar onde esse mapeamento existe.",
+    "emptyFiltered": "nenhum papel corresponde aos filtros atuais",
+    "empty": "nenhum papel foi roteado para um modelo",
+    "column": {
+      "role": "papel",
+      "model": "modelo",
+      "endpoint": "endpoint",
+      "upstream": "upstream",
+      "usedFor": "usado para"
+    },
+    "allRoles": "todos os papéis",
+    "allEndpoints": "todos os endpoints",
+    "unknown": "desconhecido",
+    "count": "{{count}} exibidos"
+  },
+  "sheet": {
+    "closeTooltip": "Fechar — escape",
+    "closeAria": "Fechar a chave",
+    "routeNotKnown": "rota não conhecida aqui",
+    "issued": "emitida",
+    "lastUsed": "último uso",
+    "expires": "expira",
+    "scope": "escopo",
+    "grants": "grants",
+    "notRecorded": "não registrado neste fio",
+    "issuedToNobody": "emitida a ninguém em particular",
+    "mayReach": "pode alcançar",
+    "everyModel": "todo modelo do endpoint",
+    "everyModelTitle": "allow-list vazia — todo modelo permitido",
+    "alreadyStopped": "esta chave já parou — não há nada para revogar",
+    "irreversible": "Irreversível — pergunta primeiro",
+    "revoke": "Revogar esta chave",
+    "spend": "gasto",
+    "notMetered": "não medido neste fio",
+    "noSpend": "nenhum gasto registrado",
+    "reading": "{{total}} nos últimos {{days}} dias · {{average}} por dia · mais pesado {{day}} em {{peak}}",
+    "silentDays": " · nenhum gasto registrado nos últimos {{count}} dias",
+    "chartLabel": "Gasto por dia, dólares. {{reading}}."
+  },
+  "meter": {
+    "noCap": "sem teto",
+    "noCapTitle": "esta chave não carrega teto — ela gasta até ser revogada ou expirar",
+    "capOnly": "teto {{cap}}",
+    "notMeteredHere": "gasto não medido aqui",
+    "notMeteredHereTitle": "o teto está vivo, mas esta superfície não mede gasto",
+    "unforcedTitle": "o proxy está desligado — este teto está registrado, mas não aplicado",
+    "over": "estourado",
+    "left": "resta {{left}}"
+  },
+  "word": {
+    "never": "nunca",
+    "expired": "expirada {{reading}}",
+    "platform": "plataforma",
+    "notOnThisWire": "não está neste fio",
+    "neverUsed": "nunca usada"
+  },
+  "wire": {
+    "openai": "compatível openai",
+    "anthropic": "compatível anthropic"
+  },
+  "state": {
+    "live": "viva",
+    "expired": "expirada",
+    "revoked": "revogada",
+    "ok": "ok",
+    "degraded": "degradado",
+    "disabled": "desativado"
+  }
+}

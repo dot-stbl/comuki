@@ -1,4 +1,5 @@
 import { Check, Monitor, Moon, Sun } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import {
   Button as AriaButton,
   Menu,
@@ -12,9 +13,14 @@ import { useTheme } from "@/app/theme-provider"
 import styles from "./theme-control.module.css"
 
 const THEMES = [
-  { id: "light", label: "Light", icon: Sun },
-  { id: "dark", label: "Dark", icon: Moon },
-  { id: "system", label: "System", icon: Monitor },
+  { id: "light", label: "Light", labelKey: "appearance.light", icon: Sun },
+  { id: "dark", label: "Dark", labelKey: "appearance.dark", icon: Moon },
+  {
+    id: "system",
+    label: "System",
+    labelKey: "appearance.system",
+    icon: Monitor,
+  },
 ] as const
 
 type ThemeId = (typeof THEMES)[number]["id"]
@@ -35,16 +41,18 @@ function isThemeId(value: unknown): value is ThemeId {
  * in" without being opened.
  */
 export function ThemeControl() {
+  const { t } = useTranslation("shell")
   const { theme, setTheme } = useTheme()
   const current = THEMES.find((entry) => entry.id === theme) ?? THEMES[1]
   const Glyph = current.icon
+  const mode = t(current.labelKey)
 
   return (
     <MenuTrigger>
       <AriaButton
         className={styles.trigger}
         data-test="theme-control"
-        aria-label={`Appearance — ${current.label}`}
+        aria-label={t("appearance.current", { mode })}
       >
         <Glyph aria-hidden="true" className={styles.glyph} />
       </AriaButton>
@@ -52,7 +60,7 @@ export function ThemeControl() {
       <Popover className={styles.popover} placement="bottom end">
         <Menu
           className={styles.menu}
-          aria-label="Appearance"
+          aria-label={t("appearance.label")}
           selectionMode="single"
           disallowEmptySelection
           selectedKeys={[theme]}
@@ -70,11 +78,11 @@ export function ThemeControl() {
             <MenuItem
               key={entry.id}
               id={entry.id}
-              textValue={entry.label}
+              textValue={t(entry.labelKey)}
               className={styles.item}
             >
               <Check aria-hidden="true" className={styles.check} />
-              <span className={styles.itemLabel}>{entry.label}</span>
+              <span className={styles.itemLabel}>{t(entry.labelKey)}</span>
             </MenuItem>
           ))}
         </Menu>

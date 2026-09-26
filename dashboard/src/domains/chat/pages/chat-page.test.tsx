@@ -9,6 +9,7 @@ import {
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { i18n, loadLocale } from "@/shared/i18n"
 import { ThemeProvider } from "@/app/theme-provider"
 import { ChatPage } from "@/domains/chat/pages/chat-page"
 import {
@@ -321,5 +322,31 @@ describe("onboarding is a screen, not a modal", () => {
     })
     await waitFor(() => expect(at("chat-thread")).not.toBeNull())
     expect(at("chat-init")).toBeNull()
+  })
+})
+
+describe("the console in russian", () => {
+  it("renders the page chrome and the thread's words in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    try {
+      mount()
+
+      expect(
+        await screen.findByRole("heading", { name: "Консоль" })
+      ).toBeTruthy()
+      // The composer's box is the deepest chrome on the screen; its label
+      // reading in russian means the whole tree re-rendered under the switch.
+      await waitFor(() =>
+        expect(at("chat-input")?.getAttribute("aria-label")).toBe(
+          "Сообщение в консоль"
+        )
+      )
+      // The rail's head names the conversations list in russian.
+      expect(screen.getByText("беседы")).toBeTruthy()
+    } finally {
+      await i18n.changeLanguage("en")
+    }
   })
 })

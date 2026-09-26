@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { digestBody, digestFactCount } from "@/domains/chat/model/dynamics"
 import type { ChatMessage as Message } from "@/domains/chat/model/types"
 
@@ -23,15 +25,16 @@ export interface MemoryDigestProps {
  * fact an operator would want beside an answer that ignored yesterday.
  */
 export function MemoryDigest({ message }: MemoryDigestProps) {
+  const { t } = useTranslation("chat")
   const facts = digestFactCount(message)
   const body = digestBody(message)
 
   return (
     <details className={styles.memory} data-test="chat-memory">
       <summary className={styles.memorySummary}>
-        <span className={styles.memoryLabel}>memory</span>
+        <span className={styles.memoryLabel}>{t("memory.label")}</span>
         <span className={styles.memoryCount}>
-          {facts} {facts === 1 ? "fact" : "facts"}
+          {t("memory.facts", { count: facts })}
         </span>
       </summary>
       <p className={styles.memoryBody}>{body}</p>

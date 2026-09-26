@@ -1,5 +1,7 @@
+import { useEffect } from "react"
 import type { ReactNode } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
+import { I18nextProvider } from "react-i18next"
 import { Toaster } from "sonner"
 
 import { ThemeProvider } from "@/app/theme-provider"
@@ -9,6 +11,7 @@ import { router } from "@/app/router"
 import { useAuthState } from "@/domains/auth"
 import { useSessionProjects } from "@/domains/projects/api/queries"
 import { SIGNED_OUT_USER } from "@/shared/api/mock/auth.store"
+import { activateStoredLocale, i18n } from "@/shared/i18n"
 import { SessionProvider } from "@/shared/session"
 
 /**
@@ -78,9 +81,17 @@ function AuthBoot({ children }: { children: ReactNode }) {
 }
 
 export function AppProviders({ children }: AppProvidersProps) {
+  // The instance itself initialises synchronously with `en`, so there is no
+  // boot loading state — only a stored non-default locale has anything to
+  // fetch, and it arrives through the same door the switcher uses.
+  useEffect(() => {
+    void activateStoredLocale()
+  }, [])
+
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="comuki-ui-theme">
-      {/* The shift, from the mock session store rather than from a constant —
+    <I18nextProvider i18n={i18n}>
+      <ThemeProvider defaultTheme="dark" storageKey="comuki-ui-theme">
+        {/* The shift, from the mock session store rather than from a constant —
           signing in and signing out have to change what the shell knows, or
           `Sign out` is a navigation with nothing behind it.
 
@@ -92,10 +103,10 @@ export function AppProviders({ children }: AppProvidersProps) {
           It sits above the query client because the project a request is
           scoped to is a parameter of nearly every one of them the day those
           requests are real. */}
-      <QueryClientProvider client={queryClient}>
-        <AuthBoot>
-          {children}
-          {/* The proof a write landed — `toast()` is called from a dozen
+        <QueryClientProvider client={queryClient}>
+          <AuthBoot>
+            {children}
+            {/* The proof a write landed — `toast()` is called from a dozen
               screens, but the only Toaster this app ever mounted lived inside
               the shadcn showcase and died with it. It lives at the root now,
               where every screen's toasts render, not just the showcase's.
@@ -105,22 +116,23 @@ export function AppProviders({ children }: AppProvidersProps) {
               when it is open, and the top corners are the bar's controls.
               Styled from the tokens — a toast is a raised surface carrying a
               sentence, and it should look like one of ours. */}
-          <Toaster
-            position="top-center"
-            toastOptions={{
-              style: {
-                background: "var(--surface-raised)",
-                border: "var(--hairline) solid var(--rule-strong)",
-                color: "var(--text)",
-                fontFamily: "var(--font-mono)",
-                fontSize: "var(--t-sm)",
-                borderRadius: "var(--r-md)",
-                boxShadow: "var(--shadow-modal)",
-              },
-            }}
-          />
-        </AuthBoot>
-      </QueryClientProvider>
-    </ThemeProvider>
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                style: {
+                  background: "var(--surface-raised)",
+                  border: "var(--hairline) solid var(--rule-strong)",
+                  color: "var(--text)",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "var(--t-sm)",
+                  borderRadius: "var(--r-md)",
+                  boxShadow: "var(--shadow-modal)",
+                },
+              }}
+            />
+          </AuthBoot>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </I18nextProvider>
   )
 }

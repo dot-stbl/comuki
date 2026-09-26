@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { RotateCw } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type { SearchTarget } from "@/app/search"
 import {
@@ -121,6 +122,7 @@ export function ChatConsole({
   focusComposerOnMount,
 }: ChatConsoleProps) {
   const session = useSession()
+  const { t } = useTranslation("chat")
   const sessions = useChatSessionsQuery()
   const custom = useChatCommandsQuery()
 
@@ -218,14 +220,14 @@ export function ChatConsole({
             }
             setFailure({
               sessionId,
-              message: requestFailureMessage(error, "The message was not sent"),
+              message: requestFailureMessage(error, t("console.sendFailure")),
               unsent: returned ? null : text,
             })
           },
         }
       )
     },
-    [current, send, onDraftChange]
+    [current, send, onDraftChange, t]
   )
 
   const onDecide = useCallback(
@@ -246,7 +248,7 @@ export function ChatConsole({
               sessionId,
               message: requestFailureMessage(
                 error,
-                "The decision was not recorded"
+                t("console.decisionFailure")
               ),
               unsent: null,
             })
@@ -254,7 +256,7 @@ export function ChatConsole({
         }
       )
     },
-    [current, decide]
+    [current, decide, t]
   )
 
   const onStart = useCallback(() => {
@@ -266,15 +268,12 @@ export function ChatConsole({
       onError: (error) => {
         setFailure({
           sessionId: null,
-          message: requestFailureMessage(
-            error,
-            "The conversation was not started"
-          ),
+          message: requestFailureMessage(error, t("console.startFailure")),
           unsent: null,
         })
       },
     })
-  }, [start, onChosenIdChange])
+  }, [start, onChosenIdChange, t])
 
   // The last thing *the operator* said in this conversation, for the empty
   // box's arrow-up. Derived, not stored: the thread is the history, and a
@@ -338,16 +337,19 @@ export function ChatConsole({
         {sessionsFailed ? (
           <ScreenState
             kind="error"
-            title="The console did not load"
-            description={requestFailureMessage(sessions.error, "Unknown error")}
+            title={t("console.consoleErrorTitle")}
+            description={requestFailureMessage(
+              sessions.error,
+              t("errors.unknown")
+            )}
             inset="gutter"
             data-test="chat-console-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="chat-console-error-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void sessions.refetch()
                   }}
@@ -360,19 +362,19 @@ export function ChatConsole({
         ) : transcriptFailed ? (
           <ScreenState
             kind="error"
-            title="The transcript did not load"
+            title={t("console.transcriptErrorTitle")}
             description={requestFailureMessage(
               transcript.error,
-              "Unknown error"
+              t("errors.unknown")
             )}
             inset="gutter"
             data-test="chat-transcript-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="chat-transcript-error-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void transcript.refetch()
                   }}
@@ -387,7 +389,7 @@ export function ChatConsole({
             lines={SKELETON_WIDTHS}
             inset="gutter"
             fill
-            label="Loading the conversation"
+            label={t("console.loading")}
             data-test="chat-console-loading"
           />
         ) : (

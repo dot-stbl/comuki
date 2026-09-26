@@ -1,0 +1,174 @@
+{
+  "actions": {
+    "cancel": "Cancelar",
+    "retry": "Tentar de novo"
+  },
+  "errors": {
+    "unknown": "Erro desconhecido"
+  },
+  "registry": {
+    "title": "Projetos",
+    "summary": "<count/> projetos · <runs/> execuções em voo · <spend/> hoje",
+    "errorTitle": "O registro não carregou",
+    "newProject": "Novo projeto",
+    "filterByTag": "Filtrar por tag",
+    "count": {
+      "one": "{{count}} mostrado",
+      "other": "{{count}} mostrados"
+    },
+    "empty": {
+      "filtered": "nenhum projeto corresponde aos filtros atuais",
+      "none": "ainda não há projetos"
+    }
+  },
+  "column": {
+    "slug": "slug",
+    "name": "nome",
+    "tags": "tags",
+    "inFlight": "em voo",
+    "runs": "execuções",
+    "costToday": "custo hoje",
+    "profiles": "perfis",
+    "created": "criado",
+    "slugFilterPlaceholder": "filtrar slug, nome, repositório…"
+  },
+  "identity": {
+    "icon": "ícone",
+    "accentColour": "cor de destaque",
+    "tags": "tags",
+    "repo": "repositório de perfis git",
+    "iconPlaceholder": "🛰️ ou https://example.com/mark.png",
+    "platformDefaults": "perfis da plataforma"
+  },
+  "mark": {
+    "stored": "ícone armazenado",
+    "neutral": "marca do projeto",
+    "brand": "marca {{brand}}"
+  },
+  "slug": {
+    "error": {
+      "required": "um slug é obrigatório",
+      "spaces": "sem espaços — use um hífen",
+      "lowercase": "slugs são em minúsculas",
+      "min": "pelo menos {{min}} caracteres",
+      "max": "no máximo {{max}} caracteres",
+      "edges": "deve começar e terminar com letra ou dígito",
+      "pattern": "apenas letras, dígitos e hífens simples",
+      "taken": "esse slug já está em uso"
+    }
+  },
+  "form": {
+    "nameLabel": "nome",
+    "slugLabel": "slug",
+    "namePlaceholder": "o que é este projeto, em poucas palavras",
+    "slugPlaceholder": "minúsculas, hífens, sem espaços",
+    "slugHint": "Aparece como coluna em todas as listas do produto. Letras minúsculas, dígitos e hífens.",
+    "repoPlaceholder": "git@github.com:org/worker-profiles.git",
+    "repoHint": "Opcional. Onde os perfis de worker deste projeto são escritos — deixe vazio para usar os perfis da plataforma.",
+    "iconHint": "Opcional. Um emoji ou uma URL de imagem, exibido ao lado do slug. Sem um, a marca vem do host do repositório.",
+    "colorClear": "sem cor",
+    "colorHint": "Opcional. Pinta o ponto ao lado da marca e tinge as tags — nunca a interface.",
+    "tagsHint": "Opcional. O que é este projeto — Enter ou vírgula adiciona cada tag, Backspace remove a última.",
+    "submit": "Criar projeto"
+  },
+  "tagEntry": {
+    "placeholder": "web, billing…",
+    "remove": "Remover tag {{tag}}"
+  },
+  "create": {
+    "title": "Novo projeto",
+    "crumb": "novo",
+    "summary": "Um projeto possui seus aplicativos, suas execuções e seu orçamento. O slug é o nome pelo qual ele é conhecido em todo o resto.",
+    "toastCreated": "Projeto criado",
+    "failureFallback": "O projeto não foi criado.",
+    "failureTail": "Nada foi criado — o que você digitou continua exatamente como você deixou.",
+    "guardTitle": "Sair sem criar o projeto?",
+    "guardBody": "O nome, o slug e o repositório que você digitou não estão salvos em lugar nenhum. Sair desta página os descarta.",
+    "guardConfirm": "Descartar",
+    "guardCancel": "Continuar editando"
+  },
+  "detail": {
+    "fallbackTitle": "Projeto",
+    "crumbFallback": "projeto",
+    "summary": "<slug/> · criado <created/>",
+    "notFoundTitle": "Nenhum projeto com esse id",
+    "notFoundDescription": "O registro não contém nada sob <id/>. Um id de projeto vindo de um link antigo é o caminho ordinário para chegar aqui — um endereço sobrevive ao projeto que nomeava, e o registro é onde vivem os que ainda existem.",
+    "notFoundBack": "Voltar aos projetos",
+    "factsSection": "o projeto em si",
+    "editIdentity": "editar identidade",
+    "editIdentityFailure": "A identidade não foi salva.",
+    "rolesSection": "papéis neste projeto",
+    "rolesForbiddenSubject": "Papéis neste projeto",
+    "rolesHeld": {
+      "one": "{{count}} atribuído",
+      "other": "{{count}} atribuídos"
+    },
+    "fact": {
+      "slug": "slug",
+      "name": "nome",
+      "mark": "marca",
+      "created": "criado",
+      "iconAbsent": "nenhum armazenado",
+      "colourAbsent": "não definida",
+      "tagsAbsent": "ainda nenhuma"
+    },
+    "rolesEmpty": "Ninguém tem um papel neste projeto. Qualquer um que pode alcançá-lo o faz por um papel de plataforma, que vale em toda parte e não é listado aqui.",
+    "rolesAll": "cada atribuição neste projeto",
+    "rolesGrant": "conceder um papel"
+  },
+  "editor": {
+    "iconHint": "Um emoji ou uma URL de imagem. Vazio mantém a marca atual.",
+    "colorClear": "manter cor armazenada",
+    "colorHint": "Pinta o ponto ao lado da marca e tinge as tags — nunca a interface.",
+    "tagsHint": "O que é este projeto. Salvar uma lista vazia limpa as tags.",
+    "save": "Salvar identidade"
+  },
+  "handoff": {
+    "section": "onde está o trabalho deste projeto",
+    "counting": "contando",
+    "runsWhat": "execuções vivas",
+    "runsCount": "<count/> em voo de <total/> vistas",
+    "runsNote": "abrir a lista de turno restrita a este projeto",
+    "queueWhat": "fila e workers",
+    "queueCount": "<items/> itens de trabalho · <workers/> workers de pé",
+    "queueNote": "abrir a fila de claim restrita a este projeto",
+    "sourcesWhat": "fontes",
+    "sourcesCount": "<count/> conexões",
+    "sourcesNote": "abrir a entrada restrita a este projeto",
+    "costWhat": "custo e falhas",
+    "costToday": "<spend/> hoje",
+    "costNothing": "<dash/> nada atribuído ainda",
+    "costNote": "a cifra é deste projeto — o relatório atrás dela é da plataforma"
+  },
+  "jobs": {
+    "section": "jobs agendados",
+    "unknown": "desconhecido",
+    "counting": "contando",
+    "loading": "Carregando jobs agendados",
+    "errorTitle": "Os agendamentos não carregaram",
+    "statusEnabled": "ativo",
+    "statusPaused": "em pausa",
+    "pause": "Pausar agendamento",
+    "resume": "Retomar agendamento",
+    "delete": "Excluir agendamento",
+    "emptyTitle": "Aqui nada roda no relógio",
+    "emptyDescription": "Nenhum agendamento inicia trabalho neste projeto sozinho. Tudo o que roda aqui foi registrado ou despachado por uma pessoa.",
+    "create": "Agendar um job",
+    "dialogDescription": "Uma entrada cron que a plataforma registra sozinha neste projeto — o brief vira o ticket, o perfil vira o primeiro passo.",
+    "dialogSubmit": "Agendar",
+    "cronLabel": "cron",
+    "cronHint": "Cron de cinco campos, na própria política de fuso horário do projeto. Escolha um preset ou componha a expressão diretamente.",
+    "profileLabel": "chave de perfil",
+    "profilePlaceholder": "implementer",
+    "profileHint": "O perfil de item de trabalho do qual a execução parte — o catálogo vive no git do cliente.",
+    "briefLabel": "brief json",
+    "briefHint": "Armazenado literal. Nada entre esta caixa e o host o toca.",
+    "deleteTitle": "Excluir este agendamento?",
+    "deleteBody": "<cron/> para <profile/> deixa de disparar e é removido. O trabalho já em execução por causa dele não é tocado.",
+    "deleteCancel": "Manter",
+    "configured": {
+      "one": "{{count}} configurado",
+      "other": "{{count}} configurados"
+    }
+  }
+}

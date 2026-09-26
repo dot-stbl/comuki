@@ -1,6 +1,10 @@
 import { Link } from "@tanstack/react-router"
 import { KeyRound, UserCheck, UserMinus } from "lucide-react"
 
+import {
+  sharedIdentityT,
+  type IdentityTranslator,
+} from "@/domains/identity/model/identity"
 import type { UserRow, UserStatus } from "@/domains/identity/model/types"
 import { can, needsLabel, type Session } from "@/shared/session"
 import { Button, Tooltip, type DataColumn } from "@/shared/ui"
@@ -27,6 +31,13 @@ export interface UserColumnsOptions {
   busyId: string | null
   onLink: (user: UserRow) => void
   onToggleDisabled: (user: UserRow) => void
+  /**
+   * Copy arrives as a parameter because `cell` is called as a plain function
+   * while the table builds a row, so a `useTranslation` inside one throws.
+   * The page passes its hook-bound `t`; tests and stories fall back to the
+   * shared instance, which answers in the active locale.
+   */
+  t?: IdentityTranslator
 }
 
 /**
@@ -44,6 +55,7 @@ export function createUserColumns({
   busyId,
   onLink,
   onToggleDisabled,
+  t = sharedIdentityT,
 }: UserColumnsOptions): DataColumn<UserRow>[] {
   // Identity is a platform act — it reads platform roles alone, and no project
   // id goes in. Being project-admin of every project must never open it.
@@ -54,7 +66,7 @@ export function createUserColumns({
   return [
     {
       accessorKey: "email",
-      header: "address",
+      header: t("usersColumn.address"),
       /* The address is the value the row is about, so the address is what
          opens it — the same way a run id opens its run. Deliberately the cell
          and not the row: a row-wide click target would swallow the two buttons
@@ -74,10 +86,10 @@ export function createUserColumns({
       meta: {
         width: 200,
         pinned: true,
-        label: "address",
+        label: t("usersColumn.address"),
         filter: {
           kind: "text",
-          placeholder: "filter address, name, subject…",
+          placeholder: t("usersColumn.filterPlaceholder"),
           match: (user, needle) =>
             // The internal id is in the haystack so a pasted `u_…` finds its
             // person. Nothing shows it, but the global search resolves that
@@ -91,7 +103,7 @@ export function createUserColumns({
     },
     {
       accessorKey: "name",
-      header: "name",
+      header: t("usersColumn.name"),
       cell: ({ row }) => (
         <span className={styles.name} title={row.original.name}>
           {row.original.name}
@@ -101,33 +113,33 @@ export function createUserColumns({
     },
     {
       accessorKey: "status",
-      header: "account",
+      header: t("usersColumn.account"),
       cell: ({ row }) => {
         const status = row.original.status
         // The word carries the reading; the hue only sharpens it. A cell that
         // said this in colour alone would say nothing in greyscale.
         return (
           <span className={status === "disabled" ? styles.off : styles.value}>
-            {status}
+            {t(`userStatus.${status}`)}
           </span>
         )
       },
       meta: {
         width: 104,
-        label: "account",
+        label: t("usersColumn.account"),
         filter: {
           kind: "select",
-          placeholder: "all accounts",
+          placeholder: t("usersColumn.allAccounts"),
           options: USER_STATUSES.map((status) => ({
             value: status,
-            label: status,
+            label: t(`userStatus.${status}`),
           })),
         },
       },
     },
     {
       accessorKey: "oidcSubject",
-      header: "oidc subject",
+      header: t("usersColumn.oidcSubject"),
       cell: ({ row }) => {
         const subject = row.original.oidcSubject
         return subject ? (
@@ -137,15 +149,15 @@ export function createUserColumns({
         ) : (
           // A local account is not a broken one — OIDC says who you are, and
           // linking is a separate act from existing here.
-          <span className={styles.absent}>local only</span>
+          <span className={styles.absent}>{t("usersColumn.localOnly")}</span>
         )
       },
-      meta: { label: "oidc subject" },
+      meta: { label: t("usersColumn.oidcSubject") },
     },
     {
       id: "scopes",
       accessorFn: (user) => user.scopes.join(" "),
-      header: "holds",
+      header: t("usersColumn.holds"),
       enableSorting: false,
       cell: ({ row }) => {
         const scopes = row.original.scopes
@@ -154,27 +166,27 @@ export function createUserColumns({
             {scopes.join(" · ")}
           </span>
         ) : (
-          <span className={styles.absent}>nothing</span>
+          <span className={styles.absent}>{t("usersColumn.nothing")}</span>
         )
       },
-      meta: { width: 180, label: "holds" },
+      meta: { width: 180, label: t("usersColumn.holds") },
     },
     {
       accessorKey: "lastSeenAt",
-      header: "last seen",
+      header: t("usersColumn.lastSeen"),
       cell: ({ row }) => {
         const seen = row.original.lastSeenAt
         return seen ? (
           <span className={styles.scope}>{seen}</span>
         ) : (
-          <span className={styles.absent}>never</span>
+          <span className={styles.absent}>{t("usersColumn.never")}</span>
         )
       },
-      meta: { width: 140, label: "last seen" },
+      meta: { width: 140, label: t("usersColumn.lastSeen") },
     },
     {
       id: "actions",
-      header: "actions",
+      header: t("usersColumn.actions"),
       enableSorting: false,
       cell: ({ row }) => {
         const user = row.original
@@ -193,14 +205,16 @@ export function createUserColumns({
                 and taking it away would make a local-only account a two-click
                 job from the list whose whole point is working down it. */}
             {user.oidcSubject ? null : (
-              <Tooltip content={denial ?? "Link oidc subject"}>
+              <Tooltip content={denial ?? t("usersColumn.linkOidc")}>
                 <Button
                   size="icon-sm"
                   variant="ghost"
                   data-test="user-link-oidc"
                   denied={denial}
                   disabled={busy}
-                  aria-label={`Link an oidc subject to ${user.email}`}
+                  aria-label={t("usersColumn.linkOidcAria", {
+                    email: user.email,
+                  })}
                   onClick={(event) => {
                     event.stopPropagation()
                     onLink(user)
@@ -212,7 +226,10 @@ export function createUserColumns({
             )}
             <Tooltip
               content={
-                denial ?? (disabled ? "Enable account" : "Disable account")
+                denial ??
+                (disabled
+                  ? t("usersColumn.enableAccount")
+                  : t("usersColumn.disableAccount"))
               }
             >
               <Button
@@ -222,7 +239,9 @@ export function createUserColumns({
                 denied={denial}
                 loading={busy}
                 aria-label={
-                  disabled ? `Enable ${user.email}` : `Disable ${user.email}`
+                  disabled
+                    ? t("usersColumn.enableAria", { email: user.email })
+                    : t("usersColumn.disableAria", { email: user.email })
                 }
                 onClick={(event) => {
                   event.stopPropagation()
@@ -239,7 +258,7 @@ export function createUserColumns({
           </span>
         )
       },
-      meta: { width: 88, align: "end", label: "actions" },
+      meta: { width: 88, align: "end", label: t("usersColumn.actions") },
     },
   ]
 }

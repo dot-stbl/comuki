@@ -1,0 +1,139 @@
+{
+  "locale": {
+    "label": "Idioma"
+  },
+  "nav": {
+    "intake": "Entrada",
+    "observe": "Observar",
+    "configure": "Configurar",
+    "platform": "Plataforma",
+    "inbox": "Caixa",
+    "liveRuns": "Execuções ao vivo",
+    "queue": "Fila",
+    "approvals": "Aprovações",
+    "cost": "Custo",
+    "sources": "Fontes",
+    "knowledge": "Conhecimento",
+    "settings": "Ajustes",
+    "projects": "Projetos",
+    "identity": "Identidade",
+    "compute": "Computação",
+    "models": "Modelos"
+  },
+  "crumb": {
+    "platform": "plataforma",
+    "projects": "projetos",
+    "attention": "turno",
+    "liveRuns": "execuções ao vivo",
+    "tasks": "tarefas",
+    "queue": "fila",
+    "observe": "observar",
+    "identity": "identidade",
+    "sources": "fontes",
+    "approvals": "aprovações",
+    "configure": "configurar",
+    "console": "console",
+    "onboard": "integração",
+    "knowledge": "conhecimento",
+    "models": "modelos",
+    "compute": "compute"
+  },
+  "topbar": {
+    "home": "Comuki — início",
+    "newRun": "Nova execução",
+    "github": "github",
+    "githubOpens": "Comuki no GitHub — abre em nova aba"
+  },
+  "page": {
+    "breadcrumb": "Trilha de navegação",
+    "showRail": "Mostrar o painel de navegação",
+    "hideRail": "Ocultar o painel de navegação",
+    "resizeRail": "Redimensionar o painel de navegação"
+  },
+  "account": {
+    "label": "Conta",
+    "named": "Conta — {{name}}",
+    "settings": "Ajustes",
+    "apiKeys": "Chaves de api",
+    "profile": "Perfil",
+    "signOut": "Sair"
+  },
+  "appearance": {
+    "label": "Aparência",
+    "current": "Aparência — {{mode}}",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema"
+  },
+  "palette": {
+    "label": "Paleta",
+    "current": "Paleta — {{name}}"
+  },
+  "live": {
+    "demo": "Demo",
+    "polling": "Sondagem",
+    "mockOnly": "Trabalhando com dados sintéticos — bun run dev:real para trocar",
+    "mockAndDown": "Trabalhando com dados sintéticos, backend inacessível",
+    "down": "Backend inacessível — mostrando o último estado conhecido",
+    "pollingDown": "As atualizações ao vivo caíram — esta tela se atualiza a cada {{seconds}} s em vez disso"
+  },
+  "search": {
+    "open": "Buscar — {{chord}}",
+    "label": "Buscar no Comuki",
+    "placeholder": "cole um id ou nomeie uma tela…",
+    "results": "Resultados",
+    "empty": "nada aqui responde a isso",
+    "keys": {
+      "move": "↑↓ mover",
+      "open": "enter abrir",
+      "close": "esc fechar"
+    },
+    "band": {
+      "resolved": "ir para",
+      "section": "seções",
+      "act": "ações",
+      "handoff": "buscar"
+    },
+    "kind": {
+      "run": "execução",
+      "workItem": "item de trabalho",
+      "worker": "worker",
+      "approval": "aprovação",
+      "project": "projeto",
+      "app": "app",
+      "person": "pessoa",
+      "apiKey": "chave de api",
+      "image": "imagem",
+      "section": "seção",
+      "act": "ação",
+      "search": "busca"
+    },
+    "act": {
+      "newTask": "Nova tarefa",
+      "newTaskHint": "colocar um ticket no backlog",
+      "newProject": "Novo projeto",
+      "newProjectHint": "registrar um projeto",
+      "newUser": "Novo usuário",
+      "newUserHint": "convidar uma pessoa",
+      "newApiKey": "Nova chave de api",
+      "newApiKeyHint": "emitir uma chave",
+      "grantRole": "Conceder um papel",
+      "grantRoleHint": "dar acesso a alguém"
+    },
+    "resolvedHint": {
+      "liveRuns": "nas execuções ao vivo",
+      "claimQueue": "na fila de claims",
+      "workerPool": "no pool de workers",
+      "approvals": "nas aprovações",
+      "image": "workers nesta imagem",
+      "apiKeys": "nas chaves de api",
+      "people": "nas pessoas",
+      "app": "execuções deste app"
+    },
+    "handoffHint": {
+      "runs": "nas execuções ao vivo",
+      "queue": "na fila",
+      "inbox": "na caixa"
+    }
+  }
+}

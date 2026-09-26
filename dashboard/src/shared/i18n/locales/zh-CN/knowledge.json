@@ -1,0 +1,96 @@
+{
+  "actions": {
+    "retry": "重试",
+    "close": "关闭"
+  },
+  "errors": {
+    "unknown": "未知错误"
+  },
+  "page": {
+    "title": "知识",
+    "summary": "规则集、修订、评测基准",
+    "tabsLabel": "知识分区"
+  },
+  "tab": {
+    "library": "库",
+    "gate": "门禁"
+  },
+  "load": {
+    "errorTitle": "知识未加载"
+  },
+  "search": {
+    "label": "筛选规则、文档与技能",
+    "placeholder": "搜索规则、文档、技能…",
+    "errorTitle": "搜索未响应",
+    "searching": "搜索中",
+    "emptyTitle": "无匹配",
+    "emptySemantic": "库中没有任何内容足够接近该查询。",
+    "emptyPlain": "换个查询词，在固定的规则和文档中再试。",
+    "sectionTitle": "语义匹配",
+    "sectionNote": "按余弦相似度取前 {{count}} 条",
+    "count": "{{shown}} / {{total}}"
+  },
+  "revision": {
+    "section": "生效修订",
+    "current": "当前修订",
+    "sub": "{{sdk}} · 更新于 {{updated}}",
+    "rules": "活跃规则",
+    "rulesSub": "{{hard}} 硬 · {{soft}} 软",
+    "reproducibility": "可复现性",
+    "reproducibilitySub": "每次运行都固定规则集 + SDK"
+  },
+  "entries": {
+    "section": "规则、文档与技能",
+    "updated": "更新于 {{updated}}"
+  },
+  "sheet": {
+    "close": "关闭条目",
+    "revisionAt": "修订 @{{revision}}",
+    "scope": "范围",
+    "updated": "更新于"
+  },
+  "badge": {
+    "kind": {
+      "rule": "规则",
+      "doc": "文档",
+      "skill": "技能"
+    },
+    "ruleKind": {
+      "hard": "硬",
+      "soft": "软"
+    },
+    "pinned": "已固定",
+    "pinnedAt": "固定于 @ {{revision}}",
+    "delta": {
+      "improved": "改善",
+      "regressed": "退化",
+      "noChange": "无变化"
+    }
+  },
+  "eval": {
+    "section": "黄金任务",
+    "note": "规则编辑前 → 后",
+    "empty": "尚未针对该修订运行过黄金任务",
+    "column": {
+      "task": "任务",
+      "before": "之前",
+      "after": "之后",
+      "delta": "差值"
+    }
+  },
+  "gate": {
+    "errorTitle": "门禁未加载",
+    "changeFailed": "更改失败。",
+    "nothingMoved": "什么都没动 — 门禁保持原样。",
+    "intro": "一次运行必须先通过客户端自己的检查才能落地。检查存放在他们的仓库里 — 一个文件，像其他一切一样提交 — 因此本节负责开关门禁，并显示每项检查最近说了什么。修改命令就是修改文件；下面每一节都会准确说明它的文件在哪里。",
+    "emptyTitle": "这里没有项目设有门禁",
+    "emptyDescription": "本次会话的项目中没有任何一个声明客户端自己的检查。只要其中一个提交了包含检查的文件，门禁就会出现。",
+    "onToast": "门禁已开启",
+    "onToastDescription": "{{name}} — 运行必须通过客户端的检查",
+    "offToast": "门禁已关闭",
+    "offToastDescription": "{{name}} — 运行不经客户端检查直接落地",
+    "summary": "<on/> / <total/> 个门禁开启 · <checks/> 项检查已声明",
+    "summaryFailing": "<failing/> 项失败",
+    "summaryNeverRan": "<never/> 项从未运行"
+  }
+}

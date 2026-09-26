@@ -1,0 +1,83 @@
+{
+  "actions": {
+    "retry": "Erneut versuchen"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler"
+  },
+  "status": {
+    "new": "neu",
+    "queued": "in der Warteschlange",
+    "planning": "wird geplant"
+  },
+  "priority": {
+    "low": "niedrig",
+    "normal": "normal",
+    "high": "hoch"
+  },
+  "registry": {
+    "title": "Aufgaben",
+    "summary": "<total/> im Backlog · <fresh/> neu",
+    "newTask": "Neue Aufgabe",
+    "count": {
+      "one": "{{count}} angezeigt",
+      "other": "{{count}} angezeigt"
+    },
+    "loading": "Backlog wird geladen",
+    "errorTitle": "Das Backlog wurde nicht geladen",
+    "empty": {
+      "filtered": "keine Aufgabe passt auf die aktuellen Filter",
+      "none": "das Backlog ist leer"
+    }
+  },
+  "dispatch": {
+    "toast": "An den Orchestrator übergeben",
+    "fallback": "Der Orchestrator hat das nicht angenommen.",
+    "tail": "Nichts wurde in die Warteschlange gestellt — das Ticket ist noch im Backlog."
+  },
+  "column": {
+    "source": "quelle",
+    "task": "aufgabe",
+    "evidence": "belege",
+    "project": "projekt",
+    "app": "app",
+    "priority": "priorität",
+    "status": "status",
+    "age": "alter",
+    "action": "aktion",
+    "filterPlaceholder": "titel, id, app filtern…",
+    "allProjects": "alle projekte",
+    "allApps": "alle apps",
+    "allPriority": "alle prioritäten",
+    "allStatus": "alle statuses",
+    "dispatch": "Übergeben",
+    "dispatchTask": "{{title}} übergeben"
+  },
+  "create": {
+    "title": "Neue Aufgabe",
+    "crumb": "neu",
+    "summary": "Ein Ticket vor dem Schwarm: woher es kam, in wessen Backlog es landet und wie dringend es ist.",
+    "toastCreated": "Aufgabe erstellt",
+    "failureTail": "Nichts wurde in die Warteschlange gestellt — was Sie getippt haben, ist genau so, wie Sie es verlassen haben.",
+    "guardTitle": "Ohne Erstellen der Aufgabe verlassen?",
+    "guardBody": "Titel und Brief sind noch nirgends gespeichert. Diese Seite zu verlassen verwirft sie, und nichts erreicht die Annahme.",
+    "guardConfirm": "Verwerfen",
+    "guardCancel": "Weiter bearbeiten",
+    "submit": "Erstellen & einreihen",
+    "cancel": "Abbrechen",
+    "sourceLabel": "quelle",
+    "sourceNote": "woher das ticket kam. jede Karte außer der eigenen erwartet eine Verbindung, die diesen Anbieter beobachtet — ein Ticket hierzu zeichnet auf, woher es kam, und reicht es dort nicht ein.",
+    "ticketLabel": "das ticket",
+    "ticketNote": "was zu tun ist, wo es landet, wie dringend es ist.",
+    "briefLabel": "brief",
+    "briefNote": "kontext, abnahmekriterien, links — für die person, die das aufnimmt, nicht für das formular.",
+    "titleLabel": "titel",
+    "titlePlaceholder": "was zu tun ist, in einer Zeile",
+    "projectLabel": "projekt",
+    "appLabel": "app",
+    "briefPlaceholder": "kontext, abnahmekriterien, links…"
+  },
+  "priorityField": {
+    "label": "priorität"
+  }
+}

@@ -39,6 +39,8 @@ import { can, type Permission, type Session } from "@/shared/session"
  */
 export interface NavItem {
   label: string
+  /** The word in the `shell` namespace; the English `label` is the identity. */
+  labelKey?: string
   href: string
   icon?: LucideIcon
   /** When false, child routes (e.g. /runs/$runId) keep the parent link active. */
@@ -57,6 +59,8 @@ export interface NavSection {
   id: "intake" | "observe" | "configure" | "platform"
   /** Display label, also used as the inner-rail heading when this section is active. */
   label: string
+  /** The word in the `shell` namespace; the English `label` is the identity. */
+  labelKey?: string
   /** Outer-rail icon — never the same as an item icon, so the two never rhyme. */
   icon: LucideIcon
   /**
@@ -77,6 +81,7 @@ export const productNavSections: NavSection[] = [
   {
     id: "intake",
     label: "Intake",
+    labelKey: "nav.intake",
     icon: InboxIcon,
     items: [
       // The console is not a section: its one door in the chrome is the
@@ -84,6 +89,7 @@ export const productNavSections: NavSection[] = [
       // conversation is something you have, not somewhere you go.
       {
         label: "Inbox",
+        labelKey: "nav.inbox",
         href: "/tasks",
         icon: ListTodo,
         permission: "inbox.view",
@@ -93,6 +99,7 @@ export const productNavSections: NavSection[] = [
   {
     id: "observe",
     label: "Observe",
+    labelKey: "nav.observe",
     icon: Activity,
     items: [
       // Attention has no rail item: the Comuki mark is the home link and has
@@ -100,6 +107,7 @@ export const productNavSections: NavSection[] = [
       // was costing a row in a rail that had grown to sixteen.
       {
         label: "Live runs",
+        labelKey: "nav.liveRuns",
         href: "/runs",
         icon: PlayCircle,
         exact: false,
@@ -108,12 +116,14 @@ export const productNavSections: NavSection[] = [
       },
       {
         label: "Queue",
+        labelKey: "nav.queue",
         href: "/queue",
         icon: ListOrdered,
         permission: "queue.view",
       },
       {
         label: "Approvals",
+        labelKey: "nav.approvals",
         href: "/approvals",
         icon: CheckCircle2,
         badge: "needsHuman",
@@ -121,6 +131,7 @@ export const productNavSections: NavSection[] = [
       },
       {
         label: "Cost",
+        labelKey: "nav.cost",
         href: "/cost",
         icon: Coins,
         permission: "cost.view",
@@ -130,10 +141,12 @@ export const productNavSections: NavSection[] = [
   {
     id: "configure",
     label: "Configure",
+    labelKey: "nav.configure",
     icon: SlidersHorizontal,
     items: [
       {
         label: "Sources",
+        labelKey: "nav.sources",
         href: "/sources",
         icon: Plug,
         permission: "sources.view",
@@ -143,6 +156,7 @@ export const productNavSections: NavSection[] = [
       // gate tab there.
       {
         label: "Knowledge",
+        labelKey: "nav.knowledge",
         href: "/knowledge",
         icon: BookOpen,
         exact: false,
@@ -150,6 +164,7 @@ export const productNavSections: NavSection[] = [
       },
       {
         label: "Settings",
+        labelKey: "nav.settings",
         href: "/settings",
         icon: Settings,
         permission: "settings.live",
@@ -159,17 +174,20 @@ export const productNavSections: NavSection[] = [
   {
     id: "platform",
     label: "Platform",
+    labelKey: "nav.platform",
     icon: Layers,
     tier: "platform",
     items: [
       {
         label: "Projects",
+        labelKey: "nav.projects",
         href: "/projects",
         icon: FolderGit2,
         permission: "projects.view",
       },
       {
         label: "Identity",
+        labelKey: "nav.identity",
         href: "/identity",
         icon: Users,
         permission: "identity.manage",
@@ -178,6 +196,7 @@ export const productNavSections: NavSection[] = [
       // guide are a section of Compute — same tier, same permission class.
       {
         label: "Compute",
+        labelKey: "nav.compute",
         href: "/compute",
         icon: Server,
         exact: false,
@@ -185,6 +204,7 @@ export const productNavSections: NavSection[] = [
       },
       {
         label: "Models",
+        labelKey: "nav.models",
         href: "/models",
         icon: RouteIcon,
         permission: "models.view",

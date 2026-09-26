@@ -1,0 +1,53 @@
+{
+  "actions": {
+    "retry": "Réessayer"
+  },
+  "registry": {
+    "title": "Approbations",
+    "summary": {
+      "one": "<count/> en attente de décision",
+      "other": "<count/> en attente de décision"
+    },
+    "errorTitle": "Échec du chargement des approbations"
+  },
+  "errors": {
+    "unknown": "Erreur inconnue"
+  },
+  "decide": {
+    "approvedToast": "Approuvé",
+    "rejectedToast": "Rejeté",
+    "openedToast": "Revue ouverte",
+    "refused": "La décision n'a pas pris.",
+    "tail": "La file est comme avant — le run attend toujours."
+  },
+  "empty": {
+    "title": "File vide",
+    "description": "Rien n'attend un humain."
+  },
+  "card": {
+    "details": "Détails",
+    "hide": "Masquer",
+    "review": "Revue",
+    "reject": "Rejeter",
+    "approve": "Approuver",
+    "reviewAria": "Revue du {{noun}} pour {{app}}",
+    "rejectAria": "Rejeter le {{noun}} pour {{app}}",
+    "approveAria": "Approuver le {{noun}} pour {{app}}",
+    "planHead": "Plan — graphe des éléments de travail",
+    "assumptionsFallback": "Hypothèses du planificateur",
+    "paneBaseline": "baseline",
+    "paneNew": "nouvelle"
+  },
+  "type": {
+    "plan": "plan",
+    "deploy": "déploiement",
+    "baseline": "baseline",
+    "gate": "gate",
+    "learning": "règle"
+  },
+  "risk": {
+    "high": "élevé",
+    "medium": "moyen",
+    "low": "faible"
+  }
+}

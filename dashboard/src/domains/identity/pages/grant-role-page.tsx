@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { FormPage } from "@/app/layout/form-page"
@@ -24,6 +25,8 @@ import { ConfirmDialog, Notice } from "@/shared/ui"
 export function GrantRolePage() {
   const navigate = useNavigate()
   const router = useRouter()
+  const { t } = useTranslation("identity")
+  const { t: tShell } = useTranslation("shell")
   const { data, isLoading } = useIdentityQuery()
   const grantRole = useGrantRoleMutation()
 
@@ -55,8 +58,8 @@ export function GrantRolePage() {
 
     grantRole.mutate(input, {
       onSuccess: () => {
-        toast.success("Role granted", {
-          description: `${input.role} on ${scope}`,
+        toast.success(t("grantPage.toast"), {
+          description: t("grantPage.toastScope", { role: input.role, scope }),
         })
         guard.leave(() => {
           // Narrowed to the subject rather than to the role: a person holds
@@ -74,13 +77,13 @@ export function GrantRolePage() {
 
   return (
     <FormPage
-      title="Grant a role"
+      title={t("grantPage.title")}
       crumbs={[
-        { label: "platform" },
-        { label: "identity", to: "/identity" },
-        { label: "grant a role" },
+        { label: tShell("crumb.platform") },
+        { label: tShell("crumb.identity"), to: "/identity" },
+        { label: t("grantPage.crumb") },
       ]}
-      summary="A grant is a subject, a role and a scope. Nothing else is stored, and nothing else is offered."
+      summary={t("grantPage.summary")}
     >
       {/* The host's own sentence, not `error.message`: a grant the platform
           refused says why in its problem body, and a screen that printed the
@@ -88,12 +91,8 @@ export function GrantRolePage() {
           operator can act on. */}
       {grantRole.error ? (
         <Notice tone="bad" data-test="grant-failure">
-          {requestFailureMessage(
-            grantRole.error,
-            "The platform refused to write the grant."
-          )}{" "}
-          Nothing was granted — the subject, role and scope below are still
-          exactly as you chose them.
+          {requestFailureMessage(grantRole.error, t("grantPage.refused"))}{" "}
+          {t("grantPage.tail")}
         </Notice>
       ) : null}
 
@@ -110,10 +109,10 @@ export function GrantRolePage() {
 
       <ConfirmDialog
         open={guard.asking}
-        title="Leave without granting the role?"
-        body="Nothing has been written yet. Leaving this page drops the subject, role and scope you chose."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
+        title={t("grantPage.leaveTitle")}
+        body={t("grantPage.leaveBody")}
+        confirmLabel={t("grantPage.discard")}
+        cancelLabel={t("grantPage.keep")}
         onConfirm={guard.discard}
         onCancel={guard.keep}
       />

@@ -10,6 +10,7 @@ import {
   Scale,
   Wrench,
 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type {
   EvalDelta,
@@ -60,6 +61,7 @@ export interface KindMarkProps {
  * and giving it a hue would spend saturation the flow needs on a filing label.
  */
 export function KindMark({ kind, className }: KindMarkProps) {
+  const { t } = useTranslation("knowledge")
   const Icon = kindIcons[kind]
 
   return (
@@ -69,7 +71,7 @@ export function KindMark({ kind, className }: KindMarkProps) {
       className={cn(badgeShell(), styles.badge, styles.kind, className)}
     >
       <Icon aria-hidden="true" />
-      {kind}
+      {t(`badge.kind.${kind}`, { defaultValue: kind })}
     </span>
   )
 }
@@ -93,6 +95,7 @@ export interface RuleKindMarkProps {
  * so the distinction is still there in greyscale.
  */
 export function RuleKindMark({ ruleKind, className }: RuleKindMarkProps) {
+  const { t } = useTranslation("knowledge")
   const Icon = ruleKindIcons[ruleKind]
 
   return (
@@ -102,7 +105,7 @@ export function RuleKindMark({ ruleKind, className }: RuleKindMarkProps) {
       className={cn(badgeShell(), styles.badge, styles[ruleKind], className)}
     >
       <Icon aria-hidden="true" />
-      {ruleKind}
+      {t(`badge.ruleKind.${ruleKind}`, { defaultValue: ruleKind })}
     </span>
   )
 }
@@ -118,10 +121,11 @@ export interface PinnedMarkProps {
  * being pinned is the reason the reproducibility figure above reads 100%.
  */
 export function PinnedMark({ revision, className }: PinnedMarkProps) {
+  const { t } = useTranslation("knowledge")
   return (
     <span data-test="knowledge-pinned" className={cn(styles.pinned, className)}>
       <Pin aria-hidden="true" />
-      {revision ? `pinned @ ${revision}` : "pinned"}
+      {revision ? t("badge.pinnedAt", { revision }) : t("badge.pinned")}
     </span>
   )
 }
@@ -137,6 +141,13 @@ const deltaLabels: Record<EvalDelta, string> = {
   "+": "improved",
   "-": "regressed",
   "=": "no change",
+}
+
+/** The catalogue key each delta word resolves through. */
+const DELTA_KEYS: Record<EvalDelta, string> = {
+  "+": "improved",
+  "-": "regressed",
+  "=": "noChange",
 }
 
 const deltaClass: Record<EvalDelta, string> = {
@@ -155,7 +166,11 @@ export interface EvalDeltaMarkProps {
  * `+` in green is a symbol the operator has to have been taught.
  */
 export function EvalDeltaMark({ delta, className }: EvalDeltaMarkProps) {
+  const { t } = useTranslation("knowledge")
   const Icon = deltaIcons[delta]
+  const word = t(`badge.delta.${DELTA_KEYS[delta]}`, {
+    defaultValue: deltaLabels[delta],
+  })
 
   return (
     <span
@@ -169,7 +184,7 @@ export function EvalDeltaMark({ delta, className }: EvalDeltaMarkProps) {
       )}
     >
       <Icon aria-hidden="true" />
-      {deltaLabels[delta]}
+      {word}
     </span>
   )
 }

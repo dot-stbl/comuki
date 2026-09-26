@@ -3,15 +3,17 @@ import { Link } from "@tanstack/react-router"
 
 import {
   ADMISSION_MODES,
-  NATIVE_DISCONNECT_REFUSAL,
   PROVIDERS,
   admissionLabel,
   admittedCount,
   connectionHost,
   connectionNote,
   isNativeIntake,
+  nativeDisconnectRefusal,
   providerBrand,
   providerLabel,
+  sharedSourcesT,
+  type SourcesTranslator,
 } from "@/domains/sources/model/providers"
 import type {
   NativeTicket,
@@ -56,6 +58,13 @@ export interface SourceColumnsOptions {
   onTest: (connection: SourceConnection) => void
   onDisconnect: (connection: SourceConnection) => void
   onNewTicket: (connection: SourceConnection) => void
+  /**
+   * Copy arrives as a parameter because `cell` is called as a plain function
+   * while the table builds a row, so a `useTranslation` inside one throws.
+   * The page passes its hook-bound `t`; tests and stories fall back to the
+   * shared instance, which answers in the active locale.
+   */
+  t?: SourcesTranslator
   /**
    * The signed-in shift itself, not an answer about it.
    *
@@ -113,11 +122,12 @@ export function createSourceColumns({
   onDisconnect,
   onNewTicket,
   session,
+  t = sharedSourcesT,
 }: SourceColumnsOptions): DataColumn<SourceConnection>[] {
   return [
     {
       accessorKey: "state",
-      header: "state",
+      header: t("column.state"),
       cell: ({ row }) => <ConnectionStateBadge state={row.original.state} />,
       sortFn: stateSort,
       meta: {
@@ -125,18 +135,18 @@ export function createSourceColumns({
         pinned: true,
         filter: {
           kind: "select",
-          placeholder: "all states",
+          placeholder: t("column.allStates"),
           options: [
-            { value: "connected", label: "connected" },
-            { value: "error", label: "error" },
-            { value: "disabled", label: "disabled" },
+            { value: "connected", label: t("state.connected") },
+            { value: "error", label: t("state.error") },
+            { value: "disabled", label: t("state.disabled") },
           ],
         },
       },
     },
     {
       accessorKey: "name",
-      header: "source",
+      header: t("column.source"),
       // The identifier cell is the link, and the row is not. A row-wide click
       // target would swallow the four buttons in the actions column — and an
       // anchor is what makes a source's page a destination somebody can open
@@ -167,10 +177,10 @@ export function createSourceColumns({
           // the key already has its own column and its own select filter, and
           // a search box that advertised every field it quietly also matches
           // would be a paragraph.
-          placeholder: "filter source, account, host…",
+          placeholder: t("column.filterPlaceholder"),
           match: (connection, needle) => {
             const key = projectOf(session, connection.projectId)?.key ?? ""
-            return `${connection.name} ${connection.account} ${connectionHost(connection)} ${connection.reason ?? ""} ${key}`
+            return `${connection.name} ${connection.account} ${connectionHost(connection, t)} ${connection.reason ?? ""} ${key}`
               .toLowerCase()
               .includes(needle.toLowerCase())
           },
@@ -179,7 +189,7 @@ export function createSourceColumns({
     },
     {
       accessorKey: "kind",
-      header: "provider",
+      header: t("column.provider"),
       // The mark, where the provider has one that survives being drained to the
       // chrome's own colour, and the word where it does not. The name goes
       // nowhere: it is still what the filter offers, what the row announces and
@@ -205,13 +215,13 @@ export function createSourceColumns({
         width: 116,
         filter: {
           kind: "select",
-          placeholder: "all providers",
+          placeholder: t("column.allProviders"),
           // The registry, in its own order. A sixth provider appears in this
           // filter the moment somebody writes its entry, and never because
           // anybody remembered this line.
           options: PROVIDERS.map((provider) => ({
             value: provider.key,
-            label: provider.label,
+            label: providerLabel(provider.key),
           })),
         },
       },
@@ -224,7 +234,7 @@ export function createSourceColumns({
       // predicate reads the field (`projectId`, what the row carries).
       id: "project",
       accessorKey: "projectId",
-      header: "project",
+      header: t("column.project"),
       cell: ({ row }) => {
         const project = projectOf(session, row.original.projectId)
         return project ? (
@@ -237,7 +247,7 @@ export function createSourceColumns({
         width: 120,
         filter: {
           kind: "select",
-          placeholder: "all projects",
+          placeholder: t("column.allProjects"),
           options: projects.map((project) => ({
             value: project.id,
             label: project.key,
@@ -247,21 +257,21 @@ export function createSourceColumns({
     },
     {
       id: "host",
-      accessorFn: connectionHost,
-      header: "instance",
+      accessorFn: (connection) => connectionHost(connection, t),
+      header: t("column.instance"),
       cell: ({ row }) => {
-        const host = connectionHost(row.original)
+        const host = connectionHost(row.original, t)
         return (
           <span className={styles.muted} title={row.original.baseUrl ?? host}>
             {host}
           </span>
         )
       },
-      meta: { width: 168, label: "instance" },
+      meta: { width: 168, label: t("column.instance") },
     },
     {
       accessorKey: "account",
-      header: "account",
+      header: t("column.account"),
       cell: ({ row }) => (
         <span className={styles.muted} title={row.original.account}>
           {row.original.account}
@@ -271,19 +281,21 @@ export function createSourceColumns({
     },
     {
       id: "admission",
-      accessorFn: admissionLabel,
-      header: "admission",
+      accessorFn: (connection) => admissionLabel(connection, t),
+      header: t("column.admission"),
       cell: ({ row }) => (
-        <span className={styles.muted}>{admissionLabel(row.original)}</span>
+        <span className={styles.muted}>{admissionLabel(row.original, t)}</span>
       ),
       meta: {
         width: 128,
         filter: {
           kind: "select",
-          placeholder: "all modes",
+          placeholder: t("column.allModes"),
           options: ADMISSION_MODES.map((mode) => ({
             value: mode.value,
-            label: mode.label,
+            label: t(`admission.${mode.value}.label`, {
+              defaultValue: mode.label,
+            }),
           })),
           // A watch that is off admits nothing, whatever mode it is set to, so
           // it does not answer to a mode filter.
@@ -296,17 +308,17 @@ export function createSourceColumns({
     {
       id: "admitted",
       accessorFn: (connection) => admittedCount(connection, tickets),
-      header: "admitted",
+      header: t("column.admitted"),
       cell: ({ row }) => admittedCount(row.original, tickets),
-      meta: { width: 104, numeric: true, label: "admitted" },
+      meta: { width: 104, numeric: true, label: t("column.admitted") },
     },
     {
       id: "note",
-      accessorFn: (connection) => connectionNote(connection, tickets),
-      header: "what is happening",
+      accessorFn: (connection) => connectionNote(connection, tickets, t),
+      header: t("column.note"),
       cell: ({ row }) => {
         const connection = row.original
-        const note = connectionNote(connection, tickets)
+        const note = connectionNote(connection, tickets, t)
         const idle =
           connection.state === "connected" &&
           Boolean(connection.watch?.enabled) &&
@@ -325,11 +337,11 @@ export function createSourceColumns({
           </span>
         )
       },
-      meta: { label: "what is happening" },
+      meta: { label: t("column.note") },
     },
     {
       id: "actions",
-      header: "actions",
+      header: t("column.actions"),
       // Buttons have no order. Say so rather than leaning on the fact that a
       // column without an accessor happens not to sort.
       enableSorting: false,
@@ -362,7 +374,7 @@ export function createSourceColumns({
         // One spelling, in `providers.ts`, because the source's own page says
         // the same sentence about the same button.
         const disconnectDenial = !connection.removable
-          ? NATIVE_DISCONNECT_REFUSAL
+          ? nativeDisconnectRefusal(t)
           : editDenial
 
         const native = isNativeIntake(connection.kind)
@@ -379,14 +391,17 @@ export function createSourceColumns({
         return (
           <span className={styles.actions}>
             {native ? (
-              <Tooltip content={takeDenial ?? "New ticket"}>
+              <Tooltip content={takeDenial ?? t("column.newTicket")}>
                 <Button
                   size="icon-sm"
                   variant="outline"
                   data-test="source-new-ticket"
                   disabled={testing}
                   denied={takeDenial}
-                  aria-label={`New ticket in ${connection.name} on ${where ?? connection.projectId}`}
+                  aria-label={t("column.newTicketAria", {
+                    name: connection.name,
+                    where: where ?? connection.projectId,
+                  })}
                   onClick={(event) => {
                     event.stopPropagation()
                     onNewTicket(connection)
@@ -397,14 +412,16 @@ export function createSourceColumns({
               </Tooltip>
             ) : (
               <>
-                <Tooltip content={editDenial ?? "Watch and filter"}>
+                <Tooltip content={editDenial ?? t("column.watchAndFilter")}>
                   <Button
                     size="icon-sm"
                     variant="outline"
                     data-test="source-edit-watch"
                     disabled={testing}
                     denied={editDenial}
-                    aria-label={`Edit the watch on ${connection.name}`}
+                    aria-label={t("column.watchAndFilterAria", {
+                      name: connection.name,
+                    })}
                     onClick={(event) => {
                       event.stopPropagation()
                       onOpenSource(connection)
@@ -413,14 +430,16 @@ export function createSourceColumns({
                     <Pencil aria-hidden="true" />
                   </Button>
                 </Tooltip>
-                <Tooltip content={editDenial ?? "Test connection"}>
+                <Tooltip content={editDenial ?? t("column.testConnection")}>
                   <Button
                     size="icon-sm"
                     variant="outline"
                     data-test="source-test"
                     loading={testing}
                     denied={editDenial}
-                    aria-label={`Test the connection to ${connection.name}`}
+                    aria-label={t("column.testConnectionAria", {
+                      name: connection.name,
+                    })}
                     onClick={(event) => {
                       event.stopPropagation()
                       onTest(connection)
@@ -431,14 +450,16 @@ export function createSourceColumns({
                 </Tooltip>
               </>
             )}
-            <Tooltip content={disconnectDenial ?? "Disconnect"}>
+            <Tooltip content={disconnectDenial ?? t("column.disconnect")}>
               <Button
                 size="icon-sm"
                 variant="destructive"
                 data-test="source-disconnect"
                 disabled={testing}
                 denied={disconnectDenial}
-                aria-label={`Disconnect ${connection.name}`}
+                aria-label={t("column.disconnectAria", {
+                  name: connection.name,
+                })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onDisconnect(connection)
@@ -450,7 +471,7 @@ export function createSourceColumns({
           </span>
         )
       },
-      meta: { width: 116, align: "end", label: "actions" },
+      meta: { width: 116, align: "end", label: t("column.actions") },
     },
   ]
 }

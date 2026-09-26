@@ -1,5 +1,6 @@
 import { Fragment, useMemo, type Ref } from "react"
 import { AlertTriangle } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { messageParts } from "@/domains/chat/model/parts"
 import {
@@ -90,6 +91,7 @@ export function ChatMessage({
   ref,
   "data-index": dataIndex,
 }: ChatMessageProps) {
+  const { t } = useTranslation("chat")
   const mine = message.kind === "person"
   const parts = useMemo(() => messageParts(message), [message])
   const proposal = message.kind === "proposal" ? message.proposal : undefined
@@ -128,11 +130,13 @@ export function ChatMessage({
       data-index={dataIndex}
     >
       <div className={styles.byline}>
-        <span className={styles.author}>{mine ? "you" : "comuki"}</span>
+        <span className={styles.author}>
+          {mine ? t("message.you") : t("message.comuki")}
+        </span>
         {phase ? <TurnBadge phase={phase} /> : null}
         {phase && iteration !== undefined ? (
           <span className={styles.iteration} data-test="chat-iteration">
-            iter {iteration}
+            {t("message.iteration", { iteration })}
           </span>
         ) : null}
         <span className={styles.clock}>{message.at}</span>
@@ -173,7 +177,7 @@ export function ChatMessage({
 
             {blank ? (
               <p className={styles.blank} data-test="chat-blank">
-                this turn arrived with nothing in it
+                {t("message.blank")}
               </p>
             ) : null}
           </>

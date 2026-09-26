@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { FormPage } from "@/app/layout/form-page"
@@ -45,6 +46,8 @@ import { ConfirmDialog, Notice } from "@/shared/ui"
 export function ConnectSourcePage() {
   const navigate = useNavigate()
   const router = useRouter()
+  const { t } = useTranslation("sources")
+  const { t: tShell } = useTranslation("shell")
   const session = useSession()
 
   const testDraft = useTestSourceDraft()
@@ -75,7 +78,7 @@ export function ConnectSourcePage() {
     }
     connect.mutate(draft, {
       onSuccess: (created) => {
-        toast.success("Source connected", { description: draft.name })
+        toast.success(t("connectPage.toast"), { description: draft.name })
         guard.leave(() => {
           void navigate({
             to: "/sources/$sourceId",
@@ -89,19 +92,18 @@ export function ConnectSourcePage() {
 
   return (
     <FormPage
-      title="Connect a source"
+      title={t("connectPage.title")}
       crumbs={[
-        { label: "configure" },
-        { label: "sources", to: "/sources" },
-        { label: "new" },
+        { label: tShell("crumb.configure") },
+        { label: tShell("crumb.sources"), to: "/sources" },
+        { label: t("connectPage.crumbNew") },
       ]}
-      summary="A connection belongs to one project and carries one credential. It arrives with its watch off — admitting tickets is a separate decision, taken on the source's own page."
+      summary={t("connectPage.summary")}
     >
       {connect.error ? (
         <Notice tone="bad" data-test="connect-failure">
-          {requestFailureMessage(connect.error, "The connection was refused.")}{" "}
-          Nothing was saved — the details below are still exactly as you typed
-          them.
+          {requestFailureMessage(connect.error, t("connectPage.refused"))}{" "}
+          {t("connectPage.tail")}
         </Notice>
       ) : null}
 
@@ -126,10 +128,10 @@ export function ConnectSourcePage() {
           named because it is the field nobody can retype from memory. */}
       <ConfirmDialog
         open={guard.asking}
-        title="Leave without connecting the source?"
-        body="Nothing here is saved yet, and the credential you typed is not held anywhere — leaving this page drops it, and connecting later means fetching it again."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
+        title={t("connectPage.leaveTitle")}
+        body={t("connectPage.leaveBody")}
+        confirmLabel={t("connectPage.discard")}
+        cancelLabel={t("connectPage.keep")}
         onConfirm={guard.discard}
         onCancel={guard.keep}
       />

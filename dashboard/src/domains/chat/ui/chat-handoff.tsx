@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { Link } from "@tanstack/react-router"
 import { ArrowUpRight } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { useSearchCatalogue } from "@/app/search"
 import { chatHandoffs } from "@/domains/chat/model/references"
@@ -29,6 +30,7 @@ export interface ChatHandoffsProps {
 export function ChatHandoffs({ query }: ChatHandoffsProps) {
   const session = useSession()
   const catalogue = useSearchCatalogue()
+  const { t } = useTranslation("chat")
 
   const handoffs = useMemo(
     () => chatHandoffs(query, session, catalogue),
@@ -52,7 +54,7 @@ export function ChatHandoffs({ query }: ChatHandoffsProps) {
             {/* Two voices in one line, doing the work they are for: the
                 sentence is meaning and the query is a value. */}
             <span className={styles.handoffWords}>
-              search {handoff.where} for
+              {t("handoff.searchFor", { where: handoff.where })}
             </span>
             <span className={styles.handoffQuery}>«{handoff.query}»</span>
           </Link>

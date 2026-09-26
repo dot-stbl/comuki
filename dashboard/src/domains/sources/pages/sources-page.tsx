@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { Plug, RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { AppShell } from "@/app/layout/app-shell"
@@ -80,6 +81,8 @@ export interface SourcesPageProps {
  * for the same rows to disagree. What moves here is the native row's own count.
  */
 export function SourcesPage({ focus }: SourcesPageProps) {
+  const { t } = useTranslation("sources")
+  const { t: tShell } = useTranslation("shell")
   const { data, isLoading, isError, error, refetch } = useSourcesQuery()
   const session = useSession()
   const navigate = useNavigate()
@@ -180,6 +183,7 @@ export function SourcesPage({ focus }: SourcesPageProps) {
         onDisconnect,
         onNewTicket,
         session,
+        t,
       }),
     [
       session,
@@ -189,6 +193,7 @@ export function SourcesPage({ focus }: SourcesPageProps) {
       onTest,
       onDisconnect,
       onNewTicket,
+      t,
     ]
   )
 
@@ -212,8 +217,11 @@ export function SourcesPage({ focus }: SourcesPageProps) {
     <AppShell
       header={
         <PageHeader
-          breadcrumbs={[{ label: "configure" }, { label: "sources" }]}
-          title="Sources"
+          breadcrumbs={[
+            { label: tShell("crumb.configure") },
+            { label: tShell("crumb.sources") },
+          ]}
+          title={t("registry.title")}
           summary={
             ready ? (
               /* Three counts told apart by spacing rather than by a separator
@@ -221,16 +229,19 @@ export function SourcesPage({ focus }: SourcesPageProps) {
                  than punctuation. */
               <span className={styles.stats}>
                 <span className={styles.stat}>
-                  <span className={styles.strong}>{connections.length}</span>{" "}
-                  connections
+                  <span className={styles.strong}>
+                    {String(connections.length)}
+                  </span>{" "}
+                  {t("registry.connectionsWord")}
                 </span>
                 <span className={styles.stat}>
-                  <span className={styles.strong}>{admitting}</span> admitting
-                  work
+                  <span className={styles.strong}>{String(admitting)}</span>{" "}
+                  {t("registry.admittingWord")}
                 </span>
                 {broken > 0 ? (
                   <span className={styles.stat}>
-                    <span className={styles.warn}>{broken}</span> in error
+                    <span className={styles.warn}>{String(broken)}</span>{" "}
+                    {t("registry.errorWord")}
                   </span>
                 ) : null}
               </span>
@@ -251,11 +262,11 @@ export function SourcesPage({ focus }: SourcesPageProps) {
               // one family, three distinct shapes, no two acts in this section
               // wearing the same mark.
               connectDenial === null ? (
-                <Tooltip content="Connect a source">
+                <Tooltip content={t("registry.connect")}>
                   <Link
                     to="/sources/new"
                     data-test="connect-source"
-                    aria-label="Connect a source"
+                    aria-label={t("registry.connect")}
                     className={buttonClass({ size: "icon" })}
                   >
                     <Plug aria-hidden="true" />
@@ -267,7 +278,7 @@ export function SourcesPage({ focus }: SourcesPageProps) {
                     size="icon"
                     data-test="connect-source"
                     denied={connectDenial}
-                    aria-label="Connect a source"
+                    aria-label={t("registry.connect")}
                   >
                     <Plug aria-hidden="true" />
                   </Button>
@@ -286,14 +297,14 @@ export function SourcesPage({ focus }: SourcesPageProps) {
         {isError ? (
           <ScreenState
             kind="error"
-            title="Couldn't load sources"
-            description={requestFailureMessage(error, "Unknown error")}
+            title={t("registry.errorTitle")}
+            description={requestFailureMessage(error, t("errors.unknown"))}
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="sources-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -311,8 +322,8 @@ export function SourcesPage({ focus }: SourcesPageProps) {
             role="alert"
             data-test="sources-failure"
           >
-            {requestFailureMessage(failure, "The change failed.")} Nothing moved
-            — the list is back as it was.
+            {requestFailureMessage(failure, t("errors.changeFailed"))}{" "}
+            {t("registry.failureTail")}
           </p>
         ) : null}
 
@@ -330,18 +341,16 @@ export function SourcesPage({ focus }: SourcesPageProps) {
           <Section
             variant="screen"
             data-test="sources-connections"
-            title="Connections"
+            title={t("registry.sectionTitle")}
             note={
-              <>
-                Every source on the platform, whichever project it feeds. A
-                connection carries the credential; its <em>watch</em> carries
-                what that credential is allowed to admit — they break
-                separately, so they read separately. Editing one is granted per
-                project, so a row you administer sits above a row you only watch
-                and each says which it is.{" "}
-                <span className={styles.code}>native</span> is on every project
-                and cannot be disconnected.
-              </>
+              <Trans
+                ns="sources"
+                i18nKey="registry.sectionNote"
+                components={{
+                  em: <em />,
+                  code: <span className={styles.code} />,
+                }}
+              />
             }
           >
             <ConnectionsPanel
@@ -356,17 +365,22 @@ export function SourcesPage({ focus }: SourcesPageProps) {
       <ConfirmDialog
         open={disconnecting !== null}
         danger
-        title="Disconnect this source?"
+        title={t("disconnect.title")}
         body={
           disconnecting
             ? // The project is named for the same reason the row names it: this
               // list mixes them, and cutting a credential is the last moment to
               // notice it is the wrong project's.
-              `${disconnecting.name} · ${projectOf(session, disconnecting.projectId)?.key ?? disconnecting.projectId} — the credential is dropped and nothing more is admitted from here. Tickets already taken keep their runs; reconnecting means a new secret.`
+              t("disconnect.body", {
+                name: disconnecting.name,
+                project:
+                  projectOf(session, disconnecting.projectId)?.key ??
+                  disconnecting.projectId,
+              })
             : ""
         }
-        confirmLabel="Disconnect"
-        cancelLabel="Keep it"
+        confirmLabel={t("disconnect.confirm")}
+        cancelLabel={t("disconnect.keep")}
         onConfirm={() => {
           if (
             disconnecting &&
@@ -380,7 +394,7 @@ export function SourcesPage({ focus }: SourcesPageProps) {
             // filter change looks like.
             disconnect.mutate(cut.id, {
               onSuccess: () => {
-                toast.success("Source disconnected", { description: cut.name })
+                toast.success(t("disconnect.toast"), { description: cut.name })
               },
             })
           }

@@ -1,0 +1,171 @@
+{
+  "actions": {
+    "cancel": "取消",
+    "retry": "重试"
+  },
+  "errors": {
+    "unknown": "未知错误"
+  },
+  "registry": {
+    "title": "项目",
+    "summary": "<count/> 个项目 · <runs/> 个运行中 · 今日 <spend/>",
+    "errorTitle": "注册表未加载",
+    "newProject": "新建项目",
+    "filterByTag": "按标签筛选",
+    "count": {
+      "other": "已显示 {{count}} 条"
+    },
+    "empty": {
+      "filtered": "没有项目匹配当前筛选条件",
+      "none": "还没有项目"
+    }
+  },
+  "column": {
+    "slug": "slug",
+    "name": "名称",
+    "tags": "标签",
+    "inFlight": "进行中",
+    "runs": "运行",
+    "costToday": "今日开销",
+    "profiles": "配置文件",
+    "created": "创建于",
+    "slugFilterPlaceholder": "筛选 slug、名称、仓库…"
+  },
+  "identity": {
+    "icon": "图标",
+    "accentColour": "强调色",
+    "tags": "标签",
+    "repo": "git 配置仓库",
+    "iconPlaceholder": "🛰️ 或 https://example.com/mark.png",
+    "platformDefaults": "平台默认配置"
+  },
+  "mark": {
+    "stored": "已存图标",
+    "neutral": "项目标识",
+    "brand": "{{brand}} 标识"
+  },
+  "slug": {
+    "error": {
+      "required": "必须填写 slug",
+      "spaces": "不能有空格 — 请用连字符",
+      "lowercase": "slug 使用小写",
+      "min": "至少 {{min}} 个字符",
+      "max": "至多 {{max}} 个字符",
+      "edges": "必须以字母或数字开头和结尾",
+      "pattern": "仅限字母、数字和单个连字符",
+      "taken": "该 slug 已被占用"
+    }
+  },
+  "form": {
+    "nameLabel": "名称",
+    "slugLabel": "slug",
+    "namePlaceholder": "用几句话说明这个项目是什么",
+    "slugPlaceholder": "小写、连字符、无空格",
+    "slugHint": "在产品的每个列表中都作为一列显示。小写字母、数字和连字符。",
+    "repoPlaceholder": "git@github.com:org/worker-profiles.git",
+    "repoHint": "可选。该项目的 worker 配置文件在哪里编写 — 留空则使用平台默认配置。",
+    "iconHint": "可选。一个 emoji 或图片 URL，显示在 slug 旁。没有时，标识取自仓库所在主机。",
+    "colorClear": "无颜色",
+    "colorHint": "可选。为标识旁的圆点上色并渲染标签色调 — 不影响界面本身。",
+    "tagsHint": "可选。这个项目是什么 — 按 Enter 或逗号添加，Backspace 删除最后一个。",
+    "submit": "创建项目"
+  },
+  "tagEntry": {
+    "placeholder": "web、billing…",
+    "remove": "移除标签 {{tag}}"
+  },
+  "create": {
+    "title": "新建项目",
+    "crumb": "新建",
+    "summary": "项目拥有它的应用、运行和预算。slug 是它在其他所有地方被称呼的名字。",
+    "toastCreated": "项目已创建",
+    "failureFallback": "项目未被创建。",
+    "failureTail": "没有创建任何内容 — 你输入的内容原样保留。",
+    "guardTitle": "不创建项目就离开？",
+    "guardBody": "你输入的名称、slug 和仓库尚未保存到任何地方。离开此页面将丢弃它们。",
+    "guardConfirm": "丢弃",
+    "guardCancel": "继续编辑"
+  },
+  "detail": {
+    "fallbackTitle": "项目",
+    "crumbFallback": "项目",
+    "summary": "<slug/> · 创建于 <created/>",
+    "notFoundTitle": "没有该 id 的项目",
+    "notFoundDescription": "注册表中没有 <id/> 的任何内容。来自旧链接的项目 id 是到达此处的常见方式 — 地址比它命名的项目活得更久，而注册表是现存项目的居所。",
+    "notFoundBack": "返回项目列表",
+    "factsSection": "项目本身",
+    "editIdentity": "编辑标识",
+    "editIdentityFailure": "标识未保存。",
+    "rolesSection": "此项目上的角色",
+    "rolesForbiddenSubject": "此项目上的角色",
+    "rolesHeld": {
+      "other": "已授予 {{count}} 个"
+    },
+    "fact": {
+      "slug": "slug",
+      "name": "名称",
+      "mark": "标识",
+      "created": "创建于",
+      "iconAbsent": "未存储",
+      "colourAbsent": "未设置",
+      "tagsAbsent": "暂无"
+    },
+    "rolesEmpty": "没有人在此项目上持有角色。任何能访问它的人都通过平台授权访问 — 平台授权全局生效，不在此列出。",
+    "rolesAll": "此项目上的所有分配",
+    "rolesGrant": "授予角色"
+  },
+  "editor": {
+    "iconHint": "一个 emoji 或图片 URL。留空保持当前标识。",
+    "colorClear": "保留已存颜色",
+    "colorHint": "为标识旁的圆点上色并渲染标签色调 — 不影响界面本身。",
+    "tagsHint": "这个项目是什么。保存空列表将清空标签。",
+    "save": "保存标识"
+  },
+  "handoff": {
+    "section": "此项目的工作在哪里",
+    "counting": "统计中",
+    "runsWhat": "活跃运行",
+    "runsCount": "<count/> 个进行中，共见 <total/> 个",
+    "runsNote": "打开收窄到此项目的值班列表",
+    "queueWhat": "队列与 worker",
+    "queueCount": "<items/> 个工作项 · <workers/> 个 worker 在线",
+    "queueNote": "打开收窄到此项目的认领队列",
+    "sourcesWhat": "来源",
+    "sourcesCount": "<count/> 个连接",
+    "sourcesNote": "打开收窄到此项目的接入",
+    "costWhat": "开销与失败",
+    "costToday": "今日 <spend/>",
+    "costNothing": "<dash/> 尚无归集",
+    "costNote": "数字属于此项目 — 其背后的报告属于平台"
+  },
+  "jobs": {
+    "section": "定时作业",
+    "unknown": "未知",
+    "counting": "统计中",
+    "loading": "正在加载定时作业",
+    "errorTitle": "定时任务未加载",
+    "statusEnabled": "已启用",
+    "statusPaused": "已暂停",
+    "pause": "暂停定时任务",
+    "resume": "恢复定时任务",
+    "delete": "删除定时任务",
+    "emptyTitle": "这里没有按时钟运行的东西",
+    "emptyDescription": "没有定时任务会在此项目中自行启动工作。这里运行的一切都由人提交或派发。",
+    "create": "安排一个作业",
+    "dialogDescription": "平台自行在此项目中提交的一条 cron 条目 — 简报成为工单，配置文件成为第一步。",
+    "dialogSubmit": "安排",
+    "cronLabel": "cron",
+    "cronHint": "五字段 cron，按项目自身的时区策略。选择预设或直接编写表达式。",
+    "profileLabel": "配置键",
+    "profilePlaceholder": "implementer",
+    "profileHint": "运行起始的工作项配置 — 目录在客户的 git 中。",
+    "briefLabel": "简报 json",
+    "briefHint": "原样存储。此输入框与主机之间没有任何东西会改动它。",
+    "deleteTitle": "删除此定时任务？",
+    "deleteBody": "<cron/>（<profile/>）将停止触发并被移除。因它而已在运行的工作不受影响。",
+    "deleteCancel": "保留",
+    "configured": {
+      "other": "已配置 {{count}} 个"
+    }
+  }
+}

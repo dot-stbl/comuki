@@ -1,6 +1,7 @@
 import { useEffect, useState, type MouseEvent } from "react"
 import { Link, useLocation } from "@tanstack/react-router"
 import { MessageSquare, Wand2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { useSearchCatalogue } from "@/app/search"
 import { referenceFromLocation } from "@/domains/chat/model/references"
@@ -74,6 +75,7 @@ export function ChatDock() {
   const session = useSession()
   const location = useLocation()
   const catalogue = useSearchCatalogue()
+  const { t } = useTranslation("chat")
 
   const [open, setOpen] = useState(chatDockMemory.open)
   const [expanded, setExpanded] = useState(readExpanded)
@@ -179,12 +181,12 @@ export function ChatDock() {
 
   return (
     <>
-      <Tooltip content={`Console — ${CHORD}`}>
+      <Tooltip content={t("dock.tooltip", { chord: CHORD })}>
         <button
           type="button"
           className={styles.trigger}
           data-test="chat-dock-trigger"
-          aria-label={`Open the console — ${CHORD}`}
+          aria-label={t("dock.openAria", { chord: CHORD })}
           aria-expanded={open}
           onClick={openSheet}
         >
@@ -195,7 +197,7 @@ export function ChatDock() {
       <BottomSheet
         open={open}
         onOpenChange={setOpen}
-        title="Console"
+        title={t("dock.title")}
         /* The dark is a way out *here*, and only here: the conversation, the
            draft and the depth all live outside the sheet's tree, so leaving
            by a stray click costs nothing. A form half-filled would not say
@@ -212,7 +214,7 @@ export function ChatDock() {
               onClick={() => setOpen(false)}
             >
               <Wand2 aria-hidden="true" />
-              Onboard a repo
+              {t("page.onboard")}
             </Link>
           ) : null
         }

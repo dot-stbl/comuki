@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { useSession, type ProjectRef } from "@/shared/session"
 import {
@@ -65,6 +66,7 @@ export function WorkersPanel({
   search,
   onSearchChange,
 }: WorkersPanelProps) {
+  const { t } = useTranslation("queue")
   const session = useSession()
 
   // Every filter except the promoted search, which lives in the URL when the
@@ -113,6 +115,7 @@ export function WorkersPanel({
         stoppingId: forceStop.isPending ? (forceStop.variables ?? null) : null,
         onDrain,
         onForceStop,
+        t,
       }),
     [
       projects,
@@ -124,6 +127,7 @@ export function WorkersPanel({
       forceStop.variables,
       onDrain,
       onForceStop,
+      t,
     ]
   )
 
@@ -214,7 +218,10 @@ export function WorkersPanel({
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="worker-count">
-              {rows.length} of {workers.length} workers
+              {t("workersPanel.count", {
+                shown: rows.length,
+                total: workers.length,
+              })}
             </span>
           }
         />
@@ -224,8 +231,8 @@ export function WorkersPanel({
         <p className={styles.failure} role="alert">
           {failure instanceof Error
             ? failure.message
-            : "The pool did not take that."}{" "}
-          Nothing changed — the worker is as it was.
+            : t("workersPanel.fallback")}{" "}
+          {t("workersPanel.tail")}
         </p>
       ) : null}
 
@@ -260,10 +267,10 @@ export function WorkersPanel({
       <ConfirmDialog
         open={stopping !== null}
         danger
-        title="Force stop this worker?"
-        body={stopBody(stopping, itemsById)}
-        confirmLabel="Force stop"
-        cancelLabel="Leave it running"
+        title={t("workersPanel.stopTitle")}
+        body={stopBody(stopping, itemsById, t)}
+        confirmLabel={t("workersPanel.stopConfirm")}
+        cancelLabel={t("workersPanel.stopCancel")}
         onConfirm={() => {
           if (stopping) {
             forceStop.mutate(stopping.id)
@@ -283,14 +290,19 @@ export function WorkersPanel({
  */
 function stopBody(
   worker: Worker | null,
-  itemsById: Map<string, QueueItem>
+  itemsById: Map<string, QueueItem>,
+  t: ReturnType<typeof useTranslation>["t"]
 ): string {
   if (!worker) {
     return ""
   }
   const item = worker.itemId ? itemsById.get(worker.itemId) : undefined
   if (!item) {
-    return `${worker.id} is idle. The container is torn down now, and scale raises another when there is work for it.`
+    return t("workersPanel.stopIdle", { id: worker.id })
   }
-  return `${worker.id} is holding "${item.label}" on run ${item.runId}. The container is torn down now, the lease is released, and the item goes back to the queue for another worker to claim.`
+  return t("workersPanel.stopBusy", {
+    id: worker.id,
+    label: item.label,
+    runId: item.runId,
+  })
 }

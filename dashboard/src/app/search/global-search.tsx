@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Search } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { useSession } from "@/shared/session"
 import { Button, Tooltip } from "@/shared/ui"
@@ -22,6 +23,7 @@ import { isApple } from "@/shared/lib/is-apple"
  * reopening is always a fresh question rather than the last one half-answered.
  */
 export function GlobalSearch() {
+  const { t } = useTranslation("shell")
   const session = useSession()
   const catalogue = useSearchCatalogue()
   const navigate = useNavigate()
@@ -62,10 +64,11 @@ export function GlobalSearch() {
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  const items = useMemo(
-    () => resolveQuery(query, { session, catalogue }),
-    [query, session, catalogue]
-  )
+  /* Unmemoised on purpose: the resolver is constant-time against a closed
+     catalogue (its own design note), and resolving in render — rather than
+     in a memo keyed on the inputs — is what keeps the rows following the
+     active language through the shared instance. */
+  const items = resolveQuery(query, { session, catalogue })
 
   const onSelect = useCallback(
     (item: SearchItem) => {
@@ -85,12 +88,12 @@ export function GlobalSearch() {
 
   return (
     <>
-      <Tooltip content={`Search — ${chord}`}>
+      <Tooltip content={t("search.open", { chord })}>
         <Button
           variant="ghost"
           size="icon"
           data-test="global-search"
-          aria-label={`Search — ${chord}`}
+          aria-label={t("search.open", { chord })}
           onClick={() => {
             changeOpen(true)
           }}

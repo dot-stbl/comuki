@@ -1,0 +1,53 @@
+{
+  "actions": {
+    "retry": "Wiederholen"
+  },
+  "registry": {
+    "title": "Genehmigungen",
+    "summary": {
+      "one": "<count/> wartet auf eine Entscheidung",
+      "other": "<count/> warten auf eine Entscheidung"
+    },
+    "errorTitle": "Genehmigungen konnten nicht geladen werden"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler"
+  },
+  "decide": {
+    "approvedToast": "Genehmigt",
+    "rejectedToast": "Abgelehnt",
+    "openedToast": "Review geöffnet",
+    "refused": "Die Entscheidung ist nicht angekommen.",
+    "tail": "Die Warteschlange ist wie zuvor — der Run wartet noch."
+  },
+  "empty": {
+    "title": "Warteschlange leer",
+    "description": "Nichts wartet auf einen Menschen."
+  },
+  "card": {
+    "details": "Details",
+    "hide": "Ausblenden",
+    "review": "Review",
+    "reject": "Ablehnen",
+    "approve": "Genehmigen",
+    "reviewAria": "Review des {{noun}} für {{app}}",
+    "rejectAria": "{{noun}} für {{app}} ablehnen",
+    "approveAria": "{{noun}} für {{app}} genehmigen",
+    "planHead": "Plan — Arbeitsgraph",
+    "assumptionsFallback": "Annahmen des Planers",
+    "paneBaseline": "Baseline",
+    "paneNew": "neu"
+  },
+  "type": {
+    "plan": "Plan",
+    "deploy": "Deployment",
+    "baseline": "Baseline",
+    "gate": "Gate",
+    "learning": "Regel"
+  },
+  "risk": {
+    "high": "hoch",
+    "medium": "mittel",
+    "low": "niedrig"
+  }
+}

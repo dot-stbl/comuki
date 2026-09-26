@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import {
   EvidenceViewer,
   evidenceForRun,
@@ -39,6 +41,7 @@ export function RunEvidenceStrip({
   runId,
   items,
 }: RunEvidenceStripProps) {
+  const { t } = useTranslation("runs")
   const query = useVisualArtifactsQuery(projectId, { runId })
   const effective = items ?? query.data?.items ?? []
   // Defence-in-depth: when items come from a server that hasn't yet
@@ -57,13 +60,13 @@ export function RunEvidenceStrip({
       data-test="run-evidence-strip"
     >
       <h3 id={`run-${runId}-evidence`} className={styles.title}>
-        evidence
+        {t("evidence.title")}
       </h3>
       <EvidenceViewer
         projectId={projectId}
         baseUrl={env.apiBaseUrl}
         items={filtered}
-        emptyLabel="no screenshots published yet"
+        emptyLabel={t("evidence.empty")}
         size="md"
         variant="strip"
       />

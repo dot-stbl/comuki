@@ -1,0 +1,129 @@
+{
+  "actions": {
+    "retry": "Erneut versuchen"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler",
+    "changeFailed": "Die Änderung ist fehlgeschlagen."
+  },
+  "page": {
+    "title": "Compute",
+    "summary": "<providers/> Anbieter · <workers/> Worker oben · <takes/>",
+    "summaryTakes": "<kind/> nimmt neue Starts",
+    "summaryNothing": "nichts nimmt neue Starts",
+    "summaryStranded": "<count/> untätig auf einem Label, das nichts matcht",
+    "loading": "Registrierung wird geladen",
+    "errorTitle": "Compute wurde nicht geladen",
+    "failureTail": "Nichts hat sich bewegt — die Registrierung ist wie zuvor."
+  },
+  "providers": {
+    "section": "Anbieter",
+    "note": "Docker für Dev und Compose, Kubernetes für Prod — die beiden <code>IComputeProvider</code>-Implementierungen, die v1 hat. Einer nimmt neue Starts; die übrigen halten die Leasen, die sie schon vergeben haben.",
+    "emptyFiltered": "keine Anbieter passen zu den aktuellen Filtern",
+    "empty": "kein Compute-Anbieter ist registriert",
+    "count": "{{count}} angezeigt",
+    "column": {
+      "kind": "Art",
+      "endpoint": "Endpunkt",
+      "state": "Zustand",
+      "newStarts": "neue Starts",
+      "pools": "Pools",
+      "workers": "Worker",
+      "allocatable": "allozierbar",
+      "note": "Notiz",
+      "actions": "Aktionen"
+    },
+    "allKinds": "alle Arten",
+    "allStates": "alle Zustände",
+    "filterPlaceholder": "Endpunkt, Notiz filtern…",
+    "takingWork": "nimmt Arbeit",
+    "noAnswer": "keine Antwort",
+    "handWork": "Neue Starts an diesen Anbieter übergeben",
+    "handWorkAria": "Neue Starts an {{endpoint}} übergeben"
+  },
+  "pools": {
+    "section": "Pools",
+    "note": "Skalierung ist quota-bewusst plus die Capacity-API des Anbieters, also hat jeder Pool zwei Obergrenzen mit zwei verschiedenen Eigentümern. Die als <tag>bindend</tag> markierte verweigert den nächsten Container — die andere ist, was er übrig hatte.",
+    "empty": "kein Pool ist konfiguriert"
+  },
+  "card": {
+    "on": "auf",
+    "unknown": "unbekannt",
+    "noReading": "keine Messung",
+    "slotFree": "Slot frei",
+    "slotsFree": "Slots frei",
+    "trackQuota": "Quota",
+    "trackAllocatable": "allozierbar",
+    "binding": "bindend",
+    "noAnswer": "keine Antwort",
+    "full": "voll",
+    "free": "{{room}} frei",
+    "up": "oben",
+    "idle": "untätig",
+    "sentences": {
+      "noAnswer": "Capacity-API hat nicht geantwortet — für diesen Pool ist keine Obergrenze lesbar",
+      "bothFull": "Quota und Cluster sind beide voll — hier kann nichts starten",
+
+      "both": "Quota und Cluster stimmen überein — Platz für {{slots}}",
+      "quotaFull": "die Quota ist die Obergrenze — nichts kann starten, und dem Cluster bleiben {{slots}} frei",
+      "quota": "die Quota ist die Obergrenze — Platz für {{slots}}, mit {{spare}} frei auf dem Cluster",
+      "clusterFull": "der Cluster ist die Obergrenze — nichts kann starten, und die Quota erlaubt noch {{slots}}",
+      "cluster": "der Cluster ist die Obergrenze — Platz für {{slots}}, mit {{spare}} übrig unter der Quota"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — pro Aufgabe erstellt",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "one": "{{count}} Slot",
+      "other": "{{count}} Slots"
+    }
+  },
+  "versions": {
+    "section": "Worker-Versionen",
+    "note": "Ein Worker wird per Image-Digest <em>und</em> Profiles-Git-Ref gelabelt. Eine Änderung an beidem wirkt nur auf einen neuen Start — ein untätiger Worker auf einem anderen Label wird nie auf ein Element gematcht, und so sitzt ein voller Pool neben einer wachsenden Warteschlange.",
+    "emptyFiltered": "keine Labels passen zu den aktuellen Filtern",
+    "empty": "keine Worker sind oben",
+    "count": "{{count}} angezeigt",
+    "countStranded": "{{count}} untätig, nie gematcht · ",
+    "column": {
+      "label": "Worker-Label",
+      "matching": "matcht",
+      "workers": "Worker",
+      "idle": "untätig",
+      "oldestUp": "ältester oben",
+      "why": "warum",
+      "actions": "Aktionen"
+    },
+    "filterPlaceholder": "Digest, Profiles-Ref filtern…",
+    "allLabels": "alle Labels",
+    "newStarts": "neue Starts",
+    "neverMatched": "wird nie gematcht",
+    "strandedTitle": "{{count}} untätig auf einem Label, das nichts matcht — sie werden kein Element übernehmen",
+    "retireTooltip": "Die untätigen Worker auf diesem Label abbauen",
+    "retireAria": "{{count}} untätige Worker auf {{label}} abbauen",
+    "retireTitle": "Die untätigen Worker auf diesem Label abbauen?",
+    "retireBody": "{{label}} — {{idle}} untätige Container werden abgebaut. Die {{rest}}, die noch eine Lease halten, laufen weiter, bis ihr Element landet.",
+    "retireConfirm": "Untätige abbaauen",
+    "retireCancel": "Oben lassen",
+    "reason": {
+
+      "both": "Image und Profiles-Ref haben sich beide bewegt",
+      "image": "ein Release hinter dem Image",
+      "profiles": "gleiches Image, der Profiles-Ref hat sich bewegt"
+    }
+  },
+  "boards": {
+    "section": "Boards",
+    "note": "Die Grafana-Boards, hierher gefaltet vom Bildschirm, dem sie früher gehörten. Sie öffnen sich in einem neuen Tab und werden absichtlich nicht eingebettet: Infra-Metriken und die eigene Timeline eines Runs werden auf verschiedenen Uhren von Leuten mit verschiedenen Fragen gelesen, und eine Fläche, die beides zeigte, würde lehren, die Geschichte eines Runs in einem Metrik-Board zu suchen, wo nur die Hälfte von ihr ist. Die Geschichte eines Runs ist auf <code>/runs</code>. Ein Board deckt alle Projekte auf einmal ab, und die Definitionen werden mit der Plattform versioniert — die Anleitung unter der Liste sagt, wie man eine Installation anbindet, in der noch nichts drin ist.",
+    "loading": "Boards werden geladen",
+    "errorTitle": "Die Boards wurden nicht geladen"
+  },
+  "state": {
+    "active": "aktiv",
+    "draining": "entleerend",
+    "standby": "bereitschaft",
+    "unreachable": "unerreichbar"
+  }
+}

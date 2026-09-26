@@ -1,4 +1,6 @@
-import { PROPOSAL_WORDS, proposalCheck } from "@/domains/chat/model/proposals"
+import { useTranslation } from "react-i18next"
+
+import { proposalCheck, proposalWords } from "@/domains/chat/model/proposals"
 import type { Proposal, ProposalDecision } from "@/domains/chat/model/types"
 import { projectOf, useSession } from "@/shared/session"
 import { Button } from "@/shared/ui"
@@ -60,8 +62,9 @@ export function ProposalCard({
   busy = false,
 }: ProposalCardProps) {
   const session = useSession()
-  const check = proposalCheck(session, proposal)
-  const words = PROPOSAL_WORDS[proposal.act]
+  const { t } = useTranslation("chat")
+  const check = proposalCheck(session, proposal, t)
+  const words = proposalWords(proposal.act, t)
   const project = projectOf(session, proposal.projectId)
   const decided = proposal.decision !== undefined
 
@@ -74,9 +77,15 @@ export function ProposalCard({
       data-decision={proposal.decision}
     >
       <header className={styles.proposalHead}>
-        <span className={styles.proposalAct}>{ACT_LABEL[proposal.act]}</span>
+        <span className={styles.proposalAct}>
+          {t(`proposal.act.${proposal.act}`, {
+            defaultValue: ACT_LABEL[proposal.act],
+          })}
+        </span>
         <span className={styles.proposalScope} data-test="chat-proposal-scope">
-          in {project ? project.key : "no project"}
+          {project
+            ? t("proposal.inProject", { project: project.key })
+            : t("proposal.inProject", { project: t("panel.noProject") })}
         </span>
         {proposal.subject ? (
           <span className={styles.proposalSubject}>{proposal.subject}</span>
@@ -99,8 +108,8 @@ export function ProposalCard({
       {decided ? (
         <p className={styles.decided} data-test="chat-proposal-decided">
           {proposal.decision === "confirmed"
-            ? "confirmed by a human, and recorded where every other decision is"
-            : "declined by a human, and recorded where every other decision is"}
+            ? t("proposal.decidedConfirmed")
+            : t("proposal.decidedRejected")}
         </p>
       ) : (
         <div className={styles.proposalActions}>

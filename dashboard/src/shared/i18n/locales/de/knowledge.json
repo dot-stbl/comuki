@@ -1,0 +1,96 @@
+{
+  "actions": {
+    "retry": "Erneut versuchen",
+    "close": "Schließen"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler"
+  },
+  "page": {
+    "title": "Wissen",
+    "summary": "Regelsatz, Revisionen, Eval-Harness",
+    "tabsLabel": "Wissensabschnitte"
+  },
+  "tab": {
+    "library": "Bibliothek",
+    "gate": "Gate"
+  },
+  "load": {
+    "errorTitle": "Wissen wurde nicht geladen"
+  },
+  "search": {
+    "label": "Regeln, Docs und Skills filtern",
+    "placeholder": "Regeln, Docs, Skills suchen…",
+    "errorTitle": "Die Suche hat nicht geantwortet",
+    "searching": "Suche läuft",
+    "emptyTitle": "Keine Treffer",
+    "emptySemantic": "Nichts in der Bibliothek ist dem Query nah genug.",
+    "emptyPlain": "Versuchen Sie ein anderes Query über gepinnte Regeln und Docs.",
+    "sectionTitle": "semantische Treffer",
+    "sectionNote": "top {{count}} nach Kosinusähnlichkeit",
+    "count": "{{shown}} von {{total}}"
+  },
+  "revision": {
+    "section": "gültige Revision",
+    "current": "aktuelle Revision",
+    "sub": "{{sdk}} · aktualisiert {{updated}}",
+    "rules": "aktive Regeln",
+    "rulesSub": "{{hard}} hart · {{soft}} weich",
+    "reproducibility": "Reproduzierbarkeit",
+    "reproducibilitySub": "jeder Run pinnt Regelsatz + SDK"
+  },
+  "entries": {
+    "section": "Regeln, Docs und Skills",
+    "updated": "aktualisiert {{updated}}"
+  },
+  "sheet": {
+    "close": "Den Eintrag schließen",
+    "revisionAt": "Revision @{{revision}}",
+    "scope": "Geltungsbereich",
+    "updated": "aktualisiert"
+  },
+  "badge": {
+    "kind": {
+      "rule": "Regel",
+      "doc": "Doc",
+      "skill": "Skill"
+    },
+    "ruleKind": {
+      "hard": "hart",
+      "soft": "weich"
+    },
+    "pinned": "gepinnt",
+    "pinnedAt": "gepinnt @ {{revision}}",
+    "delta": {
+      "improved": "verbessert",
+      "regressed": "verschlechtert",
+      "noChange": "unverändert"
+    }
+  },
+  "eval": {
+    "section": "Goldene Aufgaben",
+    "note": "vorher → nachher bei Regel-Edits",
+    "empty": "gegen diese Revision wurde keine goldene Aufgabe gefahren",
+    "column": {
+      "task": "Aufgabe",
+      "before": "vorher",
+      "after": "nachher",
+      "delta": "Delta"
+    }
+  },
+  "gate": {
+    "errorTitle": "Das Gate wurde nicht geladen",
+    "changeFailed": "Die Änderung ist fehlgeschlagen.",
+    "nothingMoved": "Nichts hat sich bewegt — das Gate ist wieder wie zuvor.",
+    "intro": "Ein Run muss die eigenen Checks des Clients bestehen, bevor er landen darf. Die Checks leben in deren Repository — eine Datei, committet wie alles andere —, daher schaltet dieser Abschnitt das Gate ein und aus und zeigt, was jeder Check zuletzt sagte. Einen Befehl zu ändern heißt, die Datei zu ändern; jeder Abschnitt unten sagt genau, wo seine Datei liegt.",
+    "emptyTitle": "Kein Projekt hat hier ein Gate",
+    "emptyDescription": "Nichts in den Projekten dieser Session erklärt die eigenen Checks des Clients. Ein Gate erscheint, sobald eines von ihnen die Datei committet, die sie hält.",
+    "onToast": "Gate an",
+    "onToastDescription": "{{name}} — Runs müssen die Checks des Clients bestehen",
+    "offToast": "Gate aus",
+    "offToastDescription": "{{name}} — Runs landen ohne die Checks des Clients",
+    "summary": "<on/> von <total/> Gates an · <checks/> Checks erklärt",
+    "summaryFailing": "<failing/> fällt",
+    "summaryNeverRan": "<never/> lief nie"
+  }
+}

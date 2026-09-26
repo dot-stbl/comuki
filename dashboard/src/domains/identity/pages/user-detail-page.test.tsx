@@ -7,7 +7,16 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { IdentityPage } from "@/domains/identity/pages/identity-page"
@@ -564,5 +573,31 @@ describe("the crumbs and the return path agree with the parent", () => {
     await screen.findByText(/already linked to/)
     const back = screen.getByRole("link", { name: "Back to rhea@comuki.local" })
     expect(back.getAttribute("href")).toBe("/identity/users/u_rhea")
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the page's own
+   words — sections, facts, acts — arrive in russian while the person's own
+   values (name, address, scopes) stay as they were. Language resets after
+   the case so the file's other readings keep their en posture. */
+describe("the person's page in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the sections and the act in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    mount(["/identity/users/u_nadia"])
+
+    expect(
+      await screen.findByRole("heading", { name: "Nadia Ferrer" })
+    ).toBeTruthy()
+    expect(await screen.findByText("роли по проектам")).toBeTruthy()
+    expect(
+      screen.getByRole("button", { name: "отключить nadia@plexor.dev" })
+    ).toBeTruthy()
   })
 })

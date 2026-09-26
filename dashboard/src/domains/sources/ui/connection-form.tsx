@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import type { FormEvent, ReactNode } from "react"
 import { PlugZap } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { FormActions, FormCard, FormLayout } from "@/app/layout/form-page"
 import { effectiveAuth, needsBaseUrl } from "@/domains/sources/model/providers"
@@ -93,6 +94,7 @@ export function ConnectionForm({
   onSave,
   onDirtyChange,
 }: ConnectionFormProps) {
+  const { t } = useTranslation("sources")
   const session = useSession()
 
   const [auth, setAuth] = useState<SourceAuth>(connection.auth)
@@ -171,7 +173,7 @@ export function ConnectionForm({
      sentence is reachable — and `loading` for the probe itself, which is what
      puts the kit's spinner where the plug was. */
   const probeControl: ReactNode = (
-    <Tooltip content={denied ?? "Test connection"}>
+    <Tooltip content={denied ?? t("connectForm.testConnection")}>
       <Button
         variant="outline"
         size="icon-sm"
@@ -179,7 +181,9 @@ export function ConnectionForm({
         denied={denied}
         loading={probing}
         disabled={busy}
-        aria-label={`Test the connection to ${connection.name}`}
+        aria-label={t("connectionForm.testConnectionAria", {
+          name: connection.name,
+        })}
         onClick={onTest}
       >
         <PlugZap aria-hidden="true" />
@@ -206,8 +210,8 @@ export function ConnectionForm({
           heading above is full width, and the form under it now spends that
           same width rather than sitting in a 44rem stack beside it. */}
       <FormCard
-        label="the way in"
-        note="where the instance is, which credential reaches it, and the env-var on the host that holds it."
+        label={t("connectionForm.cardLabel")}
+        note={t("connectionForm.cardNote")}
       >
         <ConnectionFields
           idPrefix="connection"
@@ -225,14 +229,14 @@ export function ConnectionForm({
 
         <TextField
           id="connection-secret-env"
-          label="secret env var"
+          label={t("connectionForm.secretEnvLabel")}
           required
           value={secretEnvRef}
           disabled={busy}
           placeholder="COMUKI_GITHUB_TOKEN"
           autoComplete="off"
           spellCheck={false}
-          hint="the env-var name on the host. The dashboard never sees the value; the host resolves it at probe / webhook time."
+          hint={t("connectionForm.secretEnvHint")}
           data-test="connection-secret-env"
           onValueChange={edit(setSecretEnvRef)}
         />
@@ -261,8 +265,8 @@ export function ConnectionForm({
             ) : (
               <Notice tone="warn" data-test="probe-pending">
                 {probing
-                  ? "reaching the provider…"
-                  : "test the connection before saving — changing how a source is reached is not something to do while nobody knows whether it can be."}
+                  ? t("connectionForm.probeProbing")
+                  : t("connectionForm.probePending")}
               </Notice>
             )}
           </span>
@@ -277,7 +281,7 @@ export function ConnectionForm({
           loading={busy}
           disabled={!complete || !tested}
         >
-          Save connection
+          {t("connectionForm.submit")}
         </Button>
         <Button
           variant="secondary"
@@ -290,7 +294,7 @@ export function ConnectionForm({
             setSecretEnvRef(storedSecret)
           }}
         >
-          Cancel
+          {t("actions.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

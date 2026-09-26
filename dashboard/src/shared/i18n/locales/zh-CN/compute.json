@@ -1,0 +1,128 @@
+{
+  "actions": {
+    "retry": "重试"
+  },
+  "errors": {
+    "unknown": "未知错误",
+    "changeFailed": "更改失败。"
+  },
+  "page": {
+    "title": "算力",
+    "summary": "<providers/> 个提供方 · <workers/> 个 worker 在线 · <takes/>",
+    "summaryTakes": "<kind/> 接收新启动",
+    "summaryNothing": "没有提供方接收新启动",
+    "summaryStranded": "<count/> 个闲置在无人匹配的标签上",
+    "loading": "正在加载注册表",
+    "errorTitle": "算力未加载",
+    "failureTail": "什么都没动 — 注册表保持原样。"
+  },
+  "providers": {
+    "section": "提供方",
+    "note": "Docker 用于开发和 compose，Kubernetes 用于生产 — v1 拥有的两个 <code>IComputeProvider</code> 实现。一个接收新启动；其余的持有已发放的租约。",
+    "emptyFiltered": "没有提供方匹配当前筛选",
+    "empty": "未注册任何算力提供方",
+    "count": "显示 {{count}} 个",
+    "column": {
+      "kind": "类型",
+      "endpoint": "端点",
+      "state": "状态",
+      "newStarts": "新启动",
+      "pools": "池",
+      "workers": "worker",
+      "allocatable": "可分配",
+      "note": "备注",
+      "actions": "操作"
+    },
+    "allKinds": "所有类型",
+    "allStates": "所有状态",
+    "filterPlaceholder": "筛选端点、备注…",
+    "takingWork": "接收工作",
+    "noAnswer": "无响应",
+    "handWork": "把新启动交给这个提供方",
+    "handWorkAria": "把新启动交给 {{endpoint}}"
+  },
+  "pools": {
+    "section": "池",
+    "note": "扩容既感知配额也走提供方的容量 api，因此每个池有两个属于不同所有者的上限。标记为<tag>约束中</tag>的那个就是拒绝下一个容器的那个 — 另一个是它的余量。",
+    "empty": "未配置任何池"
+  },
+  "card": {
+    "on": "于",
+    "unknown": "未知",
+    "noReading": "无读数",
+    "slotFree": "个槽位空闲",
+    "slotsFree": "个槽位空闲",
+    "trackQuota": "配额",
+    "trackAllocatable": "可分配",
+    "binding": "约束中",
+    "noAnswer": "无响应",
+    "full": "已满",
+    "free": "余 {{room}}",
+    "up": "在线",
+    "idle": "闲置",
+    "sentences": {
+      "noAnswer": "容量 api 未响应 — 无法读出该池的上限",
+      "bothFull": "配额和集群都已满 — 这里无法启动任何内容",
+
+      "both": "配额与集群一致 — 可容纳 {{slots}}",
+      "quotaFull": "配额是上限 — 无法再启动，集群还剩 {{slots}} 空闲",
+      "quota": "配额是上限 — 可容纳 {{slots}}，集群另有 {{spare}} 空闲",
+      "clusterFull": "集群是上限 — 无法再启动，配额还允许 {{slots}}",
+      "cluster": "集群是上限 — 可容纳 {{slots}}，配额下还剩 {{spare}}"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — 按任务创建",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "other": "{{count}} 个槽位"
+    }
+  },
+  "versions": {
+    "section": "Worker 版本",
+    "note": "worker 以镜像 digest <em>加</em> profiles git-ref 标记。改动任一只影响新启动 — 其他标签上的闲置 worker 永远不会被匹配到条目，这就是满池旁边还排着长队的原因。",
+    "emptyFiltered": "没有标签匹配当前筛选",
+    "empty": "没有 worker 在线",
+    "count": "显示 {{count}} 个",
+    "countStranded": "{{count}} 个闲置从未匹配 · ",
+    "column": {
+      "label": "worker 标签",
+      "matching": "匹配",
+      "workers": "worker",
+      "idle": "闲置",
+      "oldestUp": "最早已在线",
+      "why": "原因",
+      "actions": "操作"
+    },
+    "filterPlaceholder": "筛选 digest、profiles ref…",
+    "allLabels": "所有标签",
+    "newStarts": "新启动",
+    "neverMatched": "从不匹配",
+    "strandedTitle": "{{count}} 个闲置在无人匹配的标签上 — 它们不会认领条目",
+    "retireTooltip": "退役该标签上的闲置 worker",
+    "retireAria": "退役 {{label}} 上的 {{count}} 个闲置 worker",
+    "retireTitle": "退役该标签上的闲置 worker？",
+    "retireBody": "{{label}} — {{idle}} 个闲置容器将被拆除。仍持有租约的 {{rest}} 个继续运行，直到其条目落地。",
+    "retireConfirm": "退役闲置",
+    "retireCancel": "保持在线",
+    "reason": {
+
+      "both": "镜像和 profiles ref 都变了",
+      "image": "镜像落后一个 release",
+      "profiles": "镜像相同，profiles ref 变了"
+    }
+  },
+  "boards": {
+    "section": "看板",
+    "note": "grafana 看板，从曾拥有它们的屏幕折叠而来。它们在新标签页打开，故意不内嵌于此：infra 指标和运行自身的时间线由提不同问题的人在不同的节奏上阅读，同时展示两者的界面会教人去指标看板里找一次运行的故事，而那里只有一半。运行的故事在 <code>/runs</code>。一块看板同时覆盖所有项目，定义随平台一起版本化 — 列表下方的指南说明如何接入一个还空空如也的安装。",
+    "loading": "正在加载看板",
+    "errorTitle": "看板未加载"
+  },
+  "state": {
+    "active": "活跃",
+    "draining": "排空中",
+    "standby": "待机",
+    "unreachable": "不可达"
+  }
+}

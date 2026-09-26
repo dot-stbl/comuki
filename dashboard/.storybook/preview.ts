@@ -2,6 +2,11 @@ import type { Preview } from "@storybook/react"
 
 import "../src/index.css"
 
+/* The real translation instance (`en` active): stories render the same
+   catalogues the app does, so a component drawn in a story shows its
+   words rather than key paths. */
+import "../src/shared/i18n"
+
 const preview: Preview = {
   parameters: {
     controls: {

@@ -1,0 +1,169 @@
+{
+  "actions": {
+    "retry": "重试",
+    "close": "关闭"
+  },
+  "errors": {
+    "unknown": "未知错误",
+    "changeFailed": "更改失败。"
+  },
+  "page": {
+    "title": "模型",
+    "modelsErrorTitle": "模型未加载",
+    "keysErrorTitle": "消费密钥未加载",
+    "failureTail": "什么都没动 — 注册表保持原样。",
+    "summaryProxyOn": "<endpoints/> 个端点 · <keys/> 个消费密钥 · 代理 <proxy/>",
+    "summaryProxyOff": "<endpoints/> 个端点 · <keys/> 个消费密钥 · 代理 <proxy/>，未计量任何内容",
+    "summaryNearCap": "<count/> 接近上限",
+    "summaryExpired": "<count/> 已过期"
+  },
+  "proxy": {
+    "section": "代理",
+    "note": "上游前面的一个轻量可选跳板。正是它签发消费密钥、把密钥约束在预算内、计量运行并在租约到期时收回密钥 — 因此它的开关决定下面三个部分是配置还是强制。",
+    "on": "开",
+    "off": "关",
+    "since": "自 {{when}}",
+    "sentenceOn": "消费密钥会被校验，预算会被强制执行，每次运行都会被计量",
+    "sentenceOff": "worker 直接得到注入的 url 和密钥 — 消费密钥不被校验，预算不被强制执行，没有任何计量",
+    "immutableSentence": "虚拟密钥由配置播种，运行时不可变 — 消费在代理处计量，不在此处报告",
+    "turnOff": "关闭代理",
+    "turnOn": "开启代理",
+    "costPerRun": "单次运行成本",
+    "spend": "消费",
+    "runs": "运行",
+    "burnByHour": "按小时消耗",
+    "burnNothing": "按小时消费：未计量。",
+    "burnLabel": "计量日内按小时消费，峰值 {{peak}} 于 {{hour}}。",
+    "burnPeak": "峰值 {{peak}} 于 {{hour}}",
+    "windowOver": "过去 ",
+    "windowStale": "最后一次计量于过去 ",
+    "windowNotCurrent": " — 非当前",
+    "offConfirmTitle": "关闭代理？",
+    "offConfirmBody": "Worker 将直接得到注入的 url 和密钥。消费密钥停止校验，下面的每个预算停止强制执行，并且在重新开启之前不会有任何运行被计量。",
+    "offConfirm": "关闭",
+    "offCancel": "保持开启"
+  },
+  "endpoints": {
+    "section": "上游端点",
+    "note": "两条线路，openai 兼容和 anthropic 兼容，别无其他。Worker 通过其提供方配置取得 url 和密钥；主模型和聊天通过聊天客户端使用同样的端点。自托管 url 是普通的一行。",
+    "emptyFiltered": "没有端点匹配当前筛选",
+    "empty": "未配置任何上游端点",
+    "count": "显示 {{count}} 个",
+    "column": {
+      "endpoint": "端点",
+      "wire": "线路",
+      "baseUrl": "base url",
+      "state": "状态",
+      "models": "模型",
+      "note": "备注"
+    },
+    "filterPlaceholder": "筛选端点、url、模型…",
+    "allWires": "所有线路",
+    "allStates": "所有状态"
+  },
+  "keys": {
+    "section": "消费密钥",
+    "note": "一把密钥自带路由、上限、模型列表、作用域和 TTL — 因此泄露的密钥只能买到一个端点、其中点名的模型、预算的剩余部分，直到持有者无法控制的那一天。密钥只在签发时显示一次，之后永不再现。",
+    "noteUnenforced": " 代理关闭时，这些都不会被校验。",
+    "emptyFiltered": "没有密钥匹配当前筛选",
+    "empty": "尚未签发任何消费密钥",
+    "countExpired": "{{count}} 已过期 · ",
+    "countNearCap": "{{count}} 接近上限 · ",
+    "count": "显示 {{count}} 把",
+    "column": {
+      "key": "密钥",
+      "whatFor": "用途",
+      "scope": "作用域",
+      "route": "路由",
+      "mayReach": "可调用",
+      "spentOfCap": "已花占上限",
+      "expires": "过期",
+      "state": "状态",
+      "actions": "操作"
+    },
+    "filterPlaceholder": "筛选密钥、标签、模型…",
+    "allScopes": "所有作用域",
+    "allRoutes": "所有路由",
+    "allStates": "所有状态",
+    "openAria": "打开 {{prefix}} 的详情",
+    "allModels": "所有模型",
+    "allModelsTitle": "空的 allow-list — 允许所有模型",
+    "revokeTooltip": "吊销这把密钥",
+    "revokeAria": "吊销 {{prefix}}",
+    "revokeConfirmTitle": "吊销这把密钥？",
+    "revokeConfirmBody": "{{prefix}} · {{label}} — 密钥立即失效且无法恢复。持有它的 worker 会随租约一起失去它，就在运行中途。",
+    "revokeRestartNote": " 密钥库由配置播种 — 主机重启会复活这把密钥，直到它的 Proxy:VirtualKeys 行被删除。",
+    "revokeConfirm": "吊销密钥",
+    "revokeCancel": "保留密钥"
+  },
+  "routing": {
+    "section": "角色到模型",
+    "note": "平台用角色说话，从不用厂商：主模型规划、写合约、审查结果、修复失败的运行；worker 在容器中执行配置步骤。这里就是角色变成物理模型的地方，也是这个映射唯一存在的位置。",
+    "emptyFiltered": "没有角色匹配当前筛选",
+    "empty": "没有角色被路由到模型",
+    "column": {
+      "role": "角色",
+      "model": "模型",
+      "endpoint": "端点",
+      "upstream": "上游",
+      "usedFor": "用于"
+    },
+    "allRoles": "所有角色",
+    "allEndpoints": "所有端点",
+    "unknown": "未知",
+    "count": "显示 {{count}} 个"
+  },
+  "sheet": {
+    "closeTooltip": "关闭 — escape",
+    "closeAria": "关闭密钥",
+    "routeNotKnown": "此处不知道路由",
+    "issued": "签发于",
+    "lastUsed": "最后使用",
+    "expires": "过期",
+    "scope": "作用域",
+    "grants": "授权",
+    "notRecorded": "此线路上未记录",
+    "issuedToNobody": "未签发给任何具体对象",
+    "mayReach": "可调用",
+    "everyModel": "端点上的所有模型",
+    "everyModelTitle": "空的 allow-list — 允许所有模型",
+    "alreadyStopped": "这把密钥已经停止 — 无可吊销",
+    "irreversible": "不可逆 — 会先询问",
+    "revoke": "吊销这把密钥",
+    "spend": "消费",
+    "notMetered": "此线路上未计量",
+    "noSpend": "无消费记录",
+    "reading": "过去 {{days}} 天共 {{total}} · 每天 {{average}} · 最重的一天 {{day}} 为 {{peak}}",
+    "silentDays": " · 最近 {{count}} 天无消费记录",
+    "chartLabel": "按天消费，美元。{{reading}}。"
+  },
+  "meter": {
+    "noCap": "无上限",
+    "noCapTitle": "这把密钥没有上限 — 它会一直花费，直到被吊销或过期",
+    "capOnly": "上限 {{cap}}",
+    "notMeteredHere": "此处未计量消费",
+    "notMeteredHereTitle": "上限有效，但此界面不计量消费",
+    "unforcedTitle": "代理已关闭 — 该上限已记录但未应用",
+    "over": "超支",
+    "left": "剩 {{left}}"
+  },
+  "word": {
+    "never": "永不",
+    "expired": "已过期 {{reading}}",
+    "platform": "平台",
+    "notOnThisWire": "不在此线路上",
+    "neverUsed": "从未使用"
+  },
+  "wire": {
+    "openai": "openai 兼容",
+    "anthropic": "anthropic 兼容"
+  },
+  "state": {
+    "live": "有效",
+    "expired": "已过期",
+    "revoked": "已吊销",
+    "ok": "正常",
+    "degraded": "降级",
+    "disabled": "停用"
+  }
+}

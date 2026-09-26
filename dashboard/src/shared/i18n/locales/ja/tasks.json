@@ -1,0 +1,82 @@
+{
+  "actions": {
+    "retry": "再試行"
+  },
+  "errors": {
+    "unknown": "不明なエラー"
+  },
+  "status": {
+    "new": "新規",
+    "queued": "キュー投入",
+    "planning": "計画中"
+  },
+  "priority": {
+    "low": "低",
+    "normal": "通常",
+    "high": "高"
+  },
+  "registry": {
+    "title": "タスク",
+    "summary": "<total/> がバックログに · <fresh/> 件の新規",
+    "newTask": "新しいタスク",
+    "count": {
+      "other": "{{count}} 件表示"
+    },
+    "loading": "バックログを読み込み中",
+    "errorTitle": "バックログが読み込めませんでした",
+    "empty": {
+      "filtered": "現在のフィルタに一致するタスクはありません",
+      "none": "バックログは空です"
+    }
+  },
+  "dispatch": {
+    "toast": "オーケストレーターへ派遣しました",
+    "fallback": "オーケストレーターは受け取りませんでした。",
+    "tail": "何もキューに入っていません — チケットはまだバックログにあります。"
+  },
+  "column": {
+    "source": "ソース",
+    "task": "タスク",
+    "evidence": "エビデンス",
+    "project": "プロジェクト",
+    "app": "アプリ",
+    "priority": "優先度",
+    "status": "ステータス",
+    "age": "経過",
+    "action": "操作",
+    "filterPlaceholder": "タイトル、id、アプリで絞り込み…",
+    "allProjects": "すべてのプロジェクト",
+    "allApps": "すべてのアプリ",
+    "allPriority": "すべての優先度",
+    "allStatus": "すべてのステータス",
+    "dispatch": "派遣",
+    "dispatchTask": "{{title}} を派遣"
+  },
+  "create": {
+    "title": "新しいタスク",
+    "crumb": "新規",
+    "summary": "スウォームの前に出す 1 枚のチケット: どこから来て、どのプロジェクトのバックログに落ちて、どれだけ急ぐか。",
+    "toastCreated": "タスクを作成しました",
+    "failureTail": "何もキューに入っていません — 入力した内容はそのまま残っています。",
+    "guardTitle": "タスクを作成せずに離れますか？",
+    "guardBody": "入力したタイトルとブリーフはまだどこにも保存されていません。このページを離れると破棄され、受け付けには何も届きません。",
+    "guardConfirm": "破棄",
+    "guardCancel": "編集を続ける",
+    "submit": "作成してキューへ",
+    "cancel": "キャンセル",
+    "sourceLabel": "ソース",
+    "sourceNote": "チケットがどこから来たか。ネイティブ以外のカードは、そのプロバイダーを監視する接続を期待します — ここでチケットを書くのはどこから来たかの記録で、そちらに提出するものではありません。",
+    "ticketLabel": "チケット",
+    "ticketNote": "何を、どこへ、どれだけ急いで。",
+    "briefLabel": "ブリーフ",
+    "briefNote": "背景、受け入れ基準、リンク — 引き受ける人のためのもので、フォームのためのものではありません。",
+    "titleLabel": "タイトル",
+    "titlePlaceholder": "何をするか、一行で",
+    "projectLabel": "プロジェクト",
+    "appLabel": "アプリ",
+    "briefPlaceholder": "背景、受け入れ基準、リンク…"
+  },
+  "priorityField": {
+    "label": "優先度"
+  }
+}

@@ -1,4 +1,5 @@
 import type { ComponentType } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Activity,
   ChevronDown,
@@ -115,6 +116,7 @@ export function TaskPriorityBadge({
   priority,
   className,
 }: TaskPriorityBadgeProps) {
+  const { t } = useTranslation("tasks")
   const Icon = priorityIcons[priority]
 
   return (
@@ -124,7 +126,7 @@ export function TaskPriorityBadge({
       className={cn(badgeShell(), styles.badge, styles[priority], className)}
     >
       <Icon aria-hidden="true" />
-      {priority}
+      {t(`priority.${priority}`)}
     </span>
   )
 }
@@ -141,6 +143,7 @@ export interface TaskStatusBadgeProps {
 }
 
 export function TaskStatusBadge({ status, className }: TaskStatusBadgeProps) {
+  const { t } = useTranslation("tasks")
   const Icon = statusIcons[status]
 
   return (
@@ -150,7 +153,7 @@ export function TaskStatusBadge({ status, className }: TaskStatusBadgeProps) {
       className={cn(badgeShell(), styles.badge, styles[status], className)}
     >
       <Icon aria-hidden="true" />
-      {status}
+      {t(`status.${status}`)}
     </span>
   )
 }

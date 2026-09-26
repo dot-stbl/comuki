@@ -7,8 +7,9 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { render, waitFor } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { render, screen, waitFor } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { ApprovalsPage } from "@/domains/approvals/pages/approvals-page"
@@ -175,5 +176,33 @@ describe("the approvals queue, end to end over the seeds", () => {
     for (const control of all('[data-test="approval-details"]')) {
       expect(control.hasAttribute("aria-disabled")).toBe(false)
     }
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the queue's own
+   words — title, summary, cards, acts — arrive in russian while the
+   approvals' values (apps, ages, ids) stay as they were. Language resets
+   after the case so the file's other readings keep their en posture. */
+describe("the approvals queue in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the registry and the cards in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    renderScreen(["platform-admin"])
+
+    expect(
+      await screen.findByRole("heading", { name: "Согласования" })
+    ).toBeTruthy()
+    // The queue lands asynchronously; a card on screen means the summary's
+    // count has landed with it.
+    await screen.findAllByRole("button", { name: /согласовать .+ для/ })
+    expect(find('[data-test="page-header"]')?.textContent).toContain(
+      "ждут решения"
+    )
   })
 })

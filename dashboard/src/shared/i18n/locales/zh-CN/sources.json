@@ -1,0 +1,292 @@
+{
+  "actions": {
+    "retry": "重试",
+    "cancel": "取消"
+  },
+  "errors": {
+    "unknown": "未知错误",
+    "changeFailed": "更改失败。"
+  },
+  "state": {
+    "connected": "已连接",
+    "error": "错误",
+    "disabled": "已停用"
+  },
+  "word": {
+    "never": "从未"
+  },
+  "provider": {
+    "github": {
+      "label": "github",
+      "target": "仓库",
+      "intakeNote": "issue 来自受监视的仓库。在这里写下的会被标记为该仓库的。"
+    },
+    "gitlab": {
+      "label": "gitlab",
+      "target": "仓库",
+      "intakeNote": "issue 来自受监视的仓库。在这里写下的会被标记为该仓库的。"
+    },
+    "yandex-tracker": {
+      "label": "yandex tracker",
+      "target": "队列键",
+      "intakeNote": "工单来自受监视的 tracker 队列。在这里写下的会被标记为该队列的。"
+    },
+    "jira": {
+      "label": "jira",
+      "target": "项目键",
+      "intakeNote": "工单来自受监视的看板。在这里写下的会被标记为该看板的。"
+    },
+    "native": {
+      "label": "native",
+      "target": "名称",
+      "intakeNote": "由人在这里写下 — 产品自己的接收口，背后没有 tracker。"
+    }
+  },
+  "intakeNoteUnknown": "工单来自受监视的连接。在这里写下的会被标记为该提供方的。",
+  "auth": {
+    "pat": "个人访问令牌",
+    "oauth": "oauth 授权",
+    "app-install": "应用安装",
+    "none": "无"
+  },
+  "authSecret": {
+    "pat": "access token",
+    "oauth": "oauth client secret",
+    "app-install": "应用私钥",
+    "other": "秘密"
+  },
+  "nativeRefusal": "自有接收口不能断开 — 它是产品接受工单的方式",
+  "admission": {
+    "watch": {
+      "label": "watch",
+      "description": "匹配的工单启动一个 run。没有人需要认领它。"
+    },
+    "inbox-only": {
+      "label": "仅收件箱",
+      "description": "匹配的工单落入目录，等待人来认领。"
+    },
+    "both": {
+      "label": "两者",
+      "description": "工单启动一个 run 并留在目录中，这样 run 可以通过引起它的工单找到。"
+    },
+    "nativeIntake": "native 接收",
+    "watchOff": "watch 已关"
+  },
+  "host": {
+    "inPlatform": "平台内",
+    "cloud": "云端"
+  },
+  "note": {
+    "refusedSilent": "提供方拒绝了，且没有说出任何有用的话。",
+    "filedHere": {
+      "other": "此处提交了 {{count}} 个工单"
+    },
+    "turnedOff": "已关闭 — 最后同步 {{when}}",
+    "watchOff": "watch 已关 — 此处不再准入任何东西",
+    "matchedNothing": "筛选器在过去一天没有匹配到任何东西",
+    "lastSynced": "最后同步 {{when}}"
+  },
+  "registry": {
+    "title": "来源",
+    "errorTitle": "无法加载来源",
+    "connect": "连接来源",
+    "connectionsWord": "个连接",
+    "admittingWord": "个正在准入工作",
+    "errorWord": "个处于错误",
+    "failureTail": "没有任何东西移动 — 列表回到原样。",
+    "sectionTitle": "连接",
+    "sectionNote": "平台上的每个来源，无论它供给哪个项目。连接承载凭据；它的 <em>watch</em> 承载该凭据被允许准入的东西 — 二者分别失效，因此分别阅读。编辑权限按项目授予，因此你管理的行排在你只观看的行上方，各行说明自己是哪种。<code>native</code> 存在于每个项目且不能断开。"
+  },
+  "connectionsPanel": {
+    "shown": {
+      "other": "{{count}} 项"
+    },
+    "emptyFiltered": "没有连接匹配当前筛选。",
+    "emptyNone": "没有已连接的来源。"
+  },
+  "disconnect": {
+    "title": "断开此来源？",
+    "body": "{{name}} · {{project}} — 凭据被丢弃，此处不再准入任何东西。已认领的工单保留其 run；重新连接意味着新秘密。",
+    "confirm": "断开",
+    "keep": "保留",
+    "toast": "来源已断开"
+  },
+  "column": {
+    "state": "状态",
+    "source": "来源",
+    "provider": "提供方",
+    "project": "项目",
+    "instance": "实例",
+    "account": "账户",
+    "admission": "准入",
+    "admitted": "已准入",
+    "note": "正在发生什么",
+    "actions": "操作",
+    "allStates": "所有状态",
+    "allProviders": "所有提供方",
+    "allProjects": "所有项目",
+    "allModes": "所有模式",
+    "filterPlaceholder": "筛选来源、账户、主机…",
+    "newTicket": "新建工单",
+    "newTicketAria": "在 {{where}} 的 {{name}} 中新建工单",
+    "watchAndFilter": "Watch 与筛选",
+    "watchAndFilterAria": "编辑 {{name}} 的 watch",
+    "testConnection": "测试连接",
+    "testConnectionAria": "测试到 {{name}} 的连接",
+    "disconnect": "断开",
+    "disconnectAria": "断开 {{name}}"
+  },
+  "connectPage": {
+    "title": "连接来源",
+    "crumbNew": "新建",
+    "summary": "连接属于一个项目并承载一份凭据。它以 watch 关闭的状态到来 — 准入工单是单独的决定，在来源自己的页面上做出。",
+    "refused": "连接被拒绝。",
+    "tail": "没有保存任何东西 — 下面的细节与你输入的完全一致。",
+    "leaveTitle": "不连接来源就离开？",
+    "leaveBody": "这里还没有保存任何东西，你输入的凭据也没有存放在任何地方 — 离开此页面将丢弃它，之后连接意味着重新获取它。",
+    "discard": "丢弃",
+    "keep": "继续编辑",
+    "toast": "来源已连接"
+  },
+  "connectForm": {
+    "providerCard": "提供方",
+    "providerCardNote": "此连接监视哪个 tracker，说谁的方言。",
+    "providerHint": "native 接收不在这里：每个项目已经有一个，而且没有可以指向凭据的东西。",
+    "connectionCard": "连接",
+    "connectionCardNote": "它供给哪个项目，实例在哪里，哪份凭据能到达它。",
+    "projectLabel": "项目",
+    "projectHint": "此来源供给的项目。编辑来源的权限按项目授予，因此保存对这项选择负责。",
+    "settingsPreview": "主机将其存储为单个 settings json：",
+    "probeProbing": "正在联系提供方…",
+    "probePending": "保存前先测试连接 — 一个不可达的来源在有东西需要它之前看起来和健康的一模一样。",
+    "credentialCard": "凭据",
+    "credentialCardNote": "主机上保存凭据的环境变量名。主机解析该值 — 仪表盘永远看不到它。",
+    "secretEnvLabel": "秘密环境变量",
+    "secretEnvHint": "主机上保存凭据的环境变量名。主机在探测 / webhook 时解析该值 — 仪表盘永远看不到它。",
+    "mockNotice": "仅 mock 模式：表单持有字面凭据的时间刚好够探测种子存储。真实模式读取主机上的环境变量，永远看不到该值。",
+    "mockSecretLabel": "凭据（仅 mock）",
+    "submit": "保存连接",
+    "testConnection": "测试连接"
+  },
+  "connectionFields": {
+    "baseUrlLabel": "基础 url",
+    "baseUrlHint": "仅限自托管。https，因为凭据经过这条线路。",
+    "accountLabel": "账户",
+    "accountPlaceholder": "凭据所属的机器人或应用",
+    "accountHint": "之后显示在行上，以便把过期凭据追溯到人。",
+    "authKindLabel": "凭据种类"
+  },
+  "authChoice": {
+    "hint": "{{provider}} 接受什么，仅此而已。原样存储在 settings json 中；从不持有凭据。"
+  },
+  "connectionForm": {
+    "cardLabel": "进入方式",
+    "cardNote": "实例在哪里，哪份凭据能到达它，以及主机上哪个环境变量保存它。",
+    "secretEnvLabel": "秘密环境变量",
+    "secretEnvHint": "主机上的环境变量名。仪表盘永远看不到该值；主机在探测 / webhook 时解析它。",
+    "probeProbing": "正在联系提供方…",
+    "probePending": "保存前先测试连接 — 在没人知道还能不能到达时改变到达来源的方式是不可取的。",
+    "testConnectionAria": "测试到 {{name}} 的连接",
+    "submit": "保存连接"
+  },
+  "watchForm": {
+    "cardLabel": "准入",
+    "cardNote": "是否准入任何东西，哪些工单，以及准入一个时下一个行动的是谁。",
+    "watchLabel": "监视此来源",
+    "watchHint": "关闭意味着连接保持认证但不再带入任何东西。这不同于断开。",
+    "admissionModeLabel": "准入模式",
+    "submit": "保存 watch"
+  },
+  "filterField": {
+    "label": "筛选表达式",
+    "placeholder": "留空以准入此连接能看到的一切",
+    "hintsLabel": "{{kind}} 工单上见过的字段",
+    "verbatim": "原样存储且不解析 — 筛选语言尚未决定，因此此文本按输入的原样交给连接器。"
+  },
+  "statusPreview": {
+    "head": "写回 {{provider}} 的状态",
+    "nativeNone": "native 接收就是 tracker。run 的状态就是工单的状态，因此没有可以写回的地方。",
+    "unknownNone": "没有东西写回 {{provider}} — 此构建没有该提供方的映射，因此 run 的状态留在 run 上。"
+  },
+  "detailPage": {
+    "titleFallback": "来源",
+    "crumbFallback": "来源",
+    "errorTitle": "此来源未能加载",
+    "notFoundTitle": "没有此 id 的连接",
+    "notFoundBody": "此平台上没有在此 id 下连接的任何东西。被断开的来源 — 在这里或在另一个标签页 — 是到达此地址的寻常方式，而连接列表是仍然存在的那些所在的地方。",
+    "backToSources": "返回来源",
+    "failureTail": "没有任何东西移动 — 此页面回到原样。",
+    "factsTitle": "此连接是什么",
+    "factProvider": "提供方",
+    "factAuth": "凭据",
+    "factInstance": "实例",
+    "factAccount": "账户",
+    "factCredential": "凭据",
+    "factLastSync": "最后同步",
+    "credentialEnvNote": "在主机上于探测 / webhook 时解析。仪表盘永远看不到该值 — 替换它意味着更改主机上的环境变量并修补连接的 <code>secretEnvRef</code>。",
+    "credentialStoredNote": "只写存储且不再显示 — 不在此页面，不在表单，不通过 api。替换它意味着重新连接。",
+    "credentialNoneNote": "native 接收没有远端，因此没有可以认证的对象。",
+    "none": "无",
+    "never": "从未",
+    "watchTitle": "watch 与筛选",
+    "noWatch": "native 接收没有 watch。工单到达这里是因为有人提交了一个，而不是因为筛选器准入了一个 — 因此没有可开启的东西，也没有可收窄的东西。",
+    "connectionTitle": "连接",
+    "rotationTitle": "webhook 秘密",
+    "rotationBody": "一次点击生成新的 webhook 秘密并显示一次。把它复制到 tracker 的 webhook 设置中 — 此页面不会再次显示它。",
+    "rotateButton": "轮换秘密",
+    "rotateAria": "轮换 {{name}} 的 webhook 秘密",
+    "rotateLabel": "轮换 webhook 秘密",
+    "rotatedLabel": "新 webhook 秘密 — 现在就复制，此面板不会在导航后存活",
+    "handoffsTitle": "去向",
+    "handoffFiled": "此处提交的工单。它们和其他一切都在目录中 — ",
+    "handoffAdmitted": "从此处准入的工单。它们和其他一切都在目录中 — ",
+    "handoffCatalogTail": "目录未收窄到此来源。",
+    "openCatalog": "打开目录",
+    "handoffProject": "此连接供给的项目。编辑来源的权限按项目授予，因此这是此页面上每个操作所负责的对象。",
+    "openProject": "打开项目",
+    "handoffTicket": "直接向此项目的接收口写一个工单。这是成员而非管理员的操作，因此它有自己的屏幕和自己的权限。",
+    "fileTicket": "提交工单",
+    "rotateTitle": "轮换此来源的 webhook 秘密？",
+    "rotateBody": "{{name}} · {{project}} — 生成新秘密并显示一次。用先前秘密签名的 webhook 将被拒绝，直到你把新的复制到 tracker。",
+    "rotateConfirm": "轮换",
+    "rotateKeep": "保留当前",
+    "leaveTitle": "不保存就离开？",
+    "leaveBody": "你在此页面上更改的 watch 和连接细节尚未保存。离开将丢弃它们，来源保持原样。",
+    "discard": "丢弃",
+    "keep": "继续编辑",
+    "watchSavedToast": "watch 已保存",
+    "connectionSavedToast": "连接已保存",
+    "rotatedToast": "webhook 秘密已轮换",
+    "rotatedToastDescription": "{{name}} — 把新值复制到 tracker"
+  },
+  "ticketPage": {
+    "title": "在 {{project}} 中新建工单",
+    "titleFallback": "新建工单",
+    "crumb": "新建工单",
+    "summary": "native 接收是产品自己的。在这里写下的工单背后没有 tracker，因此其状态就是 run 的状态，也没有可以同步回去的地方。",
+    "errorTitle": "无法查找此来源",
+    "notFoundTitle": "没有此 id 的连接",
+    "notFoundBody": "此平台上没有 id 为 {{id}} 的连接。在此标签页打开期间被断开的来源是到达这里的寻常方式。",
+    "backToSources": "返回来源",
+    "refused": "工单被拒绝。",
+    "tail": "没有提交任何东西 — 你输入的还在这里。",
+    "leaveTitle": "不提交工单就离开？",
+    "leaveBody": "你输入的标题、正文和标签尚未保存到任何地方。离开此页面将丢弃它们，没有任何东西到达接收口。",
+    "discard": "丢弃",
+    "keep": "继续编辑",
+    "toast": "工单已提交"
+  },
+  "ticketForm": {
+    "titleLabel": "标题",
+    "titlePlaceholder": "哪里出了问题，一行说明",
+    "bodyLabel": "正文",
+    "bodyPlaceholder": "你看到了什么，在哪里。大脑在计划任何事之前会先读这个。",
+    "labelsLabel": "标签",
+    "labelsPlaceholder": "checkout-web, bug",
+    "labelsHint": "逗号分隔。这些是工单自己的标签 — 不是筛选表达式。",
+    "straightLabel": "直接开始工作",
+    "straightHint": "关闭则留待某人认领，这是一分钟后的同一操作。",
+    "submitStart": "创建并启动",
+    "submit": "创建工单"
+  }
+}

@@ -1,8 +1,9 @@
 import type { ComponentType } from "react"
 import { KeyRound, Link, Package } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import {
-  AUTH_LABEL,
+  authLabel,
   providerAuth,
   providerLabel,
 } from "@/domains/sources/model/providers"
@@ -73,7 +74,7 @@ export interface AuthKindChoiceProps {
  * opinion about this product's credential kinds.
  */
 export function AuthKindChoice({
-  label = "auth kind",
+  label,
   name,
   kind,
   auth,
@@ -81,15 +82,17 @@ export function AuthKindChoice({
   "data-test": dataTest,
   onAuthChange,
 }: AuthKindChoiceProps) {
+  const { t } = useTranslation("sources")
   const allowed = providerAuth(kind)
+  const groupLabel = label ?? t("connectionFields.authKindLabel")
 
   return (
     <fieldset
       className={styles.fieldset}
-      aria-label={label}
+      aria-label={groupLabel}
       data-test={dataTest}
     >
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel>{groupLabel}</FieldLabel>
       <div className={styles.segments}>
         {allowed.map((candidate) => {
           const selected = auth === candidate
@@ -109,14 +112,14 @@ export function AuthKindChoice({
                 value={candidate}
                 checked={selected}
                 disabled={disabled}
-                aria-label={AUTH_LABEL[candidate]}
+                aria-label={authLabel(candidate, t)}
                 onChange={() => onAuthChange(candidate)}
               />
               {Icon ? (
                 <Icon className={styles.icon} aria-hidden={true} />
               ) : null}
               <span className={styles.segmentLabel}>
-                {AUTH_LABEL[candidate]}
+                {authLabel(candidate, t)}
               </span>
             </label>
           )
@@ -127,8 +130,7 @@ export function AuthKindChoice({
           connector implements, and the provider's own word is what makes
           that a fact rather than a coincidence. */}
       <FieldHint>
-        what {providerLabel(kind)} accepts, and nothing else. Stored verbatim in
-        the settings json; never holds a credential.
+        {t("authChoice.hint", { provider: providerLabel(kind) })}
       </FieldHint>
     </fieldset>
   )

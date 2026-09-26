@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import { FormActions, FormCard, FormLayout } from "@/app/layout/form-page"
 import { ADMISSION_MODES } from "@/domains/sources/model/providers"
@@ -70,6 +71,7 @@ export function WatchForm({
   onSave,
   onDirtyChange,
 }: WatchFormProps) {
+  const { t } = useTranslation("sources")
   const session = useSession()
 
   const [enabled, setEnabled] = useState(watch.enabled)
@@ -103,17 +105,14 @@ export function WatchForm({
       {/* The card the create form's groups taught this page: the region
           heading above is full width, and the form under it spends that same
           width rather than sitting in a 44rem stack beside it. */}
-      <FormCard
-        label="admission"
-        note="whether anything is admitted, which tickets, and who moves next when one is."
-      >
+      <FormCard label={t("watchForm.cardLabel")} note={t("watchForm.cardNote")}>
         <SwitchField
           id="watch-enabled"
-          label="watch this source"
+          label={t("watchForm.watchLabel")}
           checked={enabled}
           disabled={busy}
           denied={denied}
-          hint="off means the connection stays authenticated and stops bringing anything in. It is not the same as disconnecting."
+          hint={t("watchForm.watchHint")}
           data-test="watch-enabled"
           onCheckedChange={setEnabled}
         />
@@ -132,10 +131,18 @@ export function WatchForm({
 
         <ChoiceField
           name="admission"
-          label="admission mode"
+          label={t("watchForm.admissionModeLabel")}
           value={mode}
           disabled={busy}
-          options={ADMISSION_MODES}
+          options={ADMISSION_MODES.map((entry) => ({
+            value: entry.value,
+            label: t(`admission.${entry.value}.label`, {
+              defaultValue: entry.label,
+            }),
+            description: t(`admission.${entry.value}.description`, {
+              defaultValue: entry.description,
+            }),
+          }))}
           data-test="admission-mode"
           onValueChange={(next) => setMode(next as AdmissionMode)}
         />
@@ -150,7 +157,7 @@ export function WatchForm({
           denied={denied}
           loading={busy}
         >
-          Save watch
+          {t("watchForm.submit")}
         </Button>
         <Button
           variant="secondary"
@@ -162,7 +169,7 @@ export function WatchForm({
             setMode(watch.mode)
           }}
         >
-          Cancel
+          {t("actions.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

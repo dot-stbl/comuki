@@ -1,0 +1,170 @@
+{
+  "actions": {
+    "retry": "Erneut versuchen"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler"
+  },
+  "status": {
+    "running": "läuft",
+    "waiting": "wartet",
+    "queued": "in der Warteschlange",
+    "escalated": "eskaliert",
+    "failed": "fehlgeschlagen",
+    "success": "erfolgreich",
+    "cancelled": "abgebrochen"
+  },
+  "registry": {
+    "title": "Live-Läufe",
+    "summary": "<total/> Läufe · <running/> laufen · <blocked/> warten auf einen Menschen",
+    "errorTitle": "Läufe konnten nicht geladen werden",
+    "anomaliesOnly": "Nur Anomalien zeigen",
+    "count": {
+      "one": "{{count}} angezeigt",
+      "other": "{{count}} angezeigt"
+    },
+    "empty": {
+      "profile": "Keine Läufe auf diesem Profil.",
+      "filtered": "Keine Läufe passen auf die aktuellen Filter.",
+      "none": "Noch keine Läufe."
+    },
+    "unplannedTitle": "Noch keine Pläne",
+    "unplannedDescription": "Diese Läufe sind angenommen, aber das Gehirn hat sie noch nicht geplant. Der Fluss erscheint, sobald der erste Plan Arbeitselemente hat.",
+    "expandFlow": "Fluss ausklappen",
+    "collapseFlow": "Fluss einklappen",
+    "resizeBoard": "Größe der Fluss-Tafel ändern",
+    "expandStrip": "Die Fluss-Tafel ausklappen"
+  },
+  "notice": {
+    "fallback": "Die Entscheidung ist fehlgeschlagen.",
+    "tail": "Nichts hat sich geändert — der Lauf ist wieder wie zuvor."
+  },
+  "cancelDialog": {
+    "title": "Diesen Lauf abbrechen?",
+    "body": "{{title}} · {{where}} — der Container wird abgerissen und der Lease freigegeben. Bereits gemergte Arbeit bleibt.",
+    "confirm": "Lauf abbrechen",
+    "cancel": "Weiter laufen lassen"
+  },
+  "column": {
+    "status": "status",
+    "run": "lauf",
+    "project": "projekt",
+    "app": "app",
+    "task": "aufgabe",
+    "profile": "profil",
+    "step": "schritt",
+    "inStep": "im schritt",
+    "cost": "kosten",
+    "worker": "worker",
+    "actions": "aktionen",
+    "allStatuses": "alle statuses",
+    "allProjects": "alle projekte",
+    "allApps": "alle apps",
+    "allProfiles": "alle profile",
+    "filterPlaceholder": "lauf, aufgabe, schritt filtern…",
+    "waitingOnPlan": "wartet auf einen plan",
+    "approve": "Freigeben",
+    "cancelRun": "Lauf abbrechen",
+    "approveRun": "{{title}} freigeben",
+    "cancelTask": "{{title}} abbrechen"
+  },
+  "detail": {
+    "fallbackTitle": "Lauf {{runId}}",
+    "tok": "Tok",
+    "errorTitle": "Dieser Lauf konnte nicht geladen werden",
+    "notFoundTitle": "Kein Lauf mit dieser id",
+    "notFoundDescription": "Der Schwarm hält nichts unter <id/>. Eine Lauf-id aus einem alten Link ist der gewöhnliche Weg hierher — eine Adresse überlebt den Lauf, den sie benannte, und die Dienstliste ist der Ort, wo die noch laufenden sind.",
+    "backToList": "Zurück zu den Live-Läufen",
+    "unplannedTitle": "Noch nicht geplant",
+    "unplannedDescription": "Dieser Lauf ist angenommen und das Gehirn hat ihn noch nicht in Arbeitselemente zerlegt. Nichts ist falsch und nichts wartet auf Sie — der Graph und der Element-Inspektor erscheinen hier, sobald der Plan sein erstes Element hat.",
+    "unplannedHint": "{{status}} · keine arbeitselemente · nichts zu inspizieren",
+    "noInspectorTitle": "Keine Details zu diesem Element",
+    "noInspectorDescription": "Der Plan oben ist vollständig; dieses Element hat noch keinen Inspektor-Eintrag. Wählen Sie ein anderes Element oder kommen Sie zurück, wenn es beginnt.",
+    "resizeGraph": "Größe des Lauf-Graphen ändern"
+  },
+  "river": {
+    "group": "Profil-Fluss. Pfeiltasten bewegen zwischen Profilen.",
+    "cleared": "geschafft",
+    "waitingOnHuman": "warten auf einen Menschen",
+    "noWork": "keine arbeit",
+    "poolEntry": "{{count}} {{status}}",
+    "clearedProfile": {
+      "one": "{{count}} hat das Profil geschafft",
+      "other": "{{count}} haben das Profil geschafft"
+    },
+    "mark": {
+      "one": "{{count}} wartet auf einen Menschen",
+      "other": "{{count}} warten auf einen Menschen"
+    },
+    "pinched": {
+      "one": " {{count}} wartet auf einen Menschen — mehr als jedes andere Profil.",
+      "other": " {{count}} warten auf einen Menschen — mehr als jedes andere Profil."
+    },
+    "node": "{{profile}}: {{pool}}. {{cleared}}.{{mark}}"
+  },
+  "evidence": {
+    "title": "belege",
+    "empty": "noch keine screenshots veröffentlicht"
+  },
+  "anomaly": {
+    "badgeLabel": "{{multiplier}}× des Medians",
+    "badgeTip": "Kosten {{multiplier}}× des Projekt-Medians von {{median}} — überschreitet die {{threshold}}×-Schwelle. Klicken für die Aufschlüsselung.",
+    "badgeAria": "Kostenanomalie — {{label}}. Aufschlüsselung öffnen.",
+    "dialogTitle": "Kostenspitze · Lauf {{runId}}",
+    "acknowledge": "Zur Kenntnis nehmen",
+    "cancelRun": "Lauf abbrechen",
+    "summary": "Zusammenfassung",
+    "spend": "Kostenaufschlüsselung",
+    "why": "Warum markiert",
+    "project": "projekt",
+    "profile": "profil",
+    "status": "status",
+    "cost": "kosten",
+    "tokensInOut": "tokens (rein / raus)",
+    "total": "({{total}} gesamt)",
+    "reason": "Hat <spent/> ausgegeben, das ist <multiplier/> der Median-Kosten von <median/> für <project/>.",
+    "rule": "Regel: Kosten > {{threshold}}× der Median-Laufkosten des Projekts.",
+    "openCost": "Kostenseite öffnen →"
+  },
+  "graph": {
+    "group": "Lauf-Graph. Pfeiltasten bewegen zwischen Arbeitselementen.",
+    "empty": "Keine Arbeitselemente in diesem Plan.",
+    "parallel": {
+      "one": "{{count}} parallel",
+      "other": "{{count}} parallel"
+    },
+    "here": "hier",
+    "dependsOnEarlier": {
+      "one": "hängt von {{count}} früheren ab",
+      "other": "hängt von {{count}} früheren ab"
+    },
+    "blocked": "blockiert",
+    "standingHere": "hier steht der Lauf.",
+    "blockedByFailure": "durch einen Fehler flussaufwärts blockiert.",
+    "blockedByEscalation": "durch eine Eskalation flussaufwärts blockiert.",
+    "longEdges": "hängt von {{count}} Element weiter als eine Spalte zurück ab: {{named}}.",
+    "longEdgesPlural": "hängt von {{count}} Elementen weiter als eine Spalte zurück ab: {{named}}."
+  },
+  "inspector": {
+    "itemOf": "Element {{index}} von {{total}}",
+    "env": "umgebung",
+    "tokens": "tokens",
+    "cost": "kosten",
+    "started": "gestartet",
+    "waitsOn": "wartet auf",
+    "waitsOnLong": "{{count}} weiter als eine Spalte zurück",
+    "waitsOnNone": "Nichts — dieses Element beginnt den Plan.",
+    "distancePrevious": "vorherige spalte",
+    "distanceBack": {
+      "one": "{{count}} spalte zurück",
+      "other": "{{count}} spalten zurück"
+    },
+    "dependencyAria": "{{label}}, {{profile}}, {{status}}, {{distance}} zeigen.",
+    "input": "eingabe — was ihn gefüttert hat",
+    "log": "journal",
+    "appendOnly": "nur anfügend",
+    "gate": "prüfungsgate",
+    "output": "ausgabe — was er produziert hat",
+    "outputNone": "Noch nichts."
+  }
+}

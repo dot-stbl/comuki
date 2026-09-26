@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -36,10 +37,8 @@ const SKELETON_WIDTHS = ["52%", "84%", "66%", "40%", "74%"]
  * back with a restart, and a confirm that promised permanence would be the
  * one lie on this screen that cannot be undone.
  */
-function revokeRestartNote(): string {
-  return env.useMock
-    ? ""
-    : " The key store is seeded from configuration — a host restart resurrects this key until its Proxy:VirtualKeys row is removed."
+function revokeRestartNote(t: (key: string) => string): string {
+  return env.useMock ? "" : t("keys.revokeRestartNote")
 }
 
 /** What a confirm is currently asking about. One dialog, two questions. */
@@ -69,6 +68,8 @@ type Pending =
  * project. The route already gated `models.view`; nothing here re-gates viewing.
  */
 export function ModelsPage() {
+  const { t } = useTranslation("models")
+  const { t: tShell } = useTranslation("shell")
   const { data, isLoading, isError, error, refetch } = useModelsQuery()
   /* Real mode's spend keys come from the proxy's own catalogue rather than
      the seed registry — fingerprints, caps and expiries, no token material.
@@ -159,36 +160,75 @@ export function ModelsPage() {
     <AppShell
       header={
         <PageHeader
-          breadcrumbs={[{ label: "platform" }, { label: "models" }]}
-          title="Models"
+          breadcrumbs={[
+            { label: tShell("crumb.platform") },
+            { label: tShell("crumb.models") },
+          ]}
+          title={t("page.title")}
           summary={
             ready ? (
               <>
-                <span className={styles.strong}>{endpoints.length}</span>{" "}
-                endpoints · <span className={styles.strong}>{keys.length}</span>{" "}
-                Spend keys ·{" "}
-                {proxy.enabled ? (
-                  <>
-                    proxy <span className={styles.strong}>on</span>
-                  </>
-                ) : (
-                  <>
-                    proxy <span className={styles.warn}>off</span>, nothing
-                    metered
-                  </>
-                )}
+                {/* The figures are values in their own voice and the words are
+                    the product's; the slots stringify the counts because a
+                    Trans slot holding a bare falsy `0` renders empty, and zero
+                    is a reading. */}
+                <Trans
+                  ns="models"
+                  i18nKey={
+                    proxy.enabled
+                      ? "page.summaryProxyOn"
+                      : "page.summaryProxyOff"
+                  }
+                  components={{
+                    endpoints: (
+                      <span className={styles.strong}>
+                        {String(endpoints.length)}
+                      </span>
+                    ),
+                    keys: (
+                      <span className={styles.strong}>
+                        {String(keys.length)}
+                      </span>
+                    ),
+                    proxy: (
+                      <span
+                        className={proxy.enabled ? styles.strong : styles.warn}
+                      >
+                        {proxy.enabled ? t("proxy.on") : t("proxy.off")}
+                      </span>
+                    ),
+                  }}
+                />
                 {nearCap.length > 0 ? (
                   <>
                     {" · "}
-                    <span className={styles.warn}>{nearCap.length}</span> near
-                    the cap
+                    <Trans
+                      ns="models"
+                      i18nKey="page.summaryNearCap"
+                      components={{
+                        count: (
+                          <span className={styles.warn}>
+                            {String(nearCap.length)}
+                          </span>
+                        ),
+                      }}
+                    />
                   </>
                 ) : null}
                 {expired.length > 0 ? (
                   <>
                     {" · "}
-                    <span className={styles.strong}>{expired.length}</span>{" "}
-                    expired
+                    <Trans
+                      ns="models"
+                      i18nKey="page.summaryExpired"
+                      components={{
+                        count: (
+                          <span className={styles.strong}>
+                            {String(expired.length)}
+                          </span>
+                        ),
+                      }}
+                    />
                   </>
                 ) : null}
               </>
@@ -206,18 +246,18 @@ export function ModelsPage() {
           <ScreenState
             kind="error"
             title={
-              isError ? "Couldn't load models" : "Couldn't load the spend keys"
+              isError ? t("page.modelsErrorTitle") : t("page.keysErrorTitle")
             }
             description={requestFailureMessage(
               error ?? proxyKeys.error,
-              "Unknown error"
+              t("errors.unknown")
             )}
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="models-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                     void proxyKeys.refetch()
@@ -235,8 +275,8 @@ export function ModelsPage() {
             {/* The host's own sentence, not "request failed 501" for an
                 operator to translate — the proxy switch is exactly the act
                 whose whole value on this side of the wire is the sentence. */}
-            {requestFailureMessage(failure, "The change failed.")} Nothing moved
-            — the registry is back as it was.
+            {requestFailureMessage(failure, t("errors.changeFailed"))}{" "}
+            {t("page.failureTail")}
           </p>
         ) : null}
 
@@ -245,16 +285,8 @@ export function ModelsPage() {
             <Section
               variant="screen"
               data-test="models-proxy"
-              title="Proxy"
-              note={
-                <>
-                  A thin optional hop in front of the upstreams. It is what
-                  issues a spend key, holds it to a budget, meters a run and
-                  pulls a key when its lease ends — so its switch decides
-                  whether the three sections below are configuration or
-                  enforcement.
-                </>
-              }
+              title={t("proxy.section")}
+              note={t("proxy.note")}
             >
               <ProxyPanel
                 proxy={proxy}
@@ -269,15 +301,8 @@ export function ModelsPage() {
             <Section
               variant="screen"
               data-test="models-endpoints"
-              title="Upstream endpoints"
-              note={
-                <>
-                  Two wires, openai-compatible and anthropic-compatible, and
-                  nothing else. Workers take a url and a key through their
-                  provider config; the lead and chat take the same endpoints
-                  through a chat client. A self-hosted url is an ordinary row.
-                </>
-              }
+              title={t("endpoints.section")}
+              note={t("endpoints.note")}
             >
               <EndpointsPanel endpoints={endpoints} />
             </Section>
@@ -285,18 +310,13 @@ export function ModelsPage() {
             <Section
               variant="screen"
               data-test="models-keys"
-              title="Spend keys"
+              title={t("keys.section")}
               note={
                 <>
-                  A key carries its own route, cap, model list, scope and TTL —
-                  so a leaked one buys a single endpoint, the models named on
-                  it, what is left of a budget, until a day the holder does not
-                  control. The secret is shown once when it is issued and never
-                  again.
+                  {t("keys.note")}
                   {enforced ? null : (
                     <span className={styles.inlineWarn}>
-                      {" "}
-                      With the proxy off none of it is being checked.
+                      {t("keys.noteUnenforced")}
                     </span>
                   )}
                 </>
@@ -315,16 +335,8 @@ export function ModelsPage() {
             <Section
               variant="screen"
               data-test="models-routing"
-              title="Role to model"
-              note={
-                <>
-                  The platform speaks in roles, never in vendors: the lead
-                  plans, writes contracts, reviews results and repairs a failed
-                  run; the worker runs profile steps in a container. This is
-                  where a role becomes a physical model, and the only place that
-                  mapping exists.
-                </>
-              }
+              title={t("routing.section")}
+              note={t("routing.note")}
             >
               <RoleRoutingPanel routes={routes} endpoints={endpoints} />
             </Section>
@@ -337,19 +349,28 @@ export function ModelsPage() {
         danger
         title={
           pending?.kind === "revoke"
-            ? "Revoke this key?"
-            : "Turn the proxy off?"
+            ? t("keys.revokeConfirmTitle")
+            : t("proxy.offConfirmTitle")
         }
         body={
           pending?.kind === "revoke"
-            ? `${pending.entry.prefix} · ${pending.entry.label} — the key stops working immediately and cannot be brought back. A worker holding it loses it with its lease, mid-run.${revokeRestartNote()}`
+            ? t("keys.revokeConfirmBody", {
+                prefix: pending.entry.prefix,
+                label: pending.entry.label,
+              }) + revokeRestartNote(t)
             : pending?.kind === "proxy-off"
-              ? "Workers get a url and a key injected directly. Spend keys stop being checked, every budget below stops being enforced, and no run is metered until it is turned back on."
+              ? t("proxy.offConfirmBody")
               : ""
         }
-        confirmLabel={pending?.kind === "revoke" ? "Revoke key" : "Turn it off"}
+        confirmLabel={
+          pending?.kind === "revoke"
+            ? t("keys.revokeConfirm")
+            : t("proxy.offConfirm")
+        }
         cancelLabel={
-          pending?.kind === "revoke" ? "Keep the key" : "Leave it on"
+          pending?.kind === "revoke"
+            ? t("keys.revokeCancel")
+            : t("proxy.offCancel")
         }
         onConfirm={() => {
           if (pending && can(session, "models.manage")) {

@@ -1,3 +1,5 @@
+import { Trans, useTranslation } from "react-i18next"
+
 import {
   outcomeDayTotal,
   outcomeWindowTotal,
@@ -43,6 +45,8 @@ export function OutcomesBand({
   failed = false,
   className,
 }: OutcomesBandProps) {
+  const { t } = useTranslation("home")
+
   /* Loading first, because "no history yet" and "the history has not arrived
      yet" are different answers and the band used to give the first one for
      both — it simply was not there until the query settled, which on a slow
@@ -53,7 +57,7 @@ export function OutcomesBand({
         className={className}
         lines={OUTCOMES_SKELETON}
         inset="none"
-        label="Loading the week's outcomes"
+        label={t("outcomes.loading")}
         data-test="home-outcomes-loading"
       />
     )
@@ -71,9 +75,7 @@ export function OutcomesBand({
        product and not an answer to whoever is running a shift on it. */
     return (
       <p className={cn(styles.absent, className)} data-test="home-outcomes-off">
-        The week behind this shift did not load, so there is no history to
-        compare against. Nothing else on this screen depends on it — what is in
-        flight below is the live reading.
+        {t("outcomes.failed")}
       </p>
     )
   }
@@ -93,10 +95,15 @@ export function OutcomesBand({
     <div className={cn(styles.band, className)} data-test="home-outcomes">
       <div className={styles.reading}>
         <p className={styles.figure}>
-          <span className={styles.figureValue}>{todayTotal}</span> finished
-          today so far · <span className={styles.figureValue}>{weekTotal}</span>{" "}
-          this week · <span className={styles.figureValue}>{weekFailed}</span>{" "}
-          failed
+          <Trans
+            ns="home"
+            i18nKey="outcomes.reading"
+            components={{
+              today: <span className={styles.figureValue}>{todayTotal}</span>,
+              week: <span className={styles.figureValue}>{weekTotal}</span>,
+              failed: <span className={styles.figureValue}>{weekFailed}</span>,
+            }}
+          />
         </p>
 
         <ul className={styles.legend} aria-hidden="true">
@@ -106,7 +113,7 @@ export function OutcomesBand({
                 className={cn(styles.swatch, styles.status)}
                 data-status={status}
               />
-              {status}
+              {t(`outcomes.status.${status}`)}
             </li>
           ))}
         </ul>
@@ -122,7 +129,11 @@ export function OutcomesBand({
             status: entry.status,
           })),
         }))}
-        label={`Run outcomes by day. ${todayTotal} finished today so far, ${weekTotal} this week, ${weekFailed} of them failed.`}
+        label={t("outcomes.chartLabel", {
+          today: todayTotal,
+          week: weekTotal,
+          failed: weekFailed,
+        })}
       />
     </div>
   )

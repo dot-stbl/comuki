@@ -1,0 +1,248 @@
+{
+  "actions": {
+    "retry": "Retry"
+  },
+  "errors": {
+    "unknown": "Unknown error"
+  },
+  "page": {
+    "title": "Console",
+    "summary": "the same control plane the screens drive, typed at instead of clicked",
+    "onboard": "Onboard a repo"
+  },
+  "console": {
+    "sendFailure": "The message was not sent",
+    "decisionFailure": "The decision was not recorded",
+    "startFailure": "The conversation was not started",
+    "consoleErrorTitle": "The console did not load",
+    "transcriptErrorTitle": "The transcript did not load",
+    "loading": "Loading the conversation"
+  },
+  "sessions": {
+    "navLabel": "Conversations",
+    "head": "conversations",
+    "new": "New conversation",
+    "loading": "Loading conversations",
+    "emptyTitle": "No conversations yet",
+    "emptyDescription": "Start one with the plus above. Every conversation stays here to come back to."
+  },
+  "thread": {
+    "emptyTitle": "Nothing said yet",
+    "emptyBody": "This is the same control plane the screens drive, reached by typing. Ask it what the swarm is doing, or start with a slash to see everything it can do. Anything that would change something comes back as a proposal you press — it never acts on its own.",
+    "logLabel": "Conversation",
+    "jump": "jump to latest",
+    "announceReplying": "the assistant is replying",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "you",
+    "comuki": "comuki",
+    "iteration": "iter {{iteration}}",
+    "blank": "this turn arrived with nothing in it"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "thinking",
+    "tokenWord": "tokens"
+  },
+  "memory": {
+    "label": "memory",
+    "facts": {
+      "one": "{{count}} fact",
+      "other": "{{count}} facts"
+    }
+  },
+  "composer": {
+    "boxLabel": "Message the console",
+    "placeholder": "Ask, or start with a slash",
+    "commandsHead": "commands",
+    "originFrom": "from {{project}}",
+    "seedAbout": "about",
+    "seedDrop": "Drop the reference to {{id}}",
+    "scopeRunsIn": "runs in",
+    "scopePick": "pick a project",
+    "scopeAria": "Project {{command}} runs in",
+    "sendTooltip": "Send — enter",
+    "send": "Send"
+  },
+  "scope": {
+    "needsProject": "{{command}} needs a project",
+    "notAvailable": "not available"
+  },
+  "command": {
+    "init": {
+      "description": "onboard a repository: git access, compute, models, knowledge"
+    },
+    "project": {
+      "description": "list the projects this shift can act in"
+    },
+    "run": {
+      "description": "start a run from a ticket"
+    },
+    "status": {
+      "description": "what the swarm is doing right now"
+    },
+    "stop": {
+      "description": "stop a run and tear its container down"
+    },
+    "plan": {
+      "description": "read a run's plan, and decide on it"
+    },
+    "debug": {
+      "description": "turn verbose worker logging on for an hour"
+    },
+    "help": {
+      "description": "what the console can do"
+    }
+  },
+  "panel": {
+    "label": "Console side panel",
+    "awaiting": "awaiting a decision",
+    "noProject": "no project",
+    "steps": {
+      "one": "{{count}} step",
+      "other": "{{count}} steps"
+    },
+    "quiet": "nothing is waiting on you here",
+    "slashHelp": "slash help"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "start a run",
+        "stop": "stop a run"
+      },
+      "plan": {
+        "approve": "approve a plan"
+      },
+      "settings": {
+        "debug": "change a live setting"
+      }
+    },
+    "words": {
+      "run": {
+        "start": { "confirm": "Start", "refuse": "Discard" },
+        "stop": { "confirm": "Stop", "refuse": "Leave running" }
+      },
+      "plan": {
+        "approve": { "confirm": "Approve", "refuse": "Reject" }
+      },
+      "settings": {
+        "debug": { "confirm": "Turn on", "refuse": "Leave off" }
+      }
+    },
+    "inProject": "in {{project}}",
+    "decidedConfirmed": "confirmed by a human, and recorded where every other decision is",
+    "decidedRejected": "declined by a human, and recorded where every other decision is",
+    "needsProjectDenial": "needs a project to act in"
+  },
+  "handoff": {
+    "searchFor": "search {{where}} for"
+  },
+  "dock": {
+    "tooltip": "Console — {{chord}}",
+    "openAria": "Open the console — {{chord}}",
+    "title": "Console"
+  },
+  "wizard": {
+    "title": "Onboard a repository",
+    "title": "Onboard a repository",
+
+    "running": "Onboarding is running.",
+    "streamHead": "onboarding",
+    "stageWord": {
+      "done": "done",
+
+      "running": "running",
+      "queued": "queued"
+    },
+    "doneNotice": "The project is registered. Its rule set, its worker image and its endpoints are what the swarm will use from the next run on.",
+    "backToConsole": "Back to the console",
+    "start": "Start onboarding",
+    "continue": "Continue",
+    "back": "Back",
+    "cancel": "Cancel",
+    "confirmNotice": "Nothing has been created yet. Confirming starts the onboarding run, and everything it does is recorded where every other run is.",
+    "guardTitle": "Leave the wizard without onboarding?",
+    "guardBody": "The repository, the model endpoints and the secret reference you typed are not saved anywhere yet. Leaving this page drops them.",
+    "guardConfirm": "Discard",
+    "guardCancel": "Keep editing",
+    "step": {
+      "repo": {
+        "title": "Repository and git access",
+        "summary": "Where the code lives and what the swarm may do to it. This is the step that decides which project the rest of the wizard is configuring."
+      },
+      "compute": {
+        "title": "Compute provider",
+        "summary": "Where worker containers are started, and the ceiling on how many run at once."
+      },
+      "models": {
+        "title": "Model endpoints",
+        "summary": "An OpenAI- or Anthropic-compatible base url for the lead model and for the workers. Secrets are named here, never typed here."
+      },
+      "knowledge": {
+        "title": "Knowledge",
+        "summary": "Whether this project keeps an indexed rule set, and what the first pass should read."
+      },
+      "confirm": {
+        "title": "Confirm",
+        "summary": "What onboarding will do, in the order it will do it. Nothing has been created yet."
+      }
+    },
+    "stage": {
+      "clone": "clone the repository",
+      "rules": "read the client's rules and skills",
+      "image": "pull the worker image",
+      "endpoints": "reach the model endpoints",
+      "knowledge": "seed the knowledge index",
+      "register": "register the project with the swarm"
+    },
+    "field": {
+      "project": "project",
+      "projectHint": "Only the projects where you may connect a source are listed.",
+      "pickProject": "pick a project",
+      "remote": "git remote",
+      "branch": "default branch",
+      "write": "may push branches",
+      "writeHint": "Off means the swarm reads the repository and opens nothing.",
+      "provider": "provider",
+      "workers": "workers at once",
+      "workersHint": "The ceiling on containers this project may hold.",
+      "lead": "lead model endpoint",
+      "leadHint": "OpenAI- or Anthropic-compatible.",
+      "workerModel": "worker model endpoint",
+      "workerPlaceholder": "leave empty to use the lead endpoint",
+      "secret": "secret reference",
+      "secretHint": "The name of the secret, not the secret. Keys are never typed into this product.",
+      "knowledge": "keep an indexed rule set",
+      "knowledgeHint": "A docs worker writes it. There is no document editor here.",
+      "seed": "seed",
+      "seedHint": "What the first pass reads, as globs."
+    },
+    "error": {
+      "project": "choose the project this repository belongs to",
+      "remote": "a git remote is required",
+      "branch": "a default branch is required",
+      "workers": "a whole number of workers, at least one",
+      "lead": "the lead model needs a base url",
+      "secret": "name the secret that holds the key"
+    },
+    "review": {
+      "project": "project",
+      "remote": "remote",
+      "branch": "branch",
+      "pushAccess": "push access",
+      "compute": "compute",
+      "workers": "workers",
+      "lead": "lead model",
+      "workerModel": "worker model",
+      "secret": "secret",
+      "knowledge": "knowledge",
+      "on": "on",
+      "off": "off",
+      "sameAsLead": "same as lead"
+    }
+  }
+}

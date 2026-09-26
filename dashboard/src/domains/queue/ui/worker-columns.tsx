@@ -18,7 +18,11 @@ import {
 } from "@/shared/ui"
 
 import { formatDuration } from "@/shared/lib/duration"
-import { WORKER_STATES } from "@/domains/queue/model/queue"
+import {
+  WORKER_STATES,
+  sharedQueueT,
+  type QueueTranslator,
+} from "@/domains/queue/model/queue"
 import type {
   QueueItem,
   Worker,
@@ -72,6 +76,13 @@ export interface WorkerColumnsOptions {
   stoppingId: string | null
   onDrain: (worker: Worker) => void
   onForceStop: (worker: Worker) => void
+  /**
+   * Copy arrives as a parameter for the same reason the session does: a
+   * `cell` is a plain function, so a `useTranslation` inside one throws.
+   * The page passes its hook-bound `t`; tests and stories fall back to the
+   * shared instance, which answers in the active locale.
+   */
+  t?: QueueTranslator
 }
 
 /**
@@ -90,13 +101,14 @@ export function createWorkerColumns({
   stoppingId,
   onDrain,
   onForceStop,
+  t = sharedQueueT,
 }: WorkerColumnsOptions): DataColumn<Worker>[] {
   const projectName = new Map(projects.map((entry) => [entry.id, entry.key]))
 
   return [
     {
       accessorKey: "state",
-      header: "state",
+      header: t("workerColumn.state"),
       cell: ({ row }) => <WorkerStateBadge state={row.original.state} />,
       sortFn: stateSort,
       meta: {
@@ -104,17 +116,17 @@ export function createWorkerColumns({
         pinned: true,
         filter: {
           kind: "select",
-          placeholder: "all states",
+          placeholder: t("workerColumn.allStates"),
           options: WORKER_STATES.map((state) => ({
             value: state,
-            label: state,
+            label: t(`workerState.${state}`),
           })),
         },
       },
     },
     {
       accessorKey: "id",
-      header: "worker",
+      header: t("workerColumn.worker"),
       /* The identifier is the link, exactly as the duty list's run id is —
          and emphatically *not* the whole row. A row-wide click target would
          swallow the two acts at the other end of it: drain and force stop sit
@@ -134,13 +146,13 @@ export function createWorkerColumns({
       meta: {
         width: 96,
         pinned: true,
-        label: "worker",
+        label: t("workerColumn.worker"),
         // One text box over everything that identifies a container: the pool
         // is eleven rows today and a hundred when a project scales, and by
         // then "which one is on the old digest" is the question being asked.
         filter: {
           kind: "text",
-          placeholder: "filter worker, handle, image…",
+          placeholder: t("workerColumn.filterPlaceholder"),
           /* The project key rides in the haystack for the same reason it does
              on the queue half: a hand-off has to be receivable. `?w=` is where
              `shapes.ts` sends a worker id and an image digest, and a person
@@ -161,7 +173,7 @@ export function createWorkerColumns({
     },
     {
       accessorKey: "projectId",
-      header: "project",
+      header: t("workerColumn.project"),
       cell: ({ row }) => (
         <span className={styles.value}>
           {row.original.projectId
@@ -172,10 +184,10 @@ export function createWorkerColumns({
       ),
       meta: {
         width: 100,
-        label: "project",
+        label: t("workerColumn.project"),
         filter: {
           kind: "select",
-          placeholder: "all projects",
+          placeholder: t("workerColumn.allProjects"),
           options: projects.map((entry) => ({
             value: entry.id,
             label: entry.key,
@@ -185,7 +197,7 @@ export function createWorkerColumns({
     },
     {
       accessorKey: "profile",
-      header: "profile",
+      header: t("workerColumn.profile"),
       cell: ({ row }) => (
         <span className={styles.value}>{row.original.profile ?? "—"}</span>
       ),
@@ -193,7 +205,7 @@ export function createWorkerColumns({
         width: 116,
         filter: {
           kind: "select",
-          placeholder: "all profiles",
+          placeholder: t("workerColumn.allProfiles"),
           options: PROFILE_CATALOG.map((profile) => ({
             value: profile,
             label: profile,
@@ -207,14 +219,14 @@ export function createWorkerColumns({
         worker.itemId
           ? (itemsById.get(worker.itemId)?.label ?? worker.itemId)
           : "",
-      header: "current work",
+      header: t("workerColumn.currentWork"),
       cell: ({ row }) => {
         const worker = row.original
         const item = worker.itemId ? itemsById.get(worker.itemId) : undefined
         if (!worker.itemId) {
           // Idle is the honest answer, and it is not a gap: an idle worker is
           // the pool doing its job.
-          return <span className={styles.faint}>idle</span>
+          return <span className={styles.faint}>{t("workerColumn.idle")}</span>
         }
         if (!item) {
           // Busy on an item this payload does not carry. The queue's items
@@ -255,11 +267,11 @@ export function createWorkerColumns({
           </span>
         )
       },
-      meta: { label: "current work" },
+      meta: { label: t("workerColumn.currentWork") },
     },
     {
       accessorKey: "provider",
-      header: "compute",
+      header: t("workerColumn.compute"),
       cell: ({ row }) =>
         row.original.provider ? (
           <span className={styles.value}>{row.original.provider}</span>
@@ -270,10 +282,10 @@ export function createWorkerColumns({
         ),
       meta: {
         width: 108,
-        label: "compute",
+        label: t("workerColumn.compute"),
         filter: {
           kind: "select",
-          placeholder: "all providers",
+          placeholder: t("workerColumn.allProviders"),
           options: [
             { value: "docker", label: "docker" },
             { value: "kubernetes", label: "kubernetes" },
@@ -283,7 +295,7 @@ export function createWorkerColumns({
     },
     {
       accessorKey: "handle",
-      header: "handle",
+      header: t("workerColumn.handle"),
       cell: ({ row }) =>
         row.original.handle ? (
           <span className={styles.value} title={row.original.handle}>
@@ -292,7 +304,7 @@ export function createWorkerColumns({
         ) : (
           <span className={styles.faint}>—</span>
         ),
-      meta: { width: 240, label: "handle" },
+      meta: { width: 240, label: t("workerColumn.handle") },
     },
     {
       // Off by default and one click away in the column manager. It is the
@@ -300,15 +312,15 @@ export function createWorkerColumns({
       // whose image digest is current — and it is the wrong thing to spend a
       // column on until somebody is asking.
       accessorKey: "digest",
-      header: "image",
+      header: t("workerColumn.image"),
       cell: ({ row }) => (
         <span className={styles.value}>{row.original.digest ?? "—"}</span>
       ),
-      meta: { width: 132, label: "image" },
+      meta: { width: 132, label: t("workerColumn.image") },
     },
     {
       accessorKey: "leaseSec",
-      header: "lease",
+      header: t("workerColumn.lease"),
       cell: ({ row }) => <LeaseMeter worker={row.original} />,
       sortFn: leaseSort,
       /* `numeric` as well as `align`, the way `up` below declares it: the
@@ -316,11 +328,16 @@ export function createWorkerColumns({
          counting down in proportional digits shifts under the eye on every
          refresh. The column's own `sortFn` survives it — `meta.numeric` only
          supplies `numericSort` to a column that has not declared one. */
-      meta: { width: 96, align: "end", numeric: true, label: "lease" },
+      meta: {
+        width: 96,
+        align: "end",
+        numeric: true,
+        label: t("workerColumn.lease"),
+      },
     },
     {
       accessorKey: "upSec",
-      header: "up",
+      header: t("workerColumn.up"),
       cell: ({ row }) =>
         row.original.upSec === null ? (
           // Uptime is a container-runtime fact; the derived registry has
@@ -329,11 +346,11 @@ export function createWorkerColumns({
         ) : (
           formatDuration(row.original.upSec)
         ),
-      meta: { width: 88, numeric: true, label: "up" },
+      meta: { width: 88, numeric: true, label: t("workerColumn.up") },
     },
     {
       id: "actions",
-      header: "actions",
+      header: t("workerColumn.actions"),
       // Two buttons and nothing to compare. Say so rather than relying on a
       // column without an accessor happening not to sort.
       enableSorting: false,
@@ -359,7 +376,7 @@ export function createWorkerColumns({
             {/* The kit tooltip rather than a native `title`: it arrives on
                 focus as well as on hover, and a refused act puts its sentence
                 in the same place the word would have been. */}
-            <Tooltip content={denial ?? "Drain"}>
+            <Tooltip content={denial ?? t("workerColumn.drain")}>
               <Button
                 variant="outline"
                 size="icon-sm"
@@ -372,7 +389,7 @@ export function createWorkerColumns({
                 loading={draining}
                 disabled={busy || worker.state === "draining"}
                 denied={denial}
-                aria-label={`Drain ${worker.id}`}
+                aria-label={t("workerColumn.drainWorker", { id: worker.id })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onDrain(worker)
@@ -381,7 +398,7 @@ export function createWorkerColumns({
                 <LogOut aria-hidden="true" />
               </Button>
             </Tooltip>
-            <Tooltip content={denial ?? "Force stop"}>
+            <Tooltip content={denial ?? t("workerColumn.forceStop")}>
               <Button
                 variant="destructive"
                 size="icon-sm"
@@ -389,7 +406,9 @@ export function createWorkerColumns({
                 loading={stopping}
                 disabled={busy}
                 denied={denial}
-                aria-label={`Force stop ${worker.id}`}
+                aria-label={t("workerColumn.forceStopWorker", {
+                  id: worker.id,
+                })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onForceStop(worker)
@@ -401,7 +420,11 @@ export function createWorkerColumns({
           </span>
         )
       },
-      meta: { width: 84, align: "end", label: "actions" },
+      meta: {
+        width: 84,
+        align: "end",
+        label: t("workerColumn.actions"),
+      },
     },
   ]
 }

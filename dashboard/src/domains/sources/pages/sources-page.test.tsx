@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeAll, describe, expect, it } from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { SourcesPage } from "@/domains/sources/pages/sources-page"
@@ -304,5 +305,34 @@ describe("the list receives what another screen sends it", () => {
     expect(box.value).toBe("")
     await waitFor(() => expect(screen.getByText("comuki/web-app")).toBeTruthy())
     expect(screen.getByText("plexor/identity-svc")).toBeTruthy()
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the page's own
+   words — summary, section, acts — arrive in russian while every connection
+   value (names, accounts, hosts) stays as it was. Language resets after the
+   case so the file's other readings keep their en posture. */
+describe("the sources screen in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the registry chrome and the row words in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    renderPage(["platform-admin"])
+
+    expect(
+      await screen.findByRole("heading", { name: "Источники" })
+    ).toBeTruthy()
+    // The connect act only renders once the list is ready, so awaiting it
+    // also awaits the section and the toolbar under it.
+    expect(
+      await screen.findByRole("link", { name: "подключить источник" })
+    ).toBeTruthy()
+    expect(screen.getByText("Подключения")).toBeTruthy()
+    expect(screen.getByText(/показано/)).toBeTruthy()
   })
 })

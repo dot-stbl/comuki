@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { Search } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import {
   Autocomplete,
   Dialog,
@@ -15,7 +16,7 @@ import {
 
 import { cn } from "@/shared/lib/utils"
 
-import { GROUP_LABELS, GROUP_ORDER, type SearchItem } from "./resolve"
+import { GROUP_ORDER, KIND_KEYS, type SearchItem } from "./resolve"
 
 import styles from "./command-palette.module.css"
 
@@ -56,8 +57,9 @@ export function CommandPalette({
   onQueryChange,
   items,
   onSelect,
-  emptyLabel = "nothing here answers to that",
+  emptyLabel,
 }: CommandPaletteProps) {
+  const { t } = useTranslation("shell")
   const byId = useMemo(
     () => new Map(items.map((item) => [item.id, item])),
     [items]
@@ -70,11 +72,15 @@ export function CommandPalette({
     () =>
       GROUP_ORDER.map((group) => ({
         group,
-        label: GROUP_LABELS[group],
+        label: t(`search.band.${group}`),
         rows: items.filter((item) => item.group === group),
       })).filter((band) => band.rows.length > 0),
-    [items]
+    [items, t]
   )
+
+  // The kind is a closed machine vocabulary; the word an operator reads is
+  // its shell-namespace twin (D11 — the enum does not localise, the map does).
+  const kindOf = (kind: string) => t(KIND_KEYS[kind] ?? kind)
 
   return (
     <ModalOverlay
@@ -86,7 +92,7 @@ export function CommandPalette({
       <Modal className={styles.modal}>
         <Dialog
           className={styles.dialog}
-          aria-label="Search Comuki"
+          aria-label={t("search.label")}
           data-test="command-palette"
         >
           {/* No `filter`: the rows arriving as props are already the answer,
@@ -97,18 +103,18 @@ export function CommandPalette({
             <div className={styles.field}>
               <Search className={styles.fieldIcon} aria-hidden="true" />
               {/* A text field rather than a search field, and the difference
-                  is one key: React Aria's search field swallows escape to
-                  clear itself, which would cost the palette the gesture that
-                  closes it. Clearing is what backspace is for. */}
+                   is one key: React Aria's search field swallows escape to
+                   clear itself, which would cost the palette the gesture that
+                   closes it. Clearing is what backspace is for. */}
               <TextField
-                aria-label="Search Comuki"
+                aria-label={t("search.label")}
                 className={styles.textField}
                 autoFocus
               >
                 <Input
                   className={styles.input}
                   data-test="command-palette-input"
-                  placeholder="paste an id, or name a screen…"
+                  placeholder={t("search.placeholder")}
                 />
               </TextField>
             </div>
@@ -116,7 +122,7 @@ export function CommandPalette({
             {bands.length > 0 ? (
               <Menu
                 className={styles.list}
-                aria-label="Results"
+                aria-label={t("search.results")}
                 data-test="command-palette-list"
                 onAction={(key) => {
                   const item = byId.get(String(key))
@@ -136,13 +142,15 @@ export function CommandPalette({
                       <MenuItem
                         key={item.id}
                         id={item.id}
-                        textValue={`${item.kind} ${item.label}`}
+                        textValue={`${kindOf(item.kind)} ${item.label}`}
                         className={styles.item}
                         data-test="command-palette-item"
                         data-kind={item.kind}
                         data-href={item.href}
                       >
-                        <span className={styles.itemKind}>{item.kind}</span>
+                        <span className={styles.itemKind}>
+                          {kindOf(item.kind)}
+                        </span>
                         <span
                           className={cn(
                             styles.itemLabel,
@@ -161,7 +169,7 @@ export function CommandPalette({
               </Menu>
             ) : (
               <p className={styles.empty} data-test="command-palette-empty">
-                {emptyLabel}
+                {emptyLabel ?? t("search.empty")}
               </p>
             )}
           </Autocomplete>
@@ -170,9 +178,9 @@ export function CommandPalette({
               palette does is a keyboard gesture, and a control whose whole
               interface is invisible has to name it somewhere. */}
           <footer className={styles.hints} aria-hidden="true">
-            <span>↑↓ move</span>
-            <span>enter open</span>
-            <span>esc close</span>
+            <span>{t("search.keys.move")}</span>
+            <span>{t("search.keys.open")}</span>
+            <span>{t("search.keys.close")}</span>
           </footer>
         </Dialog>
       </Modal>

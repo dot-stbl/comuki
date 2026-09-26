@@ -1,5 +1,6 @@
 import { RotateCw } from "lucide-react"
 import { Tab, TabList, TabPanel, Tabs } from "react-aria-components"
+import { Trans, useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -54,6 +55,8 @@ export interface IdentityPageProps {
  * anything rather than after the value has scrolled away.
  */
 export function IdentityPage({ tab, focus, onTabChange }: IdentityPageProps) {
+  const { t } = useTranslation("identity")
+  const { t: tShell } = useTranslation("shell")
   const { data, isLoading, isError, error, refetch } = useIdentityQuery()
 
   const users = data?.users ?? []
@@ -67,20 +70,39 @@ export function IdentityPage({ tab, focus, onTabChange }: IdentityPageProps) {
       padded={false}
       header={
         <PageHeader
-          breadcrumbs={[{ label: "platform" }, { label: "identity" }]}
-          title="Identity"
+          breadcrumbs={[
+            { label: tShell("crumb.platform") },
+            { label: tShell("crumb.identity") },
+          ]}
+          title={t("registry.title")}
           summary={
             ready ? (
-              <>
-                <span className={styles.strong}>{users.length}</span> users
-                {" · "}
-                <span className={styles.strong}>{grants.length}</span> grants
-                {" · "}
-                <span className={styles.strong}>
-                  {keys.filter((key) => key.status === "active").length}
-                </span>{" "}
-                keys in force
-              </>
+              /* The counts stringify: a Trans slot holding a falsy child (a
+                 bare `0`) renders empty, and zero is a reading, not a
+                 blank. */
+              <Trans
+                ns="identity"
+                i18nKey="registry.summary"
+                components={{
+                  users: (
+                    <span className={styles.strong}>
+                      {String(users.length)}
+                    </span>
+                  ),
+                  grants: (
+                    <span className={styles.strong}>
+                      {String(grants.length)}
+                    </span>
+                  ),
+                  keys: (
+                    <span className={styles.strong}>
+                      {String(
+                        keys.filter((key) => key.status === "active").length
+                      )}
+                    </span>
+                  ),
+                }}
+              />
             ) : undefined
           }
         />
@@ -95,7 +117,7 @@ export function IdentityPage({ tab, focus, onTabChange }: IdentityPageProps) {
             lines={SKELETON_WIDTHS}
             inset="gutter"
             fill
-            label="Loading identity"
+            label={t("registry.loading")}
             data-test="identity-loading"
           />
         ) : null}
@@ -104,19 +126,19 @@ export function IdentityPage({ tab, focus, onTabChange }: IdentityPageProps) {
           <ScreenState
             kind="error"
             inset="gutter"
-            title="Identity did not load"
+            title={t("registry.errorTitle")}
             /* The host's own problem detail rather than the transport's
                message — `requestFailureMessage` falls back to the latter when
                there is no problem body, so nothing is lost and a sentence is
                gained. */
-            description={requestFailureMessage(error, "Unknown error")}
+            description={requestFailureMessage(error, t("errors.unknown"))}
             data-test="identity-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="identity-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -138,16 +160,48 @@ export function IdentityPage({ tab, focus, onTabChange }: IdentityPageProps) {
               }
             }}
           >
-            <TabList aria-label="Identity sections" className={styles.tabList}>
+            <TabList
+              aria-label={t("registry.sectionsAria")}
+              className={styles.tabList}
+            >
               <Tab id="users" className={styles.tab} data-test="tab-users">
-                users <span className={styles.tabCount}>{users.length}</span>
+                <Trans
+                  ns="identity"
+                  i18nKey="registry.tabUsers"
+                  components={{
+                    count: (
+                      <span className={styles.tabCount}>
+                        {String(users.length)}
+                      </span>
+                    ),
+                  }}
+                />
               </Tab>
               <Tab id="grants" className={styles.tab} data-test="tab-grants">
-                role assignments{" "}
-                <span className={styles.tabCount}>{grants.length}</span>
+                <Trans
+                  ns="identity"
+                  i18nKey="registry.tabGrants"
+                  components={{
+                    count: (
+                      <span className={styles.tabCount}>
+                        {String(grants.length)}
+                      </span>
+                    ),
+                  }}
+                />
               </Tab>
               <Tab id="keys" className={styles.tab} data-test="tab-keys">
-                api keys <span className={styles.tabCount}>{keys.length}</span>
+                <Trans
+                  ns="identity"
+                  i18nKey="registry.tabKeys"
+                  components={{
+                    count: (
+                      <span className={styles.tabCount}>
+                        {String(keys.length)}
+                      </span>
+                    ),
+                  }}
+                />
               </Tab>
             </TabList>
 

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { ModelEndpoint, ModelRoute } from "@/domains/models/model/types"
 import {
@@ -30,6 +31,7 @@ export interface RoleRoutingPanelProps {
  * are built on.
  */
 export function RoleRoutingPanel({ routes, endpoints }: RoleRoutingPanelProps) {
+  const { t } = useTranslation("models")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
@@ -37,8 +39,8 @@ export function RoleRoutingPanel({ routes, endpoints }: RoleRoutingPanelProps) {
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
 
   const columns = useMemo(
-    () => createRoutingColumns({ endpoints }),
-    [endpoints]
+    () => createRoutingColumns({ endpoints, t }),
+    [endpoints, t]
   )
 
   const rows = useMemo(
@@ -47,8 +49,8 @@ export function RoleRoutingPanel({ routes, endpoints }: RoleRoutingPanelProps) {
   )
 
   const emptyLabel = hasActiveFilters(filters)
-    ? "no roles match the current filters"
-    : "no role has been routed to a model"
+    ? t("routing.emptyFiltered")
+    : t("routing.empty")
 
   return (
     <>
@@ -61,7 +63,7 @@ export function RoleRoutingPanel({ routes, endpoints }: RoleRoutingPanelProps) {
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="routes-count">
-              {rows.length} shown
+              {t("routing.count", { count: rows.length })}
             </span>
           }
         />

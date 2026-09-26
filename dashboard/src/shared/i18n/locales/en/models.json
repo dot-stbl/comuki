@@ -1,0 +1,169 @@
+{
+  "actions": {
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "errors": {
+    "unknown": "Unknown error",
+    "changeFailed": "The change failed."
+  },
+  "page": {
+    "title": "Models",
+    "modelsErrorTitle": "Couldn't load models",
+    "keysErrorTitle": "Couldn't load the spend keys",
+    "failureTail": "Nothing moved — the registry is back as it was.",
+    "summaryProxyOn": "<endpoints/> endpoints · <keys/> Spend keys · proxy <proxy/>",
+    "summaryProxyOff": "<endpoints/> endpoints · <keys/> Spend keys · proxy <proxy/>, nothing metered",
+    "summaryNearCap": "<count/> near the cap",
+    "summaryExpired": "<count/> expired"
+  },
+  "proxy": {
+    "section": "Proxy",
+    "note": "A thin optional hop in front of the upstreams. It is what issues a spend key, holds it to a budget, meters a run and pulls a key when its lease ends — so its switch decides whether the three sections below are configuration or enforcement.",
+    "on": "on",
+    "off": "off",
+    "since": "since {{when}}",
+    "sentenceOn": "Spend keys are checked, budgets are enforced and every run is metered",
+    "sentenceOff": "workers get a url and a key injected directly — Spend keys are not checked, budgets are not enforced and nothing is metered",
+    "immutableSentence": "virtual keys are seeded from configuration and immutable at runtime — spend is metered at the proxy, not reported here",
+    "turnOff": "turn the proxy off",
+    "turnOn": "turn the proxy on",
+    "costPerRun": "cost per run",
+    "spend": "spend",
+    "runs": "runs",
+    "burnByHour": "burn by hour",
+    "burnNothing": "Spend by hour: nothing metered.",
+    "burnLabel": "Spend by hour across the metered day, peak {{peak}} at {{hour}}.",
+    "burnPeak": "peak {{peak}} at {{hour}}",
+    "windowOver": "over ",
+    "windowStale": "last metered over ",
+    "windowNotCurrent": " — not current",
+    "offConfirmTitle": "Turn the proxy off?",
+    "offConfirmBody": "Workers get a url and a key injected directly. Spend keys stop being checked, every budget below stops being enforced, and no run is metered until it is turned back on.",
+    "offConfirm": "Turn it off",
+    "offCancel": "Leave it on"
+  },
+  "endpoints": {
+    "section": "Upstream endpoints",
+    "note": "Two wires, openai-compatible and anthropic-compatible, and nothing else. Workers take a url and a key through their provider config; the lead and chat take the same endpoints through a chat client. A self-hosted url is an ordinary row.",
+    "emptyFiltered": "no endpoints match the current filters",
+    "empty": "no upstream endpoint is configured",
+    "count": "{{count}} shown",
+    "column": {
+      "endpoint": "endpoint",
+      "wire": "wire",
+      "baseUrl": "base url",
+      "state": "state",
+      "models": "models",
+      "note": "note"
+    },
+    "filterPlaceholder": "filter endpoint, url, model…",
+    "allWires": "all wires",
+    "allStates": "all states"
+  },
+  "keys": {
+    "section": "Spend keys",
+    "note": "A key carries its own route, cap, model list, scope and TTL — so a leaked one buys a single endpoint, the models named on it, what is left of a budget, until a day the holder does not control. The secret is shown once when it is issued and never again.",
+    "noteUnenforced": " With the proxy off none of it is being checked.",
+    "emptyFiltered": "no keys match the current filters",
+    "empty": "no spend key has been issued",
+    "countExpired": "{{count}} expired · ",
+    "countNearCap": "{{count}} near the cap · ",
+    "count": "{{count}} shown",
+    "column": {
+      "key": "key",
+      "whatFor": "what for",
+      "scope": "scope",
+      "route": "route",
+      "mayReach": "may reach",
+      "spentOfCap": "spent of cap",
+      "expires": "expires",
+      "state": "state",
+      "actions": "actions"
+    },
+    "filterPlaceholder": "filter key, label, model…",
+    "allScopes": "all scopes",
+    "allRoutes": "all routes",
+    "allStates": "all states",
+    "openAria": "Open {{prefix}} details",
+    "allModels": "all models",
+    "allModelsTitle": "empty allow-list — every model permitted",
+    "revokeTooltip": "Revoke this key",
+    "revokeAria": "Revoke {{prefix}}",
+    "revokeConfirmTitle": "Revoke this key?",
+    "revokeConfirmBody": "{{prefix}} · {{label}} — the key stops working immediately and cannot be brought back. A worker holding it loses it with its lease, mid-run.",
+    "revokeRestartNote": " The key store is seeded from configuration — a host restart resurrects this key until its Proxy:VirtualKeys row is removed.",
+    "revokeConfirm": "Revoke key",
+    "revokeCancel": "Keep the key"
+  },
+  "routing": {
+    "section": "Role to model",
+    "note": "The platform speaks in roles, never in vendors: the lead plans, writes contracts, reviews results and repairs a failed run; the worker runs profile steps in a container. This is where a role becomes a physical model, and the only place that mapping exists.",
+    "emptyFiltered": "no roles match the current filters",
+    "empty": "no role has been routed to a model",
+    "column": {
+      "role": "role",
+      "model": "model",
+      "endpoint": "endpoint",
+      "upstream": "upstream",
+      "usedFor": "used for"
+    },
+    "allRoles": "all roles",
+    "allEndpoints": "all endpoints",
+    "unknown": "unknown",
+    "count": "{{count}} shown"
+  },
+  "sheet": {
+    "closeTooltip": "Close — escape",
+    "closeAria": "Close the key",
+    "routeNotKnown": "route not known here",
+    "issued": "issued",
+    "lastUsed": "last used",
+    "expires": "expires",
+    "scope": "scope",
+    "grants": "grants",
+    "notRecorded": "not recorded on this wire",
+    "issuedToNobody": "issued to nobody in particular",
+    "mayReach": "may reach",
+    "everyModel": "every model on the endpoint",
+    "everyModelTitle": "empty allow-list — every model permitted",
+    "alreadyStopped": "this key has already stopped — there is nothing to revoke",
+    "irreversible": "Irreversible — asks first",
+    "revoke": "Revoke this key",
+    "spend": "spend",
+    "notMetered": "not metered on this wire",
+    "noSpend": "no spend recorded",
+    "reading": "{{total}} over the last {{days}} days · {{average}} a day · heaviest {{day}} at {{peak}}",
+    "silentDays": " · no spend recorded in the last {{count}} days",
+    "chartLabel": "Spend by day, dollars. {{reading}}."
+  },
+  "meter": {
+    "noCap": "no cap",
+    "noCapTitle": "this key carries no cap — it spends until it is revoked or expires",
+    "capOnly": "cap {{cap}}",
+    "notMeteredHere": "spend not metered here",
+    "notMeteredHereTitle": "the cap is live but this surface does not meter spend",
+    "unforcedTitle": "the proxy is off — this cap is recorded but not applied",
+    "over": "over",
+    "left": "{{left}} left"
+  },
+  "word": {
+    "never": "never",
+    "expired": "expired {{reading}}",
+    "platform": "platform",
+    "notOnThisWire": "not on this wire",
+    "neverUsed": "never used"
+  },
+  "wire": {
+    "openai": "openai-compatible",
+    "anthropic": "anthropic-compatible"
+  },
+  "state": {
+    "live": "live",
+    "expired": "expired",
+    "revoked": "revoked",
+    "ok": "ok",
+    "degraded": "degraded",
+    "disabled": "disabled"
+  }
+}

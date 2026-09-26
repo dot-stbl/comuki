@@ -7,10 +7,11 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { render, waitFor } from "@testing-library/react"
-import { beforeAll, describe, expect, it, vi } from "vitest"
+import { render, screen, waitFor } from "@testing-library/react"
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { ThemeProvider } from "@/app/theme-provider"
+import { i18n, loadLocale } from "@/shared/i18n"
 import { TestSession } from "@/shared/session/test-session"
 
 import { QueuePage } from "./queue-page"
@@ -338,5 +339,36 @@ describe("the queue screen, narrowed from its own address", () => {
     // Unchanged behaviour for a screen rendered without the route's halves:
     // the panels narrow themselves and nothing outside them hears.
     expect(searches().map((box) => box.value)).toEqual(["", ""])
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the screen's own
+   words — header, summaries, acts — arrive in russian while every value (ids,
+   profiles, figures, digests) stays as it was. Language resets after the case
+   so the file's other readings keep their en posture. */
+describe("the queue screen in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the chrome and the pool's acts in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+    await boardReady()
+
+    expect(
+      await screen.findByRole("heading", { name: "Очередь и воркеры" })
+    ).toBeTruthy()
+
+    // The header's sentence reads in russian with the same figures.
+    const header = find('[data-test="page-header"]')
+    expect(header?.textContent).toContain("в очереди")
+    expect(header?.textContent).toContain("воркеров")
+
+    // The pool's collapse names itself in russian either way.
+    expect(find('[data-test="pool-toggle"]')?.getAttribute("aria-label")).toBe(
+      "свернуть пул"
+    )
   })
 })

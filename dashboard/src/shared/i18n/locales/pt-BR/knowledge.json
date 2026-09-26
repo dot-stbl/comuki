@@ -1,0 +1,96 @@
+{
+  "actions": {
+    "retry": "Tentar novamente",
+    "close": "Fechar"
+  },
+  "errors": {
+    "unknown": "Erro desconhecido"
+  },
+  "page": {
+    "title": "Conhecimento",
+    "summary": "conjunto de regras, revisões, bateria de avaliação",
+    "tabsLabel": "Seções de conhecimento"
+  },
+  "tab": {
+    "library": "biblioteca",
+    "gate": "portão"
+  },
+  "load": {
+    "errorTitle": "O conhecimento não carregou"
+  },
+  "search": {
+    "label": "Filtrar regras, docs e skills",
+    "placeholder": "Buscar regras, docs, skills…",
+    "errorTitle": "A busca não respondeu",
+    "searching": "Buscando",
+    "emptyTitle": "Sem correspondências",
+    "emptySemantic": "Nada na biblioteca está perto o suficiente da consulta.",
+    "emptyPlain": "Tente outra consulta sobre regras e docs fixados.",
+    "sectionTitle": "correspondências semânticas",
+    "sectionNote": "top {{count}} por similaridade de cosseno",
+    "count": "{{shown}} de {{total}}"
+  },
+  "revision": {
+    "section": "revisão vigente",
+    "current": "revisão atual",
+    "sub": "{{sdk}} · atualizado {{updated}}",
+    "rules": "regras ativas",
+    "rulesSub": "{{hard}} duras · {{soft}} brandas",
+    "reproducibility": "reprodutibilidade",
+    "reproducibilitySub": "cada execução fixa o conjunto de regras + SDK"
+  },
+  "entries": {
+    "section": "regras, docs e skills",
+    "updated": "atualizado {{updated}}"
+  },
+  "sheet": {
+    "close": "Fechar a entrada",
+    "revisionAt": "revisão @{{revision}}",
+    "scope": "escopo",
+    "updated": "atualizado"
+  },
+  "badge": {
+    "kind": {
+      "rule": "regra",
+      "doc": "doc",
+      "skill": "skill"
+    },
+    "ruleKind": {
+      "hard": "dura",
+      "soft": "branda"
+    },
+    "pinned": "fixado",
+    "pinnedAt": "fixado @ {{revision}}",
+    "delta": {
+      "improved": "melhorou",
+      "regressed": "piorou",
+      "noChange": "sem mudança"
+    }
+  },
+  "eval": {
+    "section": "tarefas douradas",
+    "note": "antes → depois em edições de regras",
+    "empty": "nenhuma tarefa dourada foi executada contra esta revisão",
+    "column": {
+      "task": "tarefa",
+      "before": "antes",
+      "after": "depois",
+      "delta": "delta"
+    }
+  },
+  "gate": {
+    "errorTitle": "O portão não carregou",
+    "changeFailed": "A mudança falhou.",
+    "nothingMoved": "Nada se moveu — o portão voltou a como estava.",
+    "intro": "Uma execução precisa passar pelas verificações próprias do cliente antes de pousar. As verificações vivem no repositório deles — um arquivo, commitado como qualquer outro —, então esta seção liga e desliga o portão e mostra o que cada verificação disse da última vez. Editar um comando é editar o arquivo; cada seção abaixo diz exatamente onde está o seu.",
+    "emptyTitle": "Nenhum projeto tem portão aqui",
+    "emptyDescription": "Nada nos projetos desta sessão declara as verificações próprias do cliente. Um portão aparece assim que um deles commitar o arquivo que as contém.",
+    "onToast": "Portão ligado",
+    "onToastDescription": "{{name}} — execuções precisam passar pelas verificações do cliente",
+    "offToast": "Portão desligado",
+    "offToastDescription": "{{name}} — execuções pousam sem as verificações do cliente",
+    "summary": "<on/> de <total/> portões ligados · <checks/> verificações declaradas",
+    "summaryFailing": "<failing/> falhando",
+    "summaryNeverRan": "<never/> nunca rodaram"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "actions": {
+    "retry": "Réessayer"
+  },
+  "errors": {
+    "unknown": "Erreur inconnue"
+  },
+  "status": {
+    "new": "nouvelle",
+    "queued": "en file",
+    "planning": "en planification"
+  },
+  "priority": {
+    "low": "basse",
+    "normal": "normale",
+    "high": "haute"
+  },
+  "registry": {
+    "title": "Tâches",
+    "summary": "<total/> en backlog · <fresh/> nouvelles",
+    "newTask": "Nouvelle tâche",
+    "count": {
+      "one": "{{count}} affichée",
+      "other": "{{count}} affichées"
+    },
+    "loading": "Chargement du backlog",
+    "errorTitle": "Le backlog n'a pas chargé",
+    "empty": {
+      "filtered": "aucune tâche ne correspond aux filtres actuels",
+      "none": "le backlog est vide"
+    }
+  },
+  "dispatch": {
+    "toast": "Envoyé à l'orchestrateur",
+    "fallback": "L'orchestrateur ne l'a pas pris.",
+    "tail": "Rien n'est entré en file — le ticket est toujours dans le backlog."
+  },
+  "column": {
+    "source": "source",
+    "task": "tâche",
+    "evidence": "preuves",
+    "project": "projet",
+    "app": "app",
+    "priority": "priorité",
+    "status": "statut",
+    "age": "âge",
+    "action": "action",
+    "filterPlaceholder": "filtrer titre, id, app…",
+    "allProjects": "tous les projets",
+    "allApps": "toutes les apps",
+    "allPriority": "toute priorité",
+    "allStatus": "tout statut",
+    "dispatch": "Envoyer",
+    "dispatchTask": "Envoyer {{title}}"
+  },
+  "create": {
+    "title": "Nouvelle tâche",
+    "crumb": "nouvelle",
+    "summary": "Un ticket devant l'essaim : d'où il vient, dans quel backlog il atterrit, et à quel point il est urgent.",
+    "toastCreated": "Tâche créée",
+    "failureTail": "Rien n'est entré en file — ce que vous avez tapé est exactement comme vous l'avez laissé.",
+    "guardTitle": "Partir sans créer la tâche ?",
+    "guardBody": "Le titre et le brief que vous avez tapés ne sont enregistrés nulle part. Quitter cette page les abandonne, et rien n'atteint l'admission.",
+    "guardConfirm": "Abandonner",
+    "guardCancel": "Continuer l'édition",
+    "submit": "Créer et mettre en file",
+    "cancel": "Annuler",
+    "sourceLabel": "source",
+    "sourceNote": "d'où vient le ticket. toute carte sauf la native attend une connexion qui surveille ce fournisseur — écrire un ticket ici enregistre d'où il vient, ne le dépose pas là-bas.",
+    "ticketLabel": "le ticket",
+    "ticketNote": "quoi faire, où il atterrit, à quel point c'est urgent.",
+    "briefLabel": "brief",
+    "briefNote": "contexte, critères d'acceptation, liens — pour la personne qui le prendra, pas pour le formulaire.",
+    "titleLabel": "titre",
+    "titlePlaceholder": "quoi faire, en une ligne",
+    "projectLabel": "projet",
+    "appLabel": "app",
+    "briefPlaceholder": "contexte, critères d'acceptation, liens…"
+  },
+  "priorityField": {
+    "label": "priorité"
+  }
+}

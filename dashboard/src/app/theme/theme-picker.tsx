@@ -1,5 +1,6 @@
 import { Check, Palette } from "lucide-react"
 import type { CSSProperties } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Button as AriaButton,
   Menu,
@@ -46,6 +47,7 @@ function swatchStyle(id: string): CSSProperties {
  * than a hue, the same way `ThemeControl` marks its own.
  */
 export function ThemePicker() {
+  const { t } = useTranslation("shell")
   const { themeId, setThemeId, themes } = useTheme()
   const current = findTheme(themeId) ?? themes[0]
 
@@ -58,7 +60,7 @@ export function ThemePicker() {
       <AriaButton
         className={styles.trigger}
         data-test="theme-picker"
-        aria-label={`Palette — ${current.name}`}
+        aria-label={t("palette.current", { name: current.name })}
       >
         <Palette aria-hidden="true" className={styles.glyph} />
       </AriaButton>
@@ -66,7 +68,7 @@ export function ThemePicker() {
       <Popover className={styles.popover} placement="bottom end">
         <Menu
           className={styles.menu}
-          aria-label="Palette"
+          aria-label={t("palette.label")}
           selectionMode="single"
           disallowEmptySelection
           selectedKeys={[current.id]}

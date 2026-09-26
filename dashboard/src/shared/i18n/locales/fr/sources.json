@@ -1,0 +1,294 @@
+{
+  "actions": {
+    "retry": "Réessayer",
+    "cancel": "Annuler"
+  },
+  "errors": {
+    "unknown": "Erreur inconnue",
+    "changeFailed": "La modification a échoué."
+  },
+  "state": {
+    "connected": "connecté",
+    "error": "erreur",
+    "disabled": "désactivé"
+  },
+  "word": {
+    "never": "jamais"
+  },
+  "provider": {
+    "github": {
+      "label": "github",
+      "target": "dépôt",
+      "intakeNote": "les issues arrivent d'un dépôt surveillé. une issue écrite ici est estampillée comme celle du dépôt."
+    },
+    "gitlab": {
+      "label": "gitlab",
+      "target": "dépôt",
+      "intakeNote": "les issues arrivent d'un dépôt surveillé. une issue écrite ici est estampillée comme celle du dépôt."
+    },
+    "yandex-tracker": {
+      "label": "yandex tracker",
+      "target": "clé de file",
+      "intakeNote": "les tickets arrivent d'une file de tracker surveillée. un ticket écrit ici est estampillé comme celui de la file."
+    },
+    "jira": {
+      "label": "jira",
+      "target": "clé de projet",
+      "intakeNote": "les tickets arrivent d'un board surveillé. un ticket écrit ici est estampillé comme celui du board."
+    },
+    "native": {
+      "label": "native",
+      "target": "nom",
+      "intakeNote": "écrit ici, par une personne — l'admission propre du produit, sans tracker derrière."
+    }
+  },
+  "intakeNoteUnknown": "les tickets arrivent d'une connexion surveillée. un ticket écrit ici est estampillé comme celui de ce fournisseur.",
+  "auth": {
+    "pat": "jeton d'accès personnel",
+    "oauth": "grant oauth",
+    "app-install": "installation d'app",
+    "none": "aucun"
+  },
+  "authSecret": {
+    "pat": "access token",
+    "oauth": "client secret oauth",
+    "app-install": "clé privée de l'app",
+    "other": "secret"
+  },
+  "nativeRefusal": "l'admission propre ne peut pas être déconnectée — c'est la façon du produit d'accepter un ticket",
+  "admission": {
+    "watch": {
+      "label": "watch",
+      "description": "un ticket correspondant démarre un run. personne n'a à le prendre."
+    },
+    "inbox-only": {
+      "label": "inbox seul",
+      "description": "un ticket correspondant atterrit dans le catalogue et attend qu'une personne le prenne."
+    },
+    "both": {
+      "label": "les deux",
+      "description": "le ticket démarre un run et reste dans le catalogue, pour que le run se retrouve par le ticket qui l'a causé."
+    },
+    "nativeIntake": "admission native",
+    "watchOff": "watch éteint"
+  },
+  "host": {
+    "inPlatform": "dans la plateforme",
+    "cloud": "cloud"
+  },
+  "note": {
+    "refusedSilent": "le fournisseur a refusé et n'a rien dit d'utile.",
+    "filedHere": {
+      "one": "{{count}} ticket déposé ici",
+      "other": "{{count}} tickets déposés ici"
+    },
+    "turnedOff": "éteinte — dernière synchronisation {{when}}",
+    "watchOff": "watch éteint — rien n'est admis d'ici",
+    "matchedNothing": "le filtre n'a rien correspondu dans la dernière journée",
+    "lastSynced": "synchronisée pour la dernière fois {{when}}"
+  },
+  "registry": {
+    "title": "Sources",
+    "errorTitle": "Impossible de charger les sources",
+    "connect": "Connecter une source",
+    "connectionsWord": "connexions",
+    "admittingWord": "admettent du travail",
+    "errorWord": "en erreur",
+    "failureTail": "Rien n'a bougé — la liste est revenue comme avant.",
+    "sectionTitle": "Connexions",
+    "sectionNote": "Chaque source de la plateforme, quel que soit le projet qu'elle alimente. Une connexion porte le credential ; son <em>watch</em> porte ce que ce credential a le droit d'admettre — ils cassent séparément, donc ils se lisent séparément. L'édition s'accorde par projet, donc une ligne que vous administrez se trouve au-dessus d'une ligne que vous ne faites que regarder, et chacune dit laquelle elle est. <code>native</code> est dans chaque projet et ne peut pas être déconnectée."
+  },
+  "connectionsPanel": {
+    "shown": {
+      "one": "{{count}} affichée",
+      "other": "{{count}} affichées"
+    },
+    "emptyFiltered": "Aucune connexion ne correspond aux filtres actuels.",
+    "emptyNone": "Aucune source n'est connectée."
+  },
+  "disconnect": {
+    "title": "Déconnecter cette source ?",
+    "body": "{{name}} · {{project}} — le credential est abandonné et plus rien n'est admis d'ici. Les tickets déjà pris gardent leurs runs ; se reconnecter signifie un nouveau secret.",
+    "confirm": "Déconnecter",
+    "keep": "La garder",
+    "toast": "Source déconnectée"
+  },
+  "column": {
+    "state": "état",
+    "source": "source",
+    "provider": "fournisseur",
+    "project": "projet",
+    "instance": "instance",
+    "account": "compte",
+    "admission": "admission",
+    "admitted": "admis",
+    "note": "ce qui se passe",
+    "actions": "actions",
+    "allStates": "tous les états",
+    "allProviders": "tous les fournisseurs",
+    "allProjects": "tous les projets",
+    "allModes": "tous les modes",
+    "filterPlaceholder": "filtrer source, compte, hôte…",
+    "newTicket": "Nouveau ticket",
+    "newTicketAria": "Nouveau ticket dans {{name}} sur {{where}}",
+    "watchAndFilter": "Watch et filtre",
+    "watchAndFilterAria": "Modifier le watch de {{name}}",
+    "testConnection": "Tester la connexion",
+    "testConnectionAria": "Tester la connexion à {{name}}",
+    "disconnect": "Déconnecter",
+    "disconnectAria": "Déconnecter {{name}}"
+  },
+  "connectPage": {
+    "title": "Connecter une source",
+    "crumbNew": "nouvelle",
+    "summary": "Une connexion appartient à un projet et porte un credential. Elle arrive avec son watch éteint — admettre des tickets est une décision séparée, prise sur la page de la source.",
+    "refused": "La connexion a été refusée.",
+    "tail": "Rien n'a été sauvegardé — les détails ci-dessous sont exactement tels que saisis.",
+    "leaveTitle": "Partir sans connecter la source ?",
+    "leaveBody": "Rien ici n'est sauvegardé, et le credential saisi n'est gardé nulle part — quitter cette page l'abandonne, et se connecter plus tard signifie aller le rechercher à nouveau.",
+    "discard": "Abandonner",
+    "keep": "Continuer l'édition",
+    "toast": "Source connectée"
+  },
+  "connectForm": {
+    "providerCard": "fournisseur",
+    "providerCardNote": "quel tracker cette connexion surveille, et le dialecte qu'elle parle.",
+    "providerHint": "l'admission native n'est pas ici : chaque projet en a déjà une, et il n'y a rien vers quoi pointer un credential.",
+    "connectionCard": "la connexion",
+    "connectionCardNote": "quel projet elle alimente, où est l'instance, et quel credential l'atteint.",
+    "projectLabel": "projet",
+    "projectHint": "le projet que cette source alimente. l'édition des sources s'accorde par projet, donc la sauvegarde répond de ce choix.",
+    "settingsPreview": "L'hôte stocke ceci comme un unique settings json :",
+    "probeProbing": "contact du fournisseur…",
+    "probePending": "testez la connexion avant de sauvegarder — une source injoignable ressemble exactement à une source saine jusqu'à ce que quelque chose en ait besoin.",
+    "credentialCard": "le credential",
+    "credentialCardNote": "le nom de l'env-var sur l'hôte qui porte le credential. L'hôte résout la valeur — le dashboard ne la voit jamais.",
+    "secretEnvLabel": "env var du secret",
+    "secretEnvHint": "le nom de l'env var sur l'hôte qui porte le credential. L'hôte résout la valeur à la sonde / au webhook — le dashboard ne la voit jamais.",
+    "mockNotice": "Mode mock uniquement : le formulaire tient un credential littéral juste assez longtemps pour tester le seed store. Le mode réel lit l'env var sur l'hôte et ne voit jamais la valeur.",
+    "mockSecretLabel": "credential (mock uniquement)",
+    "submit": "Sauvegarder la connexion",
+    "testConnection": "Tester la connexion"
+  },
+  "connectionFields": {
+    "baseUrlLabel": "url de base",
+    "baseUrlHint": "self-hosted uniquement. https, parce que le credential traverse ce fil.",
+    "accountLabel": "compte",
+    "accountPlaceholder": "le bot ou l'app à qui appartient le credential",
+    "accountHint": "montré ensuite sur la ligne, pour qu'un credential périmé soit traçable jusqu'à une personne.",
+    "authKindLabel": "type de credential"
+  },
+  "authChoice": {
+    "hint": "ce que {{provider}} accepte, et rien d'autre. Stocké verbatim dans le settings json ; ne tient jamais un credential."
+  },
+  "connectionForm": {
+    "cardLabel": "le chemin d'entrée",
+    "cardNote": "où est l'instance, quel credential l'atteint, et quelle env-var de l'hôte le porte.",
+    "secretEnvLabel": "env var du secret",
+    "secretEnvHint": "le nom de l'env-var sur l'hôte. Le dashboard ne voit jamais la valeur ; l'hôte la résout à la sonde / au webhook.",
+    "probeProbing": "contact du fournisseur…",
+    "probePending": "testez la connexion avant de sauvegarder — changer la façon d'atteindre une source ne se fait pas pendant que personne ne sait si on peut encore l'atteindre.",
+    "testConnectionAria": "Tester la connexion à {{name}}",
+    "submit": "Sauvegarder la connexion"
+  },
+  "watchForm": {
+    "cardLabel": "Admission",
+    "cardNote": "si quelque chose est admis, quels tickets, et qui agit ensuite quand un l'est.",
+    "watchLabel": "surveiller cette source",
+    "watchHint": "éteint signifie que la connexion reste authentifiée et cesse d'apporter quoi que ce soit. Ce n'est pas la même chose que déconnecter.",
+    "admissionModeLabel": "mode d'admission",
+    "submit": "Sauvegarder le watch"
+  },
+  "filterField": {
+    "label": "expression de filtre",
+    "placeholder": "laisser vide pour admettre tout ce que cette connexion peut voir",
+    "hintsLabel": "champs vus sur les tickets {{kind}}",
+    "verbatim": "stocké verbatim et non analysé — le langage de filtre n'est pas encore décidé, donc ce texte part au connecteur exactement comme saisi."
+  },
+  "statusPreview": {
+    "head": "statut réécrit vers {{provider}}",
+    "nativeNone": "l'admission native est le tracker. Le statut d'un run est le statut du ticket, donc il n'y a nulle part où le réécrire.",
+    "unknownNone": "rien n'est réécrit vers {{provider}} — ce build n'a pas de mapping pour ce fournisseur, donc le statut du run reste sur le run."
+  },
+  "detailPage": {
+    "titleFallback": "Source",
+    "crumbFallback": "source",
+    "errorTitle": "Cette source n'a pas chargé",
+    "notFoundTitle": "Aucune connexion avec cet id",
+    "notFoundBody": "Rien sur cette plateforme n'est connecté sous cet id. Une source déconnectée — ici ou dans un autre onglet — est la façon ordinaire d'arriver à cette adresse, et la liste des connexions est l'endroit où sont celles qui existent encore.",
+    "backToSources": "Retour aux sources",
+    "failureTail": "Rien n'a bougé — cette page est revenue comme avant.",
+    "factsTitle": "ce qu'est cette connexion",
+    "factProvider": "fournisseur",
+    "factAuth": "credential",
+    "factInstance": "instance",
+    "factAccount": "compte",
+    "factCredential": "credential",
+    "factLastSync": "dernière synchronisation",
+    "credentialEnvNote": "résolu sur l'hôte à la sonde / au webhook. Le dashboard ne voit jamais la valeur — la remplacer signifie changer l'env var sur l'hôte et patcher le <code>secretEnvRef</code> de la connexion.",
+    "credentialStoredNote": "stocké en écriture seule et jamais remonté — ni sur cette page, ni dans un formulaire, ni par l'api. Le remplacer signifie se reconnecter.",
+    "credentialNoneNote": "l'admission native n'a pas de bout distant, donc il n'y a rien contre quoi s'authentifier.",
+    "none": "aucun",
+    "never": "jamais",
+    "watchTitle": "watch et filtre",
+    "noWatch": "L'admission native n'a pas de watch. Les tickets arrivent ici parce que quelqu'un en a déposé un, pas parce qu'un filtre l'a admis — il n'y a rien à allumer ni à restreindre.",
+    "connectionTitle": "la connexion",
+    "rotationTitle": "secret de webhook",
+    "rotationBody": "Un clic génère un secret de webhook frais et le montre une fois. Copiez-le dans les réglages de webhook du tracker — cette page ne le montrera plus.",
+    "rotateButton": "Rotater le secret",
+    "rotateAria": "Rotater le secret de webhook de {{name}}",
+    "rotateLabel": "Rotater le secret de webhook",
+    "rotatedLabel": "nouveau secret de webhook — copiez maintenant, ce panneau ne survit pas à une navigation",
+    "handoffsTitle": "où cela va",
+    "handoffFiled": "tickets déposés ici. Ils sont dans le catalogue avec tout le reste — ",
+    "handoffAdmitted": "tickets admis d'ici. Ils sont dans le catalogue avec tout le reste — ",
+    "handoffCatalogTail": "le catalogue n'est pas restreint à cette source.",
+    "openCatalog": "ouvrir le catalogue",
+    "handoffProject": "le projet que cette connexion alimente. L'édition d'une source s'accorde par projet, donc c'est à cela que répond chaque acte de cette page.",
+    "openProject": "ouvrir le projet",
+    "handoffTicket": "écrire un ticket directement dans l'admission de ce projet. C'est l'acte d'un membre plutôt que d'un administrateur, donc il a son propre écran et sa propre permission.",
+    "fileTicket": "déposer un ticket",
+    "rotateTitle": "Rotater le secret de webhook de cette source ?",
+    "rotateBody": "{{name}} · {{project}} — un nouveau secret est généré et montré une fois. Les webhooks signés avec le secret précédent seront rejetés jusqu'à ce que vous copiiez le nouveau dans le tracker.",
+    "rotateConfirm": "Rotater",
+    "rotateKeep": "Garder l'actuel",
+    "leaveTitle": "Partir sans sauvegarder ?",
+    "leaveBody": "Le watch et les détails de connexion modifiés sur cette page ne sont pas encore sauvegardés. Partir les abandonne et la source reste exactement comme avant.",
+    "discard": "Abandonner",
+    "keep": "Continuer l'édition",
+    "watchSavedToast": "Watch sauvegardé",
+    "connectionSavedToast": "Connexion sauvegardée",
+    "rotatedToast": "Secret de webhook rotaté",
+    "rotatedToastDescription": "{{name}} — copiez la nouvelle valeur dans le tracker"
+  },
+  "ticketPage": {
+    "title": "Nouveau ticket dans {{project}}",
+    "titleFallback": "Nouveau ticket",
+    "crumb": "nouveau ticket",
+    "summary": "L'admission native est propre au produit. Un ticket écrit ici n'a pas de tracker derrière, donc son statut est celui du run, et il n'y a nulle part où le resynchroniser.",
+    "errorTitle": "Impossible de rechercher cette source",
+    "notFoundTitle": "Aucune connexion avec cet id",
+    "notFoundBody": "Aucune connexion de cette plateforme n'a l'id {{id}}. Une source déconnectée pendant que cet onglet restait ouvert est la façon ordinaire d'arriver ici.",
+    "backToSources": "Retour aux sources",
+    "refused": "Le ticket a été refusé.",
+    "tail": "Rien n'a été déposé — ce que vous avez saisi est encore ici.",
+    "leaveTitle": "Partir sans déposer le ticket ?",
+    "leaveBody": "Le titre, le corps et les labels saisis ne sont enregistrés nulle part. Quitter cette page les abandonne, et rien n'atteint l'admission.",
+    "discard": "Abandonner",
+    "keep": "Continuer l'édition",
+    "toast": "Ticket déposé"
+  },
+  "ticketForm": {
+    "titleLabel": "titre",
+    "titlePlaceholder": "ce qui ne va pas, en une ligne",
+    "bodyLabel": "corps",
+    "bodyPlaceholder": "ce que vous avez vu, et où. Le cerveau lit ceci avant de planifier quoi que ce soit.",
+    "labelsLabel": "labels",
+    "labelsPlaceholder": "checkout-web, bug",
+    "labelsHint": "séparés par des virgules. Ce sont les labels propres du ticket — pas une expression de filtre.",
+    "straightLabel": "direct au travail",
+    "straightHint": "éteint le laisse à quelqu'un à prendre, ce qui est le même acte une minute plus tard.",
+    "submitStart": "Créer et démarrer",
+    "submit": "Créer le ticket"
+  }
+}

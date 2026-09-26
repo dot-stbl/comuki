@@ -1,0 +1,128 @@
+{
+  "actions": {
+    "retry": "再試行"
+  },
+  "errors": {
+    "unknown": "不明なエラー",
+    "changeFailed": "変更に失敗しました。"
+  },
+  "page": {
+    "title": "コンピュート",
+    "summary": "<providers/> プロバイダー · <workers/> ワーカー稼働中 · <takes/>",
+    "summaryTakes": "<kind/> が新しい起動を受け付けます",
+    "summaryNothing": "どこも新しい起動を受け付けません",
+    "summaryStranded": "誰もマッチしないラベルで <count/> 件が遊休",
+    "loading": "レジストリを読み込み中",
+    "errorTitle": "コンピュートが読み込めませんでした",
+    "failureTail": "何も動いていません — レジストリは元のままです。"
+  },
+  "providers": {
+    "section": "プロバイダー",
+    "note": "dev と compose には Docker、prod には Kubernetes — v1 が持つ 2 つの <code>IComputeProvider</code> 実装です。1 つが新しい起動を受け付け、残りはすでに払い出したリースを保持します。",
+    "emptyFiltered": "現在のフィルターに一致するプロバイダーはありません",
+    "empty": "コンピュートプロバイダーが登録されていません",
+    "count": "{{count}} 件表示",
+    "column": {
+      "kind": "種類",
+      "endpoint": "エンドポイント",
+      "state": "状態",
+      "newStarts": "新しい起動",
+      "pools": "プール",
+      "workers": "ワーカー",
+      "allocatable": "割当可能",
+      "note": "メモ",
+      "actions": "操作"
+    },
+    "allKinds": "すべての種類",
+    "allStates": "すべての状態",
+    "filterPlaceholder": "エンドポイント、メモで絞り込み…",
+    "takingWork": "作業を受付中",
+    "noAnswer": "応答なし",
+    "handWork": "新しい起動をこのプロバイダーへ渡す",
+    "handWorkAria": "新しい起動を {{endpoint}} へ渡す"
+  },
+  "pools": {
+    "section": "プール",
+    "note": "スケーリングはクォータ認識に加えてプロバイダーの容量 api によるもので、各プールには異なる所有者を持つ 2 つの天井があります。<tag>拘束中</tag>とマークされた方が次のコンテナを拒み、もう一方は余剰でした。",
+    "empty": "プールが構成されていません"
+  },
+  "card": {
+    "on": "on",
+    "unknown": "不明",
+    "noReading": "読み取りなし",
+    "slotFree": "スロット空き",
+    "slotsFree": "スロット空き",
+    "trackQuota": "クォータ",
+    "trackAllocatable": "割当可能",
+    "binding": "拘束中",
+    "noAnswer": "応答なし",
+    "full": "満杯",
+    "free": "{{room}} 空き",
+    "up": "稼働",
+    "idle": "遊休",
+    "sentences": {
+      "noAnswer": "容量 api が応答しませんでした — このプールの天井は読めません",
+      "bothFull": "クォータとクラスターが両方満杯です — ここでは何も起動できません",
+
+      "both": "クォータとクラスターが一致 — {{slots}} の余地",
+      "quotaFull": "クォータが天井です — 何も起動できず、クラスターにはまだ {{slots}} 空きがあります",
+      "quota": "クォータが天井です — {{slots}} の余地、クラスターには {{spare}} 空き",
+      "clusterFull": "クラスターが天井です — 何も起動できず、クォータはまだ {{slots}} を許します",
+      "cluster": "クラスターが天井です — {{slots}} の余地、クォータ残り {{spare}}"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — タスクごとに作成",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "other": "{{count}} スロット"
+    }
+  },
+  "versions": {
+    "section": "ワーカーバージョン",
+    "note": "ワーカーはイメージ digest <em>と</em>プロファイルの git-ref でラベル付けされます。どちらを変えても新しい起動にしか効きません — 別のラベルの遊休ワーカーはアイテムにマッチせず、満杯のプールが育つキューの隣に座るのはこうしてです。",
+    "emptyFiltered": "現在のフィルターに一致するラベルはありません",
+    "empty": "ワーカーが稼働していません",
+    "count": "{{count}} 件表示",
+    "countStranded": "{{count}} 件遊休でマッチなし · ",
+    "column": {
+      "label": "ワーカーラベル",
+      "matching": "マッチ",
+      "workers": "ワーカー",
+      "idle": "遊休",
+      "oldestUp": "最長稼働",
+      "why": "理由",
+      "actions": "操作"
+    },
+    "filterPlaceholder": "digest、profiles ref で絞り込み…",
+    "allLabels": "すべてのラベル",
+    "newStarts": "新しい起動",
+    "neverMatched": "マッチなし",
+    "strandedTitle": "誰もマッチしないラベルで {{count}} 件が遊休 — アイテムを取りません",
+    "retireTooltip": "このラベルの遊休ワーカーを廃止する",
+    "retireAria": "{{label}} の遊休ワーカー {{count}} 件を廃止する",
+    "retireTitle": "このラベルの遊休ワーカーを廃止しますか？",
+    "retireBody": "{{label}} — 遊休コンテナ {{idle}} 台が解体されます。リースをまだ保持する {{rest}} 台は、そのアイテムが着地するまで稼働し続けます。",
+    "retireConfirm": "遊休を廃止",
+    "retireCancel": "稼働のままにする",
+    "reason": {
+
+      "both": "イメージと profiles ref の両方が動いた",
+      "image": "イメージが 1 リリース遅れている",
+      "profiles": "同じイメージ、profiles ref が動いた"
+    }
+  },
+  "boards": {
+    "section": "ボード",
+    "note": "grafana ボード、かつて所有していた画面からここへ折りたたまれたものです。新しいタブで開かれ、ここには意図的に埋め込まれません：infra のメトリクスとラン自身のタイムラインは、異なる質問を持つ人々によって異なる時計で読まれ、両方を示す画面はランの物語をメトリクスボードに探す癖をつけるでしょうが、そこにあるのは半分だけです。ランの物語は <code>/runs</code> にあります。1 つのボードがすべてのプロジェクトを一度にカバーし、定義はプラットフォームと共にバージョン管理されます — リストの下のガイドは、まだ何もないインストールの接続方法を説明します。",
+    "loading": "ボードを読み込み中",
+    "errorTitle": "ボードが読み込めませんでした"
+  },
+  "state": {
+    "active": "アクティブ",
+    "draining": "排出中",
+    "standby": "待機",
+    "unreachable": "到達不能"
+  }
+}

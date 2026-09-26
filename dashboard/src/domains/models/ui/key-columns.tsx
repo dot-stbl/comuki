@@ -7,6 +7,8 @@ import {
   isLive,
   keyState,
   scopeReading,
+  sharedModelsT,
+  type ModelsTranslator,
 } from "@/domains/models/model/keys"
 import type { ModelEndpoint, VirtualKey } from "@/domains/models/model/types"
 import { can, needsLabel, projectOf, type Session } from "@/shared/session"
@@ -49,6 +51,13 @@ export interface KeyColumnsOptions {
    * typechecks and then throws.
    */
   session: Session
+  /**
+   * Copy arrives as a parameter for the same reason the session does: a
+   * `cell` is a plain function, so a `useTranslation` inside one throws.
+   * The panel passes its hook-bound `t`; tests and stories fall back to the
+   * shared instance, which answers in the active locale.
+   */
+  t?: ModelsTranslator
 }
 
 /** Row identity for the virtualized body. Module scope keeps it stable. */
@@ -84,6 +93,7 @@ export function createKeyColumns({
   onRevoke,
   onOpen,
   session,
+  t = sharedModelsT,
 }: KeyColumnsOptions): DataColumn<VirtualKey>[] {
   const projectKey = (projectId: string) =>
     projectOf(session, projectId)?.key ?? projectId
@@ -91,14 +101,14 @@ export function createKeyColumns({
   return [
     {
       accessorKey: "prefix",
-      header: "key",
+      header: t("keys.column.key"),
       cell: ({ row }) => (
         <button
           type="button"
           className={styles.link}
           data-test="key-open"
           title={row.original.label}
-          aria-label={`Open ${row.original.prefix} details`}
+          aria-label={t("keys.openAria", { prefix: row.original.prefix })}
           onClick={() => onOpen(row.original)}
         >
           {row.original.prefix}
@@ -109,7 +119,7 @@ export function createKeyColumns({
         pinned: true,
         filter: {
           kind: "text",
-          placeholder: "filter key, label, model…",
+          placeholder: t("keys.filterPlaceholder"),
           match: (entry, needle) =>
             `${entry.prefix} ${entry.label} ${entry.models.join(" ")}`
               .toLowerCase()
@@ -119,31 +129,31 @@ export function createKeyColumns({
     },
     {
       accessorKey: "label",
-      header: "what for",
+      header: t("keys.column.whatFor"),
       cell: ({ row }) => (
         <span className={styles.note} title={row.original.label}>
           {row.original.label}
         </span>
       ),
-      meta: { width: 176, label: "what for" },
+      meta: { width: 176, label: t("keys.column.whatFor") },
     },
     {
       id: "scope",
       accessorFn: (entry) =>
         entry.scope.kind === "platform" ? "platform" : entry.scope.projectId,
-      header: "scope",
+      header: t("keys.column.scope"),
       cell: ({ row }) => (
         <span className={styles.value}>
-          {scopeReading(row.original, projectKey)}
+          {scopeReading(row.original, projectKey, t)}
         </span>
       ),
       meta: {
         width: 100,
         filter: {
           kind: "select",
-          placeholder: "all scopes",
+          placeholder: t("keys.allScopes"),
           options: [
-            { value: "platform", label: "platform" },
+            { value: "platform", label: t("word.platform") },
             ...session.projects.map((project) => ({
               value: project.id,
               label: project.key,
@@ -155,7 +165,7 @@ export function createKeyColumns({
     {
       id: "route",
       accessorFn: (entry) => entry.endpointId,
-      header: "route",
+      header: t("keys.column.route"),
       // One key, one upstream. That is the containment: a key cannot be
       // replayed against a different endpoint even if the model names match.
       cell: ({ row }) => {
@@ -172,7 +182,7 @@ export function createKeyColumns({
         width: 124,
         filter: {
           kind: "select",
-          placeholder: "all routes",
+          placeholder: t("keys.allRoutes"),
           options: endpoints.map((endpoint) => ({
             value: endpoint.id,
             label: endpoint.name,
@@ -183,17 +193,14 @@ export function createKeyColumns({
     {
       id: "models",
       accessorFn: (entry) => entry.models.join(" "),
-      header: "may reach",
+      header: t("keys.column.mayReach"),
       cell: ({ row }) =>
         row.original.models.length === 0 ? (
           // The wire's empty allow-list means *every* model is permitted —
           // a blank cell would read as "none", which is the opposite
           // security reading.
-          <span
-            className={styles.faint}
-            title="empty allow-list — every model permitted"
-          >
-            all models
+          <span className={styles.faint} title={t("keys.allModelsTitle")}>
+            {t("keys.allModels")}
           </span>
         ) : (
           <span
@@ -212,21 +219,21 @@ export function createKeyColumns({
             ))}
           </span>
         ),
-      meta: { width: 192, label: "may reach" },
+      meta: { width: 192, label: t("keys.column.mayReach") },
     },
     {
       id: "budget",
       accessorFn: budgetShare,
-      header: "spent of cap",
+      header: t("keys.column.spentOfCap"),
       sortFn: budgetSort,
       cell: ({ row }) => (
-        <KeyBudgetMeter entry={row.original} enforced={enforced} />
+        <KeyBudgetMeter entry={row.original} enforced={enforced} t={t} />
       ),
-      meta: { width: 172, label: "spent of cap" },
+      meta: { width: 172, label: t("keys.column.spentOfCap") },
     },
     {
       accessorKey: "expiresInSec",
-      header: "expires",
+      header: t("keys.column.expires"),
       // A TTL is only ever read as "is this about to stop", so it is rendered
       // relative and in the past tense once it has lapsed. A lapsed key is a
       // different thing from one with a day left, and they must not look alike.
@@ -242,27 +249,27 @@ export function createKeyColumns({
             data-test="key-expiry"
             data-lapsed={lapsed ? "" : undefined}
           >
-            {expiryReading(entry)}
+            {expiryReading(entry, t)}
           </span>
         )
       },
-      meta: { width: 112, numeric: true, label: "expires" },
+      meta: { width: 112, numeric: true, label: t("keys.column.expires") },
     },
     {
       id: "state",
       accessorFn: keyState,
-      header: "state",
-      cell: ({ row }) => <KeyStateBadge entry={row.original} />,
+      header: t("keys.column.state"),
+      cell: ({ row }) => <KeyStateBadge entry={row.original} t={t} />,
       sortFn: stateSort,
       meta: {
         width: 108,
         filter: {
           kind: "select",
-          placeholder: "all states",
+          placeholder: t("keys.allStates"),
           options: [
-            { value: "live", label: "live" },
-            { value: "expired", label: "expired" },
-            { value: "revoked", label: "revoked" },
+            { value: "live", label: t("state.live") },
+            { value: "expired", label: t("state.expired") },
+            { value: "revoked", label: t("state.revoked") },
           ],
           match: (entry, value) => keyState(entry) === value,
         },
@@ -270,7 +277,7 @@ export function createKeyColumns({
     },
     {
       id: "actions",
-      header: "actions",
+      header: t("keys.column.actions"),
       enableSorting: false,
       cell: ({ row }) => {
         const entry = row.original
@@ -292,14 +299,14 @@ export function createKeyColumns({
         // because `denied` keeps the control focusable and hoverable so it can.
         return (
           <span className={styles.actions}>
-            <Tooltip content={denial ?? "Revoke this key"}>
+            <Tooltip content={denial ?? t("keys.revokeTooltip")}>
               <Button
                 size="icon-sm"
                 variant="destructive"
                 data-test="key-revoke"
                 loading={busy}
                 denied={denial}
-                aria-label={`Revoke ${entry.prefix}`}
+                aria-label={t("keys.revokeAria", { prefix: entry.prefix })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onRevoke(entry)
@@ -311,7 +318,7 @@ export function createKeyColumns({
           </span>
         )
       },
-      meta: { width: 80, align: "end", label: "actions" },
+      meta: { width: 80, align: "end", label: t("keys.column.actions") },
     },
   ]
 }

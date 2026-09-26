@@ -1,0 +1,139 @@
+{
+  "locale": {
+    "label": "Sprache"
+  },
+  "nav": {
+    "intake": "Eingang",
+    "observe": "Beobachten",
+    "configure": "Konfigurieren",
+    "platform": "Plattform",
+    "inbox": "Eingang",
+    "liveRuns": "Live-Reihen",
+    "queue": "Warteschlange",
+    "approvals": "Freigaben",
+    "cost": "Kosten",
+    "sources": "Quellen",
+    "knowledge": "Wissen",
+    "settings": "Einstellungen",
+    "projects": "Projekte",
+    "identity": "Identität",
+    "compute": "Rechenkapazität",
+    "models": "Modelle"
+  },
+  "crumb": {
+    "platform": "plattform",
+    "projects": "projekte",
+    "attention": "schicht",
+    "liveRuns": "live-läufe",
+    "tasks": "aufgaben",
+    "queue": "queue",
+    "observe": "beobachten",
+    "identity": "identität",
+    "sources": "quellen",
+    "approvals": "genehmigungen",
+    "configure": "konfigurieren",
+    "console": "konsole",
+    "onboard": "onboarding",
+    "knowledge": "wissen",
+    "models": "modelle",
+    "compute": "compute"
+  },
+  "topbar": {
+    "home": "Comuki — Startseite",
+    "newRun": "Neuer Lauf",
+    "github": "github",
+    "githubOpens": "Comuki auf GitHub — öffnet in neuem Tab"
+  },
+  "page": {
+    "breadcrumb": "Brotkrumen",
+    "showRail": "Navigationsleiste anzeigen",
+    "hideRail": "Navigationsleiste ausblenden",
+    "resizeRail": "Navigationsleiste skalieren"
+  },
+  "account": {
+    "label": "Konto",
+    "named": "Konto — {{name}}",
+    "settings": "Einstellungen",
+    "apiKeys": "API-Schlüssel",
+    "profile": "Profil",
+    "signOut": "Abmelden"
+  },
+  "appearance": {
+    "label": "Darstellung",
+    "current": "Darstellung — {{mode}}",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
+  },
+  "palette": {
+    "label": "Palette",
+    "current": "Palette — {{name}}"
+  },
+  "live": {
+    "demo": "Demo",
+    "polling": "Polling",
+    "mockOnly": "Arbeit mit synthetischen Daten — bun run dev:real zum Umschalten",
+    "mockAndDown": "Arbeit mit synthetischen Daten, Backend nicht erreichbar",
+    "down": "Backend nicht erreichbar — letzter bekannter Stand wird gezeigt",
+    "pollingDown": "Live-Aktualisierungen liegen — dieser Bildschirm lädt stattdessen alle {{seconds}} s neu"
+  },
+  "search": {
+    "open": "Suche — {{chord}}",
+    "label": "Comuki durchsuchen",
+    "placeholder": "id einfügen oder einen Bildschirm nennen…",
+    "results": "Ergebnisse",
+    "empty": "hier antwortet nichts darauf",
+    "keys": {
+      "move": "↑↓ wählen",
+      "open": "enter öffnen",
+      "close": "esc schließen"
+    },
+    "band": {
+      "resolved": "gehe zu",
+      "section": "abschnitte",
+      "act": "aktionen",
+      "handoff": "suche"
+    },
+    "kind": {
+      "run": "lauf",
+      "workItem": "arbeitsobjekt",
+      "worker": "worker",
+      "approval": "freigabe",
+      "project": "projekt",
+      "app": "app",
+      "person": "person",
+      "apiKey": "api-schlüssel",
+      "image": "image",
+      "section": "abschnitt",
+      "act": "aktion",
+      "search": "suche"
+    },
+    "act": {
+      "newTask": "Neue Aufgabe",
+      "newTaskHint": "ein Ticket in das Backlog legen",
+      "newProject": "Neues Projekt",
+      "newProjectHint": "ein Projekt registrieren",
+      "newUser": "Neuer Benutzer",
+      "newUserHint": "eine Person einladen",
+      "newApiKey": "Neuer api-schllüssel",
+      "newApiKeyHint": "einen schlüssel ausstellen",
+      "grantRole": "Rolle vergeben",
+      "grantRoleHint": "jemandem zugriff geben"
+    },
+    "resolvedHint": {
+      "liveRuns": "in live-reihen",
+      "claimQueue": "in der warteschlange",
+      "workerPool": "im worker-pool",
+      "approvals": "in freigaben",
+      "image": "worker auf diesem image",
+      "apiKeys": "in api-schlüsseln",
+      "people": "in personen",
+      "app": "läufe dieser app"
+    },
+    "handoffHint": {
+      "runs": "in live-reihen",
+      "queue": "in der warteschlange",
+      "inbox": "im eingang"
+    }
+  }
+}

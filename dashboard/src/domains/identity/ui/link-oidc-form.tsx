@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
 import type { LinkOidcInput, UserRow } from "@/domains/identity/model/types"
@@ -29,13 +30,14 @@ export function LinkOidcForm({
   onCancel,
   onDirtyChange,
 }: LinkOidcFormProps) {
+  const { t } = useTranslation("identity")
   const manage = useCan("identity.manage")
   const [subject, setSubject] = useState("")
   const [touched, setTouched] = useState(false)
   const [attempted, setAttempted] = useState(false)
 
   const trimmed = subject.trim()
-  const error = trimmed.length === 0 ? "a subject is required" : null
+  const error = trimmed.length === 0 ? t("linkForm.subjectRequired") : null
   /* Edited-or-already-tried — the same model as every other form here; see
      `projects/ui/create-project-form`, which is the reference spelling. */
   const showError = (touched || attempted) && error
@@ -58,7 +60,7 @@ export function LinkOidcForm({
       <FormFields>
         <TextField
           id="oidc-subject"
-          label="subject"
+          label={t("linkForm.subjectLabel")}
           /* The one field on this form, and the handler refuses without it. */
           required
           autoFocus
@@ -67,7 +69,7 @@ export function LinkOidcForm({
           spellCheck={false}
           autoComplete="off"
           placeholder="oidc|provider|00000000"
-          hint="The `sub` claim the provider issues for this person."
+          hint={t("linkForm.subjectHint")}
           error={showError ? error : null}
           onValueChange={(next) => {
             setTouched(true)
@@ -83,7 +85,7 @@ export function LinkOidcForm({
           denied={manage.denial}
           loading={busy}
         >
-          Link subject
+          {t("linkForm.submit")}
         </Button>
         <Button
           variant="secondary"
@@ -91,7 +93,7 @@ export function LinkOidcForm({
           disabled={busy}
           onClick={onCancel}
         >
-          Cancel
+          {t("actions.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

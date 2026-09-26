@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { strandedIdle, targetVersion } from "@/domains/compute/model/capacity"
 import type { WorkerVersion } from "@/domains/compute/model/types"
@@ -38,6 +39,7 @@ export function VersionsPanel({
   onRetire,
 }: VersionsPanelProps) {
   const session = useSession()
+  const { t } = useTranslation("compute")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
@@ -53,8 +55,9 @@ export function VersionsPanel({
         retiringLabel,
         onRetire,
         session,
+        t,
       }),
-    [target, retiringLabel, onRetire, session]
+    [target, retiringLabel, onRetire, session, t]
   )
 
   // Target first, then most-stranded first. The order rows arrive in
@@ -76,8 +79,8 @@ export function VersionsPanel({
   const stranded = useMemo(() => strandedIdle(rows), [rows])
 
   const emptyLabel = hasActiveFilters(filters)
-    ? "no labels match the current filters"
-    : "no workers are up"
+    ? t("versions.emptyFiltered")
+    : t("versions.empty")
 
   return (
     <>
@@ -90,8 +93,10 @@ export function VersionsPanel({
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="versions-count">
-              {stranded > 0 ? `${stranded} idle never matched · ` : ""}
-              {rows.length} shown
+              {stranded > 0
+                ? t("versions.countStranded", { count: stranded })
+                : ""}
+              {t("versions.count", { count: rows.length })}
             </span>
           }
         />

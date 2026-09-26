@@ -1,0 +1,294 @@
+{
+  "actions": {
+    "retry": "Retry",
+    "cancel": "Cancel"
+  },
+  "errors": {
+    "unknown": "Unknown error",
+    "changeFailed": "The change failed."
+  },
+  "state": {
+    "connected": "connected",
+    "error": "error",
+    "disabled": "disabled"
+  },
+  "word": {
+    "never": "never"
+  },
+  "provider": {
+    "github": {
+      "label": "github",
+      "target": "repository",
+      "intakeNote": "issues land from a watched repository. one written here is stamped as the repo's."
+    },
+    "gitlab": {
+      "label": "gitlab",
+      "target": "repository",
+      "intakeNote": "issues land from a watched repository. one written here is stamped as the repo's."
+    },
+    "yandex-tracker": {
+      "label": "yandex tracker",
+      "target": "queue key",
+      "intakeNote": "tickets land from a watched tracker queue. one written here is stamped as the queue's."
+    },
+    "jira": {
+      "label": "jira",
+      "target": "project key",
+      "intakeNote": "tickets land from a watched board. one written here is stamped as the board's."
+    },
+    "native": {
+      "label": "native",
+      "target": "name",
+      "intakeNote": "written here, by a person — the product's own intake, with no tracker behind it."
+    }
+  },
+  "intakeNoteUnknown": "tickets land from a watched connection. one written here is stamped as that provider's.",
+  "auth": {
+    "pat": "personal access token",
+    "oauth": "oauth grant",
+    "app-install": "app install",
+    "none": "none"
+  },
+  "authSecret": {
+    "pat": "access token",
+    "oauth": "oauth client secret",
+    "app-install": "app private key",
+    "other": "secret"
+  },
+  "nativeRefusal": "native intake cannot be disconnected — it is the product's own way of accepting a ticket",
+  "admission": {
+    "watch": {
+      "label": "watch",
+      "description": "a matching ticket starts a run. nobody has to claim it."
+    },
+    "inbox-only": {
+      "label": "inbox-only",
+      "description": "a matching ticket lands in the catalog and waits for a person to take it."
+    },
+    "both": {
+      "label": "both",
+      "description": "the ticket starts a run and stays in the catalog, so the run can be found by the ticket that caused it."
+    },
+    "nativeIntake": "native intake",
+    "watchOff": "watch off"
+  },
+  "host": {
+    "inPlatform": "in-platform",
+    "cloud": "cloud"
+  },
+  "note": {
+    "refusedSilent": "the provider refused, and said nothing useful.",
+    "filedHere": {
+      "one": "{{count}} ticket filed here",
+      "other": "{{count}} tickets filed here"
+    },
+    "turnedOff": "turned off — last synced {{when}}",
+    "watchOff": "watch off — nothing is being admitted from here",
+    "matchedNothing": "the filter matched nothing in the last day",
+    "lastSynced": "last synced {{when}}"
+  },
+  "registry": {
+    "title": "Sources",
+    "errorTitle": "Couldn't load sources",
+    "connect": "Connect a source",
+    "connectionsWord": "connections",
+    "admittingWord": "admitting work",
+    "errorWord": "in error",
+    "failureTail": "Nothing moved — the list is back as it was.",
+    "sectionTitle": "Connections",
+    "sectionNote": "Every source on the platform, whichever project it feeds. A connection carries the credential; its <em>watch</em> carries what that credential is allowed to admit — they break separately, so they read separately. Editing one is granted per project, so a row you administer sits above a row you only watch and each says which it is. <code>native</code> is on every project and cannot be disconnected."
+  },
+  "connectionsPanel": {
+    "shown": {
+      "one": "{{count}} shown",
+      "other": "{{count}} shown"
+    },
+    "emptyFiltered": "No connections match the current filters.",
+    "emptyNone": "No sources are connected."
+  },
+  "disconnect": {
+    "title": "Disconnect this source?",
+    "body": "{{name}} · {{project}} — the credential is dropped and nothing more is admitted from here. Tickets already taken keep their runs; reconnecting means a new secret.",
+    "confirm": "Disconnect",
+    "keep": "Keep it",
+    "toast": "Source disconnected"
+  },
+  "column": {
+    "state": "state",
+    "source": "source",
+    "provider": "provider",
+    "project": "project",
+    "instance": "instance",
+    "account": "account",
+    "admission": "admission",
+    "admitted": "admitted",
+    "note": "what is happening",
+    "actions": "actions",
+    "allStates": "all states",
+    "allProviders": "all providers",
+    "allProjects": "all projects",
+    "allModes": "all modes",
+    "filterPlaceholder": "filter source, account, host…",
+    "newTicket": "New ticket",
+    "newTicketAria": "New ticket in {{name}} on {{where}}",
+    "watchAndFilter": "Watch and filter",
+    "watchAndFilterAria": "Edit the watch on {{name}}",
+    "testConnection": "Test connection",
+    "testConnectionAria": "Test the connection to {{name}}",
+    "disconnect": "Disconnect",
+    "disconnectAria": "Disconnect {{name}}"
+  },
+  "connectPage": {
+    "title": "Connect a source",
+    "crumbNew": "new",
+    "summary": "A connection belongs to one project and carries one credential. It arrives with its watch off — admitting tickets is a separate decision, taken on the source's own page.",
+    "refused": "The connection was refused.",
+    "tail": "Nothing was saved — the details below are still exactly as you typed them.",
+    "leaveTitle": "Leave without connecting the source?",
+    "leaveBody": "Nothing here is saved yet, and the credential you typed is not held anywhere — leaving this page drops it, and connecting later means fetching it again.",
+    "discard": "Discard",
+    "keep": "Keep editing",
+    "toast": "Source connected"
+  },
+  "connectForm": {
+    "providerCard": "provider",
+    "providerCardNote": "which tracker this connection watches, and whose dialect it speaks.",
+    "providerHint": "native intake is not here: every project already has one, and there is nothing to point a credential at.",
+    "connectionCard": "the connection",
+    "connectionCardNote": "which project it feeds, where the instance is, and which credential reaches it.",
+    "projectLabel": "project",
+    "projectHint": "the project this source feeds. Editing sources is granted per project, so this choice is what the save answers to.",
+    "settingsPreview": "The host stores this as a single settings json:",
+    "probeProbing": "reaching the provider…",
+    "probePending": "test the connection before saving — an unreachable source looks exactly like a healthy one until something needs it.",
+    "credentialCard": "the credential",
+    "credentialCardNote": "the env-var name on the host that holds the credential. The host resolves the value — the dashboard never sees it.",
+    "secretEnvLabel": "secret env var",
+    "secretEnvHint": "the name of the env var on the host that holds the credential. The host resolves the value at probe / webhook time — the dashboard never sees it.",
+    "mockNotice": "Mock mode only: the form holds a literal credential long enough to probe the seed store. Real mode reads the env var on the host instead and never sees the value.",
+    "mockSecretLabel": "credential (mock only)",
+    "submit": "Save connection",
+    "testConnection": "Test connection"
+  },
+  "connectionFields": {
+    "baseUrlLabel": "base url",
+    "baseUrlHint": "self-hosted only. https, because the credential crosses this wire.",
+    "accountLabel": "account",
+    "accountPlaceholder": "the bot or app the credential belongs to",
+    "accountHint": "shown on the row afterwards, so a stale credential can be traced to a person.",
+    "authKindLabel": "auth kind"
+  },
+  "authChoice": {
+    "hint": "what {{provider}} accepts, and nothing else. Stored verbatim in the settings json; never holds a credential."
+  },
+  "connectionForm": {
+    "cardLabel": "the way in",
+    "cardNote": "where the instance is, which credential reaches it, and the env-var on the host that holds it.",
+    "secretEnvLabel": "secret env var",
+    "secretEnvHint": "the env-var name on the host. The dashboard never sees the value; the host resolves it at probe / webhook time.",
+    "probeProbing": "reaching the provider…",
+    "probePending": "test the connection before saving — changing how a source is reached is not something to do while nobody knows whether it can be.",
+    "testConnectionAria": "Test the connection to {{name}}",
+    "submit": "Save connection"
+  },
+  "watchForm": {
+    "cardLabel": "admission",
+    "cardNote": "whether anything is admitted, which tickets, and who moves next when one is.",
+    "watchLabel": "watch this source",
+    "watchHint": "off means the connection stays authenticated and stops bringing anything in. It is not the same as disconnecting.",
+    "admissionModeLabel": "admission mode",
+    "submit": "Save watch"
+  },
+  "filterField": {
+    "label": "filter expression",
+    "placeholder": "leave empty to admit everything this connection can see",
+    "hintsLabel": "fields seen on {{kind}} tickets",
+    "verbatim": "stored verbatim and not parsed — the filter language is not decided yet, so this text is handed to the connector exactly as it is typed."
+  },
+  "statusPreview": {
+    "head": "status written back to {{provider}}",
+    "nativeNone": "native intake is the tracker. A run's status is the ticket's status, so there is nowhere to write it back to.",
+    "unknownNone": "nothing is written back to {{provider}} — this build has no mapping for that provider, so a run's status stays on the run."
+  },
+  "detailPage": {
+    "titleFallback": "Source",
+    "crumbFallback": "source",
+    "errorTitle": "Couldn't load this source",
+    "notFoundTitle": "No connection with that id",
+    "notFoundBody": "Nothing on this platform is connected under this id. A source that was disconnected — here or in another tab — is the ordinary way to arrive at this address, and the connections list is where the ones that still exist are.",
+    "backToSources": "Back to sources",
+    "failureTail": "Nothing moved — this page is back as it was.",
+    "factsTitle": "what this connection is",
+    "factProvider": "provider",
+    "factAuth": "auth",
+    "factInstance": "instance",
+    "factAccount": "account",
+    "factCredential": "credential",
+    "factLastSync": "last sync",
+    "credentialEnvNote": "resolved on the host at probe / webhook time. The dashboard never sees the value — replacing it means changing the env var on the host and patching the connection's <code>secretEnvRef</code>.",
+    "credentialStoredNote": "stored write-only, and never shown again — not on this page, not in a form, not through the api. Replacing it means connecting again.",
+    "credentialNoneNote": "native intake has no remote end, so there is nothing to authenticate against.",
+    "none": "none",
+    "never": "never",
+    "watchTitle": "watch and filter",
+    "noWatch": "Native intake has no watch. Tickets arrive here because somebody filed one, not because a filter admitted it — so there is nothing to turn on and nothing to narrow.",
+    "connectionTitle": "the connection",
+    "rotationTitle": "webhook secret",
+    "rotationBody": "A click generates a fresh webhook secret and shows it once. Copy it into the tracker's webhook settings — this page will not show it again.",
+    "rotateButton": "Rotate secret",
+    "rotateAria": "Rotate the webhook secret for {{name}}",
+    "rotateLabel": "Rotate webhook secret",
+    "rotatedLabel": "new webhook secret — copy now, this panel does not survive a navigation",
+    "handoffsTitle": "where this goes",
+    "handoffFiled": "tickets filed here. They are in the catalog with everything else — ",
+    "handoffAdmitted": "tickets admitted from here. They are in the catalog with everything else — ",
+    "handoffCatalogTail": "the catalog is not narrowed to this source.",
+    "openCatalog": "open the catalog",
+    "handoffProject": "the project this connection feeds. Editing a source is granted per project, so this is what every act on this page answers to.",
+    "openProject": "open the project",
+    "handoffTicket": "write a ticket straight into this project's intake. It is a member's act rather than an administrator's, so it has its own screen and its own permission.",
+    "fileTicket": "file a ticket",
+    "rotateTitle": "Rotate this source's webhook secret?",
+    "rotateBody": "{{name}} · {{project}} — a new secret is generated and shown once. Webhooks signed with the previous secret will be rejected until you copy the new one into the tracker.",
+    "rotateConfirm": "Rotate",
+    "rotateKeep": "Keep current",
+    "leaveTitle": "Leave without saving?",
+    "leaveBody": "The watch and connection details you changed on this page are not saved yet. Leaving drops them and the source stays exactly as it was.",
+    "discard": "Discard",
+    "keep": "Keep editing",
+    "watchSavedToast": "Watch saved",
+    "connectionSavedToast": "Connection saved",
+    "rotatedToast": "Webhook secret rotated",
+    "rotatedToastDescription": "{{name}} — copy the new value into the tracker"
+  },
+  "ticketPage": {
+    "title": "New ticket in {{project}}",
+    "titleFallback": "New ticket",
+    "crumb": "new ticket",
+    "summary": "Native intake is the product's own. A ticket written here has no tracker behind it, so its status is the run's status and there is nowhere to sync it back to.",
+    "errorTitle": "Couldn't look this source up",
+    "notFoundTitle": "No connection with that id",
+    "notFoundBody": "No connection on this platform has the id {{id}}. A source that was disconnected while this tab sat open is the ordinary way to arrive here.",
+    "backToSources": "Back to sources",
+    "refused": "The ticket was refused.",
+    "tail": "Nothing was filed — what you typed is still here.",
+    "leaveTitle": "Leave without filing the ticket?",
+    "leaveBody": "The title, body and labels you typed are not saved anywhere yet. Leaving this page drops them, and nothing reaches intake.",
+    "discard": "Discard",
+    "keep": "Keep editing",
+    "toast": "Ticket filed"
+  },
+  "ticketForm": {
+    "titleLabel": "title",
+    "titlePlaceholder": "what is wrong, in one line",
+    "bodyLabel": "body",
+    "bodyPlaceholder": "what you saw, and where. The brain reads this before it plans anything.",
+    "labelsLabel": "labels",
+    "labelsPlaceholder": "checkout-web, bug",
+    "labelsHint": "comma separated. These are the ticket's own labels — not a filter expression.",
+    "straightLabel": "straight to work",
+    "straightHint": "off leaves it for somebody to claim, which is the same act a minute later.",
+    "submitStart": "Create and start",
+    "submit": "Create ticket"
+  }
+}

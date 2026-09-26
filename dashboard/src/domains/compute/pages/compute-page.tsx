@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -73,6 +74,8 @@ const SKELETON_WIDTHS = ["46%", "78%", "62%", "88%", "40%"]
  * that session's to see.
  */
 export function ComputePage() {
+  const { t } = useTranslation("compute")
+  const { t: tShell } = useTranslation("shell")
   const { data, isLoading, isError, error, refetch } = useComputeQuery()
   const session = useSession()
 
@@ -146,27 +149,61 @@ export function ComputePage() {
     <AppShell
       header={
         <PageHeader
-          breadcrumbs={[{ label: "platform" }, { label: "compute" }]}
-          title="Compute"
+          breadcrumbs={[
+            { label: tShell("crumb.platform") },
+            { label: tShell("crumb.compute") },
+          ]}
+          title={t("page.title")}
           summary={
             ready ? (
               <>
-                <span className={styles.strong}>{providers.length}</span>{" "}
-                providers · <span className={styles.strong}>{workers}</span>{" "}
-                workers up ·{" "}
-                {active ? (
-                  <>
-                    <span className={styles.strong}>{active.kind}</span> takes
-                    new starts
-                  </>
-                ) : (
-                  <span className={styles.warn}>nothing takes new starts</span>
-                )}
+                {/* The figures are values in their own voice and the words are
+                    the product's; the slots stringify the counts because a
+                    Trans slot holding a bare falsy `0` renders empty, and zero
+                    is a reading. */}
+                <Trans
+                  ns="compute"
+                  i18nKey="page.summary"
+                  components={{
+                    providers: (
+                      <span className={styles.strong}>
+                        {String(providers.length)}
+                      </span>
+                    ),
+                    workers: (
+                      <span className={styles.strong}>{String(workers)}</span>
+                    ),
+                    takes: active ? (
+                      <Trans
+                        ns="compute"
+                        i18nKey="page.summaryTakes"
+                        components={{
+                          kind: (
+                            <span className={styles.strong}>{active.kind}</span>
+                          ),
+                        }}
+                      />
+                    ) : (
+                      <span className={styles.warn}>
+                        {t("page.summaryNothing")}
+                      </span>
+                    ),
+                  }}
+                />
                 {stranded > 0 ? (
                   <>
                     {" · "}
-                    <span className={styles.warn}>{stranded}</span> idle on a
-                    label nothing matches
+                    <Trans
+                      ns="compute"
+                      i18nKey="page.summaryStranded"
+                      components={{
+                        count: (
+                          <span className={styles.warn}>
+                            {String(stranded)}
+                          </span>
+                        ),
+                      }}
+                    />
                   </>
                 ) : null}
               </>
@@ -180,7 +217,7 @@ export function ComputePage() {
           <Skeleton
             lines={SKELETON_WIDTHS}
             inset="flush"
-            label="Loading the registry"
+            label={t("page.loading")}
             data-test="compute-loading"
           />
         ) : null}
@@ -188,18 +225,18 @@ export function ComputePage() {
         {isError ? (
           <ScreenState
             kind="error"
-            title="Couldn't load compute"
+            title={t("page.errorTitle")}
             description={
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : t("errors.unknown")
             }
             inset="flush"
             data-test="compute-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="compute-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -213,8 +250,10 @@ export function ComputePage() {
 
         {failure ? (
           <p className={styles.failure} role="alert">
-            {failure instanceof Error ? failure.message : "The change failed."}{" "}
-            Nothing moved — the registry is back as it was.
+            {failure instanceof Error
+              ? failure.message
+              : t("errors.changeFailed")}{" "}
+            {t("page.failureTail")}
           </p>
         ) : null}
 
@@ -223,14 +262,15 @@ export function ComputePage() {
             <Section
               variant="screen"
               data-test="compute-providers"
-              title="Providers"
+              title={t("providers.section")}
               note={
-                <>
-                  Docker for dev and compose, Kubernetes for prod — the two
-                  <code className={styles.code}>IComputeProvider</code>{" "}
-                  implementations v1 has. One takes new starts; the rest hold
-                  the leases they already handed out.
-                </>
+                <Trans
+                  ns="compute"
+                  i18nKey="providers.note"
+                  components={{
+                    code: <code className={styles.code} />,
+                  }}
+                />
               }
             >
               <ProvidersPanel
@@ -244,19 +284,19 @@ export function ComputePage() {
             <Section
               variant="screen"
               data-test="compute-pools"
-              title="Pools"
+              title={t("pools.section")}
               note={
-                <>
-                  Scaling is quota-aware plus the provider&apos;s capacity api,
-                  so every pool has two ceilings with two different owners. The
-                  one marked <span className={styles.tag}>binding</span> is the
-                  one refusing the next container — the other is what it had
-                  spare.
-                </>
+                <Trans
+                  ns="compute"
+                  i18nKey="pools.note"
+                  components={{
+                    tag: <span className={styles.tag} />,
+                  }}
+                />
               }
             >
               {orderedPools.length === 0 ? (
-                <p className={styles.sectionEmpty}>no pool is configured</p>
+                <p className={styles.sectionEmpty}>{t("pools.empty")}</p>
               ) : (
                 <div className={styles.pools}>
                   {orderedPools.map((pool) => (
@@ -279,14 +319,15 @@ export function ComputePage() {
             <Section
               variant="screen"
               data-test="compute-versions"
-              title="Worker versions"
+              title={t("versions.section")}
               note={
-                <>
-                  A worker is labelled by image digest <em>and</em> profiles
-                  git-ref. Changing either only affects a new start — an idle
-                  worker on any other label is never matched to an item, which
-                  is how a full pool sits beside a growing queue.
-                </>
+                <Trans
+                  ns="compute"
+                  i18nKey="versions.note"
+                  components={{
+                    em: <em />,
+                  }}
+                />
               }
             >
               <VersionsPanel
@@ -307,28 +348,22 @@ export function ComputePage() {
               <Section
                 variant="screen"
                 data-test="compute-boards"
-                title="Boards"
+                title={t("boards.section")}
                 note={
-                  <>
-                    The grafana boards, folded in from the screen that used to
-                    own them. They open in a new tab and are not embedded here
-                    on purpose: infra metrics and a run&apos;s own timeline are
-                    read on different clocks by people asking different
-                    questions, and a surface that showed both would teach an
-                    operator to look for a run&apos;s story in a metrics board,
-                    where only half of it is. A run&apos;s story is on{" "}
-                    <span className={styles.code}>/runs</span>. One board covers
-                    every project at once, and the definitions are versioned
-                    with the platform — the guide under the list says how to
-                    connect an installation that has nothing in it yet.
-                  </>
+                  <Trans
+                    ns="compute"
+                    i18nKey="boards.note"
+                    components={{
+                      code: <code className={styles.code} />,
+                    }}
+                  />
                 }
               >
                 {observability.isLoading ? (
                   <Skeleton
                     lines={3}
                     inset="none"
-                    label="Loading the boards"
+                    label={t("boards.loading")}
                     data-test="boards-loading"
                   />
                 ) : null}
@@ -336,22 +371,22 @@ export function ComputePage() {
                 {observability.isError ? (
                   <ScreenState
                     kind="error"
-                    title="Couldn't load the boards"
+                    title={t("boards.errorTitle")}
                     description={
                       observability.error instanceof Error
                         ? observability.error.message
-                        : "Unknown error"
+                        : t("errors.unknown")
                     }
                     /* The section has already paid for its own room, so the
                        state stands on its edge rather than buying more. */
                     inset="none"
                     data-test="boards-error"
                     action={
-                      <Tooltip content="Retry">
+                      <Tooltip content={t("actions.retry")}>
                         <Button
                           size="icon-sm"
                           data-test="boards-retry"
-                          aria-label="Retry"
+                          aria-label={t("actions.retry")}
                           onClick={() => {
                             void observability.refetch()
                           }}
@@ -382,14 +417,18 @@ export function ComputePage() {
       <ConfirmDialog
         open={retiring !== null}
         danger
-        title="Retire the idle workers on this label?"
+        title={t("versions.retireTitle")}
         body={
           retiring
-            ? `${versionLabel(retiring)} — ${retiring.idle ?? 0} idle containers are torn down. The ${(retiring.workers ?? 0) - (retiring.idle ?? 0)} still holding a lease keep running until their item lands.`
+            ? t("versions.retireBody", {
+                label: versionLabel(retiring),
+                idle: retiring.idle ?? 0,
+                rest: (retiring.workers ?? 0) - (retiring.idle ?? 0),
+              })
             : ""
         }
-        confirmLabel="Retire idle"
-        cancelLabel="Leave them up"
+        confirmLabel={t("versions.retireConfirm")}
+        cancelLabel={t("versions.retireCancel")}
         onConfirm={() => {
           if (retiring && can(session, "compute.manage")) {
             retire.mutate({

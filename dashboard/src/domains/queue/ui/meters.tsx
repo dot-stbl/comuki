@@ -1,4 +1,5 @@
 import { TriangleAlert } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { formatDuration } from "@/shared/lib/duration"
 import { cn } from "@/shared/lib/utils"
@@ -38,6 +39,7 @@ export interface AgeMeterProps {
  * row nobody needs to look at draws no bar at all.
  */
 export function AgeMeter({ item, className }: AgeMeterProps) {
+  const { t } = useTranslation("queue")
   const heat = ageHeat(item)
   const share = ageShare(item)
 
@@ -48,7 +50,9 @@ export function AgeMeter({ item, className }: AgeMeterProps) {
       className={cn(styles.age, className)}
       title={
         heat === "stalled"
-          ? `queued longer than ${formatDuration(AGE_STALLED_SEC)} — no worker on this profile has claimed it`
+          ? t("ageMeter.stalled", {
+              limit: formatDuration(AGE_STALLED_SEC),
+            })
           : undefined
       }
     >
@@ -77,6 +81,7 @@ export interface LeaseMeterProps {
  * long the silence has been rather than only that there is one.
  */
 export function LeaseMeter({ worker, className }: LeaseMeterProps) {
+  const { t } = useTranslation("queue")
   const heat = leaseHeat(worker)
 
   if (worker.leaseSec === null) {
@@ -95,7 +100,7 @@ export function LeaseMeter({ worker, className }: LeaseMeterProps) {
       // The sentence itself lives in the model beside the threshold that
       // decides when it is true — the worker's own page says it out loud, and
       // one consequence must not be promised in two different wordings.
-      title={heat === "lost" ? lostHeartbeatSentence(worker) : undefined}
+      title={heat === "lost" ? lostHeartbeatSentence(worker, t) : undefined}
     >
       {heat === "lost" ? (
         <TriangleAlert className={styles.icon} aria-hidden="true" />

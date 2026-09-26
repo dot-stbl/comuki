@@ -7,10 +7,11 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { render, waitFor } from "@testing-library/react"
-import { beforeAll, describe, expect, it, vi } from "vitest"
+import { render, screen, waitFor } from "@testing-library/react"
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { ThemeProvider } from "@/app/theme-provider"
+import { i18n, loadLocale } from "@/shared/i18n"
 import { toTask } from "@/domains/tasks/api/mappers"
 import { matchesTaskQuery } from "@/domains/tasks/model/filter-tasks"
 import { TasksPage } from "@/domains/tasks/pages/tasks-page"
@@ -199,6 +200,35 @@ describe("the backlog, end to end over the seeds", () => {
     expect(opener?.hasAttribute("disabled")).toBe(false)
     expect(opener?.getAttribute("data-denied")).toBe(
       "needs member, approver, project-admin, operator or platform-admin"
+    )
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the backlog's own
+   words — title, summary sentence, opener — arrive in russian while every
+   value (titles, tracker ids, apps) stays as it was. Language resets after
+   the case so the file's other readings keep their en posture. */
+describe("the backlog in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the registry chrome in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+    await backlogReady()
+
+    expect(await screen.findByRole("heading", { name: "Задачи" })).toBeTruthy()
+
+    // The header's sentence reads in russian with the same figures.
+    const header = find('[data-test="page-header"]')
+    expect(header?.textContent).toContain("в бэклоге")
+    expect(header?.textContent).toContain("новых")
+
+    // The intake opener names itself in russian either way.
+    expect(find('[data-test="task-new"]')?.getAttribute("aria-label")).toBe(
+      "новая задача"
     )
   })
 })

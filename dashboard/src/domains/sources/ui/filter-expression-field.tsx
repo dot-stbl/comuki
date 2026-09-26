@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { filterFields } from "@/domains/sources/model/providers"
 import type { ProviderKey } from "@/domains/sources/model/types"
 import { TextareaField } from "@/shared/ui"
@@ -46,6 +48,7 @@ export function FilterExpressionField({
   onValueChange,
   disabled = false,
 }: FilterExpressionFieldProps) {
+  const { t } = useTranslation("sources")
   // No chips for a provider the dashboard has not learned: the list is a set
   // of nouns *this* connector has been observed to accept, and offering
   // github's to an unknown tracker would be a guess dressed as a fact. The
@@ -61,21 +64,21 @@ export function FilterExpressionField({
     <div className={styles.wrap}>
       <TextareaField
         id={id}
-        label="filter expression"
+        label={t("filterField.label")}
         voice="code"
         value={value}
         onValueChange={onValueChange}
         disabled={disabled}
         spellCheck={false}
         rows={4}
-        placeholder="leave empty to admit everything this connection can see"
+        placeholder={t("filterField.placeholder")}
         data-test="filter-expression"
       />
 
       {names.length > 0 ? (
         <div className={styles.hints}>
           <span className={styles.hintsLabel} id={`${id}-hints`}>
-            fields seen on {kind} tickets
+            {t("filterField.hintsLabel", { kind })}
           </span>
           {names.map((name) => (
             <button
@@ -94,8 +97,7 @@ export function FilterExpressionField({
       ) : null}
 
       <p className={styles.verbatim} data-test="filter-verbatim">
-        stored verbatim and not parsed — the filter language is not decided yet,
-        so this text is handed to the connector exactly as it is typed.
+        {t("filterField.verbatim")}
       </p>
     </div>
   )

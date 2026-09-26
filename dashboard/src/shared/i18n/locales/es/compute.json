@@ -1,0 +1,129 @@
+{
+  "actions": {
+    "retry": "Reintentar"
+  },
+  "errors": {
+    "unknown": "Error desconocido",
+    "changeFailed": "El cambio falló."
+  },
+  "page": {
+    "title": "Compute",
+    "summary": "<providers/> proveedores · <workers/> workers arriba · <takes/>",
+    "summaryTakes": "<kind/> toma nuevos arranques",
+    "summaryNothing": "nada toma nuevos arranques",
+    "summaryStranded": "<count/> inactivos en una etiqueta que nada matchea",
+    "loading": "Cargando el registro",
+    "errorTitle": "Compute no cargó",
+    "failureTail": "Nada se movió — el registro quedó como estaba."
+  },
+  "providers": {
+    "section": "Proveedores",
+    "note": "Docker para dev y compose, Kubernetes para prod — las dos implementaciones de <code>IComputeProvider</code> que v1 tiene. Una toma nuevos arranques; el resto conserva los arriendos que ya entregó.",
+    "emptyFiltered": "ningún proveedor coincide con los filtros actuales",
+    "empty": "ningún proveedor de compute está registrado",
+    "count": "{{count}} mostrados",
+    "column": {
+      "kind": "tipo",
+      "endpoint": "endpoint",
+      "state": "estado",
+      "newStarts": "nuevos arranques",
+      "pools": "pools",
+      "workers": "workers",
+      "allocatable": "asignable",
+      "note": "nota",
+      "actions": "acciones"
+    },
+    "allKinds": "todos los tipos",
+    "allStates": "todos los estados",
+    "filterPlaceholder": "filtrar endpoint, nota…",
+    "takingWork": "toma trabajo",
+    "noAnswer": "sin respuesta",
+    "handWork": "Entregar nuevos arranques a este proveedor",
+    "handWorkAria": "Entregar nuevos arranques a {{endpoint}}"
+  },
+  "pools": {
+    "section": "Pools",
+    "note": "El escalado es consciente de cuota más la api de capacidad del proveedor, así que cada pool tiene dos techos con dos dueños distintos. El marcado <tag>vinculante</tag> es el que rechaza el próximo contenedor — el otro es lo que le sobraba.",
+    "empty": "ningún pool está configurado"
+  },
+  "card": {
+    "on": "en",
+    "unknown": "desconocido",
+    "noReading": "sin lectura",
+    "slotFree": "slot libre",
+    "slotsFree": "slots libres",
+    "trackQuota": "cuota",
+    "trackAllocatable": "asignable",
+    "binding": "vinculante",
+    "noAnswer": "sin respuesta",
+    "full": "lleno",
+    "free": "{{room}} libres",
+    "up": "arriba",
+    "idle": "inactivos",
+    "sentences": {
+      "noAnswer": "la api de capacidad no respondió — no se puede leer techo para este pool",
+      "bothFull": "la cuota y el clúster están ambos llenos — nada puede arrancar aquí",
+
+      "both": "cuota y clúster coinciden — lugar para {{slots}}",
+      "quotaFull": "la cuota es el techo — nada puede arrancar, y al clúster aún le quedan {{slots}} libres",
+      "quota": "la cuota es el techo — lugar para {{slots}}, con {{spare}} libres en el clúster",
+      "clusterFull": "el clúster es el techo — nada puede arrancar, y la cuota aún permite {{slots}}",
+      "cluster": "el clúster es el techo — lugar para {{slots}}, con {{spare}} restantes bajo la cuota"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — se crea por tarea",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "one": "{{count}} slot",
+      "other": "{{count}} slots"
+    }
+  },
+  "versions": {
+    "section": "Versiones de workers",
+    "note": "Un worker se etiqueta por digest de imagen <em>y</em> git-ref de perfiles. Cambiar cualquiera solo afecta a un arranque nuevo — un worker inactivo con otra etiqueta nunca se matchea a un elemento, y así un pool lleno se sienta junto a una cola creciente.",
+    "emptyFiltered": "ninguna etiqueta coincide con los filtros actuales",
+    "empty": "ningún worker está arriba",
+    "count": "{{count}} mostradas",
+    "countStranded": "{{count}} inactivos nunca matcheados · ",
+    "column": {
+      "label": "etiqueta del worker",
+      "matching": "matchea",
+      "workers": "workers",
+      "idle": "inactivo",
+      "oldestUp": "el más viejo arriba",
+      "why": "por qué",
+      "actions": "acciones"
+    },
+    "filterPlaceholder": "filtrar digest, profiles ref…",
+    "allLabels": "todas las etiquetas",
+    "newStarts": "nuevos arranques",
+    "neverMatched": "nunca matchea",
+    "strandedTitle": "{{count}} inactivos en una etiqueta que nada matchea — no tomarán un elemento",
+    "retireTooltip": "Retirar los workers inactivos de esta etiqueta",
+    "retireAria": "Retirar {{count}} workers inactivos en {{label}}",
+    "retireTitle": "¿Retirar los workers inactivos de esta etiqueta?",
+    "retireBody": "{{label}} — {{idle}} contenedores inactivos se derriban. Los {{rest}} que aún sostienen un arriendo siguen corriendo hasta que su elemento aterrice.",
+    "retireConfirm": "Retirar inactivos",
+    "retireCancel": "Dejarlos arriba",
+    "reason": {
+
+      "both": "la imagen y el profiles ref se movieron ambos",
+      "image": "un release por detrás en la imagen",
+      "profiles": "misma imagen, el profiles ref se movió"
+    }
+  },
+  "boards": {
+    "section": "Tableros",
+    "note": "Los tableros de grafana, plegados desde la pantalla que antes los poseía. Se abren en una pestaña nueva y no se embeben aquí a propósito: las métricas de infra y la línea de tiempo propia de una ejecución se leen en relojes distintos por gente con preguntas distintas, y una superficie que mostrara ambas enseñaría a buscar la historia de una ejecución en un tablero de métricas, donde solo está la mitad. La historia de una ejecución está en <code>/runs</code>. Un tablero cubre todos los proyectos a la vez, y las definiciones se versionan con la plataforma — la guía bajo la lista dice cómo conectar una instalación que aún no tiene nada.",
+    "loading": "Cargando los tableros",
+    "errorTitle": "Los tableros no cargaron"
+  },
+  "state": {
+    "active": "activo",
+    "draining": "drenando",
+    "standby": "en espera",
+    "unreachable": "inalcanzable"
+  }
+}

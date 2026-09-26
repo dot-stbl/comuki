@@ -1,5 +1,6 @@
 import type { ComponentType } from "react"
 import { ShieldAlert, ShieldCheck, TriangleAlert } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/shared/lib/utils"
 import { badgeShell } from "@/shared/ui"
@@ -22,9 +23,8 @@ import styles from "./approval-badges.module.css"
  * being shared, so these follow its construction instead: an icon, a hue and a
  * hairline, from the same tokens, at the small step.
  *
- * The words are the ones the model stores, spelled the way it stores them. The
- * chip used to say `Plan` while the button beside it said "approve the plan",
- * which reads as two vocabularies for one value.
+ * The words resolve from the `approvals` catalogue so the chip and the
+ * decision buttons beside it keep reading as one vocabulary in every locale.
  */
 
 export interface ApprovalTypeBadgeProps {
@@ -33,7 +33,8 @@ export interface ApprovalTypeBadgeProps {
 }
 
 export function ApprovalTypeBadge({ type, className }: ApprovalTypeBadgeProps) {
-  const { icon: Icon, noun } = APPROVAL_TYPE_META[type]
+  const { t } = useTranslation("approvals")
+  const { icon: Icon } = APPROVAL_TYPE_META[type]
 
   return (
     <span
@@ -42,7 +43,7 @@ export function ApprovalTypeBadge({ type, className }: ApprovalTypeBadgeProps) {
       className={cn(badgeShell(), styles.badge, styles.type, className)}
     >
       <Icon aria-hidden="true" />
-      {noun}
+      {t(`type.${type}`)}
     </span>
   )
 }
@@ -64,6 +65,7 @@ export interface ApprovalRiskBadgeProps {
 }
 
 export function ApprovalRiskBadge({ risk, className }: ApprovalRiskBadgeProps) {
+  const { t } = useTranslation("approvals")
   // No risk reading on the wire, no badge: an invented medium would carry a
   // hue a human would weigh, and the queue's judgement must stay its own.
   if (risk === null) {
@@ -79,7 +81,7 @@ export function ApprovalRiskBadge({ risk, className }: ApprovalRiskBadgeProps) {
       className={cn(badgeShell(), styles.badge, styles[risk], className)}
     >
       <Icon aria-hidden="true" />
-      {risk}
+      {t(`risk.${risk}`)}
     </span>
   )
 }

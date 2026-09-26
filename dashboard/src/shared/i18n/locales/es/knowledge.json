@@ -1,0 +1,96 @@
+{
+  "actions": {
+    "retry": "Reintentar",
+    "close": "Cerrar"
+  },
+  "errors": {
+    "unknown": "Error desconocido"
+  },
+  "page": {
+    "title": "Conocimiento",
+    "summary": "conjunto de reglas, revisiones, banco de evaluación",
+    "tabsLabel": "Secciones de conocimiento"
+  },
+  "tab": {
+    "library": "biblioteca",
+    "gate": "puerta"
+  },
+  "load": {
+    "errorTitle": "El conocimiento no cargó"
+  },
+  "search": {
+    "label": "Filtrar reglas, docs y skills",
+    "placeholder": "Buscar reglas, docs, skills…",
+    "errorTitle": "La búsqueda no respondió",
+    "searching": "Buscando",
+    "emptyTitle": "Sin coincidencias",
+    "emptySemantic": "Nada en la biblioteca está lo bastante cerca de la consulta.",
+    "emptyPlain": "Prueba otra consulta sobre reglas y docs fijados.",
+    "sectionTitle": "coincidencias semánticas",
+    "sectionNote": "top {{count}} por similitud coseno",
+    "count": "{{shown}} de {{total}}"
+  },
+  "revision": {
+    "section": "revisión vigente",
+    "current": "revisión actual",
+    "sub": "{{sdk}} · actualizado {{updated}}",
+    "rules": "reglas activas",
+    "rulesSub": "{{hard}} duras · {{soft}} blandas",
+    "reproducibility": "reproducibilidad",
+    "reproducibilitySub": "cada ejecución fija el conjunto de reglas + SDK"
+  },
+  "entries": {
+    "section": "reglas, docs y skills",
+    "updated": "actualizado {{updated}}"
+  },
+  "sheet": {
+    "close": "Cerrar la entrada",
+    "revisionAt": "revisión @{{revision}}",
+    "scope": "ámbito",
+    "updated": "actualizado"
+  },
+  "badge": {
+    "kind": {
+      "rule": "regla",
+      "doc": "doc",
+      "skill": "skill"
+    },
+    "ruleKind": {
+      "hard": "dura",
+      "soft": "blanda"
+    },
+    "pinned": "fijada",
+    "pinnedAt": "fijada @ {{revision}}",
+    "delta": {
+      "improved": "mejoró",
+      "regressed": "empeoró",
+      "noChange": "sin cambios"
+    }
+  },
+  "eval": {
+    "section": "tareas doradas",
+    "note": "antes → después en ediciones de reglas",
+    "empty": "ninguna tarea dorada se ha corrido contra esta revisión",
+    "column": {
+      "task": "tarea",
+      "before": "antes",
+      "after": "después",
+      "delta": "delta"
+    }
+  },
+  "gate": {
+    "errorTitle": "La puerta no cargó",
+    "changeFailed": "El cambio falló.",
+    "nothingMoved": "Nada se movió — la puerta quedó como estaba.",
+    "intro": "Una ejecución debe superar las comprobaciones propias del cliente antes de aterrizar. Las comprobaciones viven en su repositorio — un archivo, commiteado como cualquier otra cosa —, así que esta sección enciende y apaga la puerta y muestra lo que dijo cada comprobación la última vez. Editar un comando es editar el archivo; cada sección de abajo dice exactamente dónde está su archivo.",
+    "emptyTitle": "Ningún proyecto tiene puerta aquí",
+    "emptyDescription": "Nada en los proyectos de esta sesión declara las comprobaciones propias del cliente. Una puerta aparece en cuanto uno de ellos commitee el archivo que las contiene.",
+    "onToast": "Puerta activada",
+    "onToastDescription": "{{name}} — las ejecuciones deben superar las comprobaciones del cliente",
+    "offToast": "Puerta desactivada",
+    "offToastDescription": "{{name}} — las ejecuciones aterrizan sin las comprobaciones del cliente",
+    "summary": "<on/> de <total/> puertas activadas · <checks/> comprobaciones declaradas",
+    "summaryFailing": "<failing/> fallando",
+    "summaryNeverRan": "<never/> nunca se corrieron"
+  }
+}

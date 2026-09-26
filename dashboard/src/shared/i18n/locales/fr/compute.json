@@ -1,0 +1,129 @@
+{
+  "actions": {
+    "retry": "Réessayer"
+  },
+  "errors": {
+    "unknown": "Erreur inconnue",
+    "changeFailed": "Le changement a échoué."
+  },
+  "page": {
+    "title": "Compute",
+    "summary": "<providers/> fournisseurs · <workers/> workers montés · <takes/>",
+    "summaryTakes": "<kind/> prend les nouveaux démarrages",
+    "summaryNothing": "rien ne prend les nouveaux démarrages",
+    "summaryStranded": "<count/> inactifs sur un label que rien ne matche",
+    "loading": "Chargement du registre",
+    "errorTitle": "Compute n'a pas chargé",
+    "failureTail": "Rien n'a bougé — le registre est comme avant."
+  },
+  "providers": {
+    "section": "Fournisseurs",
+    "note": "Docker pour le dev et compose, Kubernetes pour la prod — les deux implémentations d'<code>IComputeProvider</code> que v1 possède. L'une prend les nouveaux démarrages ; les autres gardent les baux déjà accordés.",
+    "emptyFiltered": "aucun fournisseur ne correspond aux filtres actuels",
+    "empty": "aucun fournisseur de compute n'est enregistré",
+    "count": "{{count}} affichés",
+    "column": {
+      "kind": "type",
+      "endpoint": "point de terminaison",
+      "state": "état",
+      "newStarts": "nouveaux démarrages",
+      "pools": "pools",
+      "workers": "workers",
+      "allocatable": "allouable",
+      "note": "note",
+      "actions": "actions"
+    },
+    "allKinds": "tous les types",
+    "allStates": "tous les états",
+    "filterPlaceholder": "filtrer point de terminaison, note…",
+    "takingWork": "prend du travail",
+    "noAnswer": "pas de réponse",
+    "handWork": "Donner les nouveaux démarrages à ce fournisseur",
+    "handWorkAria": "Donner les nouveaux démarrages à {{endpoint}}"
+  },
+  "pools": {
+    "section": "Pools",
+    "note": "La mise à l'échelle est consciente des quotas plus l'api de capacité du fournisseur, donc chaque pool a deux plafonds avec deux propriétaires différents. Celui marqué <tag>contraignant</tag> est celui qui refuse le prochain conteneur — l'autre est ce qu'il avait de spare.",
+    "empty": "aucun pool n'est configuré"
+  },
+  "card": {
+    "on": "sur",
+    "unknown": "inconnu",
+    "noReading": "pas de lecture",
+    "slotFree": "slot libre",
+    "slotsFree": "slots libres",
+    "trackQuota": "quota",
+    "trackAllocatable": "allouable",
+    "binding": "contraignant",
+    "noAnswer": "pas de réponse",
+    "full": "plein",
+    "free": "{{room}} libres",
+    "up": "montés",
+    "idle": "inactifs",
+    "sentences": {
+      "noAnswer": "l'api de capacité n'a pas répondu — aucun plafond lisible pour ce pool",
+      "bothFull": "quota et cluster sont tous deux pleins — rien ne peut démarrer ici",
+
+      "both": "quota et cluster s'accordent — de la place pour {{slots}}",
+      "quotaFull": "le quota est le plafond — rien ne peut démarrer, et le cluster a encore {{slots}} libres",
+      "quota": "le quota est le plafond — de la place pour {{slots}}, avec {{spare}} libres sur le cluster",
+      "clusterFull": "le cluster est le plafond — rien ne peut démarrer, et le quota permet encore {{slots}}",
+      "cluster": "le cluster est le plafond — de la place pour {{slots}}, avec {{spare}} restants sous le quota"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — créé par tâche",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "one": "{{count}} slot",
+      "other": "{{count}} slots"
+    }
+  },
+  "versions": {
+    "section": "Versions des workers",
+    "note": "Un worker est étiqueté par le digest d'image <em>et</em> le git-ref des profils. Changer l'un ou l'autre n'affecte qu'un nouveau démarrage — un worker inactif sur un autre label n'est jamais matché à un élément, et c'est ainsi qu'un pool plein s'assoit à côté d'une file qui grandit.",
+    "emptyFiltered": "aucun label ne correspond aux filtres actuels",
+    "empty": "aucun worker n'est monté",
+    "count": "{{count}} affichées",
+    "countStranded": "{{count}} inactifs jamais matchés · ",
+    "column": {
+      "label": "label du worker",
+      "matching": "matche",
+      "workers": "workers",
+      "idle": "inactif",
+      "oldestUp": "plus ancien monté",
+      "why": "pourquoi",
+      "actions": "actions"
+    },
+    "filterPlaceholder": "filtrer digest, profiles ref…",
+    "allLabels": "tous les labels",
+    "newStarts": "nouveaux démarrages",
+    "neverMatched": "jamais matché",
+    "strandedTitle": "{{count}} inactifs sur un label que rien ne matche — ils ne prendront pas un élément",
+    "retireTooltip": "Retirer les workers inactifs sur ce label",
+    "retireAria": "Retirer {{count}} workers inactifs sur {{label}}",
+    "retireTitle": "Retirer les workers inactifs sur ce label ?",
+    "retireBody": "{{label}} — {{idle}} conteneurs inactifs sont démontés. Les {{rest}} qui tiennent encore un bail continuent jusqu'à ce que leur élément atterrisse.",
+    "retireConfirm": "Retirer les inactifs",
+    "retireCancel": "Les laisser montés",
+    "reason": {
+
+      "both": "l'image et le profiles ref ont bougé tous les deux",
+      "image": "un release de retard sur l'image",
+      "profiles": "même image, le profiles ref a bougé"
+    }
+  },
+  "boards": {
+    "section": "Tableaux",
+    "note": "Les tableaux grafana, repliés ici depuis l'écran qui les possédait. Ils s'ouvrent dans un nouvel onglet et ne sont pas embarqués ici exprès : les métriques d'infra et la timeline propre d'un run se lisent sur des horloges différentes par des gens aux questions différentes, et une surface qui montrait les deux apprendrait à chercher l'histoire d'un run dans un tableau de métriques, où il n'y en a que la moitié. L'histoire d'un run est sur <code>/runs</code>. Un tableau couvre tous les projets à la fois, et les définitions sont versionnées avec la plateforme — le guide sous la liste dit comment connecter une installation où il n'y a encore rien.",
+    "loading": "Chargement des tableaux",
+    "errorTitle": "Les tableaux n'ont pas chargé"
+  },
+  "state": {
+    "active": "actif",
+    "draining": "en vidange",
+    "standby": "en veille",
+    "unreachable": "injoignable"
+  }
+}

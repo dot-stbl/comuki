@@ -7,6 +7,7 @@ import {
   type RefObject,
 } from "react"
 import { useNavigate, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import {
   FormActions,
@@ -20,10 +21,12 @@ import {
   EMPTY_DRAFT,
   INIT_STAGES,
   INIT_STEPS,
-  STEP_META,
+  initStageLabel,
   initProjects,
   stepErrors,
   stepIndex,
+  stepSummary,
+  stepTitle,
   type InitDraft,
   type InitStep,
 } from "@/domains/chat/model/init-wizard"
@@ -81,6 +84,8 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
   const session = useSession()
   const navigate = useNavigate()
   const router = useRouter()
+  const { t } = useTranslation("chat")
+  const { t: tShell } = useTranslation("shell")
 
   const projects = useMemo(() => initProjects(session), [session])
   /* What the wizard was handed when it opened — the empty draft, plus the
@@ -118,7 +123,7 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
     leaveRef.current(go)
   }, [])
 
-  const errors = stepErrors(step, draft)
+  const errors = stepErrors(step, draft, t)
   const shown = showErrors ? errors : {}
   const index = stepIndex(step)
   const last = index === INIT_STEPS.length - 1
@@ -202,16 +207,14 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
     })
   }
 
-  const meta = STEP_META[step]
-
   return (
     <FormPage
-      title="Onboard a repository"
+      title={t("wizard.title")}
       crumbs={[
-        { label: "console", to: "/chat" },
-        { label: "onboard a repository" },
+        { label: tShell("crumb.console"), to: "/chat" },
+        { label: tShell("crumb.onboard") },
       ]}
-      summary={running ? "Onboarding is running." : meta.summary}
+      summary={running ? t("wizard.running") : stepSummary(step, t)}
     >
       {/* Keyed by the step, and that is the whole trick — see `StepGuard`. */}
       <StepGuard key={step} dirty={dirty} leaveRef={leaveRef} />
@@ -230,14 +233,14 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
             data-step={entry}
           >
             <span className={styles.stepNumber}>{at + 1}</span>
-            <span className={styles.stepName}>{STEP_META[entry].title}</span>
+            <span className={styles.stepName}>{stepTitle(entry, t)}</span>
           </li>
         ))}
       </ol>
 
       {running ? (
         <section className={styles.stream} data-test="init-stream">
-          <h2 className={styles.streamHead}>onboarding</h2>
+          <h2 className={styles.streamHead}>{t("wizard.streamHead")}</h2>
           <ol className={styles.stages}>
             {INIT_STAGES.map((label, at) => (
               <li
@@ -254,17 +257,22 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                   }
                   size="sm"
                 >
-                  {at < stage ? "done" : at === stage ? "running" : "queued"}
+                  {at < stage
+                    ? t("wizard.stageWord.done")
+                    : at === stage
+                      ? t("wizard.stageWord.running")
+                      : t("wizard.stageWord.queued")}
                 </StatusBadge>
-                <span className={styles.stageLabel}>{label}</span>
+                <span className={styles.stageLabel}>
+                  {initStageLabel(at, t)}
+                </span>
               </li>
             ))}
           </ol>
           {stage >= INIT_STAGES.length ? (
             <>
               <Notice tone="ok" announce data-test="init-done">
-                The project is registered. Its rule set, its worker image and
-                its endpoints are what the swarm will use from the next run on.
+                {t("wizard.doneNotice")}
               </Notice>
               <FormActions>
                 <Button
@@ -274,7 +282,7 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                     })
                   }}
                 >
-                  Back to the console
+                  {t("wizard.backToConsole")}
                 </Button>
               </FormActions>
             </>
@@ -293,7 +301,7 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               <>
                 <SelectField
                   id="init-project"
-                  label="project"
+                  label={t("wizard.field.project")}
                   required
                   value={draft.projectId}
                   onValueChange={(next) => set("projectId", next)}
@@ -301,14 +309,14 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                     value: entry.id,
                     label: entry.key,
                   }))}
-                  placeholder="pick a project"
-                  hint="Only the projects where you may connect a source are listed."
+                  placeholder={t("wizard.field.pickProject")}
+                  hint={t("wizard.field.projectHint")}
                   error={shown.projectId}
                   data-test="init-project"
                 />
                 <TextField
                   id="init-remote"
-                  label="git remote"
+                  label={t("wizard.field.remote")}
                   required
                   value={draft.remote}
                   onValueChange={(next) => set("remote", next)}
@@ -318,7 +326,7 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                 <FormRow>
                   <TextField
                     id="init-branch"
-                    label="default branch"
+                    label={t("wizard.field.branch")}
                     required
                     value={draft.branch}
                     onValueChange={(next) => set("branch", next)}
@@ -326,10 +334,10 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                   />
                   <SwitchField
                     id="init-write"
-                    label="may push branches"
+                    label={t("wizard.field.write")}
                     checked={draft.writeAccess}
                     onCheckedChange={(next) => set("writeAccess", next)}
-                    hint="Off means the swarm reads the repository and opens nothing."
+                    hint={t("wizard.field.writeHint")}
                   />
                 </FormRow>
               </>
@@ -339,7 +347,7 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               <FormRow>
                 <SelectField
                   id="init-provider"
-                  label="provider"
+                  label={t("wizard.field.provider")}
                   value={draft.provider}
                   onValueChange={(next) => set("provider", next)}
                   options={[
@@ -350,13 +358,13 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
                 />
                 <NumberField
                   id="init-workers"
-                  label="workers at once"
+                  label={t("wizard.field.workers")}
                   required
                   unit="workers"
                   min={1}
                   value={draft.maxWorkers}
                   onValueChange={(next) => set("maxWorkers", next)}
-                  hint="The ceiling on containers this project may hold."
+                  hint={t("wizard.field.workersHint")}
                   error={shown.maxWorkers}
                 />
               </FormRow>
@@ -366,29 +374,29 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               <>
                 <TextField
                   id="init-lead"
-                  label="lead model endpoint"
+                  label={t("wizard.field.lead")}
                   required
                   value={draft.leadEndpoint}
                   onValueChange={(next) => set("leadEndpoint", next)}
                   placeholder="https://api.example.com/v1"
-                  hint="OpenAI- or Anthropic-compatible."
+                  hint={t("wizard.field.leadHint")}
                   error={shown.leadEndpoint}
                 />
                 <TextField
                   id="init-worker"
-                  label="worker model endpoint"
+                  label={t("wizard.field.workerModel")}
                   value={draft.workerEndpoint}
                   onValueChange={(next) => set("workerEndpoint", next)}
-                  placeholder="leave empty to use the lead endpoint"
+                  placeholder={t("wizard.field.workerPlaceholder")}
                 />
                 <TextField
                   id="init-secret"
-                  label="secret reference"
+                  label={t("wizard.field.secret")}
                   required
                   value={draft.secretRef}
                   onValueChange={(next) => set("secretRef", next)}
                   placeholder="env:ACME_MODEL_KEY"
-                  hint="The name of the secret, not the secret. Keys are never typed into this product."
+                  hint={t("wizard.field.secretHint")}
                   error={shown.secretRef}
                 />
               </>
@@ -398,52 +406,74 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               <>
                 <SwitchField
                   id="init-knowledge"
-                  label="keep an indexed rule set"
+                  label={t("wizard.field.knowledge")}
                   checked={draft.knowledge}
                   onCheckedChange={(next) => set("knowledge", next)}
-                  hint="A docs worker writes it. There is no document editor here."
+                  hint={t("wizard.field.knowledgeHint")}
                 />
                 <TextareaField
                   id="init-seed"
-                  label="seed"
+                  label={t("wizard.field.seed")}
                   value={draft.seed}
                   onValueChange={(next) => set("seed", next)}
                   rows={3}
                   disabled={!draft.knowledge}
-                  hint="What the first pass reads, as globs."
+                  hint={t("wizard.field.seedHint")}
                 />
               </>
             ) : null}
 
             {step === "confirm" ? (
               <>
-                <Notice>
-                  Nothing has been created yet. Confirming starts the onboarding
-                  run, and everything it does is recorded where every other run
-                  is.
-                </Notice>
+                <Notice>{t("wizard.confirmNotice")}</Notice>
                 <dl className={styles.review} data-test="init-review">
-                  <Review label="project" value={draft.projectId || "—"} />
-                  <Review label="remote" value={draft.remote || "—"} />
-                  <Review label="branch" value={draft.branch} />
                   <Review
-                    label="push access"
-                    value={draft.writeAccess ? "on" : "off"}
+                    label={t("wizard.review.project")}
+                    value={draft.projectId || "—"}
                   />
-                  <Review label="compute" value={draft.provider} />
-                  <Review label="workers" value={draft.maxWorkers} />
                   <Review
-                    label="lead model"
+                    label={t("wizard.review.remote")}
+                    value={draft.remote || "—"}
+                  />
+                  <Review
+                    label={t("wizard.review.branch")}
+                    value={draft.branch}
+                  />
+                  <Review
+                    label={t("wizard.review.pushAccess")}
+                    value={
+                      draft.writeAccess
+                        ? t("wizard.review.on")
+                        : t("wizard.review.off")
+                    }
+                  />
+                  <Review
+                    label={t("wizard.review.compute")}
+                    value={draft.provider}
+                  />
+                  <Review
+                    label={t("wizard.review.workers")}
+                    value={draft.maxWorkers}
+                  />
+                  <Review
+                    label={t("wizard.review.lead")}
                     value={draft.leadEndpoint || "—"}
                   />
                   <Review
-                    label="worker model"
-                    value={draft.workerEndpoint || "same as lead"}
+                    label={t("wizard.review.workerModel")}
+                    value={
+                      draft.workerEndpoint || t("wizard.review.sameAsLead")
+                    }
                   />
-                  <Review label="secret" value={draft.secretRef || "—"} />
                   <Review
-                    label="knowledge"
-                    value={draft.knowledge ? draft.seed : "off"}
+                    label={t("wizard.review.secret")}
+                    value={draft.secretRef || "—"}
+                  />
+                  <Review
+                    label={t("wizard.review.knowledge")}
+                    value={
+                      draft.knowledge ? draft.seed : t("wizard.review.off")
+                    }
                   />
                 </dl>
               </>
@@ -457,10 +487,10 @@ export function InitWizardPage({ step, project }: InitWizardPageProps) {
               data-test="init-continue"
               denied={last ? allowed.denial : null}
             >
-              {last ? "Start onboarding" : "Continue"}
+              {last ? t("wizard.start") : t("wizard.continue")}
             </Button>
             <Button type="button" variant="ghost" onClick={back}>
-              {index > 0 ? "Back" : "Cancel"}
+              {index > 0 ? t("wizard.back") : t("wizard.cancel")}
             </Button>
           </FormActions>
         </FormLayout>
@@ -501,6 +531,7 @@ function StepGuard({
   leaveRef: RefObject<(go: () => void) => void>
 }) {
   const guard = useUnsavedGuard(dirty)
+  const { t } = useTranslation("chat")
 
   useEffect(() => {
     leaveRef.current = guard.leave
@@ -509,10 +540,10 @@ function StepGuard({
   return (
     <ConfirmDialog
       open={guard.asking}
-      title="Leave the wizard without onboarding?"
-      body="The repository, the model endpoints and the secret reference you typed are not saved anywhere yet. Leaving this page drops them."
-      confirmLabel="Discard"
-      cancelLabel="Keep editing"
+      title={t("wizard.guardTitle")}
+      body={t("wizard.guardBody")}
+      confirmLabel={t("wizard.guardConfirm")}
+      cancelLabel={t("wizard.guardCancel")}
       onConfirm={guard.discard}
       onCancel={guard.keep}
     />

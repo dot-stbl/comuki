@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import {
   bindingSentence,
   idleReading,
@@ -50,6 +52,7 @@ export function CapacityCard({
   projectKey,
   className,
 }: CapacityCardProps) {
+  const { t } = useTranslation("compute")
   const reading = readCapacity(pool, provider)
   const quotaBinds = reading.binding === "quota" || reading.binding === "both"
   const capacityBinds =
@@ -80,7 +83,7 @@ export function CapacityCard({
       >
         <h3 className={styles.title}>
           <span className={styles.project}>{projectKey}</span>
-          <span className={styles.on}>on</span>
+          <span className={styles.on}>{t("card.on")}</span>
           {/* The backend as its own mark. This is a naming line rather than
               prose — "atlas on <backend>" — so the glyph reads as the identity
               it is, and the heading keeps the whole sentence as its accessible
@@ -92,7 +95,7 @@ export function CapacityCard({
               className={styles.providerMark}
             />
           ) : (
-            <span className={styles.provider}>unknown</span>
+            <span className={styles.provider}>{t("card.unknown")}</span>
           )}
         </h3>
         {/* The kit's figure, not this card's own spelling of one. `StatFigure`
@@ -108,30 +111,34 @@ export function CapacityCard({
             measurement. */}
         {reading.room === null ? (
           <p className={styles.room} data-test="capacity-room">
-            <span className={styles.roomNone}>no reading</span>
+            <span className={styles.roomNone}>{t("card.noReading")}</span>
           </p>
         ) : (
           <StatFigure
             className={styles.room}
             data-test="capacity-room"
             value={String(reading.room)}
-            suffix={reading.room === 1 ? "slot free" : "slots free"}
+            suffix={
+              reading.room === 1 ? t("card.slotFree") : t("card.slotsFree")
+            }
           />
         )}
       </header>
 
       <div className={styles.tracks}>
         <Track
-          name="quota"
+          name={t("card.trackQuota")}
           constraint={reading.quota}
           binding={quotaBinds}
           room={reading.quotaRoom}
+          t={t}
         />
         <Track
-          name="allocatable"
+          name={t("card.trackAllocatable")}
           constraint={reading.capacity}
           binding={capacityBinds}
           room={reading.capacityRoom}
+          t={t}
         />
       </div>
 
@@ -140,19 +147,20 @@ export function CapacityCard({
         data-test="capacity-binding"
         data-binding={reading.binding}
       >
-        {bindingSentence(reading)}
+        {bindingSentence(reading, t)}
       </p>
 
       <p className={styles.knobs} data-test="capacity-knobs">
-        {idleReading(pool)}
+        {idleReading(pool, t)}
         <span className={styles.knobSep}>·</span>
-        <span className={styles.knobFigure}>{pool.workers}</span> up
+        <span className={styles.knobFigure}>{pool.workers}</span> {t("card.up")}
         {/* The idle count is a container-runtime reading; a snapshot that
             cannot see idle containers says "up" alone rather than a zero that
             would read as "nothing waiting". */}
         {pool.idle === null ? null : (
           <>
-            , <span className={styles.knobFigure}>{pool.idle}</span> idle
+            , <span className={styles.knobFigure}>{pool.idle}</span>{" "}
+            {t("card.idle")}
           </>
         )}
       </p>
@@ -166,6 +174,7 @@ interface TrackProps {
   constraint: Constraint | null
   binding: boolean
   room: number | null
+  t: (key: string, options?: Record<string, unknown>) => string
 }
 
 /**
@@ -177,7 +186,7 @@ interface TrackProps {
  * The figures are the reading, so they are text and the bar is decoration on
  * top of it: nothing here is announced only as a length.
  */
-function Track({ name, constraint, binding, room }: TrackProps) {
+function Track({ name, constraint, binding, room, t }: TrackProps) {
   if (!constraint) {
     return (
       <div className={styles.track} data-track={name} data-empty="">
@@ -186,7 +195,7 @@ function Track({ name, constraint, binding, room }: TrackProps) {
             hatches the channel for exactly that, which is the rule this file
             used to carry as `.track[data-empty] .channel`. */}
         <Meter value={null} />
-        <span className={styles.figure}>no answer</span>
+        <span className={styles.figure}>{t("card.noAnswer")}</span>
       </div>
     )
   }
@@ -199,7 +208,9 @@ function Track({ name, constraint, binding, room }: TrackProps) {
     >
       <StatLabel className={styles.trackName}>
         {name}
-        {binding ? <span className={styles.bindingTag}>binding</span> : null}
+        {binding ? (
+          <span className={styles.bindingTag}>{t("card.binding")}</span>
+        ) : null}
       </StatLabel>
       <Meter value={share(constraint)} tone="heat" />
       <span className={styles.figure}>
@@ -207,7 +218,7 @@ function Track({ name, constraint, binding, room }: TrackProps) {
         <span className={styles.of}>/</span>
         <span className={styles.limit}>{constraint.limit}</span>{" "}
         <span className={styles.spare}>
-          {room === 0 ? "full" : `${room} free`}
+          {room === 0 ? t("card.full") : t("card.free", { room })}
         </span>
       </span>
     </div>

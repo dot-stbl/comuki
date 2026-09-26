@@ -1,6 +1,10 @@
 import type { ComponentType } from "react"
 import { LogOut, Pause, Play, PlugZap } from "lucide-react"
 
+import {
+  sharedComputeT,
+  type ComputeTranslator,
+} from "@/domains/compute/model/capacity"
 import type { ProviderKind, ProviderState } from "@/domains/compute/model/types"
 import { cn } from "@/shared/lib/utils"
 import { BrandTag, badgeShell, type BrandId } from "@/shared/ui"
@@ -35,11 +39,14 @@ const stateIcons: Record<
 
 export interface ProviderStateBadgeProps {
   state: ProviderState
+  /** Copy as a parameter so a table `cell` (a plain function) can localise. */
+  t?: ComputeTranslator
   className?: string
 }
 
 export function ProviderStateBadge({
   state,
+  t = sharedComputeT,
   className,
 }: ProviderStateBadgeProps) {
   const Icon = stateIcons[state]
@@ -51,7 +58,7 @@ export function ProviderStateBadge({
       className={cn(badgeShell(), styles.badge, styles[state], className)}
     >
       <Icon aria-hidden="true" />
-      {state}
+      {t(`state.${state}`, { defaultValue: state })}
     </span>
   )
 }

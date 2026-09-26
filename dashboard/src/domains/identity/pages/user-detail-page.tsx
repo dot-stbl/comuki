@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
+import { Trans, useTranslation } from "react-i18next"
 import {
   ArrowLeft,
   KeyRound,
@@ -60,6 +61,8 @@ export interface UserDetailPageProps {
  * `LinkOidcPage` beside it already does this and it is the better pattern.
  */
 export function UserDetailPage({ userId }: UserDetailPageProps) {
+  const { t } = useTranslation("identity")
+  const { t: tShell } = useTranslation("shell")
   const { data, isLoading, isError, error, refetch } = useIdentityQuery()
   const navigate = useNavigate()
   // Identity is a platform act: `can` with no project id. Being project-admin
@@ -93,15 +96,15 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
       header={
         <PageHeader
           breadcrumbs={[
-            { label: "platform" },
-            { label: "identity", to: "/identity" },
+            { label: tShell("crumb.platform") },
+            { label: tShell("crumb.identity"), to: "/identity" },
             // The address, not the id: the URL names an id and an id is not
             // something an administrator recognises. Before the payload lands
             // there is nothing to name it with, so the crumb says what kind of
             // thing this is instead of naming the wrong one.
-            { label: user?.email ?? "person" },
+            { label: user?.email ?? t("userDetail.person") },
           ]}
-          title={user?.name ?? "Person"}
+          title={user?.name ?? t("userDetail.person")}
           summary={
             user ? (
               <>
@@ -120,7 +123,10 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                  the row in the list — icon, kit tooltip, real name. */
               <Tooltip
                 content={
-                  manage.denial ?? (off ? "Enable account" : "Disable account")
+                  manage.denial ??
+                  (off
+                    ? t("usersColumn.enableAccount")
+                    : t("usersColumn.disableAccount"))
                 }
               >
                 <Button
@@ -130,7 +136,9 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                   denied={manage.denial}
                   loading={busy}
                   aria-label={
-                    off ? `Enable ${user.email}` : `Disable ${user.email}`
+                    off
+                      ? t("usersColumn.enableAria", { email: user.email })
+                      : t("usersColumn.disableAria", { email: user.email })
                   }
                   onClick={() => disable.toggle(user)}
                 >
@@ -158,8 +166,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
             same thing about the same refusal. */}
         {disable.failure ? (
           <Notice tone="bad" data-test="user-disable-failure">
-            {disable.failure} Nothing changed — the account below is still as it
-            was.
+            {disable.failure} {t("usersPanel.disableTail")}
           </Notice>
         ) : null}
 
@@ -170,7 +177,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
           <Skeleton
             lines={SKELETON_WIDTHS}
             inset="none"
-            label="Loading this account"
+            label={t("userDetail.loading")}
             data-test="user-loading"
           />
         ) : null}
@@ -179,18 +186,18 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
           <ScreenState
             kind="error"
             inset="none"
-            title="This account did not load"
+            title={t("userDetail.errorTitle")}
             /* The host's own problem detail, not the transport's message:
                "request failed 503" is not a reading an administrator can
                act on. */
-            description={requestFailureMessage(error, "Unknown error")}
+            description={requestFailureMessage(error, t("errors.unknown"))}
             data-test="user-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="user-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -212,21 +219,22 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
           <ScreenState
             kind="notFound"
             inset="none"
-            title="No account with that id"
+            title={t("userDetail.notFoundTitle")}
             description={
-              <>
-                No account on this platform has the id{" "}
-                <span className={styles.id}>{userId}</span>. It may have been
-                removed since this link was written, or the link may have been
-                copied from somewhere that never had it.
-              </>
+              <Trans
+                ns="identity"
+                i18nKey="userDetail.notFoundBody"
+                components={{
+                  id: <span className={styles.id}>{userId}</span>,
+                }}
+              />
             }
             data-test="user-not-found"
             action={
-              <Tooltip content="Back to identity">
+              <Tooltip content={t("userDetail.backToIdentity")}>
                 <Link
                   to="/identity"
-                  aria-label="Back to identity"
+                  aria-label={t("userDetail.backToIdentity")}
                   className={buttonClass({ size: "icon-sm" })}
                 >
                   <ArrowLeft aria-hidden="true" />
@@ -240,16 +248,16 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
           <>
             <Section
               id="user-account"
-              title="account"
+              title={t("userDetail.accountSection")}
               data-test="user-account"
               className={styles.region}
             >
               <FactList layout="stack">
-                <Fact name="address">{user.email}</Fact>
+                <Fact name={t("usersColumn.address")}>{user.email}</Fact>
 
                 {/* A person's name is the one thing on this screen a human
                     wrote, so it is the one thing in the interface voice. */}
-                <Fact name="name" voice="prose">
+                <Fact name={t("usersColumn.name")} voice="prose">
                   {user.name}
                 </Fact>
 
@@ -257,11 +265,11 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                     cell that said this in colour alone would say nothing in
                     greyscale. */}
                 <Fact
-                  name="account"
+                  name={t("usersColumn.account")}
                   className={cn(off && styles.off)}
                   data-test="user-status"
                 >
-                  {user.status}
+                  {t(`userStatus.${user.status}`)}
                 </Fact>
 
                 {user.oidcSubject ? (
@@ -269,26 +277,35 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                      Relinking is not an act this product has — a subject is
                      written once, and a screen that offered to overwrite one
                      silently would be inventing the act. */
-                  <Fact name="oidc subject" data-test="user-subject">
+                  <Fact
+                    name={t("userDetail.oidcSubject")}
+                    data-test="user-subject"
+                  >
                     {user.oidcSubject}
                   </Fact>
                 ) : (
                   <Fact
-                    name="oidc subject"
+                    name={t("userDetail.oidcSubject")}
                     className={styles.factAct}
                     data-test="user-subject"
                   >
                     {/* Local only is not broken. OIDC says who you are, and
                         linking is a separate act from existing here — so the
                         fact carries the act rather than an apology. */}
-                    <span className={styles.absent}>local only</span>
-                    <Tooltip content={manage.denial ?? "Link an oidc subject"}>
+                    <span className={styles.absent}>
+                      {t("usersColumn.localOnly")}
+                    </span>
+                    <Tooltip
+                      content={manage.denial ?? t("userDetail.linkOidc")}
+                    >
                       <Button
                         size="icon-sm"
                         variant="ghost"
                         data-test="user-link-oidc"
                         denied={manage.denial}
-                        aria-label={`Link an oidc subject to ${user.email}`}
+                        aria-label={t("userDetail.linkOidcAria", {
+                          email: user.email,
+                        })}
                         onClick={() => {
                           void navigate({
                             to: "/identity/users/$userId/link",
@@ -305,21 +322,21 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                 {/* `never` is a real answer for an account that was invited and
                     has not arrived. A blank reads as a broken render. */}
                 <Fact
-                  name="last seen"
+                  name={t("usersColumn.lastSeen")}
                   absent={!user.lastSeenAt}
                   data-test="user-last-seen"
                 >
-                  {user.lastSeenAt ?? "never"}
+                  {user.lastSeenAt ?? t("usersColumn.never")}
                 </Fact>
 
-                <Fact name="created">{user.createdAt}</Fact>
+                <Fact name={t("userDetail.created")}>{user.createdAt}</Fact>
               </FactList>
             </Section>
 
             <Section
               id="user-roles"
-              title="roles by project"
-              note={`${held.length} held`}
+              title={t("userDetail.rolesSection")}
+              note={t("userDetail.rolesHeld", { count: held.length })}
               data-test="user-roles"
               className={styles.region}
             >
@@ -339,7 +356,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                       >
                         {grant.role}
                       </span>
-                      <span className={styles.on}>on</span>
+                      <span className={styles.on}>{t("userDetail.on")}</span>
                       <span
                         className={cn(
                           styles.scope,
@@ -349,7 +366,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                         {grant.scopeLabel}
                       </span>
                       <span className={styles.granted}>
-                        granted {grant.grantedAt}
+                        {t("userDetail.grantedAt", { date: grant.grantedAt })}
                       </span>
                       {grant.subjectInactive ? (
                         /* A grant on a disabled account is a real row and an
@@ -361,7 +378,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                           className={styles.inertNote}
                           data-test="user-grant-inert"
                         >
-                          inert while the account is disabled
+                          {t("userDetail.inertNote")}
                         </span>
                       ) : null}
                     </li>
@@ -372,9 +389,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                    state, so it is said in words. An empty box would read as a
                    list that failed to load. */
                 <p className={styles.quiet} data-test="user-holds-nothing">
-                  This account holds nothing — no role on the platform and none
-                  on any project. It can sign in and it can see nothing until
-                  somebody grants it something.
+                  {t("userDetail.holdsNothing")}
                 </p>
               )}
 
@@ -390,7 +405,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                     data-test="user-grant-new"
                     className={buttonClass({ variant: "link", size: "sm" })}
                   >
-                    grant a role
+                    {t("userDetail.grantLink")}
                   </Link>
                 ) : (
                   <Button
@@ -399,7 +414,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                     data-test="user-grant-new"
                     denied={manage.denial}
                   >
-                    grant a role
+                    {t("userDetail.grantLink")}
                   </Button>
                 )}
 
@@ -413,15 +428,15 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                   data-test="user-grants-all"
                   className={buttonClass({ variant: "link", size: "sm" })}
                 >
-                  every assignment for this person
+                  {t("userDetail.allGrantsLink")}
                 </Link>
               </div>
             </Section>
 
             <Section
               id="user-keys"
-              title="api keys"
-              note={`${keysInForce} in force`}
+              title={t("userDetail.keysSection")}
+              note={t("userDetail.keysInForce", { count: keysInForce })}
               data-test="user-keys"
               className={styles.region}
             >
@@ -432,11 +447,17 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                   this page has no "their keys" to show and does not fabricate
                   one. The count is the platform's, and it says so. */}
               <p className={styles.quiet} data-test="user-keys-note">
-                An api key is a subject in its own right on this platform: it
-                holds its own roles and answers for itself, so it belongs to no
-                account and there is no such thing as this person&apos;s keys.{" "}
-                <span className={styles.figure}>{keysInForce}</span> are in
-                force across the platform.
+                <Trans
+                  ns="identity"
+                  i18nKey="userDetail.keysNote"
+                  components={{
+                    count: (
+                      <span className={styles.figure}>
+                        {String(keysInForce)}
+                      </span>
+                    ),
+                  }}
+                />
               </p>
 
               <div className={styles.handoffs}>
@@ -446,7 +467,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                     data-test="user-key-new"
                     className={buttonClass({ variant: "link", size: "sm" })}
                   >
-                    new api key
+                    {t("userDetail.newKeyLink")}
                   </Link>
                 ) : (
                   <Button
@@ -455,7 +476,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                     data-test="user-key-new"
                     denied={manage.denial}
                   >
-                    new api key
+                    {t("userDetail.newKeyLink")}
                   </Button>
                 )}
 
@@ -465,7 +486,7 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
                   data-test="user-keys-all"
                   className={buttonClass({ variant: "link", size: "sm" })}
                 >
-                  every api key
+                  {t("userDetail.allKeysLink")}
                 </Link>
               </div>
             </Section>

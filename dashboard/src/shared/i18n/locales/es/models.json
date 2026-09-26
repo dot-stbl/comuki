@@ -1,0 +1,169 @@
+{
+  "actions": {
+    "retry": "Reintentar",
+    "close": "Cerrar"
+  },
+  "errors": {
+    "unknown": "Error desconocido",
+    "changeFailed": "El cambio falló."
+  },
+  "page": {
+    "title": "Modelos",
+    "modelsErrorTitle": "Los modelos no cargaron",
+    "keysErrorTitle": "Las claves de gasto no cargaron",
+    "failureTail": "Nada se movió — el registro quedó como estaba.",
+    "summaryProxyOn": "<endpoints/> endpoints · <keys/> claves de gasto · proxy <proxy/>",
+    "summaryProxyOff": "<endpoints/> endpoints · <keys/> claves de gasto · proxy <proxy/>, nada medido",
+    "summaryNearCap": "<count/> cerca del tope",
+    "summaryExpired": "<count/> vencidas"
+  },
+  "proxy": {
+    "section": "Proxy",
+    "note": "Un salto delgado y opcional frente a los upstreams. Es quien emite una clave de gasto, la sujeta a un presupuesto, mide una ejecución y retira una clave cuando su arriendo termina — así que su interruptor decide si las tres secciones de abajo son configuración o exigibilidad.",
+    "on": "encendido",
+    "off": "apagado",
+    "since": "desde {{when}}",
+    "sentenceOn": "Las claves de gasto se comprueban, los presupuestos se exigen y cada ejecución se mide",
+    "sentenceOff": "los workers reciben una url y una clave inyectadas directamente — las claves de gasto no se comprueban, los presupuestos no se exigen y nada se mide",
+    "immutableSentence": "las claves virtuales se siembran desde configuración y son inmutables en runtime — el gasto se mide en el proxy, no se reporta aquí",
+    "turnOff": "apagar el proxy",
+    "turnOn": "encender el proxy",
+    "costPerRun": "costo por ejecución",
+    "spend": "gasto",
+    "runs": "ejecuciones",
+    "burnByHour": "consumo por hora",
+    "burnNothing": "Gasto por hora: nada medido.",
+    "burnLabel": "Gasto por hora a lo largo del día medido, pico {{peak}} a las {{hour}}.",
+    "burnPeak": "pico {{peak}} a las {{hour}}",
+    "windowOver": "sobre ",
+    "windowStale": "última medición sobre ",
+    "windowNotCurrent": " — no actual",
+    "offConfirmTitle": "¿Apagar el proxy?",
+    "offConfirmBody": "Los workers reciben una url y una clave inyectadas directamente. Las claves de gasto dejan de comprobarse, cada presupuesto de abajo deja de exigirse, y ninguna ejecución se mide hasta que se vuelva a encender.",
+    "offConfirm": "Apagarlo",
+    "offCancel": "Dejarlo encendido"
+  },
+  "endpoints": {
+    "section": "Endpoints upstream",
+    "note": "Dos hilos, compatible con openai y compatible con anthropic, y nada más. Los workers toman una url y una clave por su configuración de proveedor; el lead y el chat toman los mismos endpoints por un cliente de chat. Una url autoalojada es una fila corriente.",
+    "emptyFiltered": "ningún endpoint coincide con los filtros actuales",
+    "empty": "ningún endpoint upstream está configurado",
+    "count": "{{count}} mostrados",
+    "column": {
+      "endpoint": "endpoint",
+      "wire": "hilo",
+      "baseUrl": "url base",
+      "state": "estado",
+      "models": "modelos",
+      "note": "nota"
+    },
+    "filterPlaceholder": "filtrar endpoint, url, modelo…",
+    "allWires": "todos los hilos",
+    "allStates": "todos los estados"
+  },
+  "keys": {
+    "section": "Claves de gasto",
+    "note": "Una clave lleva su propia ruta, tope, lista de modelos, ámbito y TTL — así que una filtrada compra un único endpoint, los modelos nombrados en él, lo que quede de un presupuesto, hasta un día que el poseedor no controla. El secreto se muestra una vez al emitirse y nunca más.",
+    "noteUnenforced": " Con el proxy apagado nada de eso se comprueba.",
+    "emptyFiltered": "ninguna clave coincide con los filtros actuales",
+    "empty": "ninguna clave de gasto ha sido emitida",
+    "countExpired": "{{count}} vencidas · ",
+    "countNearCap": "{{count}} cerca del tope · ",
+    "count": "{{count}} mostradas",
+    "column": {
+      "key": "clave",
+      "whatFor": "para qué",
+      "scope": "ámbito",
+      "route": "ruta",
+      "mayReach": "puede alcanzar",
+      "spentOfCap": "gastado del tope",
+      "expires": "vence",
+      "state": "estado",
+      "actions": "acciones"
+    },
+    "filterPlaceholder": "filtrar clave, etiqueta, modelo…",
+    "allScopes": "todos los ámbitos",
+    "allRoutes": "todas las rutas",
+    "allStates": "todos los estados",
+    "openAria": "Abrir detalles de {{prefix}}",
+    "allModels": "todos los modelos",
+    "allModelsTitle": "allow-list vacía — todo modelo permitido",
+    "revokeTooltip": "Revocar esta clave",
+    "revokeAria": "Revocar {{prefix}}",
+    "revokeConfirmTitle": "¿Revocar esta clave?",
+    "revokeConfirmBody": "{{prefix}} · {{label}} — la clave deja de funcionar de inmediato y no puede recuperarse. Un worker que la tenga la pierde con su arriendo, a mitad de ejecución.",
+    "revokeRestartNote": " El almacén de claves se siembra desde configuración — un reinicio del host resucita esta clave hasta que su fila Proxy:VirtualKeys se elimine.",
+    "revokeConfirm": "Revocar clave",
+    "revokeCancel": "Conservar la clave"
+  },
+  "routing": {
+    "section": "Rol a modelo",
+    "note": "La plataforma habla en roles, nunca en proveedores: el lead planea, escribe contratos, revisa resultados y repara una ejecución fallida; el worker corre pasos de perfil en un contenedor. Aquí es donde un rol se vuelve un modelo físico, y el único lugar donde ese mapeo existe.",
+    "emptyFiltered": "ningún rol coincide con los filtros actuales",
+    "empty": "ningún rol ha sido enrutado a un modelo",
+    "column": {
+      "role": "rol",
+      "model": "modelo",
+      "endpoint": "endpoint",
+      "upstream": "upstream",
+      "usedFor": "usado para"
+    },
+    "allRoles": "todos los roles",
+    "allEndpoints": "todos los endpoints",
+    "unknown": "desconocido",
+    "count": "{{count}} mostrados"
+  },
+  "sheet": {
+    "closeTooltip": "Cerrar — escape",
+    "closeAria": "Cerrar la clave",
+    "routeNotKnown": "ruta no conocida aquí",
+    "issued": "emitida",
+    "lastUsed": "última uso",
+    "expires": "vence",
+    "scope": "ámbito",
+    "grants": "grants",
+    "notRecorded": "no registrado en este hilo",
+    "issuedToNobody": "emitida a nadie en particular",
+    "mayReach": "puede alcanzar",
+    "everyModel": "todo modelo del endpoint",
+    "everyModelTitle": "allow-list vacía — todo modelo permitido",
+    "alreadyStopped": "esta clave ya se detuvo — no hay nada que revocar",
+    "irreversible": "Irreversible — pregunta primero",
+    "revoke": "Revocar esta clave",
+    "spend": "gasto",
+    "notMetered": "no medido en este hilo",
+    "noSpend": "sin gasto registrado",
+    "reading": "{{total}} en los últimos {{days}} días · {{average}} al día · más pesado {{day}} con {{peak}}",
+    "silentDays": " · sin gasto registrado en los últimos {{count}} días",
+    "chartLabel": "Gasto por día, dólares. {{reading}}."
+  },
+  "meter": {
+    "noCap": "sin tope",
+    "noCapTitle": "esta clave no lleva tope — gasta hasta que se revoque o venza",
+    "capOnly": "tope {{cap}}",
+    "notMeteredHere": "gasto no medido aquí",
+    "notMeteredHereTitle": "el tope está vivo pero esta superficie no mide gasto",
+    "unforcedTitle": "el proxy está apagado — este tope está registrado pero no aplicado",
+    "over": "excedido",
+    "left": "queda {{left}}"
+  },
+  "word": {
+    "never": "nunca",
+    "expired": "vencida {{reading}}",
+    "platform": "plataforma",
+    "notOnThisWire": "no está en este hilo",
+    "neverUsed": "nunca usada"
+  },
+  "wire": {
+    "openai": "compatible openai",
+    "anthropic": "compatible anthropic"
+  },
+  "state": {
+    "live": "viva",
+    "expired": "vencida",
+    "revoked": "revocada",
+    "ok": "ok",
+    "degraded": "degradado",
+    "disabled": "apagado"
+  }
+}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import type { PanelImperativeHandle, PanelSize } from "react-resizable-panels"
 import { useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import {
   AppShellTwoPaneInner,
@@ -59,6 +60,7 @@ export interface AppShellProps {
 }
 
 export function AppShell({ children, header, padded = true }: AppShellProps) {
+  const { t } = useTranslation("shell")
   const rail = useRef<PanelImperativeHandle | null>(null)
   const [railCollapsed, setRailCollapsed] = useState(false)
   // Remembers whether the viewport collapsed the rail, so widening the window
@@ -207,7 +209,7 @@ export function AppShell({ children, header, padded = true }: AppShellProps) {
 
             <SplitSeparator
               orientation="horizontal"
-              aria-label="Resize the navigation rail"
+              aria-label={t("page.resizeRail")}
             />
 
             <SplitPanel id="content" minSize="40%">

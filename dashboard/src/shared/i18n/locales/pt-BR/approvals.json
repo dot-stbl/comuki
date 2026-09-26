@@ -1,0 +1,53 @@
+{
+  "actions": {
+    "retry": "Tentar novamente"
+  },
+  "registry": {
+    "title": "Aprovações",
+    "summary": {
+      "one": "<count/> aguardando decisão",
+      "other": "<count/> aguardando decisão"
+    },
+    "errorTitle": "Falha ao carregar aprovações"
+  },
+  "errors": {
+    "unknown": "Erro desconhecido"
+  },
+  "decide": {
+    "approvedToast": "Aprovado",
+    "rejectedToast": "Rejeitado",
+    "openedToast": "Revisão aberta",
+    "refused": "A decisão não passou.",
+    "tail": "A fila está como estava — o run ainda está esperando."
+  },
+  "empty": {
+    "title": "Fila vazia",
+    "description": "Nada aguardando um humano."
+  },
+  "card": {
+    "details": "Detalhes",
+    "hide": "Ocultar",
+    "review": "Revisar",
+    "reject": "Rejeitar",
+    "approve": "Aprovar",
+    "reviewAria": "Revisar o {{noun}} de {{app}}",
+    "rejectAria": "Rejeitar o {{noun}} de {{app}}",
+    "approveAria": "Aprovar o {{noun}} de {{app}}",
+    "planHead": "Plano — grafo de itens de trabalho",
+    "assumptionsFallback": "Suposições do planejador",
+    "paneBaseline": "baseline",
+    "paneNew": "nova"
+  },
+  "type": {
+    "plan": "plano",
+    "deploy": "deploy",
+    "baseline": "baseline",
+    "gate": "gate",
+    "learning": "regra"
+  },
+  "risk": {
+    "high": "alto",
+    "medium": "médio",
+    "low": "baixo"
+  }
+}

@@ -7,8 +7,10 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { fireEvent, render, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { Route as ObservabilityRoute } from "@/routes/observability"
@@ -437,5 +439,26 @@ describe("the retired observability route", () => {
     render(<RouterProvider router={router} />)
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/compute"))
+  })
+})
+
+describe("the compute registry in russian", () => {
+  it("renders the title and the section names in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    try {
+      renderScreen()
+
+      expect(
+        await screen.findByRole("heading", { name: "Compute" })
+      ).toBeTruthy()
+      // The four sections name themselves in russian, in reading order.
+      expect(await screen.findByText("Провайдеры")).toBeTruthy()
+      expect(screen.getByText("Пулы")).toBeTruthy()
+      expect(screen.getByText("Версии воркеров")).toBeTruthy()
+    } finally {
+      await i18n.changeLanguage("en")
+    }
   })
 })

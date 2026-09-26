@@ -1,0 +1,95 @@
+{
+  "errors": {
+    "unknown": "Unknown error"
+  },
+  "actions": {
+    "retry": "Retry"
+  },
+  "header": {
+    "title": "Attention",
+    "crumb": "attention",
+    "summary": {
+      "one": "<owed/> needs you · <running/> running · <total/> runs",
+      "other": "<owed/> need you · <running/> running · <total/> runs"
+    },
+    "errorTitle": "Couldn't load the shift",
+    "errorTail": "{{detail}} — until this loads, nothing on this screen can be trusted to say whether a decision is owed."
+  },
+  "notice": {
+    "fallback": "The decision failed.",
+    "tail": "{{detail}} Nothing changed — the run is back as it was."
+  },
+  "verdict": {
+    "clear": "Nothing needs you",
+    "owed": {
+      "one": "run needs a decision",
+      "other": "runs need a decision"
+    },
+    "swarmEmpty": "The swarm is empty — nothing queued, nothing in flight.",
+    "moving": "<running/> running · <queued/> queued — the swarm is moving on its own."
+  },
+  "attention": {
+    "section": "Needs you",
+    "column": {
+      "run": "run",
+      "project": "project",
+      "task": "task",
+      "step": "step",
+      "inStep": "in step"
+    },
+    "status": {
+      "escalated": "escalated",
+      "failed": "failed",
+      "waiting": "waiting"
+    },
+    "reason": {
+      "escalated": "raised past the swarm to a person",
+      "failed": "stopped at a verification gate",
+      "waiting": "waiting on a human"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "Approve",
+    "stop": "Stop",
+    "open": "Open",
+    "approveRun": "Approve {{title}}",
+    "stopRun": "Stop {{title}}",
+    "openRun": "Open {{title}}",
+    "more": "and {{count}} more — open live runs"
+  },
+  "list": {
+    "waitingOnPlan": "waiting on a plan",
+    "timeInStep": "time in step"
+  },
+  "running": {
+    "section": "Running now",
+    "note": "{{running}} in flight · {{queued}} queued",
+    "empty": "Nothing is in flight.",
+    "more": "{{count}} more in flight — open live runs"
+  },
+  "outcomes": {
+    "loading": "Loading the week's outcomes",
+    "failed": "The week behind this shift did not load, so there is no history to compare against. Nothing else on this screen depends on it — what is in flight below is the live reading.",
+    "reading": "<today/> finished today so far · <week/> this week · <failed/> failed",
+    "chartLabel": "Run outcomes by day. {{today}} finished today so far, {{week}} this week, {{failed}} of them failed.",
+    "status": {
+      "success": "success",
+      "failed": "failed",
+      "escalated": "escalated"
+    }
+  },
+  "shortcuts": {
+    "section": "Shortcuts",
+    "newRun": "New run",
+    "newRunNote": "take a ticket from the inbox",
+    "liveRuns": "Live runs",
+    "liveRunsNote": "the whole swarm, with the flow board and filters",
+    "approvals": "Approvals",
+    "approvalsNote": "plans queued for a decision"
+  },
+  "stopDialog": {
+    "title": "Stop this run?",
+    "body": "{{title}} — the container is torn down and the lease released. Work already merged stays.",
+    "confirm": "Stop run",
+    "cancel": "Keep running"
+  }
+}

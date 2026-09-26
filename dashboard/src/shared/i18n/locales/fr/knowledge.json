@@ -1,0 +1,96 @@
+{
+  "actions": {
+    "retry": "Réessayer",
+    "close": "Fermer"
+  },
+  "errors": {
+    "unknown": "Erreur inconnue"
+  },
+  "page": {
+    "title": "Connaissances",
+    "summary": "jeu de règles, révisions, harnais d'évaluation",
+    "tabsLabel": "Sections des connaissances"
+  },
+  "tab": {
+    "library": "bibliothèque",
+    "gate": "porte"
+  },
+  "load": {
+    "errorTitle": "Les connaissances n'ont pas chargé"
+  },
+  "search": {
+    "label": "Filtrer règles, docs et skills",
+    "placeholder": "Chercher règles, docs, skills…",
+    "errorTitle": "La recherche n'a pas répondu",
+    "searching": "Recherche en cours",
+    "emptyTitle": "Aucune correspondance",
+    "emptySemantic": "Rien dans la bibliothèque n'est assez proche de la requête.",
+    "emptyPlain": "Essayez une autre requête sur les règles et docs épinglés.",
+    "sectionTitle": "correspondances sémantiques",
+    "sectionNote": "top {{count}} par similarité cosinus",
+    "count": "{{shown}} sur {{total}}"
+  },
+  "revision": {
+    "section": "révision en vigueur",
+    "current": "révision actuelle",
+    "sub": "{{sdk}} · mis à jour {{updated}}",
+    "rules": "règles actives",
+    "rulesSub": "{{hard}} dures · {{soft}} souples",
+    "reproducibility": "reproductibilité",
+    "reproducibilitySub": "chaque exécution épingle le jeu de règles + le SDK"
+  },
+  "entries": {
+    "section": "règles, docs et skills",
+    "updated": "mis à jour {{updated}}"
+  },
+  "sheet": {
+    "close": "Fermer l'entrée",
+    "revisionAt": "révision @{{revision}}",
+    "scope": "portée",
+    "updated": "mis à jour"
+  },
+  "badge": {
+    "kind": {
+      "rule": "règle",
+      "doc": "doc",
+      "skill": "skill"
+    },
+    "ruleKind": {
+      "hard": "dure",
+      "soft": "souple"
+    },
+    "pinned": "épinglé",
+    "pinnedAt": "épinglé @ {{revision}}",
+    "delta": {
+      "improved": "amélioré",
+      "regressed": "dégradé",
+      "noChange": "inchangé"
+    }
+  },
+  "eval": {
+    "section": "tâches dorées",
+    "note": "avant → après sur les éditions de règles",
+    "empty": "aucune tâche dorée n'a été jouée contre cette révision",
+    "column": {
+      "task": "tâche",
+      "before": "avant",
+      "after": "après",
+      "delta": "delta"
+    }
+  },
+  "gate": {
+    "errorTitle": "La porte n'a pas chargé",
+    "changeFailed": "Le changement a échoué.",
+    "nothingMoved": "Rien n'a bougé — la porte est comme avant.",
+    "intro": "Une exécution doit passer les vérifications propres du client avant de pouvoir atterrir. Les vérifications vivent dans leur dépôt — un fichier, committé comme tout le reste — donc cette section allume et éteint la porte et montre ce que chaque vérification a dit en dernier. Modifier une commande, c'est modifier le fichier ; chaque section ci-dessous dit exactement où est son fichier.",
+    "emptyTitle": "Aucun projet n'a de porte ici",
+    "emptyDescription": "Rien dans les projets de cette session ne déclare les vérifications propres du client. Une porte apparaît dès que l'un d'eux committe le fichier qui les contient.",
+    "onToast": "Porte activée",
+    "onToastDescription": "{{name}} — les exécutions doivent passer les vérifications du client",
+    "offToast": "Porte désactivée",
+    "offToastDescription": "{{name}} — les exécutions atterrissent sans les vérifications du client",
+    "summary": "<on/> sur <total/> portes activées · <checks/> vérifications déclarées",
+    "summaryFailing": "<failing/> en échec",
+    "summaryNeverRan": "<never/> jamais jouées"
+  }
+}

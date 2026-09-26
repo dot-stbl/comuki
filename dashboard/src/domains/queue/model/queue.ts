@@ -1,4 +1,5 @@
 import { formatDuration } from "@/shared/lib/duration"
+import { i18n } from "@/shared/i18n"
 
 import type {
   QueueDepthDay,
@@ -8,6 +9,24 @@ import type {
   WorkerPool,
   WorkerState,
 } from "./types"
+
+/**
+ * A `queue`-namespace translator, the shape the panels hand down to the
+ * model's word-bearing helpers. The default resolves through the shared
+ * i18n instance (`dashboard-i18n` D7), so a non-component caller with no
+ * translator of its own still answers in the active locale.
+ */
+export type QueueTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+export function sharedQueueT(
+  key: string,
+  options?: Record<string, unknown>
+): string {
+  return i18n.t(key, { ...options, ns: "queue" })
+}
 
 /**
  * The queue's readings — the small pile of arithmetic that turns two lists
@@ -214,14 +233,19 @@ export function leaseHeat(
  * Two places, so the words live here beside the threshold that decides when
  * they are true. A second wording would be a second promise about what the
  * orchestrator is going to do.
+ *
+ * The words resolve through the passed translator (the caller's hook-bound
+ * `t`), defaulting to the shared instance so the model still answers in the
+ * active locale on its own.
  */
 export function lostHeartbeatSentence(
-  worker: Pick<Worker, "heartbeatAgeSec">
+  worker: Pick<Worker, "heartbeatAgeSec">,
+  t: QueueTranslator = sharedQueueT
 ): string {
   const quiet = worker.heartbeatAgeSec
   return quiet === null
-    ? "no heartbeat reading — the lease lapses and the item is requeued"
-    : `no heartbeat for ${formatDuration(quiet)} — the lease lapses and the item is requeued`
+    ? t("lease.noHeartbeat")
+    : t("lease.lostHeartbeat", { quiet: formatDuration(quiet) })
 }
 
 export function lostLeases(workers: Worker[]): number {

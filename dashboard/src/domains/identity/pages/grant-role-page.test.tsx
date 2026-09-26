@@ -7,7 +7,16 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { GrantRolePage } from "@/domains/identity/pages/grant-role-page"
@@ -231,5 +240,29 @@ describe("a shift that may not administer identity", () => {
     const before = grantCount()
     fireEvent.click(submit)
     expect(grantCount()).toBe(before)
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the form's own
+   words — fields, hints, submit — arrive in russian while the subject list
+   (addresses, prefixes) stays as it was. Language resets after the case so
+   the file's other readings keep their en posture. */
+describe("the grant form in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the page and the role rule in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    mount(["/identity", "/identity/grants/new"])
+
+    expect(
+      await screen.findByRole("heading", { name: "выдать роль" })
+    ).toBeTruthy()
+    expect(screen.getByText("тип субъекта")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "выдать" })).toBeTruthy()
   })
 })

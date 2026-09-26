@@ -27,8 +27,8 @@ export type AttentionStatus = "escalated" | "failed" | "waiting"
 export type AttentionAct = "approve" | "stop" | "open"
 
 interface AttentionKind {
-  /** Why these runs are here, in the product's own seven words. */
-  reason: string
+  /** Why these runs are here — a `home`-namespace key, worded at display. */
+  reasonKey: string
   /** The acts, in the order they sit on the row. `open` is always last. */
   acts: readonly AttentionAct[]
 }
@@ -47,15 +47,15 @@ interface AttentionKind {
  */
 const KINDS: Record<AttentionStatus, AttentionKind> = {
   escalated: {
-    reason: "raised past the swarm to a person",
+    reasonKey: "attention.reason.escalated",
     acts: ["approve", "stop", "open"],
   },
   failed: {
-    reason: "stopped at a verification gate",
+    reasonKey: "attention.reason.failed",
     acts: ["open"],
   },
   waiting: {
-    reason: "waiting on a human",
+    reasonKey: "attention.reason.waiting",
     acts: ["approve", "stop", "open"],
   },
 }
@@ -77,7 +77,8 @@ export interface AttentionItem {
 
 export interface AttentionGroup {
   status: AttentionStatus
-  reason: string
+  /** A `home`-namespace key — the group's sentence, worded at display. */
+  reasonKey: string
   acts: readonly AttentionAct[]
   items: AttentionItem[]
 }
@@ -161,7 +162,7 @@ export function groupAttention(items: AttentionItem[]): AttentionGroup[] {
     }
     const created: AttentionGroup = {
       status: item.status,
-      reason: KINDS[item.status].reason,
+      reasonKey: KINDS[item.status].reasonKey,
       acts: item.acts,
       items: [item],
     }

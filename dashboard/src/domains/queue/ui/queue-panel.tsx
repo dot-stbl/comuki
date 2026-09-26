@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { ProjectRef } from "@/shared/session"
 import {
@@ -53,6 +54,7 @@ export function QueuePanel({
   search,
   onSearchChange,
 }: QueuePanelProps) {
+  const { t } = useTranslation("queue")
   // Every filter except the promoted search, which lives in the URL when the
   // route is driving.
   const [ownFilters, setOwnFilters] = useState<DataTableFilterValues>({})
@@ -62,7 +64,10 @@ export function QueuePanel({
   const [sorting, setSorting] = useState<DataTableSorting>([])
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
 
-  const columns = useMemo(() => createQueueColumns({ projects }), [projects])
+  const columns = useMemo(() => createQueueColumns({ projects, t }), [
+    projects,
+    t,
+  ])
 
   /* The filter the toolbar promotes to its search field, asked of the same
      declarations the toolbar reads — see the derivation rule on
@@ -107,10 +112,10 @@ export function QueuePanel({
   const stalled = useMemo(() => unclaimedOver(rows, AGE_STALLED_SEC), [rows])
 
   const emptyLabel = filters.profile
-    ? "nothing queued on this profile"
+    ? t("queuePanel.empty.profile")
     : hasActiveFilters(filters)
-      ? "no work items match the current filters"
-      : "the queue is empty"
+      ? t("queuePanel.empty.filtered")
+      : t("queuePanel.empty.none")
 
   return (
     <>
@@ -123,8 +128,10 @@ export function QueuePanel({
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="queue-count">
-              {stalled > 0 ? `${stalled} waiting too long · ` : ""}
-              {rows.length} shown
+              {stalled > 0
+                ? t("queuePanel.waitingTooLong", { count: stalled })
+                : ""}
+              {t("queuePanel.shown", { count: rows.length })}
             </span>
           }
         />

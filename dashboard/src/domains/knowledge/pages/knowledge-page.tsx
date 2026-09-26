@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { RotateCw } from "lucide-react"
 import { Tab, TabList, TabPanel, Tabs } from "react-aria-components"
+import { useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -76,6 +77,8 @@ export interface KnowledgePageProps {
  * registry and the three identity lists keep.
  */
 export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
+  const { t } = useTranslation("knowledge")
+  const { t: tShell } = useTranslation("shell")
   const { data, isLoading, isError, error, refetch } = useKnowledgeQuery()
   const session = useSession()
 
@@ -127,15 +130,12 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
       padded={false}
       header={
         <PageHeader
-          breadcrumbs={[{ label: "configure" }, { label: "knowledge" }]}
-          title="Knowledge"
-          summary={
-            shown === "gate" ? (
-              <GateSummary />
-            ) : (
-              "rule set, revisions, eval harness"
-            )
-          }
+          breadcrumbs={[
+            { label: tShell("crumb.configure") },
+            { label: tShell("crumb.knowledge") },
+          ]}
+          title={t("page.title")}
+          summary={shown === "gate" ? <GateSummary /> : t("page.summary")}
           /* The search rides in the header's own band rather than in the
              scroll port, so the control that narrows the list cannot scroll
              away from the list it narrows — the same contract a table screen's
@@ -167,15 +167,15 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
         {isError ? (
           <ScreenState
             kind="error"
-            title="Knowledge did not load"
-            description={requestFailureMessage(error, "Unknown error")}
+            title={t("load.errorTitle")}
+            description={requestFailureMessage(error, t("errors.unknown"))}
             inset="page"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="knowledge-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -197,13 +197,16 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
               }
             }}
           >
-            <TabList aria-label="Knowledge sections" className={styles.tabList}>
+            <TabList
+              aria-label={t("page.tabsLabel")}
+              className={styles.tabList}
+            >
               <Tab id="library" className={styles.tab} data-test="tab-library">
-                library
+                {t("tab.library")}
               </Tab>
               {gateVisible ? (
                 <Tab id="gate" className={styles.tab} data-test="tab-gate">
-                  gate
+                  {t("tab.gate")}
                 </Tab>
               ) : null}
             </TabList>
@@ -219,7 +222,7 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                   <Section
                     variant="region"
                     id="knowledge-revision"
-                    title="revision in force"
+                    title={t("revision.section")}
                     data-test="knowledge-revision"
                   >
                     <div className={styles.readings}>
@@ -233,22 +236,28 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                           and this screen was the only one at `--t-h1`. */}
                       <StatTile
                         name="revision"
-                        label="current revision"
+                        label={t("revision.current")}
                         value={data.revision.rules}
-                        sub={`${data.revision.sdk} · updated ${data.revision.updated}`}
+                        sub={t("revision.sub", {
+                          sdk: data.revision.sdk,
+                          updated: data.revision.updated,
+                        })}
                       />
                       <StatTile
                         name="rules"
-                        label="active rules"
+                        label={t("revision.rules")}
                         value={String(data.rulesActive)}
-                        sub={`${data.rulesHard} hard · ${data.rulesSoft} soft`}
+                        sub={t("revision.rulesSub", {
+                          hard: data.rulesHard,
+                          soft: data.rulesSoft,
+                        })}
                       />
                       <StatTile
                         name="reproducibility"
-                        label="reproducibility"
+                        label={t("revision.reproducibility")}
                         value="100"
                         suffix="%"
-                        sub="every run pins the rule set + SDK"
+                        sub={t("revision.reproducibilitySub")}
                       />
                     </div>
                   </Section>
@@ -258,12 +267,17 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                   variant="region"
                   id="knowledge-entries"
                   title={
-                    searching ? "semantic matches" : "rules, docs and skills"
+                    searching ? t("search.sectionTitle") : t("entries.section")
                   }
                   note={
                     searching
-                      ? `top ${search.data?.length ?? 0} by cosine similarity`
-                      : `${shownEntries.length} of ${entries.length}`
+                      ? t("search.sectionNote", {
+                          count: search.data?.length ?? 0,
+                        })
+                      : t("search.count", {
+                          shown: shownEntries.length,
+                          total: entries.length,
+                        })
                   }
                   data-test="knowledge-entries"
                 >
@@ -274,10 +288,10 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                        are the kit's. */
                     <ScreenState
                       kind="error"
-                      title="Search did not answer"
+                      title={t("search.errorTitle")}
                       description={requestFailureMessage(
                         search.error,
-                        "Unknown error"
+                        t("errors.unknown")
                       )}
                       inset="none"
                       className={styles.empty}
@@ -290,17 +304,17 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                     <Skeleton
                       lines={3}
                       inset="none"
-                      label="Searching"
+                      label={t("search.searching")}
                       data-test="knowledge-searching"
                     />
                   ) : shownEntries.length === 0 ? (
                     <ScreenState
                       kind="empty"
-                      title="No matches"
+                      title={t("search.emptyTitle")}
                       description={
                         searching
-                          ? "Nothing in the library is close enough to the query."
-                          : "Try another query over pinned rules and docs."
+                          ? t("search.emptySemantic")
+                          : t("search.emptyPlain")
                       }
                       inset="none"
                       className={styles.empty}
@@ -327,8 +341,8 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                   <Section
                     variant="screen"
                     data-test="knowledge-eval"
-                    title="golden tasks"
-                    note="before → after on rule edits"
+                    title={t("eval.section")}
+                    note={t("eval.note")}
                   >
                     <EvalHarnessTable cases={data.eval} />
                   </Section>

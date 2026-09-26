@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { useRevokeRoleMutation } from "@/domains/identity/api/queries"
@@ -45,6 +46,7 @@ export interface GrantsPanelProps {
  * is a question, so it stays a dialog.
  */
 export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
+  const { t } = useTranslation("identity")
   const session = useSession()
   const manage = useCan("identity.manage")
   const revokeRole = useRevokeRoleMutation()
@@ -81,8 +83,9 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
         scopes,
         revokingId,
         onRevoke: setRevoking,
+        t,
       }),
-    [session, scopes, revokingId]
+    [session, scopes, revokingId, t]
   )
 
   const rows = useMemo(
@@ -104,23 +107,23 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
             // carries the words. The `aria-label` keeps them either way — a
             // tooltip describes, it never becomes the name.
             manage.allowed ? (
-              <Tooltip content="Grant a role">
+              <Tooltip content={t("grantsPanel.grantRole")}>
                 <Link
                   to="/identity/grants/new"
                   data-test="grant-new"
-                  aria-label="Grant a role"
+                  aria-label={t("grantsPanel.grantRole")}
                   className={buttonClass({ size: "icon-sm" })}
                 >
                   <Plus aria-hidden="true" />
                 </Link>
               </Tooltip>
             ) : (
-              <Tooltip content={manage.denial ?? "Grant a role"}>
+              <Tooltip content={manage.denial ?? t("grantsPanel.grantRole")}>
                 <Button
                   size="icon-sm"
                   data-test="grant-new"
                   denied={manage.denial}
-                  aria-label="Grant a role"
+                  aria-label={t("grantsPanel.grantRole")}
                 >
                   <Plus aria-hidden="true" />
                 </Button>
@@ -129,7 +132,7 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
           }
           trailing={
             <span className={tableStyles.count} data-test="grants-count">
-              {rows.length} shown
+              {t("grantsPanel.shown", { count: rows.length })}
             </span>
           }
         />
@@ -144,9 +147,9 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
           <Notice tone="bad" data-test="grant-revoke-failure">
             {requestFailureMessage(
               revokeRole.error,
-              "The platform refused to revoke the grant."
+              t("grantsPanel.revokeRefused")
             )}{" "}
-            Nothing was revoked — the grant below is still in force.
+            {t("grantsPanel.revokeTail")}
           </Notice>
         </div>
       ) : null}
@@ -165,8 +168,8 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
           onColumnSizingChange={setColumnSizing}
           emptyLabel={
             hasActiveFilters(filters)
-              ? "no grants match the current filters"
-              : "nobody holds anything yet"
+              ? t("grantsPanel.emptyFiltered")
+              : t("grantsPanel.emptyNone")
           }
         />
       </div>
@@ -174,14 +177,18 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
       <ConfirmDialog
         open={revoking !== null}
         danger
-        title="Revoke this grant?"
+        title={t("grantsPanel.revokeTitle")}
         body={
           revoking
-            ? `${revoking.subjectLabel} loses ${revoking.role} on ${revoking.scopeLabel}. Anything they were doing with it stops answering.`
+            ? t("grantsPanel.revokeBody", {
+                subject: revoking.subjectLabel,
+                role: revoking.role,
+                scope: revoking.scopeLabel,
+              })
             : ""
         }
-        confirmLabel="Revoke"
-        cancelLabel="Cancel"
+        confirmLabel={t("grantsPanel.revokeConfirm")}
+        cancelLabel={t("actions.cancel")}
         onCancel={() => setRevoking(null)}
         onConfirm={() => {
           const grant = revoking
@@ -191,8 +198,11 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
           }
           revokeRole.mutate(grant.id, {
             onSuccess: () => {
-              toast.message("Grant revoked", {
-                description: `${grant.role} on ${grant.scopeLabel}`,
+              toast.message(t("grantsPanel.revokedToast"), {
+                description: t("grantsPanel.revokedToastScope", {
+                  role: grant.role,
+                  scope: grant.scopeLabel,
+                }),
               })
             },
           })

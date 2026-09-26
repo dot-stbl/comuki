@@ -1,6 +1,10 @@
 import { Ban } from "lucide-react"
 
-import { EXPIRY_SOON_DAYS } from "@/domains/identity/model/identity"
+import {
+  EXPIRY_SOON_DAYS,
+  sharedIdentityT,
+  type IdentityTranslator,
+} from "@/domains/identity/model/identity"
 import type { ApiKeyRow } from "@/domains/identity/model/types"
 import { can, needsLabel, type Session } from "@/shared/session"
 import { Button, Tooltip, numericSort, type DataColumn } from "@/shared/ui"
@@ -14,6 +18,13 @@ export interface KeyColumnsOptions {
   session: Session
   revokingId: string | null
   onRevoke: (key: ApiKeyRow) => void
+  /**
+   * Copy arrives as a parameter because `cell` is called as a plain function
+   * while the table builds a row, so a `useTranslation` inside one throws.
+   * The page passes its hook-bound `t`; tests and stories fall back to the
+   * shared instance, which answers in the active locale.
+   */
+  t?: IdentityTranslator
 }
 
 /**
@@ -33,6 +44,7 @@ export function createApiKeyColumns({
   session,
   revokingId,
   onRevoke,
+  t = sharedIdentityT,
 }: KeyColumnsOptions): DataColumn<ApiKeyRow>[] {
   const denial = can(session, "identity.manage")
     ? null
@@ -41,7 +53,7 @@ export function createApiKeyColumns({
   return [
     {
       accessorKey: "prefix",
-      header: "prefix",
+      header: t("keysColumn.prefix"),
       cell: ({ row }) => (
         <span className={styles.value}>{row.original.prefix}</span>
       ),
@@ -50,7 +62,7 @@ export function createApiKeyColumns({
         pinned: true,
         filter: {
           kind: "text",
-          placeholder: "filter prefix, name, grant…",
+          placeholder: t("keysColumn.filterPlaceholder"),
           match: (key, needle) =>
             // Same reason as the people list: a pasted `k_…` has to land.
             `${key.id} ${key.prefix} ${key.name} ${key.grants.join(" ")}`
@@ -61,7 +73,7 @@ export function createApiKeyColumns({
     },
     {
       accessorKey: "name",
-      header: "name",
+      header: t("keysColumn.name"),
       cell: ({ row }) => (
         <span className={styles.name} title={row.original.name}>
           {row.original.name}
@@ -71,24 +83,24 @@ export function createApiKeyColumns({
     },
     {
       accessorKey: "status",
-      header: "key",
+      header: t("keysColumn.key"),
       cell: ({ row }) => {
         const status = row.original.status
         return (
           <span className={status === "revoked" ? styles.off : styles.value}>
-            {status}
+            {t(`keyStatus.${status}`)}
           </span>
         )
       },
       meta: {
         width: 96,
-        label: "key",
+        label: t("keysColumn.key"),
         filter: {
           kind: "select",
-          placeholder: "all keys",
+          placeholder: t("keysColumn.allKeys"),
           options: [
-            { value: "active", label: "active" },
-            { value: "revoked", label: "revoked" },
+            { value: "active", label: t("keyStatus.active") },
+            { value: "revoked", label: t("keyStatus.revoked") },
           ],
         },
       },
@@ -96,7 +108,7 @@ export function createApiKeyColumns({
     {
       id: "grants",
       accessorFn: (key) => key.grants.join(" "),
-      header: "grants",
+      header: t("keysColumn.grants"),
       enableSorting: false,
       cell: ({ row }) => {
         const grants = row.original.grants
@@ -107,35 +119,41 @@ export function createApiKeyColumns({
         ) : (
           // A key that opens nothing authenticates and then gets a 403 on
           // everything. Worth saying out loud rather than leaving blank.
-          <span className={styles.absent}>nothing</span>
+          <span className={styles.absent}>{t("keysColumn.nothing")}</span>
         )
       },
-      meta: { label: "grants" },
+      meta: { label: t("keysColumn.grants") },
     },
     {
       accessorKey: "lastUsedAt",
-      header: "last used",
+      header: t("keysColumn.lastUsed"),
       cell: ({ row }) => {
         const used = row.original.lastUsedAt
         return used ? (
           <span className={styles.scope}>{used}</span>
         ) : (
-          <span className={styles.absent}>never</span>
+          <span className={styles.absent}>{t("keysColumn.never")}</span>
         )
       },
-      meta: { width: 140, label: "last used" },
+      meta: { width: 140, label: t("keysColumn.lastUsed") },
     },
     {
       accessorKey: "expiresInDays",
-      header: "expires",
+      header: t("keysColumn.expires"),
       sortFn: numericSort,
       cell: ({ row }) => {
         const { expiresAt, expiresInDays } = row.original
         if (!expiresAt || expiresInDays === null) {
-          return <span className={styles.absent}>no expiry</span>
+          return (
+            <span className={styles.absent}>{t("keysColumn.noExpiry")}</span>
+          )
         }
         if (expiresInDays < 0) {
-          return <span className={styles.off}>expired {expiresAt}</span>
+          return (
+            <span className={styles.off}>
+              {t("keysColumn.expired", { date: expiresAt })}
+            </span>
+          )
         }
         if (expiresInDays <= EXPIRY_SOON_DAYS) {
           // The count is the reading and the hue is the emphasis, never the
@@ -143,18 +161,18 @@ export function createApiKeyColumns({
           return (
             <span className={styles.warn}>
               {expiresInDays === 0
-                ? "expires today"
-                : `in ${expiresInDays} days`}
+                ? t("keysColumn.expiresToday")
+                : t("keysColumn.expiresInDays", { count: expiresInDays })}
             </span>
           )
         }
         return <span className={styles.scope}>{expiresAt}</span>
       },
-      meta: { width: 132, numeric: true, label: "expires" },
+      meta: { width: 132, numeric: true, label: t("keysColumn.expires") },
     },
     {
       id: "actions",
-      header: "actions",
+      header: t("keysColumn.actions"),
       enableSorting: false,
       cell: ({ row }) => {
         const key = row.original
@@ -165,14 +183,16 @@ export function createApiKeyColumns({
         const busy = revokingId === key.id
         return (
           <span className={styles.actions}>
-            <Tooltip content={denial ?? "Revoke key"}>
+            <Tooltip content={denial ?? t("keysColumn.revokeKey")}>
               <Button
                 size="icon-sm"
                 variant="destructive"
                 data-test="key-revoke"
                 denied={denial}
                 loading={busy}
-                aria-label={`Revoke key ${key.prefix}`}
+                aria-label={t("keysColumn.revokeKeyAria", {
+                  prefix: key.prefix,
+                })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onRevoke(key)
@@ -184,7 +204,7 @@ export function createApiKeyColumns({
           </span>
         )
       },
-      meta: { width: 72, align: "end", label: "actions" },
+      meta: { width: 72, align: "end", label: t("keysColumn.actions") },
     },
   ]
 }

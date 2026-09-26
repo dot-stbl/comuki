@@ -4,8 +4,28 @@ import type {
   SeedUser,
 } from "@/shared/api/mock/identity.seed"
 import type { SeedProject } from "@/shared/api/mock/projects.seed"
+import { i18n } from "@/shared/i18n"
 
 import type { ApiKeyRow, GrantRow, IdentitySnapshot, UserRow } from "./types"
+
+/**
+ * An `identity`-namespace translator, the shape the panels hand down to the
+ * column factories (a `cell` is a plain function, so a hook inside one
+ * throws). The default resolves through the shared i18n instance
+ * (`dashboard-i18n` D7), so a non-component caller with no translator of its
+ * own still answers in the active locale.
+ */
+export type IdentityTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+export function sharedIdentityT(
+  key: string,
+  options?: Record<string, unknown>
+): string {
+  return i18n.t(key, { ...options, ns: "identity" })
+}
 
 /**
  * The three lists, joined once.

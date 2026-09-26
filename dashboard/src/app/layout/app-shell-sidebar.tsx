@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import type { LucideIcon } from "lucide-react"
 import { Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { visibleNav } from "@/app/layout/nav"
 import { RailAccount } from "@/app/layout/rail-account"
@@ -14,6 +15,8 @@ import styles from "./app-shell-sidebar.module.css"
 
 export interface SidebarNavItem {
   label: string
+  /** The word in the `shell` namespace; the English `label` is the identity. */
+  labelKey?: string
   href: string
   icon?: LucideIcon
   /** When false, child routes (e.g. /runs/$runId) keep the parent link active. */
@@ -29,6 +32,8 @@ export interface SidebarNavItem {
 
 export interface SidebarNavGroup {
   label: string
+  /** The word in the `shell` namespace; the English `label` is the identity. */
+  labelKey?: string
   items: SidebarNavItem[]
   /**
    * `platform` groups sit below the divider — the machinery under the product,
@@ -47,6 +52,7 @@ export function AppShellSidebar({
   groups,
   collapsed = false,
 }: AppShellSidebarProps) {
+  const { t } = useTranslation("shell")
   const { data = [] } = useRunsQuery()
   const session = useSession()
 
@@ -86,11 +92,14 @@ export function AppShellSidebar({
               styles.group,
               index === firstPlatform && styles.tierBreak
             )}
-            aria-label={group.label}
+            aria-label={group.labelKey ? t(group.labelKey) : group.label}
           >
-            <span className={styles.groupLabel}>{group.label}</span>
+            <span className={styles.groupLabel}>
+              {group.labelKey ? t(group.labelKey) : group.label}
+            </span>
             {group.items.map((item) => {
               const count = item.badge ? counts[item.badge] : null
+              const label = item.labelKey ? t(item.labelKey) : item.label
               return (
                 /* The item's own label never leaves the accessibility tree —
                    collapsed it is clipped to zero width, not hidden — so the
@@ -103,7 +112,7 @@ export function AppShellSidebar({
                    transition the collapse from. */
                 <Tooltip
                   key={item.href}
-                  content={item.label}
+                  content={label}
                   placement="end"
                   disabled={!collapsed}
                 >
@@ -116,7 +125,7 @@ export function AppShellSidebar({
                     {item.icon ? (
                       <item.icon className={styles.icon} aria-hidden="true" />
                     ) : null}
-                    <span className={styles.itemLabel}>{item.label}</span>
+                    <span className={styles.itemLabel}>{label}</span>
                     {count ? (
                       /* The count span never carries the alert alone: the row
                          it rides on is what it counts, and the count reads as

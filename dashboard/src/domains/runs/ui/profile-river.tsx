@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef } from "react"
 import type { CSSProperties, KeyboardEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import type {
   ProfileFlow,
@@ -7,6 +8,7 @@ import type {
   ProfileFlowNode,
 } from "@/domains/runs/model/profile-flow"
 import type { RunStatus } from "@/domains/runs/model/types"
+import type { RunsTranslator } from "@/domains/runs/ui/runs-columns"
 import { useValueChanged } from "@/shared/hooks/use-value-changed"
 import { cn } from "@/shared/lib/utils"
 
@@ -65,9 +67,9 @@ function narrowsAt(flow: ProfileFlow, index: number): boolean {
  * worst-first, so the line under the channel and the channel itself say the
  * same thing in the same order.
  */
-function composition(node: ProfileFlowNode): string[] {
+function composition(node: ProfileFlowNode, t: RunsTranslator): string[] {
   return SEGMENT_ORDER.filter((status) => node.poolByStatus[status] > 0).map(
-    (status) => `${node.poolByStatus[status]} ${status}`
+    (status) => t("river.poolEntry", { count: node.poolByStatus[status], status: t(`status.${status}`) })
   )
 }
 
@@ -77,14 +79,23 @@ function composition(node: ProfileFlowNode): string[] {
  * the marked profile has to be named here too — otherwise the one thing this
  * screen points at first is a sighted-only cue.
  */
-function describe(node: ProfileFlowNode, marked: boolean): string {
-  const parts = composition(node)
-  const pool = parts.length > 0 ? parts.join(", ") : "no work"
-  const mark = marked
-    ? ` ${node.blocked} waiting on a human, more than any other profile.`
-    : ""
+function describe(
+  node: ProfileFlowNode,
+  marked: boolean,
+  t: RunsTranslator
+): string {
+  const parts = composition(node, t)
+  const pool = parts.length > 0 ? parts.join(", ") : t("river.noWork")
+  // The pinched sentence carries its own leading space in the catalogue, so
+  // the mark meets the closing period with exactly one space between them.
+  const mark = marked ? t("river.pinched", { count: node.blocked }) : ""
 
-  return `${node.profile}: ${pool}. ${node.cleared} cleared the profile.${mark}`
+  return t("river.node", {
+    profile: node.profile,
+    pool,
+    cleared: t("river.clearedProfile", { count: node.cleared }),
+    mark,
+  })
 }
 
 interface SegmentsProps {
@@ -133,6 +144,7 @@ function RiverNode({
   index,
   onSelect,
 }: RiverNodeProps) {
+  const { t } = useTranslation("runs")
   // The big slot always measures the same thing — the work items sitting on
   // the profile — so every column compares on a two-second scan. Under it the
   // pool splits into the real statuses; the marked profile says how many of
@@ -146,7 +158,7 @@ function RiverNode({
       data-test="river-node"
       data-profile={node.profile}
       aria-pressed={selected}
-      aria-label={describe(node, marked)}
+      aria-label={describe(node, marked, t)}
       className={cn(styles.node, marked && styles.markedNode)}
       onClick={() => onSelect(node.profile)}
     >
@@ -170,37 +182,36 @@ function RiverNode({
         <span className={cn(styles.pool, moved && styles.moved)}>
           {node.pool}
         </span>
-        <span className={styles.mix}>{composition(node).join(" · ")}</span>
+        <span className={styles.mix}>{composition(node, t).join(" · ")}</span>
       </span>
 
       {/* Reserved on every node, filled on one: a mark that added a line would
           shorten its own channel and take that profile off the shared axis. */}
       <span className={styles.mark}>
-        {marked ? `${node.blocked} waiting on a human` : null}
+        {marked ? t("river.mark", { count: node.blocked }) : null}
       </span>
     </button>
   )
 }
 
-const LEGEND: Array<[RunStatus, string]> = [
-  ["running", "running"],
-  ["waiting", "waiting on a human"],
-  ["escalated", "escalated"],
-  ["failed", "failed"],
-]
+/** The legend's statuses; the words resolve at display per-locale. */
+const LEGEND: RunStatus[] = ["running", "waiting", "escalated", "failed"]
 
 /** Lives beside the river so the weave is defined once and read once. */
 export function RiverLegend() {
+  const { t } = useTranslation("runs")
   return (
     <ul className={styles.legend}>
       <li className={styles.key}>
         <span className={cn(styles.keySwatch, styles.keyCleared)} />
-        cleared
+        {t("river.cleared")}
       </li>
-      {LEGEND.map(([status, label]) => (
+      {LEGEND.map((status) => (
         <li key={status} className={styles.key}>
           <span className={styles.keySwatch} data-status={status} />
-          {label}
+          {status === "waiting"
+            ? t("river.waitingOnHuman")
+            : t(`status.${status}`)}
         </li>
       ))}
     </ul>
@@ -238,6 +249,7 @@ export function ProfileRiver({
   onSelect,
   className,
 }: ProfileRiverProps) {
+  const { t } = useTranslation("runs")
   const ref = useRef<HTMLDivElement>(null)
 
   // On a narrow desk the river outruns its scroll container: bring the filtered
@@ -291,7 +303,7 @@ export function ProfileRiver({
       className={cn(styles.river, className)}
       data-test="profile-river"
       role="group"
-      aria-label="Profile flow. Arrow keys move between profiles."
+      aria-label={t("river.group")}
       onKeyDown={onKeyDown}
     >
       {flow.columns.map((column, columnIndex) => (
@@ -341,12 +353,13 @@ export interface ProfileStripProps {
  * never a dead end for a pointer or for a keyboard.
  */
 export function ProfileStrip({ flow, onExpand, className }: ProfileStripProps) {
+  const { t } = useTranslation("runs")
   return (
     <button
       type="button"
       data-test="profile-strip"
       className={cn(styles.strip, className)}
-      aria-label="Expand the flow board"
+      aria-label={t("registry.expandStrip")}
       aria-expanded={false}
       onClick={onExpand}
     >

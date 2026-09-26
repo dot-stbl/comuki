@@ -9,6 +9,7 @@ import {
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
+import { i18n, loadLocale } from "@/shared/i18n"
 import { ThemeProvider } from "@/app/theme-provider"
 import { InitWizardPage } from "@/domains/chat/pages/init-wizard-page"
 import { stepFrom, type InitStep } from "@/domains/chat/model/init-wizard"
@@ -331,5 +332,28 @@ describe("a shift that may not connect a source", () => {
 
     fireEvent.click(submit)
     expect(at("init-stream")).toBeNull()
+  })
+})
+
+describe("the wizard in russian", () => {
+  it("renders the title, the step list and the confirm button in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    try {
+      mount(["/chat/init?step=confirm"])
+
+      expect(
+        await screen.findByRole("heading", { name: "Подключение репозитория" })
+      ).toBeTruthy()
+      // The step list spells the confirm step's name in russian.
+      expect(screen.getByText("Подтверждение")).toBeTruthy()
+      // And the act, named, in russian.
+      expect(
+        screen.getByRole("button", { name: "Начать онбординг" })
+      ).toBeTruthy()
+    } finally {
+      await i18n.changeLanguage("en")
+    }
   })
 })

@@ -7,7 +7,16 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { LinkOidcPage } from "@/domains/identity/pages/link-oidc-page"
@@ -245,5 +254,30 @@ describe("leaving a half-filled form", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
 
     await waitFor(() => expect(here(router)).toBe("/identity/users/u_nadia"))
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the form's own
+   words — title, field, submit — arrive in russian while the account's
+   values stay as they were. Language resets after the case so the file's
+   other readings keep their en posture. */
+describe("the link page in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the page and its one field in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    mount("u_nadia")
+
+    expect(
+      await screen.findByRole("heading", { name: "привязать oidc-субъект" })
+    ).toBeTruthy()
+    expect(
+      await screen.findByRole("button", { name: "привязать субъекта" })
+    ).toBeTruthy()
   })
 })

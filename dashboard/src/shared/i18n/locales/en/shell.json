@@ -1,0 +1,139 @@
+{
+  "locale": {
+    "label": "Language"
+  },
+  "nav": {
+    "intake": "Intake",
+    "observe": "Observe",
+    "configure": "Configure",
+    "platform": "Platform",
+    "inbox": "Inbox",
+    "liveRuns": "Live runs",
+    "queue": "Queue",
+    "approvals": "Approvals",
+    "cost": "Cost",
+    "sources": "Sources",
+    "knowledge": "Knowledge",
+    "settings": "Settings",
+    "projects": "Projects",
+    "identity": "Identity",
+    "compute": "Compute",
+    "models": "Models"
+  },
+  "crumb": {
+    "platform": "platform",
+    "projects": "projects",
+    "attention": "attention",
+    "liveRuns": "live runs",
+    "tasks": "tasks",
+    "queue": "queue",
+    "observe": "observe",
+    "identity": "identity",
+    "sources": "sources",
+    "approvals": "approvals",
+    "configure": "configure",
+    "console": "console",
+    "onboard": "onboard",
+    "knowledge": "knowledge",
+    "models": "models",
+    "compute": "compute"
+  },
+  "topbar": {
+    "home": "Comuki — home",
+    "newRun": "New run",
+    "github": "github",
+    "githubOpens": "Comuki on GitHub — opens in a new tab"
+  },
+  "page": {
+    "breadcrumb": "Breadcrumb",
+    "showRail": "Show the navigation rail",
+    "hideRail": "Hide the navigation rail",
+    "resizeRail": "Resize the navigation rail"
+  },
+  "account": {
+    "label": "Account",
+    "named": "Account — {{name}}",
+    "settings": "Settings",
+    "apiKeys": "API keys",
+    "profile": "Profile",
+    "signOut": "Sign out"
+  },
+  "appearance": {
+    "label": "Appearance",
+    "current": "Appearance — {{mode}}",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "palette": {
+    "label": "Palette",
+    "current": "Palette — {{name}}"
+  },
+  "live": {
+    "demo": "Demo",
+    "polling": "Polling",
+    "mockOnly": "Working with synthetic data — bun run dev:real to switch",
+    "mockAndDown": "Working with synthetic data, backend unreachable",
+    "down": "Backend unreachable — showing last known state",
+    "pollingDown": "Live updates are down — this screen refreshes every {{seconds}}s instead"
+  },
+  "search": {
+    "open": "Search — {{chord}}",
+    "label": "Search Comuki",
+    "placeholder": "paste an id, or name a screen…",
+    "results": "Results",
+    "empty": "nothing here answers to that",
+    "keys": {
+      "move": "↑↓ move",
+      "open": "enter open",
+      "close": "esc close"
+    },
+    "band": {
+      "resolved": "go to",
+      "section": "sections",
+      "act": "acts",
+      "handoff": "search"
+    },
+    "kind": {
+      "run": "run",
+      "workItem": "work item",
+      "worker": "worker",
+      "approval": "approval",
+      "project": "project",
+      "app": "app",
+      "person": "person",
+      "apiKey": "api key",
+      "image": "image",
+      "section": "section",
+      "act": "act",
+      "search": "search"
+    },
+    "act": {
+      "newTask": "New task",
+      "newTaskHint": "put a ticket in the backlog",
+      "newProject": "New project",
+      "newProjectHint": "register a project",
+      "newUser": "New user",
+      "newUserHint": "invite a person",
+      "newApiKey": "New api key",
+      "newApiKeyHint": "issue a key",
+      "grantRole": "Grant a role",
+      "grantRoleHint": "give somebody access"
+    },
+    "resolvedHint": {
+      "liveRuns": "in live runs",
+      "claimQueue": "in the claim queue",
+      "workerPool": "in the worker pool",
+      "approvals": "in approvals",
+      "image": "workers on this image",
+      "apiKeys": "in api keys",
+      "people": "in people",
+      "app": "runs on this app"
+    },
+    "handoffHint": {
+      "runs": "in live runs",
+      "queue": "in the queue",
+      "inbox": "in the inbox"
+    }
+  }
+}

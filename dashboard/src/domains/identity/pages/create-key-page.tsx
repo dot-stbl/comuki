@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { FormPage } from "@/app/layout/form-page"
 import { useUnsavedGuard } from "@/app/layout/use-unsaved-guard"
@@ -33,6 +34,8 @@ import { ConfirmDialog, Notice } from "@/shared/ui"
 export function CreateKeyPage() {
   const navigate = useNavigate()
   const router = useRouter()
+  const { t } = useTranslation("identity")
+  const { t: tShell } = useTranslation("shell")
   const createKey = useCreateApiKeyMutation()
 
   const [dirty, setDirty] = useState(false)
@@ -79,13 +82,13 @@ export function CreateKeyPage() {
 
   return (
     <FormPage
-      title="New api key"
+      title={t("keyPage.title")}
       crumbs={[
-        { label: "platform" },
-        { label: "identity", to: "/identity" },
-        { label: "new api key" },
+        { label: tShell("crumb.platform") },
+        { label: tShell("crumb.identity"), to: "/identity" },
+        { label: t("keyPage.crumb") },
       ]}
-      summary="A key is a subject in its own right: it is granted roles on the role assignments list, exactly like a person."
+      summary={t("keyPage.summary")}
     >
       {/* A refusal is the one answer this page could previously give in
           silence, and the silence read exactly like the success it is not:
@@ -93,12 +96,8 @@ export function CreateKeyPage() {
           says why — the transport's status line would not. */}
       {createKey.error ? (
         <Notice tone="bad" data-test="key-failure">
-          {requestFailureMessage(
-            createKey.error,
-            "The platform refused to make the key."
-          )}{" "}
-          No key was made and no secret was generated — the name and lifetime
-          below are still exactly as you chose them.
+          {requestFailureMessage(createKey.error, t("keyPage.refused"))}{" "}
+          {t("keyPage.tail")}
         </Notice>
       ) : null}
 
@@ -116,10 +115,10 @@ export function CreateKeyPage() {
           only question left is whether the operator has copied the value. */}
       <ConfirmDialog
         open={guard.asking}
-        title="Leave without creating the key?"
-        body="No key has been made and no secret has been generated. Leaving this page drops the name and lifetime you chose."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
+        title={t("keyPage.leaveTitle")}
+        body={t("keyPage.leaveBody")}
+        confirmLabel={t("keyPage.discard")}
+        cancelLabel={t("keyPage.keep")}
         onConfirm={guard.discard}
         onCancel={guard.keep}
       />

@@ -4,7 +4,12 @@ import { PROFILE_CATALOG } from "@/shared/api/mock/runs.seed"
 import type { ProjectRef } from "@/shared/session"
 import { rankSort, type DataColumn } from "@/shared/ui"
 
-import { QUEUE_RANK, WORK_ITEM_STATUSES } from "@/domains/queue/model/queue"
+import {
+  QUEUE_RANK,
+  WORK_ITEM_STATUSES,
+  sharedQueueT,
+  type QueueTranslator,
+} from "@/domains/queue/model/queue"
 import type { QueueItem } from "@/domains/queue/model/types"
 
 import { AgeMeter } from "./meters"
@@ -24,6 +29,13 @@ const statusSort = rankSort(QUEUE_RANK)
 export interface QueueColumnsOptions {
   /** Projects the session can see — the `project` filter's options and names. */
   projects: ProjectRef[]
+  /**
+   * Copy arrives as a parameter because `cell` is called as a plain function
+   * while the table builds a row, so a `useTranslation` inside one throws.
+   * The page passes its hook-bound `t`; tests and stories fall back to the
+   * shared instance, which answers in the active locale.
+   */
+  t?: QueueTranslator
 }
 
 /**
@@ -45,13 +57,14 @@ export interface QueueColumnsOptions {
  */
 export function createQueueColumns({
   projects,
+  t = sharedQueueT,
 }: QueueColumnsOptions): DataColumn<QueueItem>[] {
   const projectName = new Map(projects.map((entry) => [entry.id, entry.key]))
 
   return [
     {
       accessorKey: "status",
-      header: "status",
+      header: t("queueColumn.status"),
       cell: ({ row }) => <WorkStatusBadge status={row.original.status} />,
       sortFn: statusSort,
       meta: {
@@ -59,17 +72,17 @@ export function createQueueColumns({
         pinned: true,
         filter: {
           kind: "select",
-          placeholder: "all statuses",
+          placeholder: t("queueColumn.allStatuses"),
           options: WORK_ITEM_STATUSES.map((status) => ({
             value: status,
-            label: status,
+            label: t(`workStatus.${status}`),
           })),
         },
       },
     },
     {
       accessorKey: "id",
-      header: "item",
+      header: t("queueColumn.item"),
       cell: ({ row }) => (
         <span className={styles.value}>{row.original.id}</span>
       ),
@@ -77,7 +90,7 @@ export function createQueueColumns({
     },
     {
       accessorKey: "runId",
-      header: "run",
+      header: t("queueColumn.run"),
       cell: ({ row }) => (
         <Link
           to="/runs/$runId"
@@ -88,11 +101,11 @@ export function createQueueColumns({
           {row.original.runId}
         </Link>
       ),
-      meta: { width: 104, label: "run" },
+      meta: { width: 104, label: t("queueColumn.run") },
     },
     {
       accessorKey: "projectId",
-      header: "project",
+      header: t("queueColumn.project"),
       // The key, not the display name: it is the handle an operator types and
       // reads, and it is what the denial sentence on the other half names.
       cell: ({ row }) => (
@@ -102,10 +115,10 @@ export function createQueueColumns({
       ),
       meta: {
         width: 104,
-        label: "project",
+        label: t("queueColumn.project"),
         filter: {
           kind: "select",
-          placeholder: "all projects",
+          placeholder: t("queueColumn.allProjects"),
           options: projects.map((entry) => ({
             value: entry.id,
             label: entry.key,
@@ -115,7 +128,7 @@ export function createQueueColumns({
     },
     {
       accessorKey: "profile",
-      header: "profile",
+      header: t("queueColumn.profile"),
       cell: ({ row }) => (
         <span className={styles.value}>{row.original.profile}</span>
       ),
@@ -123,7 +136,7 @@ export function createQueueColumns({
         width: 116,
         filter: {
           kind: "select",
-          placeholder: "all profiles",
+          placeholder: t("queueColumn.allProfiles"),
           options: PROFILE_CATALOG.map((profile) => ({
             value: profile,
             label: profile,
@@ -133,17 +146,17 @@ export function createQueueColumns({
     },
     {
       accessorKey: "label",
-      header: "step",
+      header: t("queueColumn.step"),
       cell: ({ row }) => (
         <span className={styles.step} title={row.original.label}>
           {row.original.label}
         </span>
       ),
       meta: {
-        label: "step",
+        label: t("queueColumn.step"),
         filter: {
           kind: "text",
-          placeholder: "filter item, run, step…",
+          placeholder: t("queueColumn.filterPlaceholder"),
           /* The project key is in the haystack and deliberately *not* in the
              placeholder, and both halves of that are decisions.
 
@@ -168,7 +181,7 @@ export function createQueueColumns({
     },
     {
       accessorKey: "claimedBy",
-      header: "claimed by",
+      header: t("queueColumn.claimedBy"),
       // The lease is released the moment an item stops running, so most rows
       // have no claimant — and a dash says that better than a blank cell,
       // which reads as a rendering fault.
@@ -178,13 +191,13 @@ export function createQueueColumns({
         ) : (
           <span className={styles.faint}>—</span>
         ),
-      meta: { width: 104, label: "claimed by" },
+      meta: { width: 104, label: t("queueColumn.claimedBy") },
     },
     {
       accessorKey: "ageSec",
-      header: "age",
+      header: t("queueColumn.age"),
       cell: ({ row }) => <AgeMeter item={row.original} />,
-      meta: { width: 96, numeric: true, label: "age" },
+      meta: { width: 96, numeric: true, label: t("queueColumn.age") },
     },
   ]
 }

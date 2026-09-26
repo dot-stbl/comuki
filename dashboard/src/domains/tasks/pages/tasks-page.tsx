@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { Plus, RotateCw } from "lucide-react"
 import { toast } from "sonner"
+import { Trans, useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -74,6 +75,8 @@ interface TasksBodyProps extends TasksPageProps {
 }
 
 function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
+  const { t } = useTranslation("tasks")
+  const { t: tShell } = useTranslation("shell")
   const { data = [], isLoading, isError, error, refetch } = useTasksQuery()
   const dispatchTask = useDispatchTaskMutation()
 
@@ -129,13 +132,13 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
       }
       dispatchMutate(task.id, {
         onSuccess: () => {
-          toast.success("Dispatched to orchestrator", {
+          toast.success(t("dispatch.toast"), {
             description: task.title,
           })
         },
       })
     },
-    [dispatchMutate, session]
+    [dispatchMutate, session, t]
   )
 
   const columns = useMemo(
@@ -150,6 +153,7 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
         // mounting the pane.
         onArtifactOpen,
         session,
+        t,
       }),
     [
       apps,
@@ -158,6 +162,7 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
       onDispatch,
       onArtifactOpen,
       session,
+      t,
     ]
   )
 
@@ -185,15 +190,27 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
       padded={false}
       header={
         <PageHeader
-          breadcrumbs={[{ label: "tasks" }]}
-          title="Tasks"
+          breadcrumbs={[{ label: tShell("crumb.tasks") }]}
+          title={t("registry.title")}
           summary={
             ready ? (
-              <>
-                <span className={styles.strong}>{data.length}</span> in backlog
-                {" · "}
-                <span className={styles.strong}>{newCount}</span> new
-              </>
+              /* The figures are values in their own voice and the words are
+                 prose in theirs, so the emphasis rides slot elements and the
+                 sentence — word order included — belongs to the locale. The
+                 counts stringify: a Trans slot holding a falsy child (a bare
+                 `0`) renders empty, and zero is a reading, not a blank. */
+              <Trans
+                ns="tasks"
+                i18nKey="registry.summary"
+                components={{
+                  total: (
+                    <span className={styles.strong}>{String(data.length)}</span>
+                  ),
+                  fresh: (
+                    <span className={styles.strong}>{String(newCount)}</span>
+                  ),
+                }}
+              />
             ) : undefined
           }
           actions={
@@ -202,23 +219,23 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
             // and spelled as an anchor; denied, it is a control that refuses
             // and says what it needs (a disabled anchor is not a thing).
             mayTake.allowed ? (
-              <Tooltip content="New task">
+              <Tooltip content={t("registry.newTask")}>
                 <Link
                   to="/tasks/new"
                   data-test="task-new"
-                  aria-label="New task"
+                  aria-label={t("registry.newTask")}
                   className={buttonClass({ size: "icon-sm" })}
                 >
                   <Plus aria-hidden="true" />
                 </Link>
               </Tooltip>
             ) : (
-              <Tooltip content={mayTake.denial ?? "New task"}>
+              <Tooltip content={mayTake.denial ?? t("registry.newTask")}>
                 <Button
                   size="icon-sm"
                   data-test="task-new"
                   denied={mayTake.denial}
-                  aria-label="New task"
+                  aria-label={t("registry.newTask")}
                 >
                   <Plus aria-hidden="true" />
                 </Button>
@@ -244,7 +261,7 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
                 onColumnVisibilityChange={setColumnVisibility}
                 trailing={
                   <span className={tableStyles.count} data-test="tasks-count">
-                    {shown.length} shown
+                    {t("registry.count", { count: shown.length })}
                   </span>
                 }
               />
@@ -259,7 +276,7 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
             lines={SKELETON_WIDTHS}
             inset="gutter"
             fill
-            label="Loading the backlog"
+            label={t("registry.loading")}
             data-test="tasks-loading"
           />
         ) : null}
@@ -267,18 +284,18 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
         {isError ? (
           <ScreenState
             kind="error"
-            title="The backlog did not load"
+            title={t("registry.errorTitle")}
             description={
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : t("errors.unknown")
             }
             inset="gutter"
             data-test="tasks-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="tasks-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -304,8 +321,8 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
           >
             {dispatchTask.error instanceof Error
               ? dispatchTask.error.message
-              : "The orchestrator did not take that."}{" "}
-            Nothing was queued — the ticket is still in the backlog.
+              : t("dispatch.fallback")}{" "}
+            {t("dispatch.tail")}
           </p>
         ) : null}
 
@@ -324,8 +341,8 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
               onColumnSizingChange={setColumnSizing}
               emptyLabel={
                 hasActiveFilters(filters)
-                  ? "no tasks match the current filters"
-                  : "the backlog is empty"
+                  ? t("registry.empty.filtered")
+                  : t("registry.empty.none")
               }
             />
           </div>

@@ -10,11 +10,12 @@ import type { ApprovalType } from "@/domains/approvals/model/types"
  * that exports both a component and a value loses fast refresh, which is the
  * same reason `identity/model/tabs.ts` and `shared/ui/form/ids.ts` are theirs.
  *
- * `noun` is the word, and it is the *only* word — it names the chip and it
- * lands inside the accessible sentence on every decision button ("approve the
- * deploy for checkout-web"). There used to be a second, title-cased `label` for
- * the chip, which made one value read as two vocabularies; a value is spelled
- * the way it is stored, the way the kit's `StatusBadge` spells a status.
+ * The noun is not here — it lives in the `approvals` catalogue
+ * (`approvals:type.<kind>`) and is read where it renders, because a constant
+ * cannot answer in the active locale. There used to be a second, title-cased
+ * `label` for the chip, which made one value read as two vocabularies; a value
+ * is spelled the way it is stored, the way the kit's `StatusBadge` spells a
+ * status.
  *
  * `gate` is the wire's kind: a run the orchestrator escalated back to a human.
  * It is not a plan or a deploy — the host does not say *why* it escalated, and
@@ -26,11 +27,11 @@ import type { ApprovalType } from "@/domains/approvals/model/types"
  */
 export const APPROVAL_TYPE_META: Record<
   ApprovalType,
-  { icon: ComponentType<{ className?: string }>; noun: string }
+  { icon: ComponentType<{ className?: string }> }
 > = {
-  plan: { icon: GitBranch, noun: "plan" },
-  deploy: { icon: Zap, noun: "deploy" },
-  baseline: { icon: Image, noun: "baseline" },
-  gate: { icon: Flag, noun: "gate" },
-  learning: { icon: Lightbulb, noun: "rule" },
+  plan: { icon: GitBranch },
+  deploy: { icon: Zap },
+  baseline: { icon: Image },
+  gate: { icon: Flag },
+  learning: { icon: Lightbulb },
 }

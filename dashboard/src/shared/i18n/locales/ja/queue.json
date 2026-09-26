@@ -1,0 +1,166 @@
+{
+  "actions": {
+    "retry": "再試行"
+  },
+  "errors": {
+    "unknown": "不明なエラー"
+  },
+  "workStatus": {
+    "queued": "キュー投入",
+    "running": "実行中",
+    "blocked": "ブロック済み",
+    "failed": "失敗",
+    "cancelled": "キャンセル済み",
+    "succeeded": "成功"
+  },
+  "workerState": {
+    "busy": "ビジー",
+    "idle": "アイドル",
+    "draining": "ドレイン中",
+    "offline": "オフライン"
+  },
+  "registry": {
+    "title": "キューと worker",
+    "summary": "<queued/> がキューに · <stalled/> が 5 分以上未Claim · <total/> worker、<idle/> アイドル · <lost/> 心跳なし",
+    "errorTitle": "キューが読み込めませんでした",
+    "loading": "キューを読み込み中",
+    "expandPool": "プールを展開",
+    "collapsePool": "プールを折りたたむ",
+    "resizePool": "worker プールのサイズ変更"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "このプロファイルのキューには何もありません",
+      "filtered": "現在のフィルタに一致する作業項目はありません",
+      "none": "キューは空です"
+    },
+    "shown": {
+      "other": "{{count}} 件表示"
+    },
+    "waitingTooLong": {
+      "other": "{{count}} 件が長く待機 · "
+    }
+  },
+  "queueColumn": {
+    "status": "ステータス",
+    "item": "項目",
+    "run": "実行",
+    "project": "プロジェクト",
+    "profile": "プロファイル",
+    "step": "ステップ",
+    "claimedBy": "Claim 者",
+    "age": "経過",
+    "allStatuses": "すべてのステータス",
+    "allProjects": "すべてのプロジェクト",
+    "allProfiles": "すべてのプロファイル",
+    "filterPlaceholder": "項目、実行、ステップで絞り込み…"
+  },
+  "ageMeter": {
+    "stalled": "{{limit}} 以上キューにいる — このプロファイルの worker は誰も Claim していません"
+  },
+  "lease": {
+    "noHeartbeat": "ハートビート読み取りなし — リースが切れると項目は再キューされます",
+    "lostHeartbeat": "{{quiet}} の間ハートビートなし — リースが切れると項目は再キューされます"
+  },
+  "depth": {
+    "label": "日別キュー深度",
+    "figure": "現在 <today/> がキューに · 週は <week/> を推移",
+    "deepest": " · 今日は今週で最も深い日",
+    "chartLabel": "日別キュー深度、Claim 待ちの項目。今日は {{today}} がキューに。週は {{weekMin}} から {{weekMax}} を推移しました。",
+    "chartLabelDeepest": "日別キュー深度、Claim 待ちの項目。今日は {{today}} がキューに — {{weekMin}} から {{weekMax}} を推移した週で最も深い日です。"
+  },
+  "poolStrip": {
+    "expandEmpty": "プールを展開。稼働中の worker はいません。",
+    "expand": "プールを展開。worker {{total}} 台: {{busy}} ビジー、{{draining}} ドレイン中、{{idle}} アイドル。"
+  },
+  "workerColumn": {
+    "state": "状態",
+    "worker": "worker",
+    "project": "プロジェクト",
+    "profile": "プロファイル",
+    "currentWork": "現在の作業",
+    "compute": "コンピュート",
+    "handle": "ハンドル",
+    "image": "イメージ",
+    "lease": "リース",
+    "up": "稼働",
+    "actions": "操作",
+    "idle": "アイドル",
+    "allStates": "すべての状態",
+    "allProjects": "すべてのプロジェクト",
+    "allProfiles": "すべてのプロファイル",
+    "allProviders": "すべてのプロバイダー",
+    "filterPlaceholder": "worker、ハンドル、イメージで絞り込み…",
+    "drain": "ドレイン",
+    "forceStop": "強制停止",
+    "drainWorker": "{{id}} をドレイン",
+    "forceStopWorker": "{{id}} を強制停止"
+  },
+  "workersPanel": {
+    "count": "{{total}} worker 中 {{shown}}",
+    "fallback": "プールは受け付けませんでした。",
+    "tail": "何も変わっていません — worker は元のままです。",
+    "stopTitle": "この worker を強制停止しますか？",
+    "stopIdle": "{{id}} はアイドルです。コンテナは今解体され、作業があれば scale が別のものを立てます。",
+    "stopBusy": "{{id}} は実行 {{runId}} で「{{label}}」を保持しています。コンテナは今解体され、リースは解放され、項目は別の worker が Claim できるようキューに戻ります。",
+    "stopConfirm": "強制停止",
+    "stopCancel": "稼働を続ける"
+  },
+  "workerEmpty": {
+    "clearFilters": "フィルタをクリア",
+    "filteredTitle": "フィルタに一致する worker はいません",
+    "filteredDescription": {
+      "other": "プールは稼働中 — <pool/> worker{{where}} が走っています。ただし、これらではありません。"
+    },
+    "backlogTitle": "まだ worker がいません",
+    "backlogDescription": {
+      "other": "min idle = <zero/>{{where}} なので、作業ができるまでプールは空のままです。今はあります: <backlog/> 件が未Claim でキューにいます。scale が worker を立てて取りに行きます。"
+    },
+    "atRestTitle": "worker なし — それで正常",
+    "atRestDescription": "min idle = <zero/>{{where}} でキューは空。空のプールはここでは設定された静止状態で、障害ではありません — コンテナはタスクごとに作られ、後に解体されます。",
+    "underTargetTitle": "プールが目標を下回っています",
+    "underTargetDescription": {
+      "other": "min idle = <minIdle/>{{where}} で、稼働中の worker がいません。これは静止状態ではありません: コンピュートが立ち上げておらず、<backlog/> 件はそれまで待ち続けます。"
+    },
+    "onProject": " （{{project}}）"
+  },
+  "worker": {
+    "loading": "worker を読み込み中",
+    "errorTitle": "プールが読み込めませんでした",
+    "fallback": "プールは受け付けませんでした。",
+    "tail": "何も変わっていません — worker は元のままです。",
+    "live": "ライブ",
+    "container": "コンテナ",
+    "currentWork": "現在の作業",
+    "leaseLeft": "残りリース",
+    "leaseNone": "何も Claim していないので、守るべきリースはありません",
+    "sinceHeartbeat": "ハートビートから",
+    "heartbeatStale": "{{limit}} を超えると失効",
+    "up": "稼働",
+    "upNote": "コンテナが立ってから",
+    "compute": "コンピュート",
+    "handle": "ハンドル",
+    "image": "イメージ",
+    "imageNote": "このイメージ上のすべてのコンテナ",
+    "profile": "プロファイル",
+    "profileNote": "Claim がマッチする軸",
+    "project": "プロジェクト",
+    "workNote": "キューがこのペイロードで送らなかった項目を保持しています。",
+    "idle": "アイドル",
+    "idleNote": "何も保持しておらず、プロファイルに一致する次の項目を Claim できます。",
+    "tornDownTitle": "このコンテナはもうありません",
+    "tornDownDescription": "<id/> はこのページが開いている間に解体されました。停止されたコンテナは保持されません — 戻れる記録はなく、あるべきでもありません。worker は目の前の作業のために立てられ、それが終わるか誰かが止めると取り除かれます。これは設定どおりに振る舞うプールで、障害ではありません。",
+    "tornDownHolding": "<label/> を保持していました。その作業は失われていません: リースは解放され、項目は別の worker が Claim できるようキューに戻りました。",
+    "tornDownIdle": "去るときはアイドルでした — 何も保持しておらず、キューに戻ったものもありません。",
+    "tornDownItem": "{{id}}",
+    "poolLink": "キューと worker",
+    "notFoundTitle": "<id/> という worker はいません",
+    "notFoundDescription": "プールにはこの id に応答するものがありません。worker は短命です — 作業の一片のために立てられ、後に取り除かれます — ので、昨日のログの id、古いブックマーク、末尾を失ったリンクはすべてここに着きます。そしてそのどれも、何かが悪いことを意味しません。",
+    "notFoundLook": "プールで {{id}} を探す",
+    "stopTitle": "この worker を強制停止しますか？",
+    "stopIdle": "<id/> はアイドルです。コンテナは今解体され、作業があれば scale が別のものを立てます。",
+    "stopBusy": "<id/> は実行 <run/> で <label/> を保持しています。コンテナは今解体され、リースは解放され、項目は別の worker が Claim できるようキューに戻ります。",
+    "stopConfirm": "強制停止",
+    "stopCancel": "稼働を続ける"
+  }
+}

@@ -7,13 +7,8 @@ import { TRIAGE_RANK } from "@/domains/runs/model/profile-flow"
 import type { RunStatus, RunSummary } from "@/domains/runs/model/types"
 import { currentLabel, currentProfile } from "@/domains/runs/model/work-items"
 import { AnomalyBadge } from "@/domains/runs/ui/anomaly-badge"
-import {
-  can,
-  needsLabel,
-  projectOf,
-  type ProjectRef,
-  type Session,
-} from "@/shared/session"
+import { can, needsLabel, projectOf, type ProjectRef, type Session } from "@/shared/session"
+import { i18n } from "@/shared/i18n"
 import {
   Button,
   StatusBadge,
@@ -52,6 +47,30 @@ export interface RunColumnsOptions {
    * as plain functions, which is why they are exported beside the hook.
    */
   session: Session
+  /**
+   * Copy arrives as a parameter for the same reason the session does: a
+   * `cell` is a plain function, so a `useTranslation` inside one throws.
+   * The page passes its hook-bound `t`; tests and stories fall back to the
+   * shared instance, which answers in the active locale.
+   */
+  t?: RunsTranslator
+}
+
+/**
+ * Copy arrives as a parameter because `cell` is called as a plain function
+ * while the table builds a row, so a `useTranslation` inside one throws. The
+ * page passes its hook-bound `t` (a language change re-renders the page and
+ * rebuilds the columns); tests and stories fall back to the shared instance,
+ * which answers in the active locale without either having to know the
+ * machinery exists.
+ */
+export type RunsTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+function sharedRunsT(key: string, options?: Record<string, unknown>): string {
+  return i18n.t(key, { ...options, ns: "runs" })
 }
 
 /** Row identity for the virtualized body. Module scope keeps it stable. */
@@ -115,6 +134,7 @@ export function createRunColumns({
   onCancel,
   onShowAnomaly,
   session,
+  t = sharedRunsT,
 }: RunColumnsOptions): DataColumn<RunSummary>[] {
   // Profiles arrive in the order the board derived from the observed graphs,
   // which is the only order they have — sorted alphabetically the pipeline
@@ -126,7 +146,7 @@ export function createRunColumns({
   return [
     {
       accessorKey: "status",
-      header: "status",
+      header: t("column.status"),
       cell: ({ row }) => <StatusBadge status={row.original.status} size="sm" />,
       sortFn: statusSort,
       meta: {
@@ -134,17 +154,17 @@ export function createRunColumns({
         pinned: true,
         filter: {
           kind: "select",
-          placeholder: "all statuses",
+          placeholder: t("column.allStatuses"),
           options: RUN_STATUSES.map((status) => ({
             value: status,
-            label: status,
+            label: t(`status.${status}`),
           })),
         },
       },
     },
     {
       accessorKey: "id",
-      header: "run",
+      header: t("column.run"),
       cell: ({ row }) => (
         <Link
           to="/runs/$runId"
@@ -166,7 +186,7 @@ export function createRunColumns({
       // predicate reads the field (`projectId`, what the row carries).
       id: "project",
       accessorKey: "projectId",
-      header: "project",
+      header: t("column.project"),
       cell: ({ row }) => {
         const project = projectOf(session, row.original.projectId)
         // A run in a project this session cannot see still has to render as a
@@ -182,7 +202,7 @@ export function createRunColumns({
         width: 120,
         filter: {
           kind: "select",
-          placeholder: "all projects",
+          placeholder: t("column.allProjects"),
           // Value is the id, because that is what the row carries; the label
           // is the key, because that is what the operator knows it by.
           options: projects.map((project) => ({
@@ -194,20 +214,20 @@ export function createRunColumns({
     },
     {
       accessorKey: "app",
-      header: "app",
+      header: t("column.app"),
       cell: ({ row }) => <span className={styles.app}>{row.original.app}</span>,
       meta: {
         width: 144,
         filter: {
           kind: "select",
-          placeholder: "all apps",
+          placeholder: t("column.allApps"),
           options: apps.map((app) => ({ value: app, label: app })),
         },
       },
     },
     {
       accessorKey: "title",
-      header: "task",
+      header: t("column.task"),
       cell: ({ row }) => {
         const run = row.original
         return (
@@ -227,10 +247,10 @@ export function createRunColumns({
         )
       },
       meta: {
-        label: "task",
+        label: t("column.task"),
         filter: {
           kind: "text",
-          placeholder: "filter run, task, step…",
+          placeholder: t("column.filterPlaceholder"),
           // The project key is in the haystack and not in the placeholder, and
           // both halves of that are deliberate. A project's own screen hands
           // its runs off as `/runs?q=<slug>` — the same `q` the palette writes
@@ -251,7 +271,7 @@ export function createRunColumns({
     {
       id: "profile",
       accessorFn: currentProfile,
-      header: "profile",
+      header: t("column.profile"),
       sortFn: profileSort,
       // A ticket the brain has not planned yet has no profile to stand on —
       // an honest dash beats a blank cell that reads as a rendering fault.
@@ -265,10 +285,10 @@ export function createRunColumns({
       },
       meta: {
         width: 120,
-        label: "profile",
+        label: t("column.profile"),
         filter: {
           kind: "select",
-          placeholder: "all profiles",
+          placeholder: t("column.allProfiles"),
           options: profiles.map((profile) => ({
             value: profile,
             label: profile,
@@ -280,7 +300,7 @@ export function createRunColumns({
     {
       id: "step",
       accessorFn: currentLabel,
-      header: "step",
+      header: t("column.step"),
       cell: ({ row }) => {
         const label = currentLabel(row.original)
         return label ? (
@@ -288,34 +308,34 @@ export function createRunColumns({
             {label}
           </span>
         ) : (
-          <span className={styles.unplanned}>waiting on a plan</span>
+          <span className={styles.unplanned}>{t("column.waitingOnPlan")}</span>
         )
       },
-      meta: { label: "step" },
+      meta: { label: t("column.step") },
     },
     {
       accessorKey: "durationSec",
-      header: "in step",
+      header: t("column.inStep"),
       cell: ({ row }) => formatDuration(row.original.durationSec),
-      meta: { width: 96, numeric: true, label: "in step" },
+      meta: { width: 96, numeric: true, label: t("column.inStep") },
     },
     {
       accessorKey: "cost",
-      header: "cost",
+      header: t("column.cost"),
       cell: ({ row }) => formatCost(row.original.cost),
       meta: { width: 88, numeric: true },
     },
     {
       accessorKey: "model",
-      header: "worker",
+      header: t("column.worker"),
       cell: ({ row }) => (
         <span className={styles.worker}>{row.original.model}</span>
       ),
-      meta: { width: 96, label: "worker" },
+      meta: { width: 96, label: t("column.worker") },
     },
     {
       id: "actions",
-      header: "actions",
+      header: t("column.actions"),
       // Two buttons and a blank have no order. Say so rather than leaning on
       // the fact that a column without an accessor happens not to sort.
       enableSorting: false,
@@ -362,14 +382,14 @@ export function createRunColumns({
         // button beside one explained one, and now that can differ row to row.
         return (
           <span className={styles.actions}>
-            <Tooltip content={approveDenial ?? "Approve"}>
+            <Tooltip content={approveDenial ?? t("column.approve")}>
               <Button
                 size="icon-sm"
                 data-test="run-approve"
                 loading={approving}
                 disabled={busy}
                 denied={approveDenial}
-                aria-label={`Approve ${run.title}`}
+                aria-label={t("column.approveRun", { title: run.title })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onApprove(run)
@@ -378,14 +398,14 @@ export function createRunColumns({
                 <Check aria-hidden="true" />
               </Button>
             </Tooltip>
-            <Tooltip content={stopDenial ?? "Cancel run"}>
+            <Tooltip content={stopDenial ?? t("column.cancelRun")}>
               <Button
                 size="icon-sm"
                 variant="destructive"
                 data-test="run-cancel"
                 disabled={busy}
                 denied={stopDenial}
-                aria-label={`Cancel ${run.title}`}
+                aria-label={t("column.cancelTask", { title: run.title })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onCancel(run)
@@ -397,7 +417,7 @@ export function createRunColumns({
           </span>
         )
       },
-      meta: { width: 80, align: "end", label: "actions" },
+      meta: { width: 80, align: "end", label: t("column.actions") },
     },
   ]
 }

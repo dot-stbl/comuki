@@ -1,4 +1,5 @@
 import { FilterX } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import { Button, ScreenState, Tooltip } from "@/shared/ui"
 
@@ -30,12 +31,12 @@ export interface WorkerEmptyProps {
   onClearFilters?: () => void
 }
 
-/** The one line each of the four cases leads with. */
-const TITLES: Record<WorkerEmptyKind, string> = {
-  filtered: "No workers match the filters",
-  backlog: "No workers yet",
-  "at-rest": "No workers, and none wanted",
-  "under-target": "The pool is under its target",
+/** The one line each of the four cases leads with, as `queue`-namespace keys. */
+const TITLE_KEYS: Record<WorkerEmptyKind, string> = {
+  filtered: "workerEmpty.filteredTitle",
+  backlog: "workerEmpty.backlogTitle",
+  "at-rest": "workerEmpty.atRestTitle",
+  "under-target": "workerEmpty.underTargetTitle",
 }
 
 export function WorkerEmpty({
@@ -46,64 +47,76 @@ export function WorkerEmpty({
   projectKey,
   onClearFilters,
 }: WorkerEmptyProps) {
-  const where = projectKey ? ` on ${projectKey}` : ""
+  const { t } = useTranslation("queue")
+  const where = projectKey
+    ? t("workerEmpty.onProject", { project: projectKey })
+    : ""
 
   /* One sentence per case, and they have to stay four different sentences:
-     every one of these pools is empty and three of the four are correct. */
+     every one of these pools is empty and three of the four are correct. The
+     figures are values in their own voice and the words are prose in theirs,
+     so the emphasis rides slot elements and the plural form follows the case's
+     own count through `Trans`. The counts stringify: a Trans slot holding a
+     falsy child (a bare `0`) renders empty, and zero is a reading, not a
+     blank. */
+  const figure = (value: number) => (
+    <span className={styles.figure}>{String(value)}</span>
+  )
   const description =
     kind === "filtered" ? (
-      <>
-        The pool is up — <span className={styles.figure}>{poolSize}</span>{" "}
-        worker
-        {poolSize === 1 ? "" : "s"}
-        {where} are running, they are just not these.
-      </>
+      <Trans
+        ns="queue"
+        i18nKey="workerEmpty.filteredDescription"
+        count={poolSize}
+        values={{ where }}
+        components={{ pool: figure(poolSize) }}
+      />
     ) : kind === "backlog" ? (
-      <>
-        min idle = <span className={styles.figure}>0</span>
-        {where}, so the pool sits empty until there is work to do. There is now:{" "}
-        <span className={styles.figure}>{backlog}</span> item
-        {backlog === 1 ? "" : "s"} queued and unclaimed. Scale raises a worker
-        to take them.
-      </>
+      <Trans
+        ns="queue"
+        i18nKey="workerEmpty.backlogDescription"
+        count={backlog}
+        values={{ where }}
+        components={{ zero: figure(0), backlog: figure(backlog) }}
+      />
     ) : kind === "at-rest" ? (
-      <>
-        min idle = <span className={styles.figure}>0</span>
-        {where} and nothing is queued. An empty pool is the configured resting
-        state here, not an outage — a container is created per task and torn
-        down after it.
-      </>
+      <Trans
+        ns="queue"
+        i18nKey="workerEmpty.atRestDescription"
+        values={{ where }}
+        components={{ zero: figure(0) }}
+      />
     ) : (
-      <>
-        min idle = <span className={styles.figure}>{minIdle}</span>
-        {where} and no workers are up. This one is not a resting state: compute
-        is not raising them, and{" "}
-        <span className={styles.figure}>{backlog}</span> item
-        {backlog === 1 ? "" : "s"} will wait until it does.
-      </>
+      <Trans
+        ns="queue"
+        i18nKey="workerEmpty.underTargetDescription"
+        count={backlog}
+        values={{ where }}
+        components={{ minIdle: figure(minIdle), backlog: figure(backlog) }}
+      />
     )
 
   return (
     <ScreenState
       kind="empty"
       /* `data-kind` is the finer reading — which of the four empties the model
-         resolved — and it rides on the title rather than on the state's own
-         box. `ScreenState` stamps `data-state="empty"` for all four and
-         forwards no other data attribute, so the distinction needs an element
-         of its own; the title is the one that is always there and the one that
-         actually differs between the four. */
-      title={<span data-kind={kind}>{TITLES[kind]}</span>}
+          resolved — and it rides on the title rather than on the state's own
+          box. `ScreenState` stamps `data-state="empty"` for all four and
+          forwards no other data attribute, so the distinction needs an element
+          of its own; the title is the one that is always there and the one that
+          actually differs between the four. */
+      title={<span data-kind={kind}>{t(TITLE_KEYS[kind])}</span>}
       description={description}
       inset="gutter"
       data-test="worker-empty"
       action={
         kind === "filtered" && onClearFilters ? (
-          <Tooltip content="Clear filters">
+          <Tooltip content={t("workerEmpty.clearFilters")}>
             <Button
               size="icon-sm"
               variant="outline"
               data-test="worker-empty-clear"
-              aria-label="Clear filters"
+              aria-label={t("workerEmpty.clearFilters")}
               onClick={onClearFilters}
             >
               <FilterX aria-hidden="true" />

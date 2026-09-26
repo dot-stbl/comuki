@@ -1,0 +1,170 @@
+{
+  "actions": {
+    "retry": "Reintentar"
+  },
+  "errors": {
+    "unknown": "Error desconocido"
+  },
+  "status": {
+    "running": "en ejecución",
+    "waiting": "esperando",
+    "queued": "en cola",
+    "escalated": "escalado",
+    "failed": "fallido",
+    "success": "éxito",
+    "cancelled": "cancelado"
+  },
+  "registry": {
+    "title": "Ejecuciones en vivo",
+    "summary": "<total/> ejecuciones · <running/> en ejecución · <blocked/> esperan a una persona",
+    "errorTitle": "Las ejecuciones no cargaron",
+    "anomaliesOnly": "Solo anomalías",
+    "count": {
+      "one": "{{count}} mostrada",
+      "other": "{{count}} mostradas"
+    },
+    "empty": {
+      "profile": "No hay ejecuciones en este perfil.",
+      "filtered": "Ninguna ejecución coincide con los filtros actuales.",
+      "none": "Aún no hay ejecuciones."
+    },
+    "unplannedTitle": "Aún no hay planes",
+    "unplannedDescription": "Estas ejecuciones están aceptadas pero el cerebro no las ha planificado. El flujo aparece cuando el primer plan tenga elementos de trabajo.",
+    "expandFlow": "Expandir flujo",
+    "collapseFlow": "Contraer flujo",
+    "resizeBoard": "Redimensionar el tablero de flujo",
+    "expandStrip": "Expandir el tablero de flujo"
+  },
+  "notice": {
+    "fallback": "La decisión falló.",
+    "tail": "Nada cambió — la ejecución volvió a como estaba."
+  },
+  "cancelDialog": {
+    "title": "¿Cancelar esta ejecución?",
+    "body": "{{title}} · {{where}} — el contenedor se derriba y el lease se libera. El trabajo ya fusionado se queda.",
+    "confirm": "Cancelar ejecución",
+    "cancel": "Seguir ejecutando"
+  },
+  "column": {
+    "status": "estado",
+    "run": "ejecución",
+    "project": "proyecto",
+    "app": "app",
+    "task": "tarea",
+    "profile": "perfil",
+    "step": "paso",
+    "inStep": "en paso",
+    "cost": "costo",
+    "worker": "worker",
+    "actions": "acciones",
+    "allStatuses": "todos los estados",
+    "allProjects": "todos los proyectos",
+    "allApps": "todas las apps",
+    "allProfiles": "todos los perfiles",
+    "filterPlaceholder": "filtrar ejecución, tarea, paso…",
+    "waitingOnPlan": "esperando un plan",
+    "approve": "Aprobar",
+    "cancelRun": "Cancelar ejecución",
+    "approveRun": "Aprobar {{title}}",
+    "cancelTask": "Cancelar {{title}}"
+  },
+  "detail": {
+    "fallbackTitle": "Ejecución {{runId}}",
+    "tok": "tok",
+    "errorTitle": "Esta ejecución no cargó",
+    "notFoundTitle": "No hay ejecución con ese id",
+    "notFoundDescription": "El enjambre no contiene nada bajo <id/>. Un id de ejecución de un enlace antiguo es la forma ordinaria de llegar aquí — una dirección sobrevive a la ejecución que nombraba, y la lista de guardia es donde están las que siguen en vuelo.",
+    "backToList": "Volver a ejecuciones en vivo",
+    "unplannedTitle": "Aún no planificado",
+    "unplannedDescription": "Esta ejecución está aceptada y el cerebro no la ha descompuesto en elementos de trabajo. Nada está mal y nada te espera — el grafo y el inspector de elementos aparecen aquí en cuanto el plan tenga su primer elemento.",
+    "unplannedHint": "{{status}} · sin elementos de trabajo · nada que inspeccionar",
+    "noInspectorTitle": "Sin detalle para este elemento",
+    "noInspectorDescription": "El plan de arriba está completo; este elemento aún no tiene registro de inspector. Elige otro elemento o vuelve cuando empiece.",
+    "resizeGraph": "Redimensionar el grafo de ejecución"
+  },
+  "river": {
+    "group": "Flujo de perfiles. Las flechas se mueven entre perfiles.",
+    "cleared": "pasaron",
+    "waitingOnHuman": "esperan a una persona",
+    "noWork": "sin trabajo",
+    "poolEntry": "{{count}} {{status}}",
+    "clearedProfile": {
+      "one": "{{count}} pasó el perfil",
+      "other": "{{count}} pasaron el perfil"
+    },
+    "mark": {
+      "one": "{{count}} espera a una persona",
+      "other": "{{count}} esperan a una persona"
+    },
+    "pinched": {
+      "one": " {{count}} espera a una persona — más que cualquier otro perfil.",
+      "other": " {{count}} esperan a una persona — más que cualquier otro perfil."
+    },
+    "node": "{{profile}}: {{pool}}. {{cleared}}.{{mark}}"
+  },
+  "evidence": {
+    "title": "evidencias",
+    "empty": "aún no hay capturas publicadas"
+  },
+  "anomaly": {
+    "badgeLabel": "{{multiplier}}× la mediana",
+    "badgeTip": "Costo {{multiplier}}× la mediana de este proyecto de {{median}} — supera el umbral de {{threshold}}×. Clic para el desglose.",
+    "badgeAria": "Anomalía de costo — {{label}}. Abrir desglose.",
+    "dialogTitle": "Pico de costo · ejecución {{runId}}",
+    "acknowledge": "Reconocer",
+    "cancelRun": "Cancelar ejecución",
+    "summary": "Resumen",
+    "spend": "Desglose de gasto",
+    "why": "Por qué está marcada",
+    "project": "proyecto",
+    "profile": "perfil",
+    "status": "estado",
+    "cost": "costo",
+    "tokensInOut": "tokens (entrada / salida)",
+    "total": "({{total}} en total)",
+    "reason": "Gastó <spent/>, que es <multiplier/> el costo mediano de <median/> para <project/>.",
+    "rule": "Regla: costo > {{threshold}}× el costo mediano de ejecución del proyecto.",
+    "openCost": "Abrir página de costos →"
+  },
+  "graph": {
+    "group": "Grafo de ejecución. Las flechas se mueven entre elementos de trabajo.",
+    "empty": "No hay elementos de trabajo en este plan.",
+    "parallel": {
+      "one": "{{count}} en paralelo",
+      "other": "{{count}} en paralelo"
+    },
+    "here": "aquí",
+    "dependsOnEarlier": {
+      "one": "depende de {{count}} anterior",
+      "other": "depende de {{count}} anteriores"
+    },
+    "blocked": "bloqueado",
+    "standingHere": "aquí está la ejecución.",
+    "blockedByFailure": "bloqueado por un fallo aguas arriba.",
+    "blockedByEscalation": "bloqueado por una escalada aguas arriba.",
+    "longEdges": "depende de {{count}} elemento a más de una columna de distancia: {{named}}.",
+    "longEdgesPlural": "depende de {{count}} elementos a más de una columna de distancia: {{named}}."
+  },
+  "inspector": {
+    "itemOf": "elemento {{index}} de {{total}}",
+    "env": "entorno",
+    "tokens": "tokens",
+    "cost": "costo",
+    "started": "iniciado",
+    "waitsOn": "espera",
+    "waitsOnLong": "{{count}} a más de una columna atrás",
+    "waitsOnNone": "Nada — este elemento inicia el plan.",
+    "distancePrevious": "columna anterior",
+    "distanceBack": {
+      "one": "{{count}} columna atrás",
+      "other": "{{count}} columnas atrás"
+    },
+    "dependencyAria": "Mostrar {{label}}, {{profile}}, {{status}}, {{distance}}.",
+    "input": "entrada — qué lo alimentó",
+    "log": "registro",
+    "appendOnly": "solo adición",
+    "gate": "puerta de verificación",
+    "output": "salida — qué produjo",
+    "outputNone": "Aún nada."
+  }
+}

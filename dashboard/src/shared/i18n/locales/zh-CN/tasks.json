@@ -1,0 +1,82 @@
+{
+  "actions": {
+    "retry": "重试"
+  },
+  "errors": {
+    "unknown": "未知错误"
+  },
+  "status": {
+    "new": "新建",
+    "queued": "排队中",
+    "planning": "规划中"
+  },
+  "priority": {
+    "low": "低",
+    "normal": "普通",
+    "high": "高"
+  },
+  "registry": {
+    "title": "任务",
+    "summary": "<total/> 在积压中 · <fresh/> 个新建",
+    "newTask": "新建任务",
+    "count": {
+      "other": "已显示 {{count}} 条"
+    },
+    "loading": "正在加载积压列表",
+    "errorTitle": "积压列表未能加载",
+    "empty": {
+      "filtered": "没有任务匹配当前筛选",
+      "none": "积压列表为空"
+    }
+  },
+  "dispatch": {
+    "toast": "已派发给编排器",
+    "fallback": "编排器没有接受。",
+    "tail": "没有任何入队 — 工单仍在积压列表中。"
+  },
+  "column": {
+    "source": "来源",
+    "task": "任务",
+    "evidence": "证据",
+    "project": "项目",
+    "app": "应用",
+    "priority": "优先级",
+    "status": "状态",
+    "age": "年龄",
+    "action": "操作",
+    "filterPlaceholder": "筛选标题、id、应用…",
+    "allProjects": "所有项目",
+    "allApps": "所有应用",
+    "allPriority": "所有优先级",
+    "allStatus": "所有状态",
+    "dispatch": "派发",
+    "dispatchTask": "派发 {{title}}"
+  },
+  "create": {
+    "title": "新建任务",
+    "crumb": "新建",
+    "summary": "摆在集群面前的一张工单：它从哪来、落入谁的积压列表、有多紧急。",
+    "toastCreated": "任务已创建",
+    "failureTail": "没有任何入队 — 你输入的内容原样保留。",
+    "guardTitle": "不创建任务就离开？",
+    "guardBody": "你输入的标题和简报尚未保存到任何地方。离开此页将丢弃它们，也不会有任何内容进入接收。",
+    "guardConfirm": "丢弃",
+    "guardCancel": "继续编辑",
+    "submit": "创建并入队",
+    "cancel": "取消",
+    "sourceLabel": "来源",
+    "sourceNote": "工单从哪来。除原生外的每张卡片都期望有一个监视该提供方的连接 — 在这里写工单只是记录它从哪来，不会提交到那边。",
+    "ticketLabel": "工单",
+    "ticketNote": "做什么、落到哪、多紧急。",
+    "briefLabel": "简报",
+    "briefNote": "背景、验收标准、链接 — 给接手的人，不是给表单的。",
+    "titleLabel": "标题",
+    "titlePlaceholder": "要做什么，一句话",
+    "projectLabel": "项目",
+    "appLabel": "应用",
+    "briefPlaceholder": "背景、验收标准、链接…"
+  },
+  "priorityField": {
+    "label": "优先级"
+  }
+}

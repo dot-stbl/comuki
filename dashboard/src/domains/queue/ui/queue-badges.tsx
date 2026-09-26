@@ -1,4 +1,5 @@
 import type { ComponentType } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Activity,
   Ban,
@@ -53,6 +54,7 @@ export interface WorkStatusBadgeProps {
 }
 
 export function WorkStatusBadge({ status, className }: WorkStatusBadgeProps) {
+  const { t } = useTranslation("queue")
   const Icon = statusIcons[status]
 
   return (
@@ -62,7 +64,7 @@ export function WorkStatusBadge({ status, className }: WorkStatusBadgeProps) {
       className={cn(badgeShell(), styles.badge, styles[status], className)}
     >
       <Icon aria-hidden="true" />
-      {status}
+      {t(`workStatus.${status}`)}
     </span>
   )
 }
@@ -80,6 +82,7 @@ export interface WorkerStateBadgeProps {
 }
 
 export function WorkerStateBadge({ state, className }: WorkerStateBadgeProps) {
+  const { t } = useTranslation("queue")
   const Icon = stateIcons[state]
 
   return (
@@ -89,7 +92,7 @@ export function WorkerStateBadge({ state, className }: WorkerStateBadgeProps) {
       className={cn(badgeShell(), styles.badge, styles[state], className)}
     >
       <Icon aria-hidden="true" />
-      {state}
+      {t(`workerState.${state}`)}
     </span>
   )
 }

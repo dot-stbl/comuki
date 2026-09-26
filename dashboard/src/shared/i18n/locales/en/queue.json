@@ -1,0 +1,171 @@
+{
+  "actions": {
+    "retry": "Retry"
+  },
+  "errors": {
+    "unknown": "Unknown error"
+  },
+  "workStatus": {
+    "queued": "queued",
+    "running": "running",
+    "blocked": "blocked",
+    "failed": "failed",
+    "cancelled": "cancelled",
+    "succeeded": "succeeded"
+  },
+  "workerState": {
+    "busy": "busy",
+    "idle": "idle",
+    "draining": "draining",
+    "offline": "offline"
+  },
+  "registry": {
+    "title": "Queue & workers",
+    "summary": "<queued/> queued · <stalled/> unclaimed over five minutes · <total/> workers, <idle/> idle · <lost/> without a heartbeat",
+    "errorTitle": "Couldn't load the queue",
+    "loading": "Loading the queue",
+    "expandPool": "Expand pool",
+    "collapsePool": "Collapse pool",
+    "resizePool": "Resize the worker pool"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "nothing queued on this profile",
+      "filtered": "no work items match the current filters",
+      "none": "the queue is empty"
+    },
+    "shown": {
+      "one": "{{count}} shown",
+      "other": "{{count}} shown"
+    },
+    "waitingTooLong": {
+      "one": "{{count}} waiting too long · ",
+      "other": "{{count}} waiting too long · "
+    }
+  },
+  "queueColumn": {
+    "status": "status",
+    "item": "item",
+    "run": "run",
+    "project": "project",
+    "profile": "profile",
+    "step": "step",
+    "claimedBy": "claimed by",
+    "age": "age",
+    "allStatuses": "all statuses",
+    "allProjects": "all projects",
+    "allProfiles": "all profiles",
+    "filterPlaceholder": "filter item, run, step…"
+  },
+  "ageMeter": {
+    "stalled": "queued longer than {{limit}} — no worker on this profile has claimed it"
+  },
+  "lease": {
+    "noHeartbeat": "no heartbeat reading — the lease lapses and the item is requeued",
+    "lostHeartbeat": "no heartbeat for {{quiet}} — the lease lapses and the item is requeued"
+  },
+  "depth": {
+    "label": "Queue depth by day",
+    "figure": "<today/> queued now · the week ran <week/>",
+    "deepest": " · deepest of the week today",
+    "chartLabel": "Queue depth by day, items waiting for a claim. {{today}} queued today; the week ran {{weekMin}} to {{weekMax}}.",
+    "chartLabelDeepest": "Queue depth by day, items waiting for a claim. {{today}} queued today — the deepest day of a week that ran {{weekMin}} to {{weekMax}}."
+  },
+  "poolStrip": {
+    "expandEmpty": "Expand the pool. No workers are up.",
+    "expand": "Expand the pool. {{total}} workers: {{busy}} busy, {{draining}} draining, {{idle}} idle."
+  },
+  "workerColumn": {
+    "state": "state",
+    "worker": "worker",
+    "project": "project",
+    "profile": "profile",
+    "currentWork": "current work",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "image",
+    "lease": "lease",
+    "up": "up",
+    "actions": "actions",
+    "idle": "idle",
+    "allStates": "all states",
+    "allProjects": "all projects",
+    "allProfiles": "all profiles",
+    "allProviders": "all providers",
+    "filterPlaceholder": "filter worker, handle, image…",
+    "drain": "Drain",
+    "forceStop": "Force stop",
+    "drainWorker": "Drain {{id}}",
+    "forceStopWorker": "Force stop {{id}}"
+  },
+  "workersPanel": {
+    "count": "{{shown}} of {{total}} workers",
+    "fallback": "The pool did not take that.",
+    "tail": "Nothing changed — the worker is as it was.",
+    "stopTitle": "Force stop this worker?",
+    "stopIdle": "{{id}} is idle. The container is torn down now, and scale raises another when there is work for it.",
+    "stopBusy": "{{id}} is holding \"{{label}}\" on run {{runId}}. The container is torn down now, the lease is released, and the item goes back to the queue for another worker to claim.",
+    "stopConfirm": "Force stop",
+    "stopCancel": "Leave it running"
+  },
+  "workerEmpty": {
+    "clearFilters": "Clear filters",
+    "filteredTitle": "No workers match the filters",
+    "filteredDescription": {
+      "one": "The pool is up — <pool/> worker{{where}} are running, they are just not these.",
+      "other": "The pool is up — <pool/> workers{{where}} are running, they are just not these."
+    },
+    "backlogTitle": "No workers yet",
+    "backlogDescription": {
+      "one": "min idle = <zero/>{{where}}, so the pool sits empty until there is work to do. There is now: <backlog/> item queued and unclaimed. Scale raises a worker to take them.",
+      "other": "min idle = <zero/>{{where}}, so the pool sits empty until there is work to do. There is now: <backlog/> items queued and unclaimed. Scale raises a worker to take them."
+    },
+    "atRestTitle": "No workers, and none wanted",
+    "atRestDescription": "min idle = <zero/>{{where}} and nothing is queued. An empty pool is the configured resting state here, not an outage — a container is created per task and torn down after it.",
+    "underTargetTitle": "The pool is under its target",
+    "underTargetDescription": {
+      "one": "min idle = <minIdle/>{{where}} and no workers are up. This one is not a resting state: compute is not raising them, and <backlog/> item will wait until it does.",
+      "other": "min idle = <minIdle/>{{where}} and no workers are up. This one is not a resting state: compute is not raising them, and <backlog/> items will wait until it does."
+    },
+    "onProject": " on {{project}}"
+  },
+  "worker": {
+    "loading": "Loading the worker",
+    "errorTitle": "Couldn't load the pool",
+    "fallback": "The pool did not take that.",
+    "tail": "Nothing changed — the worker is as it was.",
+    "live": "live",
+    "container": "container",
+    "currentWork": "current work",
+    "leaseLeft": "lease left",
+    "leaseNone": "nothing claimed, so there is no lease to defend",
+    "sinceHeartbeat": "since heartbeat",
+    "heartbeatStale": "stale past {{limit}}",
+    "up": "up",
+    "upNote": "since the container came up",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "image",
+    "imageNote": "every container on this image",
+    "profile": "profile",
+    "profileNote": "the axis a claim matches on",
+    "project": "project",
+    "workNote": "Holding an item the queue has not sent with this payload.",
+    "idle": "idle",
+    "idleNote": "Holding nothing, and free to claim the next item that matches its profile.",
+    "tornDownTitle": "This container is gone",
+    "tornDownDescription": "<id/> was torn down while this page was open. A stopped container is not kept — there is no record of it to go back to, and there is not meant to be. Workers are raised for the work in front of them and removed when it is done or when somebody stops them; this is the pool behaving the way it is configured to, not a failure.",
+    "tornDownHolding": "It was holding <label/>. That work did not go with it: the lease was released and the item went back to the queue for another worker to claim.",
+    "tornDownIdle": "It was idle when it went, so it was holding nothing and nothing returned to the queue.",
+    "tornDownItem": "{{id}}",
+    "poolLink": "queue & workers",
+    "notFoundTitle": "No worker called <id/>",
+    "notFoundDescription": "Nothing in the pool answers to that id. Workers are ephemeral — one is raised for a piece of work and removed after it — so an id out of yesterday's log, an old bookmark or a link that lost its tail all land here, and none of them mean anything is wrong.",
+    "notFoundLook": "look for {{id}} in the pool",
+    "stopTitle": "Force stop this worker?",
+    "stopIdle": "<id/> is idle. The container is torn down now, and scale raises another when there is work for it.",
+    "stopBusy": "<id/> is holding <label/> on run <run/>. The container is torn down now, the lease is released, and the item goes back to the queue for another worker to claim.",
+    "stopConfirm": "Force stop",
+    "stopCancel": "Leave it running"
+  }
+}

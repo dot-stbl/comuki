@@ -1,4 +1,5 @@
 import type { SessionEnd } from "@/shared/api/mock/auth.store"
+import { i18n } from "@/shared/i18n"
 
 /**
  * The ways to arrive at one screen.
@@ -68,32 +69,39 @@ export interface LandingCopy {
   lead: string
 }
 
-const COLD: LandingCopy = {
-  kind: "cold",
-  notice: null,
-  lead: "Sign in to reach the dispatcher board.",
-}
-
-const LANDINGS: Record<LoginReason, LandingCopy> = {
-  expired: {
-    kind: "expired",
-    notice: "Your session expired",
-    lead: "Sign in again to pick up where you left off.",
-  },
-  "signed-out": {
-    kind: "signed-out",
-    notice: "You're signed out",
-    lead: "Sign in again whenever you're ready.",
-  },
-  "oidc-failed": {
-    kind: "oidc-failed",
-    notice: "Sign-in with your provider failed",
-    lead: "Try again, or sign in with your email and password.",
-  },
+/* The words resolve through the shared instance at call time (D7): the login
+   screen asks on every render, so a locale switch re-words the landing. */
+function landing(
+  kind: LandingCopy["kind"],
+  noticeKey: string | null,
+  leadKey: string
+): LandingCopy {
+  return {
+    kind,
+    notice: noticeKey ? i18n.t(`auth:${noticeKey}`) : null,
+    lead: i18n.t(`auth:${leadKey}`),
+  }
 }
 
 export function landingFor(reason?: LoginReason): LandingCopy {
-  return reason ? LANDINGS[reason] : COLD
+  if (reason === "expired") {
+    return landing("expired", "landing.expiredNotice", "landing.expiredLead")
+  }
+  if (reason === "signed-out") {
+    return landing(
+      "signed-out",
+      "landing.signedOutNotice",
+      "landing.signedOutLead"
+    )
+  }
+  if (reason === "oidc-failed") {
+    return landing(
+      "oidc-failed",
+      "landing.oidcFailedNotice",
+      "landing.oidcFailedLead"
+    )
+  }
+  return landing("cold", null, "landing.coldLead")
 }
 
 /** Where a successful sign-in lands: back where they were, or the board. */

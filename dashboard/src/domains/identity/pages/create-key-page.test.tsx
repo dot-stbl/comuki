@@ -7,7 +7,16 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { CreateKeyPage } from "@/domains/identity/pages/create-key-page"
@@ -339,5 +348,28 @@ describe("a shift that may not administer identity", () => {
 
     fireEvent.click(create)
     expect(secretNode()).toBeNull()
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the page's own
+   words — title, notice, submit — arrive in russian. Language resets after
+   the case so the file's other readings keep their en posture. */
+describe("the key creation page in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the page and the once-only warning in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    mount(["/identity/keys/new"])
+
+    expect(
+      await screen.findByRole("heading", { name: "новый api-ключ" })
+    ).toBeTruthy()
+    expect(screen.getByText(/секрет появится один раз/)).toBeTruthy()
+    expect(screen.getByRole("button", { name: "создать ключ" })).toBeTruthy()
   })
 })

@@ -1,0 +1,247 @@
+{
+  "actions": {
+    "retry": "Reintentar"
+  },
+  "errors": {
+    "unknown": "Error desconocido"
+  },
+  "page": {
+    "title": "Consola",
+    "summary": "el mismo plano de control que manejan las pantallas, pero tecleado",
+    "onboard": "Incorporar un repositorio"
+  },
+  "console": {
+    "sendFailure": "El mensaje no se envió",
+    "decisionFailure": "La decisión no quedó registrada",
+    "startFailure": "La conversación no se inició",
+    "consoleErrorTitle": "La consola no cargó",
+    "transcriptErrorTitle": "La transcripción no cargó",
+    "loading": "Cargando la conversación"
+  },
+  "sessions": {
+    "navLabel": "Conversaciones",
+    "head": "conversaciones",
+    "new": "Nueva conversación",
+    "loading": "Cargando conversaciones",
+    "emptyTitle": "Aún no hay conversaciones",
+    "emptyDescription": "Empieza una con el más de arriba. Cada conversación queda aquí para volver."
+  },
+  "thread": {
+    "emptyTitle": "Nada dicho aún",
+    "emptyBody": "Es el mismo plano de control que manejan las pantallas, alcanzado tecleando. Pregúntale qué hace el enjambre, o empieza con una barra para ver todo lo que puede hacer. Todo lo que cambiaría algo vuelve como una propuesta que tú pulsas — nunca actúa por su cuenta.",
+    "logLabel": "Conversación",
+    "jump": "ir a lo último",
+    "announceReplying": "el asistente está respondiendo",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "tú",
+    "comuki": "comuki",
+    "iteration": "iter. {{iteration}}",
+    "blank": "este turno llegó vacío"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "pensando",
+    "tokenWord": "tokens"
+  },
+  "memory": {
+    "label": "memoria",
+    "facts": {
+      "one": "{{count}} dato",
+      "other": "{{count}} datos"
+    }
+  },
+  "composer": {
+    "boxLabel": "Mensaje a la consola",
+    "placeholder": "Pregunta, o empieza con una barra",
+    "commandsHead": "comandos",
+    "originFrom": "de {{project}}",
+    "seedAbout": "sobre",
+    "seedDrop": "Quitar la referencia a {{id}}",
+    "scopeRunsIn": "se ejecuta en",
+    "scopePick": "elige un proyecto",
+    "scopeAria": "Proyecto en el que se ejecuta {{command}}",
+    "sendTooltip": "Enviar — enter",
+    "send": "Enviar"
+  },
+  "scope": {
+    "needsProject": "{{command}} necesita un proyecto",
+    "notAvailable": "no disponible"
+  },
+  "command": {
+    "init": {
+      "description": "incorporar un repositorio: acceso git, compute, modelos, conocimiento"
+    },
+    "project": {
+      "description": "listar los proyectos en los que este turno puede actuar"
+    },
+    "run": {
+      "description": "iniciar una ejecución desde un ticket"
+    },
+    "status": {
+      "description": "qué está haciendo el enjambre ahora mismo"
+    },
+    "stop": {
+      "description": "detener una ejecución y derribar su contenedor"
+    },
+    "plan": {
+      "description": "leer el plan de una ejecución y decidir sobre él"
+    },
+    "debug": {
+      "description": "activar el logging detallado de workers durante una hora"
+    },
+    "help": {
+      "description": "qué puede hacer la consola"
+    }
+  },
+  "panel": {
+    "label": "Panel lateral de la consola",
+    "awaiting": "esperando una decisión",
+    "noProject": "sin proyecto",
+    "steps": {
+      "one": "{{count}} paso",
+      "other": "{{count}} pasos"
+    },
+    "quiet": "nada te espera aquí",
+    "slashHelp": "ayuda de barras"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "iniciar una ejecución",
+        "stop": "detener una ejecución"
+      },
+      "plan": {
+        "approve": "aprobar un plan"
+      },
+      "settings": {
+        "debug": "cambiar un ajuste en vivo"
+      }
+    },
+    "words": {
+      "run": {
+        "start": { "confirm": "Iniciar", "refuse": "Descartar" },
+        "stop": { "confirm": "Detener", "refuse": "Dejar corriendo" }
+      },
+      "plan": {
+        "approve": { "confirm": "Aprobar", "refuse": "Rechazar" }
+      },
+      "settings": {
+        "debug": { "confirm": "Encender", "refuse": "Dejar apagado" }
+      }
+    },
+    "inProject": "en {{project}}",
+    "decidedConfirmed": "confirmado por una persona y registrado donde se registra cada decisión",
+    "decidedRejected": "rechazado por una persona y registrado donde se registra cada decisión",
+    "needsProjectDenial": "necesita un proyecto donde actuar"
+  },
+  "handoff": {
+    "searchFor": "buscar en {{where}}"
+  },
+  "dock": {
+    "tooltip": "Consola — {{chord}}",
+    "openAria": "Abrir la consola — {{chord}}",
+    "title": "Consola"
+  },
+  "wizard": {
+    "title": "Incorporar un repositorio",
+
+    "running": "El onboarding se está ejecutando.",
+    "streamHead": "onboarding",
+    "stageWord": {
+      "done": "hecho",
+
+      "running": "ejecutando",
+      "queued": "en cola"
+    },
+    "doneNotice": "El proyecto quedó registrado. Su conjunto de reglas, su imagen de worker y sus endpoints son los que el enjambre usará desde la próxima ejecución.",
+    "backToConsole": "Volver a la consola",
+    "start": "Iniciar onboarding",
+    "continue": "Continuar",
+    "back": "Atrás",
+    "cancel": "Cancelar",
+    "confirmNotice": "Nada se ha creado aún. Confirmar inicia la ejecución de onboarding, y todo lo que haga queda registrado donde cualquier otra ejecución.",
+    "guardTitle": "¿Salir del asistente sin incorporar?",
+    "guardBody": "El repositorio, los endpoints de modelos y la referencia al secreto que escribiste no están guardados en ningún sitio. Salir de esta página los descarta.",
+    "guardConfirm": "Descartar",
+    "guardCancel": "Seguir editando",
+    "step": {
+      "repo": {
+        "title": "Repositorio y acceso git",
+        "summary": "Dónde vive el código y qué puede hacerle el enjambre. Este paso decide qué proyecto configura el resto del asistente."
+      },
+      "compute": {
+        "title": "Proveedor de compute",
+        "summary": "Dónde se arrancan los contenedores de workers, y el techo de cuántos corren a la vez."
+      },
+      "models": {
+        "title": "Endpoints de modelos",
+        "summary": "Una url base compatible con OpenAI o Anthropic para el modelo guía y los workers. Los secretos aquí se nombran, nunca se teclean."
+      },
+      "knowledge": {
+        "title": "Conocimiento",
+        "summary": "Si este proyecto mantiene un conjunto de reglas indexado y qué debe leer la primera pasada."
+      },
+      "confirm": {
+        "title": "Confirmar",
+        "summary": "Qué hará el onboarding, en el orden en que lo hará. Nada se ha creado aún."
+      }
+    },
+    "stage": {
+      "clone": "clonar el repositorio",
+      "rules": "leer las reglas y skills del cliente",
+      "image": "descargar la imagen de worker",
+      "endpoints": "alcanzar los endpoints de modelos",
+      "knowledge": "sembrar el índice de conocimiento",
+      "register": "registrar el proyecto con el enjambre"
+    },
+    "field": {
+      "project": "proyecto",
+      "projectHint": "Solo se listan los proyectos donde puedes conectar una fuente.",
+      "pickProject": "elige un proyecto",
+      "remote": "git remote",
+      "branch": "rama por defecto",
+      "write": "puede pushear ramas",
+      "writeHint": "Apagado significa que el enjambre lee el repositorio y no abre nada.",
+      "provider": "proveedor",
+      "workers": "workers a la vez",
+      "workersHint": "El techo de contenedores que este proyecto puede tener.",
+      "lead": "endpoint del modelo guía",
+      "leadHint": "Compatible con OpenAI o Anthropic.",
+      "workerModel": "endpoint del modelo de workers",
+      "workerPlaceholder": "déjalo vacío para usar el endpoint del modelo guía",
+      "secret": "referencia al secreto",
+      "secretHint": "El nombre del secreto, no el secreto. Las claves nunca se teclean en este producto.",
+      "knowledge": "mantener un conjunto de reglas indexado",
+      "knowledgeHint": "Lo escribe un worker de docs. Aquí no hay editor de documentos.",
+      "seed": "semilla",
+      "seedHint": "Qué lee la primera pasada, como globs."
+    },
+    "error": {
+      "project": "elige el proyecto al que pertenece este repositorio",
+      "remote": "hace falta un git remote",
+      "branch": "hace falta una rama por defecto",
+      "workers": "un número entero de workers, al menos uno",
+      "lead": "al modelo guía le falta una url base",
+      "secret": "nombra el secreto que guarda la clave"
+    },
+    "review": {
+      "project": "proyecto",
+      "remote": "remote",
+      "branch": "rama",
+      "pushAccess": "acceso push",
+      "compute": "compute",
+      "workers": "workers",
+      "lead": "modelo guía",
+      "workerModel": "modelo de workers",
+      "secret": "secreto",
+      "knowledge": "conocimiento",
+      "on": "sí",
+      "off": "no",
+      "sameAsLead": "igual que el guía"
+    }
+  }
+}

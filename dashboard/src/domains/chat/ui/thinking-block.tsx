@@ -1,4 +1,5 @@
 import { Check, LoaderCircle } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import {
   parseThinkingSteps,
@@ -48,6 +49,7 @@ export interface ThinkingBlockProps {
  * here React does better.
  */
 export function ThinkingBlock({ text, tokens, active }: ThinkingBlockProps) {
+  const { t } = useTranslation("chat")
   const steps = parseThinkingSteps(text)
 
   if (active) {
@@ -58,7 +60,7 @@ export function ThinkingBlock({ text, tokens, active }: ThinkingBlockProps) {
         data-active="true"
       >
         <p className={cn(styles.thinkingWords, styles.thinkingWordsActive)}>
-          thinking
+          {t("thinking.label")}
         </p>
         <ol className={styles.thinkingSteps}>
           {steps.map((step, index) => (
@@ -76,10 +78,10 @@ export function ThinkingBlock({ text, tokens, active }: ThinkingBlockProps) {
   return (
     <details className={styles.thinking} data-test="chat-thinking">
       <summary className={styles.thinkingSummary}>
-        <span className={styles.thinkingWords}>thinking</span>
+        <span className={styles.thinkingWords}>{t("thinking.label")}</span>
         {tokens === undefined ? null : (
           <span className={styles.thinkingCount}>
-            {tokens.toLocaleString("en-US")} tokens
+            {tokens.toLocaleString("en-US")} {t("thinking.tokenWord")}
           </span>
         )}
       </summary>

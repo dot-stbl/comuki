@@ -1,0 +1,53 @@
+{
+  "actions": {
+    "retry": "Retry"
+  },
+  "registry": {
+    "title": "Approvals",
+    "summary": {
+      "one": "<count/> awaiting decision",
+      "other": "<count/> awaiting decision"
+    },
+    "errorTitle": "Failed to load approvals"
+  },
+  "errors": {
+    "unknown": "Unknown error"
+  },
+  "decide": {
+    "approvedToast": "Approved",
+    "rejectedToast": "Rejected",
+    "openedToast": "Opened review",
+    "refused": "The decision did not land.",
+    "tail": "The queue is as it was — the run is still waiting."
+  },
+  "empty": {
+    "title": "Queue empty",
+    "description": "Nothing awaiting a human."
+  },
+  "card": {
+    "details": "Details",
+    "hide": "Hide",
+    "review": "Review",
+    "reject": "Reject",
+    "approve": "Approve",
+    "reviewAria": "Review the {{noun}} for {{app}}",
+    "rejectAria": "Reject the {{noun}} for {{app}}",
+    "approveAria": "Approve the {{noun}} for {{app}}",
+    "planHead": "Plan — work item graph",
+    "assumptionsFallback": "Planner assumptions",
+    "paneBaseline": "baseline",
+    "paneNew": "new"
+  },
+  "type": {
+    "plan": "plan",
+    "deploy": "deploy",
+    "baseline": "baseline",
+    "gate": "gate",
+    "learning": "rule"
+  },
+  "risk": {
+    "high": "high",
+    "medium": "medium",
+    "low": "low"
+  }
+}

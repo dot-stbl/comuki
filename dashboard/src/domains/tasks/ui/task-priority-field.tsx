@@ -1,5 +1,6 @@
 import type { ComponentType } from "react"
 import { ChevronDown, ChevronsUp, Minus } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/shared/lib/utils"
 import type { TaskPriority } from "@/domains/tasks/model/types"
@@ -53,6 +54,7 @@ export function TaskPriorityField({
   disabled = false,
   "data-test": dataTest,
 }: TaskPriorityFieldProps) {
+  const { t } = useTranslation("tasks")
   return (
     /* A `span` label rather than a `<legend>`: a legend renders in the
        fieldset's own border slot, outside the layout, so the flex gap
@@ -62,10 +64,10 @@ export function TaskPriorityField({
        which is the same channel the source picker uses. */
     <fieldset
       className={styles.fieldset}
-      aria-label="priority"
+      aria-label={t("priorityField.label")}
       data-test={dataTest}
     >
-      <span className={styles.fieldLabel}>priority</span>
+      <span className={styles.fieldLabel}>{t("priorityField.label")}</span>
       <div className={styles.segments}>
         {PRIORITIES.map((priority) => {
           const selected = value === priority
@@ -92,7 +94,9 @@ export function TaskPriorityField({
                 onChange={() => onValueChange(priority)}
               />
               <Icon className={styles.icon} aria-hidden="true" />
-              <span className={styles.segmentLabel}>{priority}</span>
+              <span className={styles.segmentLabel}>
+                {t(`priority.${priority}`)}
+              </span>
             </label>
           )
         })}

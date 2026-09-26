@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { Trans, useTranslation } from "react-i18next"
 
 import { ANOMALY_MULTIPLIER } from "@/domains/runs/model/anomaly"
 import { formatCost, formatTokens } from "@/domains/runs/model/format"
@@ -57,6 +58,7 @@ export function AnomalyBreakdownDialog({
   session,
   onCancelRun,
 }: AnomalyBreakdownDialogProps) {
+  const { t } = useTranslation("runs")
   if (!run) {
     return null
   }
@@ -81,7 +83,7 @@ export function AnomalyBreakdownDialog({
     <Dialog
       open={run !== null}
       onOpenChange={onOpenChange}
-      title={`Cost spike · run ${run.id}`}
+      title={t("anomaly.dialogTitle", { runId: run.id })}
       width="32rem"
       footer={
         <>
@@ -96,37 +98,39 @@ export function AnomalyBreakdownDialog({
                 onCancelRun(run)
               }}
             >
-              Cancel run
+              {t("anomaly.cancelRun")}
             </Button>
           ) : null}
-          <Button onClick={() => onOpenChange(false)}>Acknowledge</Button>
+          <Button onClick={() => onOpenChange(false)}>
+            {t("anomaly.acknowledge")}
+          </Button>
         </>
       }
     >
-      <Section title="Summary" variant="region">
+      <Section title={t("anomaly.summary")} variant="region">
         <p className={cn(styles.summary)}>
           <strong>{run.title}</strong> — {run.app}
         </p>
         <dl className={cn(styles.kvList)}>
           <div className={cn(styles.kv)}>
-            <dt>project</dt>
+            <dt>{t("anomaly.project")}</dt>
             <dd>{projectKey}</dd>
           </div>
           <div className={cn(styles.kv)}>
-            <dt>profile</dt>
+            <dt>{t("anomaly.profile")}</dt>
             <dd>{profile}</dd>
           </div>
           <div className={cn(styles.kv)}>
-            <dt>status</dt>
+            <dt>{t("anomaly.status")}</dt>
             <dd>{run.status}</dd>
           </div>
         </dl>
       </Section>
 
-      <Section title="Spend breakdown" variant="region">
+      <Section title={t("anomaly.spend")} variant="region">
         <dl className={cn(styles.kvList)}>
           <div className={cn(styles.kv)}>
-            <dt>cost</dt>
+            <dt>{t("anomaly.cost")}</dt>
             <dd
               className={cn(styles.figure)}
               data-test="anomaly-breakdown-cost"
@@ -135,26 +139,35 @@ export function AnomalyBreakdownDialog({
             </dd>
           </div>
           <div className={cn(styles.kv)}>
-            <dt>tokens (in / out)</dt>
+            <dt>{t("anomaly.tokensInOut")}</dt>
             <dd className={cn(styles.figure)}>
               {formatTokens(inputTokens)} / {formatTokens(outputTokens)}{" "}
               <span className={cn(styles.tokensMuted)}>
-                ({formatTokens(totalTokens)} total)
+                {t("anomaly.total", { total: formatTokens(totalTokens) })}
               </span>
             </dd>
           </div>
         </dl>
       </Section>
 
-      <Section title="Why it's flagged" variant="region">
+      <Section title={t("anomaly.why")} variant="region">
+        {/* The figures are values in their own voice and the words are prose
+            in theirs, so the emphasis rides slot elements and the sentence —
+            word order included — belongs to the locale. */}
         <p className={cn(styles.summary)} data-test="anomaly-breakdown-reason">
-          Spent <strong>{formatCost(run.cost)}</strong>, which is{" "}
-          <strong>{flag.multiplier}×</strong> the median cost of{" "}
-          <strong>{formatCost(flag.medianCost)}</strong> for{" "}
-          <strong>{projectKey}</strong>.
+          <Trans
+            ns="runs"
+            i18nKey="anomaly.reason"
+            components={{
+              spent: <strong>{formatCost(run.cost)}</strong>,
+              multiplier: <strong>{`${flag.multiplier}×`}</strong>,
+              median: <strong>{formatCost(flag.medianCost)}</strong>,
+              project: <strong>{projectKey}</strong>,
+            }}
+          />
         </p>
         <p className={cn(styles.rule)}>
-          Rule: cost &gt; {ANOMALY_MULTIPLIER}× the project's median run cost.
+          {t("anomaly.rule", { threshold: ANOMALY_MULTIPLIER })}
         </p>
       </Section>
 
@@ -164,7 +177,7 @@ export function AnomalyBreakdownDialog({
           className={cn(styles.link)}
           onClick={() => onOpenChange(false)}
         >
-          Open cost page →
+          {t("anomaly.openCost")}
         </Link>
       </p>
     </Dialog>

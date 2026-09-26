@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
 import { parseTicketLabels } from "@/domains/sources/model/providers"
@@ -47,6 +48,7 @@ export function NativeTicketForm({
   onCancel,
   onDirtyChange,
 }: NativeTicketFormProps) {
+  const { t } = useTranslation("sources")
   const session = useSession()
 
   const [title, setTitle] = useState("")
@@ -89,46 +91,46 @@ export function NativeTicketForm({
       <FormFields>
         <TextField
           id="ticket-title"
-          label="title"
+          label={t("ticketForm.titleLabel")}
           required
           autoFocus
           value={title}
           disabled={busy}
-          placeholder="what is wrong, in one line"
+          placeholder={t("ticketForm.titlePlaceholder")}
           data-test="ticket-title"
           onValueChange={setTitle}
         />
 
         <TextareaField
           id="ticket-body"
-          label="body"
+          label={t("ticketForm.bodyLabel")}
           value={body}
           disabled={busy}
           rows={6}
-          placeholder="what you saw, and where. The brain reads this before it plans anything."
+          placeholder={t("ticketForm.bodyPlaceholder")}
           data-test="ticket-body"
           onValueChange={setBody}
         />
 
         <TextField
           id="ticket-labels"
-          label="labels"
+          label={t("ticketForm.labelsLabel")}
           value={labels}
           disabled={busy}
           placeholder="checkout-web, bug"
           spellCheck={false}
-          hint="comma separated. These are the ticket's own labels — not a filter expression."
+          hint={t("ticketForm.labelsHint")}
           data-test="ticket-labels"
           onValueChange={setLabels}
         />
 
         <SwitchField
           id="ticket-straight-to-work"
-          label="straight to work"
+          label={t("ticketForm.straightLabel")}
           checked={straightToWork}
           disabled={busy}
           denied={denied}
-          hint="off leaves it for somebody to claim, which is the same act a minute later."
+          hint={t("ticketForm.straightHint")}
           data-test="ticket-straight-to-work"
           onCheckedChange={setStraightToWork}
         />
@@ -146,7 +148,9 @@ export function NativeTicketForm({
           loading={busy}
           disabled={trimmedTitle.length === 0}
         >
-          {straightToWork ? "Create and start" : "Create ticket"}
+          {straightToWork
+            ? t("ticketForm.submitStart")
+            : t("ticketForm.submit")}
         </Button>
         <Button
           variant="secondary"
@@ -154,7 +158,7 @@ export function NativeTicketForm({
           disabled={busy}
           onClick={onCancel}
         >
-          Cancel
+          {t("actions.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

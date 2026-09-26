@@ -1,7 +1,11 @@
 import type { ComponentType } from "react"
 import { Ban, Check, Clock, Power, TriangleAlert } from "lucide-react"
 
-import { keyState } from "@/domains/models/model/keys"
+import {
+  keyState,
+  sharedModelsT,
+  type ModelsTranslator,
+} from "@/domains/models/model/keys"
 import type {
   EndpointState,
   ModelWire,
@@ -38,11 +42,14 @@ const endpointIcons: Record<
 
 export interface EndpointStateBadgeProps {
   state: EndpointState
+  /** Copy as a parameter so a table `cell` (a plain function) can localise. */
+  t?: ModelsTranslator
   className?: string
 }
 
 export function EndpointStateBadge({
   state,
+  t = sharedModelsT,
   className,
 }: EndpointStateBadgeProps) {
   const Icon = endpointIcons[state]
@@ -54,7 +61,7 @@ export function EndpointStateBadge({
       className={cn(badgeShell(), styles.badge, styles[state], className)}
     >
       <Icon aria-hidden="true" />
-      {state}
+      {t(`state.${state}`, { defaultValue: state })}
     </span>
   )
 }
@@ -68,6 +75,8 @@ const keyIcons = {
 export interface KeyStateBadgeProps {
   /** The key itself, because its state is derived rather than stored. */
   entry: VirtualKey
+  /** Copy as a parameter so a table `cell` (a plain function) can localise. */
+  t?: ModelsTranslator
   className?: string
 }
 
@@ -76,7 +85,11 @@ export interface KeyStateBadgeProps {
  * revocation overrides that. Taking the key rather than a string is what keeps
  * the badge and the table from ever disagreeing about which rule won.
  */
-export function KeyStateBadge({ entry, className }: KeyStateBadgeProps) {
+export function KeyStateBadge({
+  entry,
+  t = sharedModelsT,
+  className,
+}: KeyStateBadgeProps) {
   const state = keyState(entry)
   const Icon = keyIcons[state]
 
@@ -87,7 +100,7 @@ export function KeyStateBadge({ entry, className }: KeyStateBadgeProps) {
       className={cn(badgeShell(), styles.badge, styles[state], className)}
     >
       <Icon aria-hidden="true" />
-      {state}
+      {t(`state.${state}`, { defaultValue: state })}
     </span>
   )
 }

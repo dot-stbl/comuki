@@ -1,0 +1,169 @@
+{
+  "actions": {
+    "retry": "Réessayer",
+    "close": "Fermer"
+  },
+  "errors": {
+    "unknown": "Erreur inconnue",
+    "changeFailed": "Le changement a échoué."
+  },
+  "page": {
+    "title": "Modèles",
+    "modelsErrorTitle": "Les modèles n'ont pas chargé",
+    "keysErrorTitle": "Les clés de dépense n'ont pas chargé",
+    "failureTail": "Rien n'a bougé — le registre est comme avant.",
+    "summaryProxyOn": "<endpoints/> points de terminaison · <keys/> clés de dépense · proxy <proxy/>",
+    "summaryProxyOff": "<endpoints/> points de terminaison · <keys/> clés de dépense · proxy <proxy/>, rien mesuré",
+    "summaryNearCap": "<count/> près du plafond",
+    "summaryExpired": "<count/> expirées"
+  },
+  "proxy": {
+    "section": "Proxy",
+    "note": "Un saut fin et facultatif devant les upstreams. C'est lui qui émet une clé de dépense, la tient à un budget, mesure un run et retire une clé quand son bail finit — donc son interrupteur décide si les trois sections ci-dessous sont de la configuration ou de l'application.",
+    "on": "allumé",
+    "off": "éteint",
+    "since": "depuis {{when}}",
+    "sentenceOn": "Les clés de dépense sont vérifiées, les budgets sont appliqués et chaque run est mesuré",
+    "sentenceOff": "les workers reçoivent une url et une clé injectées directement — les clés de dépense ne sont pas vérifiées, les budgets pas appliqués, rien n'est mesuré",
+    "immutableSentence": "les clés virtuelles sont semées depuis la configuration et immuables à l'exécution — la dépense se mesure au proxy, elle n'est pas rapportée ici",
+    "turnOff": "éteindre le proxy",
+    "turnOn": "allumer le proxy",
+    "costPerRun": "coût par run",
+    "spend": "dépense",
+    "runs": "runs",
+    "burnByHour": "consommation par heure",
+    "burnNothing": "Dépense par heure : rien de mesuré.",
+    "burnLabel": "Dépense par heure sur la journée mesurée, pic {{peak}} à {{hour}}.",
+    "burnPeak": "pic {{peak}} à {{hour}}",
+    "windowOver": "sur ",
+    "windowStale": "dernière mesure sur ",
+    "windowNotCurrent": " — non actuel",
+    "offConfirmTitle": "Éteindre le proxy ?",
+    "offConfirmBody": "Les workers reçoivent une url et une clé injectées directement. Les clés de dépense cessent d'être vérifiées, chaque budget ci-dessous cesse d'être appliqué, et aucun run n'est mesuré jusqu'au rallumage.",
+    "offConfirm": "L'éteindre",
+    "offCancel": "Le laisser allumé"
+  },
+  "endpoints": {
+    "section": "Points de terminaison upstream",
+    "note": "Deux fils, compatible openai et compatible anthropic, et rien d'autre. Les workers prennent une url et une clé via leur config de fournisseur ; le lead et le chat prennent les mêmes points de terminaison via un client de chat. Une url auto-hébergée est une ligne ordinaire.",
+    "emptyFiltered": "aucun point de terminaison ne correspond aux filtres actuels",
+    "empty": "aucun point de terminaison upstream n'est configuré",
+    "count": "{{count}} affichés",
+    "column": {
+      "endpoint": "point de terminaison",
+      "wire": "fil",
+      "baseUrl": "url de base",
+      "state": "état",
+      "models": "modèles",
+      "note": "note"
+    },
+    "filterPlaceholder": "filtrer point de terminaison, url, modèle…",
+    "allWires": "tous les fils",
+    "allStates": "tous les états"
+  },
+  "keys": {
+    "section": "Clés de dépense",
+    "note": "Une clé porte sa propre route, son plafond, sa liste de modèles, sa portée et sa TTL — une clé fuitée n'achète donc qu'un seul point de terminaison, les modèles qui y sont nommés, ce qui reste d'un budget, jusqu'à un jour que le détenteur ne contrôle pas. Le secret est montré une fois à l'émission et jamais ensuite.",
+    "noteUnenforced": " Proxy éteint, rien de tout cela n'est vérifié.",
+    "emptyFiltered": "aucune clé ne correspond aux filtres actuels",
+    "empty": "aucune clé de dépense n'a été émise",
+    "countExpired": "{{count}} expirées · ",
+    "countNearCap": "{{count}} près du plafond · ",
+    "count": "{{count}} affichées",
+    "column": {
+      "key": "clé",
+      "whatFor": "pour quoi",
+      "scope": "portée",
+      "route": "route",
+      "mayReach": "peut atteindre",
+      "spentOfCap": "dépensé du plafond",
+      "expires": "expire",
+      "state": "état",
+      "actions": "actions"
+    },
+    "filterPlaceholder": "filtrer clé, libellé, modèle…",
+    "allScopes": "toutes les portées",
+    "allRoutes": "toutes les routes",
+    "allStates": "tous les états",
+    "openAria": "Ouvrir les détails de {{prefix}}",
+    "allModels": "tous les modèles",
+    "allModelsTitle": "allow-list vide — tout modèle permis",
+    "revokeTooltip": "Révoquer cette clé",
+    "revokeAria": "Révoquer {{prefix}}",
+    "revokeConfirmTitle": "Révoquer cette clé ?",
+    "revokeConfirmBody": "{{prefix}} · {{label}} — la clé cesse immédiatement de fonctionner et ne peut pas être ramenée. Un worker qui la tient la perd avec son bail, en plein run.",
+    "revokeRestartNote": " Le magasin de clés est semé depuis la configuration — un redémarrage de l'hôte ressuscite cette clé jusqu'à ce que sa ligne Proxy:VirtualKeys soit retirée.",
+    "revokeConfirm": "Révoquer la clé",
+    "revokeCancel": "Garder la clé"
+  },
+  "routing": {
+    "section": "Rôle vers modèle",
+    "note": "La plateforme parle en rôles, jamais en fabricants : le lead planifie, écrit les contrats, vérifie les résultats et répare un run échoué ; le worker exécute les étapes de profil dans un conteneur. C'est ici qu'un rôle devient un modèle physique, et le seul endroit où cette correspondance existe.",
+    "emptyFiltered": "aucun rôle ne correspond aux filtres actuels",
+    "empty": "aucun rôle n'est routé vers un modèle",
+    "column": {
+      "role": "rôle",
+      "model": "modèle",
+      "endpoint": "point de terminaison",
+      "upstream": "upstream",
+      "usedFor": "servant à"
+    },
+    "allRoles": "tous les rôles",
+    "allEndpoints": "tous les points de terminaison",
+    "unknown": "inconnu",
+    "count": "{{count}} affichés"
+  },
+  "sheet": {
+    "closeTooltip": "Fermer — échap",
+    "closeAria": "Fermer la clé",
+    "routeNotKnown": "route inconnue ici",
+    "issued": "émise",
+    "lastUsed": "dernière utilisation",
+    "expires": "expire",
+    "scope": "portée",
+    "grants": "grants",
+    "notRecorded": "pas enregistré sur ce fil",
+    "issuedToNobody": "émise à personne en particulier",
+    "mayReach": "peut atteindre",
+    "everyModel": "tout modèle du point de terminaison",
+    "everyModelTitle": "allow-list vide — tout modèle permis",
+    "alreadyStopped": "cette clé est déjà arrêtée — rien à révoquer",
+    "irreversible": "Irréversible — demande d'abord",
+    "revoke": "Révoquer cette clé",
+    "spend": "dépense",
+    "notMetered": "pas mesuré sur ce fil",
+    "noSpend": "aucune dépense enregistrée",
+    "reading": "{{total}} sur les {{days}} derniers jours · {{average}} par jour · plus lourd {{day}} à {{peak}}",
+    "silentDays": " · aucune dépense enregistrée les {{count}} derniers jours",
+    "chartLabel": "Dépense par jour, dollars. {{reading}}."
+  },
+  "meter": {
+    "noCap": "sans plafond",
+    "noCapTitle": "cette clé ne porte pas de plafond — elle dépense jusqu'à sa révocation ou son expiration",
+    "capOnly": "plafond {{cap}}",
+    "notMeteredHere": "dépense non mesurée ici",
+    "notMeteredHereTitle": "le plafond est vivant mais cette surface ne mesure pas la dépense",
+    "unforcedTitle": "le proxy est éteint — ce plafond est enregistré mais pas appliqué",
+    "over": "dépassé",
+    "left": "{{left}} restant"
+  },
+  "word": {
+    "never": "jamais",
+    "expired": "expirée {{reading}}",
+    "platform": "plateforme",
+    "notOnThisWire": "pas sur ce fil",
+    "neverUsed": "jamais utilisée"
+  },
+  "wire": {
+    "openai": "compatible openai",
+    "anthropic": "compatible anthropic"
+  },
+  "state": {
+    "live": "vivante",
+    "expired": "expirée",
+    "revoked": "révoquée",
+    "ok": "ok",
+    "degraded": "dégradé",
+    "disabled": "désactivé"
+  }
+}

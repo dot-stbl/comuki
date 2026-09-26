@@ -1,0 +1,245 @@
+{
+  "actions": {
+    "retry": "再試行"
+  },
+  "errors": {
+    "unknown": "不明なエラー"
+  },
+  "page": {
+    "title": "コンソール",
+    "summary": "各画面が操作するのと同じコントロールプレーンを、入力で扱う",
+    "onboard": "リポジトリを組み込む"
+  },
+  "console": {
+    "sendFailure": "メッセージは送信されませんでした",
+    "decisionFailure": "決定は記録されませんでした",
+    "startFailure": "会話を開始できませんでした",
+    "consoleErrorTitle": "コンソールが読み込めませんでした",
+    "transcriptErrorTitle": "トランスクリプトが読み込めませんでした",
+    "loading": "会話を読み込み中"
+  },
+  "sessions": {
+    "navLabel": "会話",
+    "head": "会話",
+    "new": "新しい会話",
+    "loading": "会話を読み込み中",
+    "emptyTitle": "まだ会話はありません",
+    "emptyDescription": "上のプラスで始めてください。会話はすべてここに残り、いつでも戻れます。"
+  },
+  "thread": {
+    "emptyTitle": "まだ何も話されていません",
+    "emptyBody": "これは各画面が操作するのと同じコントロールプレーンを、入力で扱うものです。スワームが何をしているか聞くか、スラッシュで始めて何でも見てください。何かを変えるものはすべて、あなたが押す提案として返ってきます。自分で行動することはありません。",
+    "logLabel": "会話",
+    "jump": "最新へ移動",
+    "announceReplying": "アシスタントが返信しています",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "あなた",
+    "comuki": "comuki",
+    "iteration": "反復 {{iteration}}",
+    "blank": "このターンは空のまま届きました"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "思考中",
+    "tokenWord": "トークン"
+  },
+  "memory": {
+    "label": "メモリ",
+    "facts": {
+      "other": "{{count}} 件のファクト"
+    }
+  },
+  "composer": {
+    "boxLabel": "コンソールへのメッセージ",
+    "placeholder": "聞くか、スラッシュで始める",
+    "commandsHead": "コマンド",
+    "originFrom": "{{project}} から",
+    "seedAbout": "について",
+    "seedDrop": "{{id}} への参照を外す",
+    "scopeRunsIn": "実行先",
+    "scopePick": "プロジェクトを選択",
+    "scopeAria": "{{command}} が実行されるプロジェクト",
+    "sendTooltip": "送信 — enter",
+    "send": "送信"
+  },
+  "scope": {
+    "needsProject": "{{command}} にはプロジェクトが必要です",
+    "notAvailable": "利用できません"
+  },
+  "command": {
+    "init": {
+      "description": "リポジトリを組み込む：git アクセス、コンピュート、モデル、ナレッジ"
+    },
+    "project": {
+      "description": "このシフトが操作できるプロジェクトの一覧"
+    },
+    "run": {
+      "description": "チケットからランを開始する"
+    },
+    "status": {
+      "description": "スワームが今何をしているか"
+    },
+    "stop": {
+      "description": "ランを停止し、コンテナを解体する"
+    },
+    "plan": {
+      "description": "ランのプランを読み、判断する"
+    },
+    "debug": {
+      "description": "1時間、ワーカーの詳細ログを有効にする"
+    },
+    "help": {
+      "description": "コンソールにできること"
+    }
+  },
+  "panel": {
+    "label": "コンソールのサイドパネル",
+    "awaiting": "決定待ち",
+    "noProject": "プロジェクトなし",
+    "steps": {
+      "other": "{{count}} ステップ"
+    },
+    "quiet": "ここであなたを待っているものはありません",
+    "slashHelp": "スラッシュヘルプ"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "ランを開始する",
+        "stop": "ランを停止する"
+      },
+      "plan": {
+        "approve": "プランを承認する"
+      },
+      "settings": {
+        "debug": "ライブ設定を変更する"
+      }
+    },
+    "words": {
+      "run": {
+        "start": { "confirm": "開始", "refuse": "破棄" },
+        "stop": { "confirm": "停止", "refuse": "実行させたままにする" }
+      },
+      "plan": {
+        "approve": { "confirm": "承認", "refuse": "却下" }
+      },
+      "settings": {
+        "debug": { "confirm": "オンにする", "refuse": "オフのままにする" }
+      }
+    },
+    "inProject": "{{project}} 内で",
+    "decidedConfirmed": "人間によって確認され、他のすべての決定と同じ場所に記録されました",
+    "decidedRejected": "人間によって拒否され、他のすべての決定と同じ場所に記録されました",
+    "needsProjectDenial": "操作するプロジェクトが必要です"
+  },
+  "handoff": {
+    "searchFor": "{{where}} で検索"
+  },
+  "dock": {
+    "tooltip": "コンソール — {{chord}}",
+    "openAria": "コンソールを開く — {{chord}}",
+    "title": "コンソール"
+  },
+  "wizard": {
+    "title": "リポジトリを組み込む",
+
+    "running": "オンボーディングを実行中です。",
+    "streamHead": "オンボーディング",
+    "stageWord": {
+      "done": "完了",
+
+      "running": "実行中",
+      "queued": "待機中"
+    },
+    "doneNotice": "プロジェクトが登録されました。そのルールセット、ワーカーイメージ、エンドポイントが、次のランからスワームで使われます。",
+    "backToConsole": "コンソールに戻る",
+    "start": "オンボーディングを開始",
+    "continue": "続ける",
+    "back": "戻る",
+    "cancel": "キャンセル",
+    "confirmNotice": "まだ何も作成されていません。確認するとオンボーディングランが開始され、その内容は他のランと同じ場所に記録されます。",
+    "guardTitle": "オンボーディングせずにウィザードを離れますか？",
+    "guardBody": "入力したリポジトリ、モデルエンドポイント、シークレット参照はまだどこにも保存されていません。このページを離れると失われます。",
+    "guardConfirm": "破棄",
+    "guardCancel": "編集を続ける",
+    "step": {
+      "repo": {
+        "title": "リポジトリと git アクセス",
+        "summary": "コードがどこにあり、スワームに何を許すか。このステップが、ウィザードの残りが構成するプロジェクトを決めます。"
+      },
+      "compute": {
+        "title": "コンピュートプロバイダー",
+        "summary": "ワーカーコンテナがどこで起動するかと、同時実行数の上限。"
+      },
+      "models": {
+        "title": "モデルエンドポイント",
+        "summary": "リードモデルとワーカーのための、OpenAI または Anthropic 互換のベース url。シークレットはここでは名前だけで、入力はされません。"
+      },
+      "knowledge": {
+        "title": "ナレッジ",
+        "summary": "このプロジェクトがインデックス化されたルールセットを保持するか、最初のパスが何を読むべきか。"
+      },
+      "confirm": {
+        "title": "確認",
+        "summary": "オンボーディングが何を、どの順で行うか。まだ何も作成されていません。"
+      }
+    },
+    "stage": {
+      "clone": "リポジトリをクローン",
+      "rules": "クライアントのルールとスキルを読む",
+      "image": "ワーカーイメージを取得",
+      "endpoints": "モデルエンドポイントに到達",
+      "knowledge": "ナレッジインデックスをシード",
+      "register": "プロジェクトをスワームに登録"
+    },
+    "field": {
+      "project": "プロジェクト",
+      "projectHint": "ソースを接続できるプロジェクトのみが一覧されます。",
+      "pickProject": "プロジェクトを選択",
+      "remote": "git remote",
+      "branch": "デフォルトブランチ",
+      "write": "ブランチを push できる",
+      "writeHint": "オフの場合、スワームはリポジトリを読むだけで、何も開きません。",
+      "provider": "プロバイダー",
+      "workers": "同時ワーカー数",
+      "workersHint": "このプロジェクトが持てるコンテナの上限。",
+      "lead": "リードモデルのエンドポイント",
+      "leadHint": "OpenAI または Anthropic 互換。",
+      "workerModel": "ワーカーモデルのエンドポイント",
+      "workerPlaceholder": "空のままにするとリードモデルのエンドポイントを使います",
+      "secret": "シークレット参照",
+      "secretHint": "シークレットの名前であって、シークレットではありません。キーがこの製品に入力されることはありません。",
+      "knowledge": "インデックス化されたルールセットを保持",
+      "knowledgeHint": "docs ワーカーが書きます。ここにドキュメントエディタはありません。",
+      "seed": "シード",
+      "seedHint": "最初のパスが読むもの。glob で指定します。"
+    },
+    "error": {
+      "project": "このリポジトリが属するプロジェクトを選んでください",
+      "remote": "git remote が必要です",
+      "branch": "デフォルトブランチが必要です",
+      "workers": "1 以上の整数のワーカー数",
+      "lead": "リードモデルにはベース url が必要です",
+      "secret": "キーを保持するシークレットの名前を指定してください"
+    },
+    "review": {
+      "project": "プロジェクト",
+      "remote": "remote",
+      "branch": "ブランチ",
+      "pushAccess": "push 権限",
+      "compute": "コンピュート",
+      "workers": "ワーカー",
+      "lead": "リードモデル",
+      "workerModel": "ワーカーモデル",
+      "secret": "シークレット",
+      "knowledge": "ナレッジ",
+      "on": "オン",
+      "off": "オフ",
+      "sameAsLead": "リードと同じ"
+    }
+  }
+}

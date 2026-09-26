@@ -1,4 +1,5 @@
 import { Check } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import type { AttentionStatus } from "@/domains/home/model/attention"
 
@@ -41,6 +42,7 @@ export function AttentionVerdict({
   running,
   queued,
 }: AttentionVerdictProps) {
+  const { t } = useTranslation("home")
   const clear = count === 0
 
   return (
@@ -58,13 +60,13 @@ export function AttentionVerdict({
           {clear ? (
             <>
               <Check className={styles.mark} aria-hidden="true" />
-              <span className={styles.verdict}>Nothing needs you</span>
+              <span className={styles.verdict}>{t("verdict.clear")}</span>
             </>
           ) : (
             <>
               <span className={styles.count}>{count}</span>
               <span className={styles.label}>
-                {count === 1 ? "run needs a decision" : "runs need a decision"}
+                {t("verdict.owed", { count })}
               </span>
             </>
           )}
@@ -73,20 +75,23 @@ export function AttentionVerdict({
         <p className={styles.line}>
           {clear ? (
             running + queued === 0 ? (
-              "The swarm is empty — nothing queued, nothing in flight."
+              t("verdict.swarmEmpty")
             ) : (
-              <>
-                <span className={styles.figure}>{running}</span> running ·{" "}
-                <span className={styles.figure}>{queued}</span> queued — the
-                swarm is moving on its own.
-              </>
+              <Trans
+                ns="home"
+                i18nKey="verdict.moving"
+                components={{
+                  running: <span className={styles.figure}>{running}</span>,
+                  queued: <span className={styles.figure}>{queued}</span>,
+                }}
+              />
             )
           ) : (
             mix.map((entry, index) => (
               <span key={entry.status}>
                 {index > 0 ? " · " : null}
                 <span className={styles.figure}>{entry.count}</span>{" "}
-                {entry.status}
+                {t(`attention.status.${entry.status}`)}
               </span>
             ))
           )}

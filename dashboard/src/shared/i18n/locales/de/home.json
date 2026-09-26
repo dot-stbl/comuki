@@ -1,0 +1,95 @@
+{
+  "errors": {
+    "unknown": "unbekannter fehler"
+  },
+  "actions": {
+    "retry": "wiederholen"
+  },
+  "header": {
+    "title": "Schicht",
+    "crumb": "schicht",
+    "summary": {
+      "one": "<owed/> wartet auf sie · <running/> läuft · <total/> reihen",
+      "other": "<owed/> warten auf sie · <running/> läuft · <total/> reihen"
+    },
+    "errorTitle": "Die schicht lud nicht",
+    "errorTail": "{{detail}} — bis sie lädt, kann nichts auf diesem bildschirm sagen, ob eine entscheidung ansteht."
+  },
+  "notice": {
+    "fallback": "Die entscheidung schlug fehl.",
+    "tail": "{{detail}} nichts änderte sich — der lauf ist wieder wie er war."
+  },
+  "verdict": {
+    "clear": "Nichts braucht sie",
+    "owed": {
+      "one": "lauf wartet auf eine entscheidung",
+      "other": "läufe warten auf eine entscheidung"
+    },
+    "swarmEmpty": "Der schwarm ist leer — nichts in der warteschlange, nichts in bearbeitung.",
+    "moving": "<running/> läuft · <queued/> in der warteschlange — der schwarm bewegt sich von selbst."
+  },
+  "attention": {
+    "section": "Braucht sie",
+    "column": {
+      "run": "lauf",
+      "project": "projekt",
+      "task": "aufgabe",
+      "step": "schritt",
+      "inStep": "im schritt"
+    },
+    "status": {
+      "escalated": "eskalation",
+      "failed": "fehler",
+      "waiting": "warten"
+    },
+    "reason": {
+      "escalated": "vom schwarm an eine person gehoben",
+      "failed": "an einem prüfftor gestoppt",
+      "waiting": "wartet auf einen menschen"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "Freigeben",
+    "stop": "Stoppen",
+    "open": "Öffnen",
+    "approveRun": "{{title}} freigeben",
+    "stopRun": "{{title}} stoppen",
+    "openRun": "{{title}} öffnen",
+    "more": "und {{count}} weitere — live-reihen öffnen"
+  },
+  "list": {
+    "waitingOnPlan": "wartet auf einen plan",
+    "timeInStep": "zeit im schritt"
+  },
+  "running": {
+    "section": "Läuft jetzt",
+    "note": "{{running}} in bearbeitung · {{queued}} in der warteschlange",
+    "empty": "Nichts ist in bearbeitung.",
+    "more": "{{count}} weitere in bearbeitung — live-reihen öffnen"
+  },
+  "outcomes": {
+    "loading": "Ergebnisse der woche laden",
+    "failed": "Die woche hinter dieser schicht lud nicht, es gibt keinen verlauf zum vergleich. Alles andere auf diesem bildschirm hängt nicht davon ab — was unten in bearbeitung ist, ist die live-lesung.",
+    "reading": "<today/> heute bisher beendet · <week/> diese woche · <failed/> fehlgeschlagen",
+    "chartLabel": "Lauffergebnisse pro tag. {{today}} heute beendet, {{week}} diese woche, davon {{failed}} fehlgeschlagen.",
+    "status": {
+      "success": "erfolg",
+      "failed": "fehler",
+      "escalated": "eskalation"
+    }
+  },
+  "shortcuts": {
+    "section": "Kurzhänge",
+    "newRun": "neuer lauf",
+    "newRunNote": "ein ticket aus dem eingang nehmen",
+    "liveRuns": "live-reihen",
+    "liveRunsNote": "der ganze schwarm, mit flussboard und filtern",
+    "approvals": "freigaben",
+    "approvalsNote": "pläne in wartestellung auf eine entscheidung"
+  },
+  "stopDialog": {
+    "title": "Diesen lauf stoppen?",
+    "body": "{{title}} — der container wird abgerissen und der lease freigegeben. bereits gemergte arbeit bleibt.",
+    "confirm": "Stopp",
+    "cancel": "Weiterlaufen lassen"
+  }
+}

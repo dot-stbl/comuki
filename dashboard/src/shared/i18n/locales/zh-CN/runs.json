@@ -1,0 +1,163 @@
+{
+  "actions": {
+    "retry": "重试"
+  },
+  "errors": {
+    "unknown": "未知错误"
+  },
+  "status": {
+    "running": "运行中",
+    "waiting": "等待中",
+    "queued": "排队中",
+    "escalated": "已升级",
+    "failed": "失败",
+    "success": "成功",
+    "cancelled": "已取消"
+  },
+  "registry": {
+    "title": "实时运行",
+    "summary": "<total/> 个运行 · <running/> 个运行中 · <blocked/> 个等待人工",
+    "errorTitle": "运行列表未能加载",
+    "anomaliesOnly": "仅显示异常",
+    "count": {
+      "other": "已显示 {{count}} 条"
+    },
+    "empty": {
+      "profile": "该配置下没有运行。",
+      "filtered": "没有运行匹配当前筛选。",
+      "none": "还没有运行。"
+    },
+    "unplannedTitle": "还没有计划",
+    "unplannedDescription": "这些运行已被接受，但大脑尚未规划它们。第一个计划出现工作项后，流程图就会显示。",
+    "expandFlow": "展开流程",
+    "collapseFlow": "折叠流程",
+    "resizeBoard": "调整流程板大小",
+    "expandStrip": "展开流程板"
+  },
+  "notice": {
+    "fallback": "决策失败。",
+    "tail": "没有任何改变 — 运行已恢复原状。"
+  },
+  "cancelDialog": {
+    "title": "取消这个运行？",
+    "body": "{{title}} · {{where}} — 容器将被销毁，租约被释放。已合并的工作会保留。",
+    "confirm": "取消运行",
+    "cancel": "继续运行"
+  },
+  "column": {
+    "status": "状态",
+    "run": "运行",
+    "project": "项目",
+    "app": "应用",
+    "task": "任务",
+    "profile": "配置",
+    "step": "步骤",
+    "inStep": "步骤内",
+    "cost": "成本",
+    "worker": "worker",
+    "actions": "操作",
+    "allStatuses": "所有状态",
+    "allProjects": "所有项目",
+    "allApps": "所有应用",
+    "allProfiles": "所有配置",
+    "filterPlaceholder": "筛选运行、任务、步骤…",
+    "waitingOnPlan": "等待计划",
+    "approve": "批准",
+    "cancelRun": "取消运行",
+    "approveRun": "批准 {{title}}",
+    "cancelTask": "取消 {{title}}"
+  },
+  "detail": {
+    "fallbackTitle": "运行 {{runId}}",
+    "tok": "tok",
+    "errorTitle": "未能加载这个运行",
+    "notFoundTitle": "没有这个 id 的运行",
+    "notFoundDescription": "集群中没有 <id/> 对应的内容。来自旧链接的运行 id 是到达这里的常见方式 — 地址比它命名的运行活得久，值班列表才是仍在进行的运行所在的地方。",
+    "backToList": "返回实时运行",
+    "unplannedTitle": "尚未规划",
+    "unplannedDescription": "这个运行已被接受，大脑还没有把它分解成工作项。没有任何问题，也没有什么在等你 — 计划出现第一个工作项后，图和项检查器就会出现在这里。",
+    "unplannedHint": "{{status}} · 无工作项 · 无可检查",
+    "noInspectorTitle": "该项没有详情",
+    "noInspectorDescription": "上面的计划是完整的；这个项还没有检查记录。选择另一个项，或等它开始后再来。",
+    "resizeGraph": "调整运行图大小"
+  },
+  "river": {
+    "group": "配置流程。方向键在配置之间移动。",
+    "cleared": "已通过",
+    "waitingOnHuman": "等待人工",
+    "noWork": "没有工作",
+    "poolEntry": "{{count}} {{status}}",
+    "clearedProfile": {
+      "other": "{{count}} 个已通过该配置"
+    },
+    "mark": {
+      "other": "{{count}} 个等待人工"
+    },
+    "pinched": {
+      "other": " {{count}} 个等待人工 — 多于任何其他配置。"
+    },
+    "node": "{{profile}}：{{pool}}。{{cleared}}。{{mark}}"
+  },
+  "evidence": {
+    "title": "证据",
+    "empty": "尚未发布截图"
+  },
+  "anomaly": {
+    "badgeLabel": "{{multiplier}}× 中位数",
+    "badgeTip": "成本为该项目中位数 {{median}} 的 {{multiplier}}× — 超过 {{threshold}}× 阈值。点击查看明细。",
+    "badgeAria": "成本异常 — {{label}}。打开明细。",
+    "dialogTitle": "成本尖峰 · 运行 {{runId}}",
+    "acknowledge": "知道了",
+    "cancelRun": "取消运行",
+    "summary": "摘要",
+    "spend": "支出明细",
+    "why": "为何被标记",
+    "project": "项目",
+    "profile": "配置",
+    "status": "状态",
+    "cost": "成本",
+    "tokensInOut": "token（输入 / 输出）",
+    "total": "（共 {{total}}）",
+    "reason": "花费了 <spent/>，是 <project/> 中位数成本 <median/> 的 <multiplier/>。",
+    "rule": "规则：成本 > 项目中位数运行成本的 {{threshold}}×。",
+    "openCost": "打开成本页 →"
+  },
+  "graph": {
+    "group": "运行图。方向键在工作项之间移动。",
+    "empty": "此计划中没有工作项。",
+    "parallel": {
+      "other": "{{count}} 个并行"
+    },
+    "here": "此处",
+    "dependsOnEarlier": {
+      "other": "依赖 {{count}} 个较早项"
+    },
+    "blocked": "已阻塞",
+    "standingHere": "运行停在这里。",
+    "blockedByFailure": "被上游失败阻塞。",
+    "blockedByEscalation": "被上游升级阻塞。",
+    "longEdges": "依赖 {{count}} 个距一列以上的项：{{named}}。",
+    "longEdgesPlural": "依赖 {{count}} 个距一列以上的项：{{named}}。"
+  },
+  "inspector": {
+    "itemOf": "第 {{index}} 项，共 {{total}} 项",
+    "env": "环境",
+    "tokens": "token",
+    "cost": "成本",
+    "started": "已开始",
+    "waitsOn": "等待",
+    "waitsOnLong": "{{count}} 个距一列以上",
+    "waitsOnNone": "无 — 此项开启整个计划。",
+    "distancePrevious": "上一列",
+    "distanceBack": {
+      "other": "{{count}} 列之前"
+    },
+    "dependencyAria": "显示 {{label}}，{{profile}}，{{status}}，{{distance}}。",
+    "input": "输入 — 喂给它什么",
+    "log": "日志",
+    "appendOnly": "只追加",
+    "gate": "验证门",
+    "output": "输出 — 它产出了什么",
+    "outputNone": "还没有。"
+  }
+}

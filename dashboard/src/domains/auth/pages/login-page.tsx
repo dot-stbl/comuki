@@ -1,5 +1,6 @@
 import { useId, useState, type FormEvent } from "react"
 import { Check, CircleAlert, TimerOff } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import { useAuthState } from "@/domains/auth/api/auth"
 import { startOidcFlow } from "@/domains/auth/api/oidc-start"
@@ -46,6 +47,7 @@ export interface LoginPageProps {
  * immediately start drifting apart.
  */
 export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
+  const { t } = useTranslation("auth")
   const { oidc } = useAuthState()
   const landing = landingFor(reason)
 
@@ -132,7 +134,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
       <div className={styles.panel}>
         <div className={styles.head}>
           <ComukiMark className={styles.mark} />
-          <h1 className={styles.title}>Sign in</h1>
+          <h1 className={styles.title}>{t("title")}</h1>
           {landing.notice ? null : (
             <p className={styles.lead}>{landing.lead}</p>
           )}
@@ -172,13 +174,13 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               correction the rest of the product's forms receive. */}
           <TextField
             id={identityId}
-            label="Email"
+            label={t("email.label")}
             name="identity"
             type="text"
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
-            placeholder="you@comuki.local"
+            placeholder={t("email.placeholder")}
             value={identity}
             onValueChange={setIdentity}
             aria-invalid={failure ? true : undefined}
@@ -187,11 +189,11 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
 
           <TextField
             id={passwordId}
-            label="Password"
+            label={t("password.label")}
             name="password"
             type="password"
             autoComplete="current-password"
-            placeholder="your account password"
+            placeholder={t("password.placeholder")}
             value={password}
             onValueChange={setPassword}
             aria-invalid={failure ? true : undefined}
@@ -213,7 +215,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
             disabled={incomplete}
             data-test="login-submit"
           >
-            Sign in
+            {t("submit")}
           </Button>
         </form>
 
@@ -223,7 +225,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
         {oidc ? (
           <div className={styles.alternative}>
             <div className={styles.divider} aria-hidden="true">
-              or
+              {t("or")}
             </div>
             <Button
               variant="outline"
@@ -233,7 +235,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
               onClick={() => void onContinueWithProvider()}
               data-test="login-oidc"
             >
-              Continue with {oidc.label}
+              {t("continueWith", { provider: oidc.label })}
             </Button>
           </div>
         ) : null}
@@ -247,7 +249,7 @@ export function LoginPage({ reason, redirect, onSignedIn }: LoginPageProps) {
             voice because a repo URL is a value. */}
         <footer className={styles.footer} data-test="login-footer">
           <p className={styles.footerLine}>
-            © 2026 dot-stbl · source at{" "}
+            {t("footer")}{" "}
             {env.repoUrl ? (
               <a
                 href={env.repoUrl}
@@ -300,9 +302,13 @@ function Landing({ kind, notice, lead, redirect }: LandingProps) {
         <span className={styles.noticeTitle}>{notice}</span>
         <span className={styles.noticeLead}>{lead}</span>
         {redirect ? (
-          <span className={styles.noticeLead}>
-            You'll return to <span className={styles.path}>{redirect}</span>
-          </span>
+          <Trans
+            ns="auth"
+            i18nKey="landing.returnTo"
+            components={{
+              path: <span className={styles.path}>{redirect}</span>,
+            }}
+          />
         ) : null}
       </span>
     </div>

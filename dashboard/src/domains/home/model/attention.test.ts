@@ -156,9 +156,9 @@ describe("bucketing the list", () => {
       "waiting",
     ])
     expect(groups.map((group) => group.items.length)).toEqual([1, 1, 2])
-    // The product's own words, so a bucket heading and the duty screen's header
-    // are saying the same thing about the same runs.
-    expect(groups[2].reason).toBe("waiting on a human")
+    // The bucket's sentence is a locale key (`dashboard-i18n` D11): the
+    // English words live in `home.json`, and the gate test pins them there.
+    expect(groups[2].reasonKey).toBe("attention.reason.waiting")
   })
 
   it("groups nothing when nothing is owed", () => {

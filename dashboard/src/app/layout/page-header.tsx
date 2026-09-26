@@ -2,6 +2,7 @@ import { Fragment } from "react"
 import type { ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { useRail } from "@/app/layout/rail-context"
 import { cn } from "@/shared/lib/utils"
@@ -112,6 +113,7 @@ export function PageHeader({
   filters,
   className,
 }: PageHeaderProps) {
+  const { t } = useTranslation("shell")
   const { railCollapsed, toggleRail } = useRail()
   const RailIcon = railCollapsed ? PanelLeftOpen : PanelLeftClose
   const last = breadcrumbs.length - 1
@@ -126,17 +128,13 @@ export function PageHeader({
           data-test="rail-toggle"
           aria-controls="rail"
           aria-expanded={!railCollapsed}
-          aria-label={
-            railCollapsed
-              ? "Show the navigation rail"
-              : "Hide the navigation rail"
-          }
+          aria-label={railCollapsed ? t("page.showRail") : t("page.hideRail")}
           onClick={toggleRail}
         >
           <RailIcon aria-hidden="true" />
         </Button>
 
-        <nav aria-label="Breadcrumb" className={styles.crumbs}>
+        <nav aria-label={t("page.breadcrumb")} className={styles.crumbs}>
           {breadcrumbs.map((crumb, index) => {
             const current = index === last
             return (

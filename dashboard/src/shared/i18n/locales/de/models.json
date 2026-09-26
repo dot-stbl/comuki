@@ -1,0 +1,169 @@
+{
+  "actions": {
+    "retry": "Erneut versuchen",
+    "close": "Schließen"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler",
+    "changeFailed": "Die Änderung ist fehlgeschlagen."
+  },
+  "page": {
+    "title": "Modelle",
+    "modelsErrorTitle": "Modelle wurden nicht geladen",
+    "keysErrorTitle": "Die Spend-Keys wurden nicht geladen",
+    "failureTail": "Nichts hat sich bewegt — die Registrierung ist wie zuvor.",
+    "summaryProxyOn": "<endpoints/> Endpunkte · <keys/> Spend-Keys · Proxy <proxy/>",
+    "summaryProxyOff": "<endpoints/> Endpunkte · <keys/> Spend-Keys · Proxy <proxy/>, nichts gemessen",
+    "summaryNearCap": "<count/> nahe der Obergrenze",
+    "summaryExpired": "<count/> abgelaufen"
+  },
+  "proxy": {
+    "section": "Proxy",
+    "note": "Ein dünner, optionaler Hop vor den Upstreams. Er stellt einen Spend-Key aus, hält ihn an einem Budget, misst einen Run und zieht einen Key ab, wenn dessen Lease endet — also entscheidet sein Schalter, ob die drei Abschnitte unten Konfiguration oder Durchsetzung sind.",
+    "on": "an",
+    "off": "aus",
+    "since": "seit {{when}}",
+    "sentenceOn": "Spend-Keys werden geprüft, Budgets werden durchgesetzt und jeder Run wird gemessen",
+    "sentenceOff": "Worker erhalten eine url und einen Key direkt injiziert — Spend-Keys werden nicht geprüft, Budgets nicht durchgesetzt, nichts wird gemessen",
+    "immutableSentence": "virtuelle Keys werden aus der Konfiguration geimpft und sind zur Laufzeit unveränderlich — Spend wird am Proxy gemessen, nicht hier berichtet",
+    "turnOff": "den Proxy ausschalten",
+    "turnOn": "den Proxy einschalten",
+    "costPerRun": "Kosten pro Run",
+    "spend": "Spend",
+    "runs": "Runs",
+    "burnByHour": "Verbrauch pro Stunde",
+    "burnNothing": "Spend pro Stunde: nichts gemessen.",
+    "burnLabel": "Spend pro Stunde über den gemessenen Tag, Spitze {{peak}} um {{hour}}.",
+    "burnPeak": "Spitze {{peak}} um {{hour}}",
+    "windowOver": "über ",
+    "windowStale": "zuletzt gemessen über ",
+    "windowNotCurrent": " — nicht aktuell",
+    "offConfirmTitle": "Den Proxy ausschalten?",
+    "offConfirmBody": "Worker erhalten eine url und einen Key direkt injiziert. Spend-Keys werden nicht mehr geprüft, jedes Budget darunter wird nicht mehr durchgesetzt, und kein Run wird gemessen, bis er wieder eingeschaltet ist.",
+    "offConfirm": "Ausschalten",
+    "offCancel": "An lassen"
+  },
+  "endpoints": {
+    "section": "Upstream-Endpunkte",
+    "note": "Zwei Leitungen, openai-kompatibel und anthropic-kompatibel, und keine anderen. Worker nehmen eine url und einen Key über ihre Provider-Konfiguration; Lead und Chat nehmen dieselben Endpunkte über einen Chat-Client. Eine selbst gehostete url ist eine gewöhnliche Zeile.",
+    "emptyFiltered": "keine Endpunkte passen zu den aktuellen Filtern",
+    "empty": "kein Upstream-Endpunkt ist konfiguriert",
+    "count": "{{count}} angezeigt",
+    "column": {
+      "endpoint": "Endpunkt",
+      "wire": "Leitung",
+      "baseUrl": "Base-URL",
+      "state": "Zustand",
+      "models": "Modelle",
+      "note": "Notiz"
+    },
+    "filterPlaceholder": "Endpunkt, url, Modell filtern…",
+    "allWires": "alle Leitungen",
+    "allStates": "alle Zustände"
+  },
+  "keys": {
+    "section": "Spend-Keys",
+    "note": "Ein Key trägt seine eigene Route, Obergrenze, Modellliste, seinen Scope und seine TTL — ein geleakter kauft also einen einzigen Endpunkt, die dort genannten Modelle, was vom Budget übrig ist, bis zu einem Tag, den der Halter nicht kontrolliert. Das Geheimnis wird bei der Ausstellung einmal gezeigt und nie wieder.",
+    "noteUnenforced": " Mit ausgeschaltetem Proxy wird nichts davon geprüft.",
+    "emptyFiltered": "keine Keys passen zu den aktuellen Filtern",
+    "empty": "kein Spend-Key wurde ausgestellt",
+    "countExpired": "{{count}} abgelaufen · ",
+    "countNearCap": "{{count}} nahe der Obergrenze · ",
+    "count": "{{count}} angezeigt",
+    "column": {
+      "key": "Key",
+      "whatFor": "wofür",
+      "scope": "Scope",
+      "route": "Route",
+      "mayReach": "darf erreichen",
+      "spentOfCap": "ausgegeben von der Obergrenze",
+      "expires": "läuft ab",
+      "state": "Zustand",
+      "actions": "Aktionen"
+    },
+    "filterPlaceholder": "Key, Label, Modell filtern…",
+    "allScopes": "alle Scopes",
+    "allRoutes": "alle Routen",
+    "allStates": "alle Zustände",
+    "openAria": "Details zu {{prefix}} öffnen",
+    "allModels": "alle Modelle",
+    "allModelsTitle": "leere Allow-List — jedes Modell erlaubt",
+    "revokeTooltip": "Diesen Key widerrufen",
+    "revokeAria": "{{prefix}} widerrufen",
+    "revokeConfirmTitle": "Diesen Key widerrufen?",
+    "revokeConfirmBody": "{{prefix}} · {{label}} — der Key hört sofort auf zu arbeiten und kann nicht zurückgeholt werden. Ein Worker, der ihn hält, verliert ihn mit seiner Lease, mitten im Run.",
+    "revokeRestartNote": " Der Key-Store wird aus der Konfiguration geimpft — ein Host-Restart erweckt diesen Key wieder, bis seine Proxy:VirtualKeys-Zeile entfernt ist.",
+    "revokeConfirm": "Key widerrufen",
+    "revokeCancel": "Key behalten"
+  },
+  "routing": {
+    "section": "Rolle zu Modell",
+    "note": "Die Plattform spricht in Rollen, nie in Herstellern: der Lead plant, schreibt Verträge, prüft Ergebnisse und repariert einen gescheiterten Run; der Worker fährt Profilschritte in einem Container. Hier wird eine Rolle ein physisches Modell — und das ist der einzige Ort, an dem diese Abbildung existiert.",
+    "emptyFiltered": "keine Rollen passen zu den aktuellen Filtern",
+    "empty": "keine Rolle ist auf ein Modell geroutet",
+    "column": {
+      "role": "Rolle",
+      "model": "Modell",
+      "endpoint": "Endpunkt",
+      "upstream": "Upstream",
+      "usedFor": "wofür"
+    },
+    "allRoles": "alle Rollen",
+    "allEndpoints": "alle Endpunkte",
+    "unknown": "unbekannt",
+    "count": "{{count}} angezeigt"
+  },
+  "sheet": {
+    "closeTooltip": "Schließen — Escape",
+    "closeAria": "Den Key schließen",
+    "routeNotKnown": "Route hier nicht bekannt",
+    "issued": "ausgestellt",
+    "lastUsed": "zuletzt genutzt",
+    "expires": "läuft ab",
+    "scope": "Scope",
+    "grants": "Grants",
+    "notRecorded": "auf dieser Leitung nicht aufgezeichnet",
+    "issuedToNobody": "an niemand bestimmten ausgestellt",
+    "mayReach": "darf erreichen",
+    "everyModel": "jedes Modell auf dem Endpunkt",
+    "everyModelTitle": "leere Allow-List — jedes Modell erlaubt",
+    "alreadyStopped": "dieser Key ist bereits gestoppt — nichts zu widerrufen",
+    "irreversible": "Unumkehrbar — fragt zuerst",
+    "revoke": "Diesen Key widerrufen",
+    "spend": "Spend",
+    "notMetered": "auf dieser Leitung nicht gemessen",
+    "noSpend": "kein Spend aufgezeichnet",
+    "reading": "{{total}} über die letzten {{days}} Tage · {{average}} pro Tag · schwerster {{day}} bei {{peak}}",
+    "silentDays": " · kein Spend in den letzten {{count}} Tagen aufgezeichnet",
+    "chartLabel": "Spend pro Tag, Dollar. {{reading}}."
+  },
+  "meter": {
+    "noCap": "keine Obergrenze",
+    "noCapTitle": "dieser Key trägt keine Obergrenze — er gibt aus, bis er widerrufen oder abgelaufen ist",
+    "capOnly": "Obergrenze {{cap}}",
+    "notMeteredHere": "Spend hier nicht gemessen",
+    "notMeteredHereTitle": "die Obergrenze ist live, aber diese Oberfläche misst keinen Spend",
+    "unforcedTitle": "der Proxy ist aus — diese Obergrenze ist aufgezeichnet, aber nicht angewandt",
+    "over": "darüber",
+    "left": "{{left}} übrig"
+  },
+  "word": {
+    "never": "nie",
+    "expired": "abgelaufen {{reading}}",
+    "platform": "Plattform",
+    "notOnThisWire": "nicht auf dieser Leitung",
+    "neverUsed": "nie genutzt"
+  },
+  "wire": {
+    "openai": "openai-kompatibel",
+    "anthropic": "anthropic-kompatibel"
+  },
+  "state": {
+    "live": "live",
+    "expired": "abgelaufen",
+    "revoked": "widerrufen",
+    "ok": "ok",
+    "degraded": "degradiert",
+    "disabled": "deaktiviert"
+  }
+}

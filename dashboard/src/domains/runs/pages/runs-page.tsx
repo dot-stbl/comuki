@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react"
 import { ChevronsDownUp, ChevronsUpDown, RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 import type { PanelImperativeHandle, PanelSize } from "react-resizable-panels"
 
 import { AppShell } from "@/app/layout/app-shell"
@@ -104,6 +105,8 @@ export interface RunsPageProps {
 }
 
 export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
+  const { t } = useTranslation("runs")
+  const { t: tShell } = useTranslation("shell")
   const { data = [], isLoading, isError, error, refetch } = useRunsQuery()
 
   const board = useRef<PanelImperativeHandle | null>(null)
@@ -196,6 +199,7 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
         onCancel,
         onShowAnomaly,
         session,
+        t,
       }),
     [
       apps,
@@ -207,6 +211,7 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
       onCancel,
       onShowAnomaly,
       session,
+      t,
     ]
   )
 
@@ -302,25 +307,41 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
   const ready = !isLoading && !isError && data.length > 0
 
   const emptyLabel = profileFilter
-    ? "No runs on this profile."
+    ? t("registry.empty.profile")
     : hasActiveFilters(filters)
-      ? "No runs match the current filters."
-      : "No runs yet."
+      ? t("registry.empty.filtered")
+      : t("registry.empty.none")
 
   return (
     <AppShell
       padded={false}
       header={
         <PageHeader
-          breadcrumbs={[{ label: "live runs" }]}
-          title="Live runs"
+          breadcrumbs={[{ label: tShell("crumb.liveRuns") }]}
+          title={t("registry.title")}
           summary={
-            <>
-              <span className={styles.strong}>{flow.total}</span> runs ·{" "}
-              <span className={styles.strong}>{flow.runningTotal}</span> running
-              · <span className={styles.warn}>{flow.blockedTotal}</span> waiting
-              on a human
-            </>
+            /* The figures are values in their own voice and the words are
+               prose in theirs, so the emphasis rides slot elements and the
+               sentence — word order included — belongs to the locale. The
+               counts stringify: a Trans slot holding a falsy child (a bare
+               `0`) renders empty, and zero is a reading, not a blank. */
+            <Trans
+              ns="runs"
+              i18nKey="registry.summary"
+              components={{
+                total: (
+                  <span className={styles.strong}>{String(flow.total)}</span>
+                ),
+                running: (
+                  <span className={styles.strong}>
+                    {String(flow.runningTotal)}
+                  </span>
+                ),
+                blocked: (
+                  <span className={styles.warn}>{String(flow.blockedTotal)}</span>
+                ),
+              }}
+            />
           }
           actions={
             ready ? (
@@ -331,7 +352,11 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                     so the name a person was told to look for is the name the
                     control still answers to. */}
                 <Tooltip
-                  content={boardCollapsed ? "Expand flow" : "Collapse flow"}
+                  content={
+                    boardCollapsed
+                      ? t("registry.expandFlow")
+                      : t("registry.collapseFlow")
+                  }
                 >
                   <Button
                     variant="ghost"
@@ -340,7 +365,9 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                     aria-controls="board"
                     aria-expanded={!boardCollapsed}
                     aria-label={
-                      boardCollapsed ? "Expand flow" : "Collapse flow"
+                      boardCollapsed
+                        ? t("registry.expandFlow")
+                        : t("registry.collapseFlow")
                     }
                     onClick={toggleBoard}
                   >
@@ -373,13 +400,13 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                   <span className={tableStyles.toolbarTrailing}>
                     <SwitchField
                       id="runs-anomalies-only"
-                      label="Show only anomalies"
+                      label={t("registry.anomaliesOnly")}
                       checked={anomaliesOnly}
                       onCheckedChange={setAnomaliesOnly}
                       data-test="anomalies-only-toggle"
                     />
                     <span className={tableStyles.count} data-test="runs-count">
-                      {rows.length} shown
+                      {t("registry.count", { count: rows.length })}
                     </span>
                   </span>
                 }
@@ -405,16 +432,16 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
         {isError ? (
           <ScreenState
             kind="error"
-            title="Couldn't load runs"
-            description={requestFailureMessage(error, "Unknown error")}
+            title={t("registry.errorTitle")}
+            description={requestFailureMessage(error, t("errors.unknown"))}
             inset="gutter"
             data-test="runs-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="runs-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -429,7 +456,7 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
         {!isLoading && !isError && data.length === 0 ? (
           <ScreenState
             kind="empty"
-            title="No runs yet."
+            title={t("registry.empty.none")}
             inset="gutter"
             data-test="runs-empty"
           />
@@ -459,8 +486,8 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                 // board, which reads as a screen that failed to load.
                 <ScreenState
                   kind="empty"
-                  title="No plans yet"
-                  description="These runs are accepted but the brain has not planned them. The flow appears once the first plan has work items."
+                  title={t("registry.unplannedTitle")}
+                  description={t("registry.unplannedDescription")}
                   inset="gutter"
                   data-test="runs-unplanned"
                 />
@@ -477,7 +504,7 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
 
             <SplitSeparator
               orientation="vertical"
-              aria-label="Resize the flow board"
+              aria-label={t("registry.resizeBoard")}
             />
 
             <SplitPanel id="table" className={styles.tablePanel} minSize="25%">
@@ -485,8 +512,8 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                 <p className={styles.failure} role="alert">
                   {failure instanceof Error
                     ? failure.message
-                    : "The decision failed."}{" "}
-                  Nothing changed — the run is back as it was.
+                    : t("notice.fallback")}{" "}
+                  {t("notice.tail")}
                 </p>
               ) : null}
 
@@ -513,17 +540,24 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
       <ConfirmDialog
         open={cancelling !== null}
         danger
-        title="Cancel this run?"
+        title={t("cancelDialog.title")}
         body={
           cancelling
             ? // The project is named here for the same reason the row names it:
               // this list mixes them, and tearing down a container is the last
-              // moment to notice it is the wrong project's.
-              `${cancelling.title} · ${projectOf(session, cancelling.projectId)?.key ?? cancelling.app} — the container is torn down and the lease released. Work already merged stays.`
+              // moment to notice it is the wrong project's. Per-domain rather
+              // than shared with the home stop dialog, which names no project
+              // because its list says whose run it is one row up.
+              t("cancelDialog.body", {
+                title: cancelling.title,
+                where:
+                  projectOf(session, cancelling.projectId)?.key ??
+                  cancelling.app,
+              })
             : ""
         }
-        confirmLabel="Cancel run"
-        cancelLabel="Keep running"
+        confirmLabel={t("cancelDialog.confirm")}
+        cancelLabel={t("cancelDialog.cancel")}
         onConfirm={() => {
           if (cancelling && can(session, "runs.stop", cancelling.projectId)) {
             cancel.mutate(cancelling.id)

@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react"
 import { RotateCw } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 import { useSetVerifyEnabled } from "@/domains/verify/api/mutations"
 import { useVerifyQuery } from "@/domains/verify/api/queries"
@@ -40,6 +41,7 @@ const SKELETON_WIDTHS = ["64%", "40%", "78%", "52%"]
  * explains itself.
  */
 export function GateTab() {
+  const { t } = useTranslation("knowledge")
   const { data, isLoading, isError, error, refetch } = useVerifyQuery()
   const session = useSession()
   const setEnabled = useSetVerifyEnabled()
@@ -65,16 +67,16 @@ export function GateTab() {
           // twice.
           onSuccess: () => {
             const name = projectOf(session, projectId)?.name ?? projectId
-            toast.success(enabled ? "Gate on" : "Gate off", {
+            toast.success(enabled ? t("gate.onToast") : t("gate.offToast"), {
               description: enabled
-                ? `${name} — runs must clear the client's checks`
-                : `${name} — runs land without the client's checks`,
+                ? t("gate.onToastDescription", { name })
+                : t("gate.offToastDescription", { name }),
             })
           },
         }
       )
     },
-    [session, setEnabledMutate]
+    [session, setEnabledMutate, t]
   )
 
   const ready = !isLoading && !isError
@@ -88,14 +90,14 @@ export function GateTab() {
       {isError ? (
         <ScreenState
           kind="error"
-          title="Couldn't load the gate"
-          description={requestFailureMessage(error, "Unknown error")}
+          title={t("gate.errorTitle")}
+          description={requestFailureMessage(error, t("errors.unknown"))}
           action={
-            <Tooltip content="Retry">
+            <Tooltip content={t("actions.retry")}>
               <Button
                 size="icon-sm"
                 data-test="verify-retry"
-                aria-label="Retry"
+                aria-label={t("actions.retry")}
                 onClick={() => {
                   void refetch()
                 }}
@@ -109,20 +111,14 @@ export function GateTab() {
 
       {setEnabled.error ? (
         <p className={styles.failure} role="alert" data-test="verify-failure">
-          {requestFailureMessage(setEnabled.error, "The change failed.")}{" "}
-          Nothing moved — the gate is back as it was.
+          {requestFailureMessage(setEnabled.error, t("gate.changeFailed"))}{" "}
+          {t("gate.nothingMoved")}
         </p>
       ) : null}
 
       {ready ? (
         <>
-          <p className={styles.intro}>
-            A run has to clear the client&apos;s own checks before it can land.
-            The checks live in their repository — one file, committed like
-            anything else — so this section turns the gate on and off and shows
-            what each check last said. Editing a command means editing the file;
-            every section below says exactly where its file is.
-          </p>
+          <p className={styles.intro}>{t("gate.intro")}</p>
 
           {/* The read answered and it held nothing this session can see — a
               member with no verify-scoped project lands here. The paragraph
@@ -131,8 +127,8 @@ export function GateTab() {
           {projects.length === 0 ? (
             <ScreenState
               kind="empty"
-              title="No project has a gate here"
-              description="Nothing in this session's projects declares the client's own checks. A gate appears as soon as one of them commits the file that holds them."
+              title={t("gate.emptyTitle")}
+              description={t("gate.emptyDescription")}
               data-test="verify-empty"
             />
           ) : null}

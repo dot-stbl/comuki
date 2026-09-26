@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import { RUNS_POLL_INTERVAL_MS } from "@/shared/api/polling"
 import { StatusBadge, Tooltip } from "@/shared/ui"
@@ -67,6 +68,7 @@ export interface LiveBadgeProps {
 }
 
 export function LiveBadge({ useMock, status }: LiveBadgeProps) {
+  const { t } = useTranslation("shell")
   // Only real mode can be "late" — mock mode has no socket to lose, and its
   // own pill already outranks this one.
   const lagging = useSettledPolling(!useMock && status === "polling")
@@ -74,10 +76,10 @@ export function LiveBadge({ useMock, status }: LiveBadgeProps) {
   // Env mock OR a degraded hub: the data is synthetic either way.
   if (useMock || status === "demo") {
     return (
-      <Tooltip content={explanation(useMock, status)}>
+      <Tooltip content={explanation(t, useMock, status)}>
         <span data-test="demo-badge">
           <StatusBadge status="waiting" size="sm">
-            Demo
+            {t("live.demo")}
           </StatusBadge>
         </span>
       </Tooltip>
@@ -86,10 +88,10 @@ export function LiveBadge({ useMock, status }: LiveBadgeProps) {
 
   if (lagging) {
     return (
-      <Tooltip content={pollingExplanation()}>
+      <Tooltip content={pollingExplanation(t)}>
         <span data-test="polling-badge">
           <StatusBadge status="queued" size="sm">
-            Polling
+            {t("live.polling")}
           </StatusBadge>
         </span>
       </Tooltip>
@@ -132,24 +134,30 @@ function useSettledPolling(watching: boolean): boolean {
   return watching && settled
 }
 
-function explanation(useMock: boolean, status: RunsHubStatus): string {
+type Translate = (key: string, options?: Record<string, unknown>) => string
+
+function explanation(
+  t: Translate,
+  useMock: boolean,
+  status: RunsHubStatus
+): string {
   // Mock + hub degraded is the operator's worst day — name both so the
   // tooltip does not send them chasing the wrong fix.
   if (useMock && status === "demo") {
-    return "Working with synthetic data, backend unreachable"
+    return t("live.mockAndDown")
   }
   // Mock + a "live" hub is unusual (mock mode never opens a socket, but
   // tests pin it): the actionable sentence is the same as mock alone.
   if (useMock) {
-    return "Working with synthetic data — bun run dev:real to switch"
+    return t("live.mockOnly")
   }
   // Real + hub degraded: the backend is the only thing missing.
-  return "Backend unreachable — showing last known state"
+  return t("live.down")
 }
 
-function pollingExplanation(): string {
+function pollingExplanation(t: Translate): string {
   // The cadence is read off the same constant the grace window uses, so the
   // sentence can never promise a freshness the polling layer is not keeping.
   const seconds = Math.round(RUNS_POLL_INTERVAL_MS / 1000)
-  return `Live updates are down — this screen refreshes every ${seconds}s instead`
+  return t("live.pollingDown", { seconds })
 }

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
 import { LogOut, PowerOff, RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -79,6 +80,8 @@ export interface WorkerDetailPageProps {
  * second way of drawing a duration inside one screen's walk.
  */
 export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
+  const { t } = useTranslation("queue")
+  const { t: tShell } = useTranslation("shell")
   /* The items half stays on the board query — current work and the requeued
      orphan both read it. The worker itself has its own endpoint in real mode
      (`GET /api/v1/workers/{id}`), which resolves `null` for a 404 so the
@@ -188,8 +191,8 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
       header={
         <PageHeader
           breadcrumbs={[
-            { label: "observe", to: "/runs" },
-            { label: "queue", to: "/queue" },
+            { label: tShell("crumb.observe"), to: "/runs" },
+            { label: tShell("crumb.queue"), to: "/queue" },
             { label: workerId },
           ]}
           // The id is a value, so it keeps the data voice even at title size:
@@ -230,7 +233,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     hand finishes — and force stop is neither. So they are two
                     icon buttons rather than a menu or a severity slider, and
                     only the one that loses something asks first. */}
-                <Tooltip content={denial ?? "Drain"}>
+                <Tooltip content={denial ?? t("workerColumn.drain")}>
                   <Button
                     variant="outline"
                     size="icon-sm"
@@ -244,13 +247,15 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     loading={draining}
                     disabled={busy || worker.state === "draining"}
                     denied={denial}
-                    aria-label={`Drain ${worker.id}`}
+                    aria-label={t("workerColumn.drainWorker", {
+                      id: worker.id,
+                    })}
                     onClick={onDrain}
                   >
                     <LogOut aria-hidden="true" />
                   </Button>
                 </Tooltip>
-                <Tooltip content={denial ?? "Force stop"}>
+                <Tooltip content={denial ?? t("workerColumn.forceStop")}>
                   <Button
                     variant="destructive"
                     size="icon-sm"
@@ -258,7 +263,9 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     loading={stopping}
                     disabled={busy}
                     denied={denial}
-                    aria-label={`Force stop ${worker.id}`}
+                    aria-label={t("workerColumn.forceStopWorker", {
+                      id: worker.id,
+                    })}
                     onClick={() => setConfirming(true)}
                   >
                     <PowerOff aria-hidden="true" />
@@ -275,7 +282,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
           <Skeleton
             lines={SKELETON_WIDTHS}
             inset="none"
-            label="Loading the worker"
+            label={t("worker.loading")}
             data-test="worker-loading"
           />
         ) : null}
@@ -286,20 +293,20 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
         {isError ? (
           <ScreenState
             kind="error"
-            title="Couldn't load the pool"
+            title={t("worker.errorTitle")}
             description={
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : t("errors.unknown")
             }
             /* `none`: every region on this page already pays for its own room,
                so the state stands on the same edge they do. */
             inset="none"
             data-test="worker-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="worker-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -319,8 +326,8 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
           >
             {failure instanceof Error
               ? failure.message
-              : "The pool did not take that."}{" "}
-            Nothing changed — the worker is as it was.
+              : t("worker.fallback")}{" "}
+            {t("worker.tail")}
           </p>
         ) : null}
 
@@ -331,13 +338,13 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                 takes to read it, which is the whole reason the page exists in
                 the shape it does. The state itself is up in the header beside
                 the acts that change it — said once, where the verbs are. */}
-            <Section title="live" id="worker-live" data-test="worker-live">
+            <Section title={t("worker.live")} id="worker-live" data-test="worker-live">
               <div className={styles.readings}>
                 <Reading
-                  label="lease left"
+                  label={t("worker.leaseLeft")}
                   note={
                     worker.leaseSec === null
-                      ? "nothing claimed, so there is no lease to defend"
+                      ? t("worker.leaseNone")
                       : undefined
                   }
                 >
@@ -345,15 +352,20 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                 </Reading>
 
                 <Reading
-                  label="since heartbeat"
-                  note={`stale past ${formatDuration(HEARTBEAT_STALE_SEC)}`}
+                  label={t("worker.sinceHeartbeat")}
+                  note={t("worker.heartbeatStale", {
+                    limit: formatDuration(HEARTBEAT_STALE_SEC),
+                  })}
                 >
                   {worker.heartbeatAgeSec === null
                     ? "—"
                     : formatDuration(worker.heartbeatAgeSec)}
                 </Reading>
 
-                <Reading label="up" note="since the container came up">
+                <Reading
+                  label={t("worker.up")}
+                  note={t("worker.upNote")}
+                >
                   {worker.upSec === null
                     ? // The derived registry has no container start to read;
                       // a dash is the honest figure and the note says what is
@@ -369,21 +381,23 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                   the model's, so the pool's tooltip and this cannot drift. */}
               {leaseHeat(worker) === "lost" ? (
                 <p className={styles.lost} data-test="worker-lost-heartbeat">
-                  {lostHeartbeatSentence(worker)}
+                  {lostHeartbeatSentence(worker, t)}
                 </p>
               ) : null}
             </Section>
 
             {/* --- container -------------------------------------------- */}
             <Section
-              title="container"
+              title={t("worker.container")}
               id="worker-container"
               data-test="worker-container"
             >
               <div className={styles.readings}>
-                <Reading label="compute">{worker.provider ?? "—"}</Reading>
+                <Reading label={t("worker.compute")}>
+                  {worker.provider ?? "—"}
+                </Reading>
 
-                <Reading label="handle" wrap>
+                <Reading label={t("worker.handle")} wrap>
                   {worker.handle ?? "—"}
                 </Reading>
 
@@ -395,7 +409,10 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     for a digest — the same address a pasted `sha256:…`
                     resolves to. An idle wire row carries no image, and a dash
                     without a link says so without inventing a destination. */}
-                <Reading label="image" note="every container on this image">
+                <Reading
+                  label={t("worker.image")}
+                  note={t("worker.imageNote")}
+                >
                   {worker.digest ? (
                     <Link
                       to="/queue"
@@ -410,11 +427,14 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                   )}
                 </Reading>
 
-                <Reading label="profile" note="the axis a claim matches on">
+                <Reading
+                  label={t("worker.profile")}
+                  note={t("worker.profileNote")}
+                >
                   {worker.profile ?? "—"}
                 </Reading>
 
-                <Reading label="project">
+                <Reading label={t("worker.project")}>
                   {worker.projectId ? (project?.key ?? worker.projectId) : "—"}
                 </Reading>
               </div>
@@ -424,7 +444,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
             {/* One item, named — never a table. The queue is a screen of its
                 own and this page links to it with a filter applied. */}
             <Section
-              title="current work"
+              title={t("worker.currentWork")}
               id="worker-work"
               data-test="worker-work"
             >
@@ -458,9 +478,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                    answer is the ids and the ways to look them up, not a blank
                    region that reads as a rendering fault. */
                 <div className={styles.work}>
-                  <p className={styles.workNote}>
-                    Holding an item the queue has not sent with this payload.
-                  </p>
+                  <p className={styles.workNote}>{t("worker.workNote")}</p>
                   <div className={styles.workFacts}>
                     {worker.runId ? (
                       <Link
@@ -486,11 +504,8 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                 /* Idle is the pool doing its job, not a gap — and it is said
                    in the same word the pool's own column says it in. */
                 <div className={styles.work}>
-                  <span className={styles.idle}>idle</span>
-                  <p className={styles.readingNote}>
-                    Holding nothing, and free to claim the next item that
-                    matches its profile.
-                  </p>
+                  <span className={styles.idle}>{t("worker.idle")}</span>
+                  <p className={styles.readingNote}>{t("worker.idleNote")}</p>
                 </div>
               )}
             </Section>
@@ -512,10 +527,10 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
       <ConfirmDialog
         open={confirming}
         danger
-        title="Force stop this worker?"
+        title={t("worker.stopTitle")}
         body={stopBody(worker, item)}
-        confirmLabel="Force stop"
-        cancelLabel="Leave it running"
+        confirmLabel={t("worker.stopConfirm")}
+        cancelLabel={t("worker.stopCancel")}
         onConfirm={onConfirmStop}
         onCancel={() => setConfirming(false)}
       />
@@ -606,22 +621,22 @@ function TornDown({
   worker: Worker
   item: QueueItem | null
 }) {
+  const { t } = useTranslation("queue")
   return (
     <ScreenState
       /* Not `error`, and not drawn as one: a container going is the pool doing
-         what it is configured to do. `notFound` is the kind that reads as an
-         ordinary arrival rather than an alarm. */
+          what it is configured to do. `notFound` is the kind that reads as an
+          ordinary arrival rather than an alarm. */
       kind="notFound"
-      title="This container is gone"
+      title={t("worker.tornDownTitle")}
       description={
-        <>
-          <span className={styles.figure}>{worker.id}</span> was torn down while
-          this page was open. A stopped container is not kept — there is no
-          record of it to go back to, and there is not meant to be. Workers are
-          raised for the work in front of them and removed when it is done or
-          when somebody stops them; this is the pool behaving the way it is
-          configured to, not a failure.
-        </>
+        /* The id is a value in its own voice, so it rides a slot element and
+           the sentence — word order included — belongs to the locale. */
+        <Trans
+          ns="queue"
+          i18nKey="worker.tornDownDescription"
+          components={{ id: <span className={styles.figure}>{worker.id}</span> }}
+        />
       }
       inset="none"
       data-test="worker-torn-down"
@@ -629,9 +644,15 @@ function TornDown({
       {item ? (
         <>
           <StateText>
-            It was holding <span className={styles.figure}>{item.label}</span>.
-            That work did not go with it: the lease was released and the item
-            went back to the queue for another worker to claim.
+            <Trans
+              ns="queue"
+              i18nKey="worker.tornDownHolding"
+              components={{
+                label: (
+                  <span className={styles.figure}>{item.label}</span>
+                ),
+              }}
+            />
           </StateText>
           <div className={styles.exits}>
             <Link
@@ -653,10 +674,7 @@ function TornDown({
           </div>
         </>
       ) : (
-        <StateText>
-          It was idle when it went, so it was holding nothing and nothing
-          returned to the queue.
-        </StateText>
+        <StateText>{t("worker.tornDownIdle")}</StateText>
       )}
 
       <div className={styles.exits}>
@@ -665,7 +683,7 @@ function TornDown({
           className={styles.link}
           data-test="worker-torn-down-pool"
         >
-          queue &amp; workers
+          {t("worker.poolLink")}
         </Link>
       </div>
     </ScreenState>
@@ -689,22 +707,20 @@ function TornDown({
  * is the ordinary end of an ephemeral thing.
  */
 function NotFound({ workerId }: { workerId: string }) {
+  const { t } = useTranslation("queue")
   return (
     <ScreenState
       kind="notFound"
       title={
-        <>
-          No worker called <span className={styles.figure}>{workerId}</span>
-        </>
+        /* The id is a value in its own voice, so it rides a slot element and
+           the sentence — word order included — belongs to the locale. */
+        <Trans
+          ns="queue"
+          i18nKey="worker.notFoundTitle"
+          components={{ id: <span className={styles.figure}>{workerId}</span> }}
+        />
       }
-      description={
-        <>
-          Nothing in the pool answers to that id. Workers are ephemeral — one is
-          raised for a piece of work and removed after it — so an id out of
-          yesterday&apos;s log, an old bookmark or a link that lost its tail all
-          land here, and none of them mean anything is wrong.
-        </>
-      }
+      description={t("worker.notFoundDescription")}
       inset="none"
       data-test="worker-not-found"
     >
@@ -715,14 +731,14 @@ function NotFound({ workerId }: { workerId: string }) {
           className={styles.link}
           data-test="worker-not-found-pool"
         >
-          look for {workerId} in the pool
+          {t("worker.notFoundLook", { id: workerId })}
         </Link>
         <Link
           to="/queue"
           className={styles.link}
           data-test="worker-not-found-queue"
         >
-          queue &amp; workers
+          {t("worker.poolLink")}
         </Link>
       </div>
     </ScreenState>
@@ -737,26 +753,37 @@ function NotFound({ workerId }: { workerId: string }) {
  * all — and the identifiers in it are values, which is why the dialog takes a
  * node rather than a string.
  */
-function stopBody(worker: Worker | null, item: QueueItem | null): ReactNode {
+function stopBody(
+  worker: Worker | null,
+  item: QueueItem | null
+): ReactNode {
+  const figure = (value: string) => (
+    <span className={styles.figure}>{value}</span>
+  )
   if (!worker) {
     return ""
   }
   if (!item) {
     return (
-      <>
-        <span className={styles.figure}>{worker.id}</span> is idle. The
-        container is torn down now, and scale raises another when there is work
-        for it.
-      </>
+      /* The identifiers are values in their own voice and the words are prose
+         in theirs, so the emphasis rides slot elements and the sentence —
+         word order included — belongs to the locale. */
+      <Trans
+        ns="queue"
+        i18nKey="worker.stopIdle"
+        components={{ id: figure(worker.id) }}
+      />
     )
   }
   return (
-    <>
-      <span className={styles.figure}>{worker.id}</span> is holding{" "}
-      <span className={styles.figure}>{item.label}</span> on run{" "}
-      <span className={styles.figure}>{item.runId}</span>. The container is torn
-      down now, the lease is released, and the item goes back to the queue for
-      another worker to claim.
-    </>
+    <Trans
+      ns="queue"
+      i18nKey="worker.stopBusy"
+      components={{
+        id: figure(worker.id),
+        label: figure(item.label),
+        run: figure(item.runId),
+      }}
+    />
   )
 }

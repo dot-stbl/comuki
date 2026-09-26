@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/shared/lib/utils"
 import { useSession } from "@/shared/session"
@@ -42,6 +43,7 @@ export function AppShellTwoPaneOuter({
   activeId,
   onSelect,
 }: AppShellTwoPaneOuterProps) {
+  const { t } = useTranslation("shell")
   const session = useSession()
   const visible = visibleNavSections(sections, session)
 
@@ -50,13 +52,14 @@ export function AppShellTwoPaneOuter({
       {visible.map((section) => {
         const Icon = section.icon
         const isActive = activeId === section.id
+        const label = section.labelKey ? t(section.labelKey) : section.label
         return (
-          <Tooltip key={section.id} content={section.label} placement="end">
+          <Tooltip key={section.id} content={label} placement="end">
             <button
               type="button"
               className={styles.sectionButton}
               data-active={isActive || undefined}
-              aria-label={section.label}
+              aria-label={label}
               aria-current={isActive ? "true" : undefined}
               data-test="two-pane-section"
               onClick={() => onSelect(section)}
@@ -89,6 +92,8 @@ export function AppShellTwoPaneInner({
   counts,
   collapsed,
 }: AppShellTwoPaneInnerProps) {
+  const { t } = useTranslation("shell")
+
   if (collapsed || !section) {
     return null
   }
@@ -98,13 +103,17 @@ export function AppShellTwoPaneInner({
       {/* No section heading here — the outer icon + its tooltip already name
           the section. Repeating it as a label above the pages was noise. */}
       <div className={styles.scroll}>
-        <ul className={styles.itemList} aria-label={section.label}>
+        <ul
+          className={styles.itemList}
+          aria-label={section.labelKey ? t(section.labelKey) : section.label}
+        >
           {section.items.map((item) => (
             <Item
               key={item.href}
               item={item}
               counts={counts}
               testId="two-pane-item"
+              t={t}
             />
           ))}
         </ul>
@@ -117,14 +126,16 @@ interface ItemProps {
   item: NavItem
   counts: NavCounts
   testId: string
+  t: (key: string) => string
 }
 
 /** A single row in the inner rail — its own component because the active
  *  styles are load-bearing and inlining them in the map grew the parent
  *  past the point where the row could be read on its own. */
-function Item({ item, counts, testId }: ItemProps) {
+function Item({ item, counts, testId, t }: ItemProps) {
   const count = item.badge ? counts[item.badge] : null
   const Icon = item.icon
+  const label = item.labelKey ? t(item.labelKey) : item.label
 
   return (
     <li>
@@ -136,7 +147,7 @@ function Item({ item, counts, testId }: ItemProps) {
         data-test={testId}
       >
         {Icon ? <Icon aria-hidden="true" className={styles.itemIcon} /> : null}
-        <span className={styles.itemLabel}>{item.label}</span>
+        <span className={styles.itemLabel}>{label}</span>
         {count ? (
           <span
             className={cn(

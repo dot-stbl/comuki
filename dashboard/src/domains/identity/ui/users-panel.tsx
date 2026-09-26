@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type { UserRow } from "@/domains/identity/model/types"
 import { useUserDisabledAct } from "@/domains/identity/ui/use-user-disabled"
@@ -46,6 +47,7 @@ export interface UsersPanelProps {
  * had to travel to would lose their place in a list they are working down.
  */
 export function UsersPanel({ users, initialFilter }: UsersPanelProps) {
+  const { t } = useTranslation("identity")
   const session = useSession()
   const navigate = useNavigate()
   const manage = useCan("identity.manage")
@@ -88,12 +90,13 @@ export function UsersPanel({ users, initialFilter }: UsersPanelProps) {
         busyId,
         onLink,
         onToggleDisabled: disable.toggle,
+        t,
       }),
     // `disable.toggle` and `onLink` close over a mutation and a navigate that
     // are stable across renders, so listing them would rebuild every column on
     // every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [session, busyId]
+    [session, busyId, t]
   )
 
   const rows = useMemo(
@@ -119,23 +122,23 @@ export function UsersPanel({ users, initialFilter }: UsersPanelProps) {
             // the words. The `aria-label` keeps them either way — a tooltip
             // describes, it never becomes the name.
             manage.allowed ? (
-              <Tooltip content="New user">
+              <Tooltip content={t("usersPanel.newUser")}>
                 <Link
                   to="/identity/users/new"
                   data-test="user-new"
-                  aria-label="New user"
+                  aria-label={t("usersPanel.newUser")}
                   className={buttonClass({ size: "icon-sm" })}
                 >
                   <Plus aria-hidden="true" />
                 </Link>
               </Tooltip>
             ) : (
-              <Tooltip content={manage.denial ?? "New user"}>
+              <Tooltip content={manage.denial ?? t("usersPanel.newUser")}>
                 <Button
                   size="icon-sm"
                   data-test="user-new"
                   denied={manage.denial}
-                  aria-label="New user"
+                  aria-label={t("usersPanel.newUser")}
                 >
                   <Plus aria-hidden="true" />
                 </Button>
@@ -144,7 +147,7 @@ export function UsersPanel({ users, initialFilter }: UsersPanelProps) {
           }
           trailing={
             <span className={tableStyles.count} data-test="users-count">
-              {rows.length} shown
+              {t("usersPanel.shown", { count: rows.length })}
             </span>
           }
         />
@@ -156,8 +159,7 @@ export function UsersPanel({ users, initialFilter }: UsersPanelProps) {
       {disable.failure ? (
         <div className={styles.failure}>
           <Notice tone="bad" data-test="user-disable-failure">
-            {disable.failure} Nothing changed — the account below is still as it
-            was.
+            {disable.failure} {t("usersPanel.disableTail")}
           </Notice>
         </div>
       ) : null}
@@ -176,8 +178,8 @@ export function UsersPanel({ users, initialFilter }: UsersPanelProps) {
           onColumnSizingChange={setColumnSizing}
           emptyLabel={
             hasActiveFilters(filters)
-              ? "no accounts match the current filters"
-              : "nobody exists on this platform yet"
+              ? t("usersPanel.emptyFiltered")
+              : t("usersPanel.emptyNone")
           }
         />
       </div>

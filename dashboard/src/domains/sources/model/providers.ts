@@ -1,3 +1,4 @@
+import { i18n } from "@/shared/i18n"
 import type {
   AdmissionMode,
   NativeTicket,
@@ -6,6 +7,26 @@ import type {
   SourceConnection,
 } from "@/domains/sources/model/types"
 import type { BrandId } from "@/shared/ui"
+
+/**
+ * A `sources`-namespace translator, the shape the word-bearing helpers below
+ * resolve their copy through (`dashboard-i18n` D7). The default is the shared
+ * i18n instance, so a caller with no translator of its own still answers in
+ * the active locale; the registry's own fields ride along as `defaultValue`
+ * so a provider whose catalogue entry is missing still says its EN word
+ * rather than a key path.
+ */
+export type SourcesTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+export function sharedSourcesT(
+  key: string,
+  options?: Record<string, unknown>
+): string {
+  return i18n.t(key, { ...options, ns: "sources" })
+}
 
 /**
  * **The provider registry.** One row per tracker this build has learned, and
@@ -260,9 +281,16 @@ export function isKnownProvider(key: ProviderKey): boolean {
 /**
  * The provider's name as a surface says it: the product's word for one it
  * knows, and the host's own word for one it does not. Never an empty cell.
+ *
+ * The word resolves through the `sources` catalogue with the registry's own
+ * `label` as the default — the enum→label map localises at this edge (D11);
+ * consumers keep calling the reader and never learn about either half.
  */
 export function providerLabel(key: ProviderKey): string {
-  return providerOf(key)?.label ?? key
+  const provider = providerOf(key)
+  return provider === null
+    ? key
+    : sharedSourcesT(`provider.${key}.label`, { defaultValue: provider.label })
 }
 
 /**
@@ -318,7 +346,12 @@ export function needsBaseUrl(key: ProviderKey): boolean {
 
 /** What the thing a connection points at is called. */
 export function targetLabel(key: ProviderKey): string {
-  return providerOf(key)?.target ?? "name"
+  const provider = providerOf(key)
+  return provider === null
+    ? "name"
+    : sharedSourcesT(`provider.${key}.target`, {
+        defaultValue: provider.target,
+      })
 }
 
 /** A shape for the target box, in the provider's own spelling. */
@@ -344,10 +377,12 @@ export function filterFields(key: ProviderKey): readonly string[] {
  * ones do, minus the noun nobody can supply.
  */
 export function intakeNote(key: ProviderKey): string {
-  return (
-    providerOf(key)?.intakeNote ??
-    "tickets land from a watched connection. one written here is stamped as that provider's."
-  )
+  const provider = providerOf(key)
+  return provider === null
+    ? sharedSourcesT("intakeNoteUnknown")
+    : sharedSourcesT(`provider.${key}.intakeNote`, {
+        defaultValue: provider.intakeNote,
+      })
 }
 
 /**
@@ -361,27 +396,34 @@ export function intakeNote(key: ProviderKey): string {
  * `sources.store.ts`, which is the half an operator never reads. Two copies of
  * a sentence is how a sentence drifts.
  */
-export const NATIVE_DISCONNECT_REFUSAL =
-  "native intake cannot be disconnected — it is the product's own way of accepting a ticket"
+export function nativeDisconnectRefusal(
+  t: SourcesTranslator = sharedSourcesT
+): string {
+  return t("nativeRefusal")
+}
 
-export const AUTH_LABEL: Record<SourceAuth, string> = {
-  pat: "personal access token",
-  oauth: "oauth grant",
-  "app-install": "app install",
-  none: "none",
+/** The credential's name, in the product's word for it. */
+export function authLabel(
+  auth: SourceAuth,
+  t: SourcesTranslator = sharedSourcesT
+): string {
+  return t(`auth.${auth}`)
 }
 
 /** What the secret box is called for this credential, in the provider's words. */
-export function secretLabel(auth: SourceAuth): string {
+export function secretLabel(
+  auth: SourceAuth,
+  t: SourcesTranslator = sharedSourcesT
+): string {
   switch (auth) {
     case "pat":
-      return "access token"
+      return t("authSecret.pat")
     case "oauth":
-      return "oauth client secret"
+      return t("authSecret.oauth")
     case "app-install":
-      return "app private key"
+      return t("authSecret.app-install")
     default:
-      return "secret"
+      return t("authSecret.other")
   }
 }
 
@@ -430,12 +472,15 @@ export const ADMISSION_LABEL: Record<AdmissionMode, string> = {
  * and says so; native has no remote end at all. The three are different facts
  * and the column shows three different words rather than one blank.
  */
-export function connectionHost(connection: SourceConnection): string {
+export function connectionHost(
+  connection: SourceConnection,
+  t: SourcesTranslator = sharedSourcesT
+): string {
   if (isNativeIntake(connection.kind)) {
-    return "in-platform"
+    return t("host.inPlatform")
   }
   if (!connection.baseUrl) {
-    return "cloud"
+    return t("host.cloud")
   }
   try {
     return new URL(connection.baseUrl).host
@@ -448,14 +493,19 @@ export function connectionHost(connection: SourceConnection): string {
  * How this connection describes its admission, for the table's one-line cell.
  * Native has no watch, and the honest word for that is not "off".
  */
-export function admissionLabel(connection: SourceConnection): string {
+export function admissionLabel(
+  connection: SourceConnection,
+  t: SourcesTranslator = sharedSourcesT
+): string {
   if (!connection.watch) {
-    return "native intake"
+    return t("admission.nativeIntake")
   }
   if (!connection.watch.enabled) {
-    return "watch off"
+    return t("admission.watchOff")
   }
-  return ADMISSION_LABEL[connection.watch.mode]
+  return t(`admission.${connection.watch.mode}.label`, {
+    defaultValue: ADMISSION_LABEL[connection.watch.mode],
+  })
 }
 
 /**
@@ -486,25 +536,27 @@ export function admittedCount(
  */
 export function connectionNote(
   connection: SourceConnection,
-  tickets: NativeTicket[]
+  tickets: NativeTicket[],
+  t: SourcesTranslator = sharedSourcesT
 ): string {
   if (connection.state === "error") {
-    return connection.reason ?? "the provider refused, and said nothing useful."
+    return connection.reason ?? t("note.refusedSilent")
   }
   if (isNativeIntake(connection.kind)) {
     const count = admittedCount(connection, tickets)
-    return count === 1 ? "1 ticket filed here" : `${count} tickets filed here`
+    return t("note.filedHere", { count })
   }
+  const when = connection.lastSyncAt ?? t("word.never")
   if (connection.state === "disabled") {
-    return `turned off — last synced ${connection.lastSyncAt ?? "never"}`
+    return t("note.turnedOff", { when })
   }
   if (connection.watch && !connection.watch.enabled) {
-    return "watch off — nothing is being admitted from here"
+    return t("note.watchOff")
   }
   if (connection.watch && connection.watch.matched === 0) {
-    return "the filter matched nothing in the last day"
+    return t("note.matchedNothing")
   }
-  return `last synced ${connection.lastSyncAt ?? "never"}`
+  return t("note.lastSynced", { when })
 }
 
 /**

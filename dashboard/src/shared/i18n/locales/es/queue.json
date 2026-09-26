@@ -1,0 +1,171 @@
+{
+  "actions": {
+    "retry": "Reintentar"
+  },
+  "errors": {
+    "unknown": "Error desconocido"
+  },
+  "workStatus": {
+    "queued": "en cola",
+    "running": "en ejecución",
+    "blocked": "bloqueado",
+    "failed": "fallido",
+    "cancelled": "cancelado",
+    "succeeded": "completado"
+  },
+  "workerState": {
+    "busy": "ocupado",
+    "idle": "libre",
+    "draining": "vacándose",
+    "offline": "sin conexión"
+  },
+  "registry": {
+    "title": "Cola y workers",
+    "summary": "<queued/> en cola · <stalled/> sin reclamar por más de cinco minutos · <total/> workers, <idle/> libres · <lost/> sin latido",
+    "errorTitle": "La cola no cargó",
+    "loading": "Cargando la cola",
+    "expandPool": "Expandir el pool",
+    "collapsePool": "Contraer el pool",
+    "resizePool": "Redimensionar el pool de workers"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "nada en cola en este perfil",
+      "filtered": "ningún elemento de trabajo coincide con los filtros actuales",
+      "none": "la cola está vacía"
+    },
+    "shown": {
+      "one": "{{count}} mostrado",
+      "other": "{{count}} mostrados"
+    },
+    "waitingTooLong": {
+      "one": "{{count}} espera demasiado · ",
+      "other": "{{count}} esperan demasiado · "
+    }
+  },
+  "queueColumn": {
+    "status": "estado",
+    "item": "elemento",
+    "run": "ejecución",
+    "project": "proyecto",
+    "profile": "perfil",
+    "step": "paso",
+    "claimedBy": "reclamado por",
+    "age": "edad",
+    "allStatuses": "todos los estados",
+    "allProjects": "todos los proyectos",
+    "allProfiles": "todos los perfiles",
+    "filterPlaceholder": "filtrar elemento, ejecución, paso…"
+  },
+  "ageMeter": {
+    "stalled": "en cola más de {{limit}} — ningún worker de este perfil lo ha reclamado"
+  },
+  "lease": {
+    "noHeartbeat": "sin lectura de latido — el lease vence y el elemento vuelve a la cola",
+    "lostHeartbeat": "sin latido durante {{quiet}} — el lease vence y el elemento vuelve a la cola"
+  },
+  "depth": {
+    "label": "Profundidad de cola por día",
+    "figure": "<today/> en cola ahora · la semana fue de <week/>",
+    "deepest": " · hoy es el día más profundo de la semana",
+    "chartLabel": "Profundidad de cola por día, elementos esperando reclamo. Hoy {{today}} en cola; la semana fue de {{weekMin}} a {{weekMax}}.",
+    "chartLabelDeepest": "Profundidad de cola por día, elementos esperando reclamo. Hoy {{today}} en cola — el día más profundo de una semana que fue de {{weekMin}} a {{weekMax}}."
+  },
+  "poolStrip": {
+    "expandEmpty": "Expandir el pool. No hay workers arriba.",
+    "expand": "Expandir el pool. {{total}} workers: {{busy}} ocupados, {{draining}} vacándose, {{idle}} libres."
+  },
+  "workerColumn": {
+    "state": "estado",
+    "worker": "worker",
+    "project": "proyecto",
+    "profile": "perfil",
+    "currentWork": "trabajo actual",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "imagen",
+    "lease": "lease",
+    "up": "arriba",
+    "actions": "acciones",
+    "idle": "libre",
+    "allStates": "todos los estados",
+    "allProjects": "todos los proyectos",
+    "allProfiles": "todos los perfiles",
+    "allProviders": "todos los proveedores",
+    "filterPlaceholder": "filtrar worker, handle, imagen…",
+    "drain": "Vaciar",
+    "forceStop": "Parada forzosa",
+    "drainWorker": "Vaciar {{id}}",
+    "forceStopWorker": "Parada forzosa de {{id}}"
+  },
+  "workersPanel": {
+    "count": "{{shown}} de {{total}} workers",
+    "fallback": "El pool no lo aceptó.",
+    "tail": "Nada cambió — el worker está como estaba.",
+    "stopTitle": "¿Parada forzosa de este worker?",
+    "stopIdle": "{{id}} está libre. El contenedor se derriba ahora, y scale levanta otro cuando haya trabajo para él.",
+    "stopBusy": "{{id}} está sosteniendo \"{{label}}\" en la ejecución {{runId}}. El contenedor se derriba ahora, el lease se libera, y el elemento vuelve a la cola para que otro worker lo reclame.",
+    "stopConfirm": "Parada forzosa",
+    "stopCancel": "Dejarlo corriendo"
+  },
+  "workerEmpty": {
+    "clearFilters": "Limpiar filtros",
+    "filteredTitle": "Ningún worker coincide con los filtros",
+    "filteredDescription": {
+      "one": "El pool está arriba — <pool/> worker{{where}} está corriendo, solo que no son estos.",
+      "other": "El pool está arriba — <pool/> workers{{where}} están corriendo, solo que no son estos."
+    },
+    "backlogTitle": "Aún no hay workers",
+    "backlogDescription": {
+      "one": "min idle = <zero/>{{where}}, así que el pool queda vacío hasta que haya trabajo. Ahora lo hay: <backlog/> elemento en cola y sin reclamar. Scale levantará un worker para tomarlo.",
+      "other": "min idle = <zero/>{{where}}, así que el pool queda vacío hasta que haya trabajo. Ahora lo hay: <backlog/> elementos en cola y sin reclamar. Scale levantará un worker para tomarlos."
+    },
+    "atRestTitle": "Sin workers — y sin quererlos",
+    "atRestDescription": "min idle = <zero/>{{where}} y no hay nada en cola. Un pool vacío es el estado de reposo configurado aquí, no una caída — un contenedor se crea por tarea y se derriba después.",
+    "underTargetTitle": "El pool está por debajo de su objetivo",
+    "underTargetDescription": {
+      "one": "min idle = <minIdle/>{{where}} y no hay workers arriba. Este no es un estado de reposo: compute no los está levantando, y <backlog/> elemento esperará hasta que lo haga.",
+      "other": "min idle = <minIdle/>{{where}} y no hay workers arriba. Este no es un estado de reposo: compute no los está levantando, y <backlog/> elementos esperarán hasta que lo haga."
+    },
+    "onProject": " en {{project}}"
+  },
+  "worker": {
+    "loading": "Cargando el worker",
+    "errorTitle": "El pool no cargó",
+    "fallback": "El pool no lo aceptó.",
+    "tail": "Nada cambió — el worker está como estaba.",
+    "live": "vivo",
+    "container": "contenedor",
+    "currentWork": "trabajo actual",
+    "leaseLeft": "lease restante",
+    "leaseNone": "nada reclamado, no hay lease que defender",
+    "sinceHeartbeat": "desde el latido",
+    "heartbeatStale": "obsoleto tras {{limit}}",
+    "up": "arriba",
+    "upNote": "desde que el contenedor subió",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "imagen",
+    "imageNote": "todos los contenedores en esta imagen",
+    "profile": "perfil",
+    "profileNote": "el eje sobre el que matchea un reclamo",
+    "project": "proyecto",
+    "workNote": "Sosteniendo un elemento que la cola no envió con esta respuesta.",
+    "idle": "libre",
+    "idleNote": "No sostiene nada y puede reclamar el siguiente elemento que coincida con su perfil.",
+    "tornDownTitle": "Este contenedor ya no está",
+    "tornDownDescription": "<id/> fue derribado mientras esta página estaba abierta. Un contenedor detenido no se conserva — no hay registro al que volver, ni debe haberlo. Los workers se levantan para el trabajo que tienen delante y se eliminan cuando termina o alguien los detiene; esto es el pool comportándose como está configurado, no una falla.",
+    "tornDownHolding": "Sostenía <label/>. Ese trabajo no se fue con él: el lease se liberó y el elemento volvió a la cola para que otro worker lo reclamara.",
+    "tornDownIdle": "Estaba libre cuando se fue — no sostenía nada y nada volvió a la cola.",
+    "tornDownItem": "{{id}}",
+    "poolLink": "cola y workers",
+    "notFoundTitle": "No hay ningún worker llamado <id/>",
+    "notFoundDescription": "Nada en el pool responde a ese id. Los workers son efímeros — uno se levanta para un trozo de trabajo y se elimina después —, así que un id del log de ayer, un marcador viejo o un enlace que perdió la cola terminan aquí, y ninguno de ellos significa que algo esté mal.",
+    "notFoundLook": "buscar {{id}} en el pool",
+    "stopTitle": "¿Parada forzosa de este worker?",
+    "stopIdle": "<id/> está libre. El contenedor se derriba ahora, y scale levanta otro cuando haya trabajo para él.",
+    "stopBusy": "<id/> está sosteniendo <label/> en la ejecución <run/>. El contenedor se derriba ahora, el lease se libera, y el elemento vuelve a la cola para que otro worker lo reclame.",
+    "stopConfirm": "Parada forzosa",
+    "stopCancel": "Dejarlo corriendo"
+  }
+}

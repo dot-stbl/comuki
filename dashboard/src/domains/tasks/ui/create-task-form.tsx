@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import type { FormEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import {
   FormActions,
@@ -50,6 +51,7 @@ export function CreateTaskForm({
   onCancel,
   onDirtyChange,
 }: CreateTaskFormProps) {
+  const { t } = useTranslation("tasks")
   const session = useSession()
 
   /**
@@ -125,8 +127,8 @@ export function CreateTaskForm({
           project, app and priority on one line — and `FormMeasure` keeps the
           one-line fields readable. */}
       <FormCard
-        label="source"
-        note="where the ticket came from. every card but native expects a connection watching that provider — writing a ticket here records where it came from, it does not file one there."
+        label={t("create.sourceLabel")}
+        note={t("create.sourceNote")}
       >
         <TaskSourceCards
           value={source}
@@ -137,22 +139,22 @@ export function CreateTaskForm({
       </FormCard>
 
       <FormCard
-        label="the ticket"
-        note="what to do, where it lands, how urgent it is."
+        label={t("create.ticketLabel")}
+        note={t("create.ticketNote")}
       >
         <FormMeasure>
           <TextField
             id="task-title"
-            label="title"
+            label={t("create.titleLabel")}
             /* Marked because the submit below is already gated on it —
-               `!title.trim()`. The word in the label and `aria-required` say
-               out loud what the disabled button was only implying; neither
-               changes when the form will go. */
+                `!title.trim()`. The word in the label and `aria-required` say
+                out loud what the disabled button was only implying; neither
+                changes when the form will go. */
             required
             autoFocus
             value={title}
             disabled={busy}
-            placeholder="what to do, in one line"
+            placeholder={t("create.titlePlaceholder")}
             data-test="task-title"
             onValueChange={setTitle}
           />
@@ -161,7 +163,7 @@ export function CreateTaskForm({
         <FormRow>
           <SelectField
             id="task-project"
-            label="project"
+            label={t("create.projectLabel")}
             value={projectId}
             disabled={busy || projects.length === 0}
             options={projects.map((entry) => ({
@@ -178,7 +180,7 @@ export function CreateTaskForm({
               is not there. */}
           <SelectField
             id="task-app"
-            label="app"
+            label={t("create.appLabel")}
             required
             value={app}
             disabled={busy || apps.length === 0}
@@ -197,19 +199,19 @@ export function CreateTaskForm({
       </FormCard>
 
       <FormCard
-        label="brief"
-        note="context, acceptance criteria, links — for the person who picks this up, not for the form."
+        label={t("create.briefLabel")}
+        note={t("create.briefNote")}
       >
         <FormMeasure>
           <TextareaField
             id="task-brief"
-            label="brief"
+            label={t("create.briefLabel")}
             // A brief is something a person wrote for another person to read, so it
             // takes the interface voice rather than the data one.
             voice="prose"
             value={brief}
             disabled={busy}
-            placeholder="context, acceptance criteria, links…"
+            placeholder={t("create.briefPlaceholder")}
             data-test="task-brief"
             onValueChange={setBrief}
           />
@@ -230,7 +232,7 @@ export function CreateTaskForm({
           loading={busy}
           disabled={!title.trim() || !app}
         >
-          Create &amp; queue
+          {t("create.submit")}
         </Button>
         <Button
           variant="secondary"
@@ -238,7 +240,7 @@ export function CreateTaskForm({
           disabled={busy}
           onClick={onCancel}
         >
-          Cancel
+          {t("create.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

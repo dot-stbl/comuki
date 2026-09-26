@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
 import { PlugZap } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import {
   FormActions,
@@ -90,6 +91,7 @@ export function ConnectSourceForm({
   onCancel,
   onDirtyChange,
 }: ConnectSourceFormProps) {
+  const { t } = useTranslation("sources")
   const session = useSession()
 
   const [kind, setKind] = useState<ProviderKey>(CONNECTABLE_PROVIDERS[0].key)
@@ -168,14 +170,14 @@ export function ConnectSourceForm({
      `denied`: an incomplete draft is nothing to ask the provider about,
      which is invalid rather than forbidden. */
   const probeControl = (
-    <Tooltip content="Test connection">
+    <Tooltip content={t("connectForm.testConnection")}>
       <Button
         variant="outline"
         size="icon-sm"
         data-test="connect-test"
         loading={probing}
         disabled={!complete || busy}
-        aria-label="Test connection"
+        aria-label={t("connectForm.testConnection")}
         onClick={() =>
           onTest({
             draft,
@@ -205,17 +207,17 @@ export function ConnectSourceForm({
           old 44rem stack never had, so the cards wrapped two-by-two and the
           picker read as a grid rather than a row. */}
       <FormCard
-        label="provider"
-        note="which tracker this connection watches, and whose dialect it speaks."
+        label={t("connectForm.providerCard")}
+        note={t("connectForm.providerCardNote")}
       >
         <ProviderCards
-          label="provider"
+          label={t("connectForm.providerCard")}
           labelHidden
           name="connect-kind"
           value={kind}
           disabled={busy}
           options={providerCardOptions(CONNECTABLE_PROVIDERS)}
-          hint="native intake is not here: every project already has one, and there is nothing to point a credential at."
+          hint={t("connectForm.providerHint")}
           data-test="connect-kind"
           cardDataTest="connect-provider-card"
           onValueChange={edit(setKind)}
@@ -223,13 +225,13 @@ export function ConnectSourceForm({
       </FormCard>
 
       <FormCard
-        label="the connection"
-        note="which project it feeds, where the instance is, and which credential reaches it."
+        label={t("connectForm.connectionCard")}
+        note={t("connectForm.connectionCardNote")}
       >
         <FormRow>
           <SelectField
             id="connect-project"
-            label="project"
+            label={t("connectForm.projectLabel")}
             value={projectId}
             disabled={busy}
             options={session.projects.map((project) => ({
@@ -237,7 +239,7 @@ export function ConnectSourceForm({
               label: project.name,
               secondary: project.key,
             }))}
-            hint="the project this source feeds. Editing sources is granted per project, so this choice is what the save answers to."
+            hint={t("connectForm.projectHint")}
             data-test="connect-project"
             onValueChange={edit(setProjectId)}
           />
@@ -269,8 +271,7 @@ export function ConnectSourceForm({
         />
 
         <Notice data-test="settings-preview">
-          The host stores this as a single settings json:{" "}
-          <code>{settingsJson}</code>
+          {t("connectForm.settingsPreview")} <code>{settingsJson}</code>
         </Notice>
 
         <div className={probeStyles.probe} data-test="probe">
@@ -298,8 +299,8 @@ export function ConnectSourceForm({
             ) : (
               <Notice tone="warn" data-test="probe-pending">
                 {probing
-                  ? "reaching the provider…"
-                  : "test the connection before saving — an unreachable source looks exactly like a healthy one until something needs it."}
+                  ? t("connectForm.probeProbing")
+                  : t("connectForm.probePending")}
               </Notice>
             )}
           </span>
@@ -307,20 +308,20 @@ export function ConnectSourceForm({
       </FormCard>
 
       <FormCard
-        label="the credential"
-        note="the env-var name on the host that holds the credential. The host resolves the value — the dashboard never sees it."
+        label={t("connectForm.credentialCard")}
+        note={t("connectForm.credentialCardNote")}
       >
         <FormMeasure>
           <TextField
             id="connect-secret-env"
-            label="secret env var"
+            label={t("connectForm.secretEnvLabel")}
             required
             value={secretEnvRef}
             disabled={busy}
             placeholder="COMUKI_GITHUB_TOKEN"
             autoComplete="off"
             spellCheck={false}
-            hint="the name of the env var on the host that holds the credential. The host resolves the value at probe / webhook time — the dashboard never sees it."
+            hint={t("connectForm.secretEnvHint")}
             data-test="connect-secret-env"
             onValueChange={edit(setSecretEnvRef)}
           />
@@ -329,14 +330,12 @@ export function ConnectSourceForm({
         {env.useMock ? (
           <>
             <Notice data-test="mock-secret-notice">
-              Mock mode only: the form holds a literal credential long enough to
-              probe the seed store. Real mode reads the env var on the host
-              instead and never sees the value.
+              {t("connectForm.mockNotice")}
             </Notice>
             <FormMeasure>
               <TextField
                 id="connect-mock-secret"
-                label="credential (mock only)"
+                label={t("connectForm.mockSecretLabel")}
                 type="password"
                 required
                 value={mockSecret}
@@ -359,7 +358,7 @@ export function ConnectSourceForm({
           loading={busy}
           disabled={!complete || !tested}
         >
-          Save connection
+          {t("connectForm.submit")}
         </Button>
         <Button
           variant="secondary"
@@ -367,7 +366,7 @@ export function ConnectSourceForm({
           disabled={busy}
           onClick={onCancel}
         >
-          Cancel
+          {t("actions.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

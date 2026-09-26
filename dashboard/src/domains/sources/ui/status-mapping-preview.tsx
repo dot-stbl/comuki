@@ -1,4 +1,5 @@
 import { Fragment } from "react"
+import { useTranslation } from "react-i18next"
 
 import {
   isNativeIntake,
@@ -33,10 +34,12 @@ export function StatusMappingPreview({
   kind,
   mapping,
 }: StatusMappingPreviewProps) {
+  const { t } = useTranslation("sources")
+
   return (
     <section className={styles.preview} data-test="status-mapping">
       <h3 className={styles.head}>
-        status written back to {providerLabel(kind)}
+        {t("statusPreview.head", { provider: providerLabel(kind) })}
       </h3>
       {mapping.length === 0 ? (
         /* Two different reasons for an empty mapping, and they are not the
@@ -48,8 +51,10 @@ export function StatusMappingPreview({
            written back when nothing is. */
         <p className={styles.none}>
           {isNativeIntake(kind)
-            ? "native intake is the tracker. A run's status is the ticket's status, so there is nowhere to write it back to."
-            : `nothing is written back to ${providerLabel(kind)} — this build has no mapping for that provider, so a run's status stays on the run.`}
+            ? t("statusPreview.nativeNone")
+            : t("statusPreview.unknownNone", {
+                provider: providerLabel(kind),
+              })}
         </p>
       ) : (
         // `dt` and `dd` sit directly under the `dl` rather than in the

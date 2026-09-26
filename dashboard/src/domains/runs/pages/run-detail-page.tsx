@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { Link } from "@tanstack/react-router"
+import { Trans, useTranslation } from "react-i18next"
 import {
   ArrowLeft,
   Cpu,
@@ -62,6 +63,8 @@ export interface RunDetailPageProps {
 
 /** One run, in full. */
 export function RunDetailPage({ runId }: RunDetailPageProps) {
+  const { t } = useTranslation("runs")
+  const { t: tShell } = useTranslation("shell")
   const { data, isLoading, isError, error, refetch } = useRunQuery(runId)
   const session = useSession()
   const [picked, setPicked] = useState<string | null>(null)
@@ -120,10 +123,10 @@ export function RunDetailPage({ runId }: RunDetailPageProps) {
       header={
         <PageHeader
           breadcrumbs={[
-            { label: "live runs", to: "/runs" },
+            { label: tShell("crumb.liveRuns"), to: "/runs" },
             { label: `run_${runId}` },
           ]}
-          title={data?.title ?? `Run ${runId}`}
+          title={data?.title ?? t("detail.fallbackTitle", { runId })}
           // Which project, then which app. Arrived at from a list that mixes
           // projects, so the page says whose run this is before it says
           // anything else about it. Both halves are values rather than prose,
@@ -156,17 +159,17 @@ export function RunDetailPage({ runId }: RunDetailPageProps) {
         {isError ? (
           <ScreenState
             kind="error"
-            title="Couldn't load this run"
-            description={requestFailureMessage(error, "Unknown error")}
+            title={t("detail.errorTitle")}
+            description={requestFailureMessage(error, t("errors.unknown"))}
             inset="none"
             className={styles.stateFill}
             data-test="run-error"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="run-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -180,33 +183,34 @@ export function RunDetailPage({ runId }: RunDetailPageProps) {
 
         {missing ? (
           /* The swarm answered and this id was not in it. The state names the
-             missing id, because "not found" without it is a screen that cannot
-             be acted on: the operator arrived from a link somebody else wrote,
-             and the id is the only part of it they can take back to whoever
-             wrote it. A way out rather than a retry — asking again would ask
-             the same question. */
+              missing id, because "not found" without it is a screen that cannot
+              be acted on: the operator arrived from a link somebody else wrote,
+              and the id is the only part of it they can take back to whoever
+              wrote it. A way out rather than a retry — asking again would ask
+              the same question. */
           <ScreenState
             kind="notFound"
-            title="No run with that id"
+            title={t("detail.notFoundTitle")}
             description={
-              <>
-                The swarm holds nothing under{" "}
-                <code className={styles.missing}>{runId}</code>. A run id out of
-                an old link is the ordinary way to arrive here — an address
-                outlives the run it named, and the duty list is where the ones
-                still in flight are.
-              </>
+              /* The id is a value in its own voice, so it rides a slot
+                 element and the sentence — word order included — belongs to
+                 the locale. */
+              <Trans
+                ns="runs"
+                i18nKey="detail.notFoundDescription"
+                components={{ id: <code className={styles.missing}>{runId}</code> }}
+              />
             }
             hint={runId}
             inset="none"
             className={styles.stateFill}
             data-test="run-not-found"
             action={
-              <Tooltip content="Back to live runs">
+              <Tooltip content={t("detail.backToList")}>
                 <Link
                   to="/runs"
                   data-test="run-not-found-back"
-                  aria-label="Back to live runs"
+                  aria-label={t("detail.backToList")}
                   className={buttonClass({ size: "icon-sm" })}
                 >
                   <ArrowLeft aria-hidden="true" />
@@ -236,7 +240,8 @@ export function RunDetailPage({ runId }: RunDetailPageProps) {
               <span className={styles.fact}>
                 <DollarSign className={styles.factIcon} aria-hidden="true" />
                 <span className={styles.factValue}>
-                  {formatCost(data.cost)} · {formatTokens(data.tokens)} tok
+                  {formatCost(data.cost)} · {formatTokens(data.tokens)}{" "}
+                  {t("detail.tok")}
                 </span>
               </span>
               <span className={styles.fact}>
@@ -279,9 +284,9 @@ export function RunDetailPage({ runId }: RunDetailPageProps) {
           // says whose move it is, and says what will appear in its place.
           <ScreenState
             kind="empty"
-            title="Not planned yet"
-            description="This run is accepted and the brain has not decomposed it into work items. Nothing is wrong and nothing is waiting on you — the graph and the item inspector appear here as soon as the plan has its first item."
-            hint={`${data.status} · no work items · nothing to inspect`}
+            title={t("detail.unplannedTitle")}
+            description={t("detail.unplannedDescription")}
+            hint={t("detail.unplannedHint", { status: data.status })}
             inset="none"
             className={styles.stateFill}
             data-test="run-unplanned"
@@ -315,7 +320,7 @@ export function RunDetailPage({ runId }: RunDetailPageProps) {
 
             <SplitSeparator
               orientation="vertical"
-              aria-label="Resize the run graph"
+              aria-label={t("detail.resizeGraph")}
             />
 
             <SplitPanel
@@ -339,8 +344,8 @@ export function RunDetailPage({ runId }: RunDetailPageProps) {
               ) : (
                 <ScreenState
                   kind="empty"
-                  title="No detail for this item"
-                  description="The plan above is complete; this item has no inspector record yet. Pick another item, or come back once it starts."
+                  title={t("detail.noInspectorTitle")}
+                  description={t("detail.noInspectorDescription")}
                   inset="none"
                   className={styles.stateFill}
                   data-test="run-item-no-detail"

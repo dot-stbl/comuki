@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { useSetUserDisabledMutation } from "@/domains/identity/api/queries"
@@ -47,6 +48,7 @@ export interface UserDisabledAct {
 }
 
 export function useUserDisabledAct(): UserDisabledAct {
+  const { t } = useTranslation("identity")
   const setDisabled = useSetUserDisabledMutation()
   const [asking, setAsking] = useState<UserRow | null>(null)
 
@@ -59,10 +61,7 @@ export function useUserDisabledAct(): UserDisabledAct {
      ("the last platform admin cannot be disabled") and the transport answers
      with a status line. */
   const failure = setDisabled.error
-    ? requestFailureMessage(
-        setDisabled.error,
-        "The platform refused to change this account."
-      )
+    ? requestFailureMessage(setDisabled.error, t("disable.refused"))
     : null
 
   const toggle = (user: UserRow) => {
@@ -84,7 +83,7 @@ export function useUserDisabledAct(): UserDisabledAct {
       { userId: user.id, disabled: true },
       {
         onSuccess: () => {
-          toast.message("Account disabled", { description: user.email })
+          toast.message(t("disable.toast"), { description: user.email })
         },
       }
     )
@@ -100,12 +99,10 @@ export function useUserDisabledAct(): UserDisabledAct {
       /* Switching an account off keeps its grants: disabling somebody and
          un-granting them are different acts, and the confirmation says which
          one is about to happen. */
-      title: "Disable this account?",
-      body: asking
-        ? `${asking.email} will not be able to sign in. Their grants stay as they are, and enabling the account restores them exactly.`
-        : "",
-      confirmLabel: "Disable",
-      cancelLabel: "Cancel",
+      title: t("disable.title"),
+      body: asking ? t("disable.body", { email: asking.email }) : "",
+      confirmLabel: t("disable.confirm"),
+      cancelLabel: t("actions.cancel"),
       onCancel: () => setAsking(null),
       onConfirm: confirm,
     },

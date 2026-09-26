@@ -1,0 +1,170 @@
+{
+  "actions": {
+    "retry": "Tentar novamente"
+  },
+  "errors": {
+    "unknown": "Erro desconhecido"
+  },
+  "status": {
+    "running": "em execução",
+    "waiting": "aguardando",
+    "queued": "enfileirado",
+    "escalated": "escalado",
+    "failed": "falhou",
+    "success": "sucesso",
+    "cancelled": "cancelado"
+  },
+  "registry": {
+    "title": "Execuções ao vivo",
+    "summary": "<total/> execuções · <running/> em execução · <blocked/> aguardam uma pessoa",
+    "errorTitle": "As execuções não carregaram",
+    "anomaliesOnly": "Somente anomalias",
+    "count": {
+      "one": "{{count}} exibida",
+      "other": "{{count}} exibidas"
+    },
+    "empty": {
+      "profile": "Sem execuções neste perfil.",
+      "filtered": "Nenhuma execução corresponde aos filtros atuais.",
+      "none": "Ainda sem execuções."
+    },
+    "unplannedTitle": "Ainda sem planos",
+    "unplannedDescription": "Estas execuções foram aceitas, mas o cérebro ainda não as planejou. O fluxo aparece assim que o primeiro plano tiver itens de trabalho.",
+    "expandFlow": "Expandir fluxo",
+    "collapseFlow": "Recolher fluxo",
+    "resizeBoard": "Redimensionar o painel de fluxo",
+    "expandStrip": "Expandir o painel de fluxo"
+  },
+  "notice": {
+    "fallback": "A decisão falhou.",
+    "tail": "Nada mudou — a execução voltou ao que era."
+  },
+  "cancelDialog": {
+    "title": "Cancelar esta execução?",
+    "body": "{{title}} · {{where}} — o contêiner é derrubado e o lease liberado. Trabalho já mesclado permanece.",
+    "confirm": "Cancelar execução",
+    "cancel": "Deixar rodando"
+  },
+  "column": {
+    "status": "status",
+    "run": "execução",
+    "project": "projeto",
+    "app": "app",
+    "task": "tarefa",
+    "profile": "perfil",
+    "step": "passo",
+    "inStep": "no passo",
+    "cost": "custo",
+    "worker": "worker",
+    "actions": "ações",
+    "allStatuses": "todos os status",
+    "allProjects": "todos os projetos",
+    "allApps": "todos os apps",
+    "allProfiles": "todos os perfis",
+    "filterPlaceholder": "filtrar execução, tarefa, passo…",
+    "waitingOnPlan": "aguardando um plano",
+    "approve": "Aprovar",
+    "cancelRun": "Cancelar execução",
+    "approveRun": "Aprovar {{title}}",
+    "cancelTask": "Cancelar {{title}}"
+  },
+  "detail": {
+    "fallbackTitle": "Execução {{runId}}",
+    "tok": "tok",
+    "errorTitle": "Esta execução não carregou",
+    "notFoundTitle": "Nenhuma execução com esse id",
+    "notFoundDescription": "O enxame não guarda nada sob <id/>. Um id de execução vindo de um link antigo é o caminho ordinário até aqui — um endereço sobrevive à execução que nomeava, e a lista de plantão é onde estão as que ainda estão voando.",
+    "backToList": "Voltar às execuções ao vivo",
+    "unplannedTitle": "Ainda não planejado",
+    "unplannedDescription": "Esta execução foi aceita e o cérebro ainda não a decompôs em itens de trabalho. Nada está errado e nada está esperando por você — o grafo e o inspetor de itens aparecem aqui assim que o plano tiver seu primeiro item.",
+    "unplannedHint": "{{status}} · sem itens de trabalho · nada para inspecionar",
+    "noInspectorTitle": "Sem detalhes para este item",
+    "noInspectorDescription": "O plano acima está completo; este item ainda não tem registro de inspetor. Escolha outro item, ou volte quando ele começar.",
+    "resizeGraph": "Redimensionar o grafo da execução"
+  },
+  "river": {
+    "group": "Fluxo de perfis. As setas movem entre perfis.",
+    "cleared": "passaram",
+    "waitingOnHuman": "aguardam uma pessoa",
+    "noWork": "sem trabalho",
+    "poolEntry": "{{count}} {{status}}",
+    "clearedProfile": {
+      "one": "{{count}} passou pelo perfil",
+      "other": "{{count}} passaram pelo perfil"
+    },
+    "mark": {
+      "one": "{{count}} aguarda uma pessoa",
+      "other": "{{count}} aguardam uma pessoa"
+    },
+    "pinched": {
+      "one": " {{count}} aguarda uma pessoa — mais que qualquer outro perfil.",
+      "other": " {{count}} aguardam uma pessoa — mais que qualquer outro perfil."
+    },
+    "node": "{{profile}}: {{pool}}. {{cleared}}.{{mark}}"
+  },
+  "evidence": {
+    "title": "evidências",
+    "empty": "nenhuma captura publicada ainda"
+  },
+  "anomaly": {
+    "badgeLabel": "{{multiplier}}× a mediana",
+    "badgeTip": "Custo {{multiplier}}× a mediana deste projeto de {{median}} — excede o limiar de {{threshold}}×. Clique para o detalhamento.",
+    "badgeAria": "Anomalia de custo — {{label}}. Abrir detalhamento.",
+    "dialogTitle": "Pico de custo · execução {{runId}}",
+    "acknowledge": "Reconhecer",
+    "cancelRun": "Cancelar execução",
+    "summary": "Resumo",
+    "spend": "Detalhamento de gastos",
+    "why": "Por que está marcado",
+    "project": "projeto",
+    "profile": "perfil",
+    "status": "status",
+    "cost": "custo",
+    "tokensInOut": "tokens (entrada / saída)",
+    "total": "({{total}} no total)",
+    "reason": "Gastou <spent/>, o que é <multiplier/> o custo mediano de <median/> para <project/>.",
+    "rule": "Regra: custo > {{threshold}}× o custo mediano de execução do projeto.",
+    "openCost": "Abrir a página de custos →"
+  },
+  "graph": {
+    "group": "Grafo da execução. As setas movem entre itens de trabalho.",
+    "empty": "Nenhum item de trabalho neste plano.",
+    "parallel": {
+      "one": "{{count}} em paralelo",
+      "other": "{{count}} em paralelo"
+    },
+    "here": "aqui",
+    "dependsOnEarlier": {
+      "one": "depende de {{count}} anterior",
+      "other": "depende de {{count}} anteriores"
+    },
+    "blocked": "bloqueado",
+    "standingHere": "a execução está parada aqui.",
+    "blockedByFailure": "bloqueado por uma falha a montante.",
+    "blockedByEscalation": "bloqueado por uma escalada a montante.",
+    "longEdges": "depende de {{count}} item a mais de uma coluna de distância: {{named}}.",
+    "longEdgesPlural": "depende de {{count}} itens a mais de uma coluna de distância: {{named}}."
+  },
+  "inspector": {
+    "itemOf": "item {{index}} de {{total}}",
+    "env": "ambiente",
+    "tokens": "tokens",
+    "cost": "custo",
+    "started": "iniciado",
+    "waitsOn": "aguarda",
+    "waitsOnLong": "{{count}} a mais de uma coluna atrás",
+    "waitsOnNone": "Nada — este item começa o plano.",
+    "distancePrevious": "coluna anterior",
+    "distanceBack": {
+      "one": "{{count}} coluna atrás",
+      "other": "{{count}} colunas atrás"
+    },
+    "dependencyAria": "Mostrar {{label}}, {{profile}}, {{status}}, {{distance}}.",
+    "input": "entrada — o que o alimentou",
+    "log": "registro",
+    "appendOnly": "somente adição",
+    "gate": "porto de verificação",
+    "output": "saída — o que produziu",
+    "outputNone": "Nada ainda."
+  }
+}

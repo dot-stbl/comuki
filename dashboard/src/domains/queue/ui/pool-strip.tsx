@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { cn } from "@/shared/lib/utils"
 
 import type { WorkerCounts } from "@/domains/queue/model/queue"
@@ -23,6 +25,7 @@ export interface PoolStripProps {
  * never a dead end for a pointer or for a keyboard.
  */
 export function PoolStrip({ counts, onExpand, className }: PoolStripProps) {
+  const { t } = useTranslation("queue")
   const { total, busy, draining, idle } = counts
   const share = (value: number) => (total === 0 ? 0 : (value / total) * 100)
 
@@ -34,8 +37,8 @@ export function PoolStrip({ counts, onExpand, className }: PoolStripProps) {
       aria-expanded={false}
       aria-label={
         total === 0
-          ? "Expand the pool. No workers are up."
-          : `Expand the pool. ${total} workers: ${busy} busy, ${draining} draining, ${idle} idle.`
+          ? t("poolStrip.expandEmpty")
+          : t("poolStrip.expand", { total, busy, draining, idle })
       }
       onClick={onExpand}
     >

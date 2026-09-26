@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 
 import { needsBaseUrl } from "@/domains/sources/model/providers"
 import type { ProviderKey, SourceAuth } from "@/domains/sources/model/types"
@@ -98,6 +99,7 @@ export function ConnectionFields({
   onAuthChange,
   onAccountChange,
 }: ConnectionFieldsProps) {
+  const { t } = useTranslation("sources")
   const host = wantsHost ?? needsBaseUrl(kind)
 
   return (
@@ -105,13 +107,13 @@ export function ConnectionFields({
       {host ? (
         <TextField
           id={`${idPrefix}-base-url`}
-          label="base url"
+          label={t("connectionFields.baseUrlLabel")}
           required
           value={baseUrl}
           disabled={disabled}
           placeholder="https://git.example.internal"
           spellCheck={false}
-          hint="self-hosted only. https, because the credential crosses this wire."
+          hint={t("connectionFields.baseUrlHint")}
           suffix={urlSuffix}
           data-test={`${idPrefix}-base-url`}
           onValueChange={onBaseUrlChange}
@@ -129,13 +131,13 @@ export function ConnectionFields({
 
       <TextField
         id={`${idPrefix}-account`}
-        label="account"
+        label={t("connectionFields.accountLabel")}
         required
         value={account}
         disabled={disabled}
-        placeholder="the bot or app the credential belongs to"
+        placeholder={t("connectionFields.accountPlaceholder")}
         spellCheck={false}
-        hint="shown on the row afterwards, so a stale credential can be traced to a person."
+        hint={t("connectionFields.accountHint")}
         data-test={`${idPrefix}-account`}
         onValueChange={onAccountChange}
       />

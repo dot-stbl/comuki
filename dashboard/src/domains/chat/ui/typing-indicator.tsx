@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { cn } from "@/shared/lib/utils"
 
 import styles from "./chat-thread.module.css"
@@ -22,6 +24,7 @@ export interface TypingIndicatorProps {
  * breathes says the turn has started and not finished.
  */
 export function TypingIndicator({ className }: TypingIndicatorProps) {
+  const { t } = useTranslation("chat")
   return (
     <div
       className={cn(styles.typing, className)}
@@ -33,7 +36,7 @@ export function TypingIndicator({ className }: TypingIndicatorProps) {
         <span className={styles.typingDot} />
         <span className={styles.typingDot} />
       </span>
-      <span className={styles.typingWords}>Comuki думает</span>
+      <span className={styles.typingWords}>{t("typing.words")}</span>
     </div>
   )
 }

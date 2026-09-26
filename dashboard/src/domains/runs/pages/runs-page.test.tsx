@@ -8,11 +8,12 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { cleanup, render, waitFor } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { beforeAll, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { ThemeProvider } from "@/app/theme-provider"
+import { i18n, loadLocale } from "@/shared/i18n"
 import { TestSession } from "@/shared/session/test-session"
 
 import { RunsPage } from "./runs-page"
@@ -298,8 +299,8 @@ describe("the duty list's search filter, held in the URL", () => {
     const allCount = shown()
 
     // The toggle starts unchecked; flipping it on hides every non-flagged
-    // row. The runaway lives in the seed, so the list is non-empty after
-    // the flip — proving the filter is wired to the data, not to the
+    // row. The runaway lives in the seed, so the list is non-empty after the
+    // flip — proving the filter is wired to the data, not to the
     // toggle alone.
     await user.click(toggle!)
     await waitFor(() => expect(shown()).toBeLessThan(allCount))
@@ -314,3 +315,43 @@ describe("the duty list's search filter, held in the URL", () => {
     cleanup()
   })
 })
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the board's own
+   words — title, summary sentence, toolbar — arrive in russian while every
+   value (ids, profiles, figures, step names) stays as it was. Language resets
+   after the case so the file's other readings keep their en posture. */
+describe("the duty list in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the registry chrome and the toolbar in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+    // The local `ready()` waits on the en-only "N shown" spelling, so this
+    // case waits on the toolbar itself — the table is what it was waiting
+    // for either way.
+    renderScreen(<AsRoute />)
+    await waitFor(() => expect(search()).not.toBeNull())
+
+    expect(
+      await screen.findByRole("heading", { name: "Живые запуски" })
+    ).toBeTruthy()
+
+    // The header's sentence reads in russian with the same figures.
+    const header = document.querySelector('[data-test="page-header"]')
+    expect(header?.textContent).toContain("запусков")
+    expect(header?.textContent).toContain("ждут человека")
+
+    // The toolbar's own words follow: the toggle names itself, and the
+    // count says what it is counting.
+    expect(screen.getByText("только аномалии")).toBeTruthy()
+    expect(
+      document.querySelector('[data-test="runs-count"]')?.textContent
+    ).toMatch(/показан/)
+
+    cleanup()
+  })
+})
+

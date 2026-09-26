@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ArrowLeft, RotateCw } from "lucide-react"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { FormPage } from "@/app/layout/form-page"
@@ -52,6 +53,8 @@ export interface CreateTicketPageProps {
 export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
   const navigate = useNavigate()
   const router = useRouter()
+  const { t } = useTranslation("sources")
+  const { t: tShell } = useTranslation("shell")
   const session = useSession()
   const { data, isLoading, isError, error, refetch } = useSourcesQuery()
   const createTicket = useCreateNativeTicket()
@@ -84,7 +87,7 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
     }
     createTicket.mutate(draft, {
       onSuccess: () => {
-        toast.success("Ticket filed", { description: draft.title })
+        toast.success(t("ticketPage.toast"), { description: draft.title })
         guard.leave(() => {
           void navigate({
             to: "/sources/$sourceId",
@@ -97,13 +100,13 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
   }
 
   const crumbs = [
-    { label: "configure" },
-    { label: "sources", to: "/sources" },
+    { label: tShell("crumb.configure") },
+    { label: tShell("crumb.sources"), to: "/sources" },
     {
       label: connection?.name ?? sourceId,
       to: `/sources/${sourceId}`,
     },
-    { label: "new ticket" },
+    { label: t("ticketPage.crumb") },
   ]
 
   /* Three arrivals, not two. The list not having answered yet, the list
@@ -113,7 +116,7 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
      gone", in the words of a stale link, with nothing to press. */
   if (isLoading) {
     return (
-      <FormPage title="New ticket" crumbs={crumbs}>
+      <FormPage title={t("ticketPage.titleFallback")} crumbs={crumbs}>
         <Skeleton lines={SKELETON_WIDTHS} data-test="ticket-loading" />
       </FormPage>
     )
@@ -121,18 +124,18 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
 
   if (isError) {
     return (
-      <FormPage title="New ticket" crumbs={crumbs}>
+      <FormPage title={t("ticketPage.titleFallback")} crumbs={crumbs}>
         <ScreenState
           kind="error"
-          title="Couldn't look this source up"
-          description={requestFailureMessage(error, "Unknown error")}
+          title={t("ticketPage.errorTitle")}
+          description={requestFailureMessage(error, t("errors.unknown"))}
           data-test="ticket-source-failed"
           action={
-            <Tooltip content="Retry">
+            <Tooltip content={t("actions.retry")}>
               <Button
                 size="icon-sm"
                 data-test="ticket-retry"
-                aria-label="Retry"
+                aria-label={t("actions.retry")}
                 onClick={() => {
                   void refetch()
                 }}
@@ -148,18 +151,18 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
 
   if (!connection) {
     return (
-      <FormPage title="New ticket" crumbs={crumbs}>
+      <FormPage title={t("ticketPage.titleFallback")} crumbs={crumbs}>
         <ScreenState
           kind="notFound"
-          title="No connection with that id"
-          description={`No connection on this platform has the id ${sourceId}. A source that was disconnected while this tab sat open is the ordinary way to arrive here.`}
+          title={t("ticketPage.notFoundTitle")}
+          description={t("ticketPage.notFoundBody", { id: sourceId })}
           data-test="ticket-source-gone"
           action={
-            <Tooltip content="Back to sources">
+            <Tooltip content={t("ticketPage.backToSources")}>
               <Link
                 to="/sources"
                 search={{}}
-                aria-label="Back to sources"
+                aria-label={t("ticketPage.backToSources")}
                 className={buttonClass({ size: "icon-sm" })}
               >
                 <ArrowLeft aria-hidden="true" />
@@ -176,14 +179,14 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
 
   return (
     <FormPage
-      title={`New ticket in ${projectKey}`}
+      title={t("ticketPage.title", { project: projectKey })}
       crumbs={crumbs}
-      summary="Native intake is the product's own. A ticket written here has no tracker behind it, so its status is the run's status and there is nowhere to sync it back to."
+      summary={t("ticketPage.summary")}
     >
       {createTicket.error ? (
         <Notice tone="bad" data-test="ticket-failure">
-          {requestFailureMessage(createTicket.error, "The ticket was refused.")}{" "}
-          Nothing was filed — what you typed is still here.
+          {requestFailureMessage(createTicket.error, t("ticketPage.refused"))}{" "}
+          {t("ticketPage.tail")}
         </Notice>
       ) : null}
 
@@ -197,10 +200,10 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
 
       <ConfirmDialog
         open={guard.asking}
-        title="Leave without filing the ticket?"
-        body="The title, body and labels you typed are not saved anywhere yet. Leaving this page drops them, and nothing reaches intake."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
+        title={t("ticketPage.leaveTitle")}
+        body={t("ticketPage.leaveBody")}
+        confirmLabel={t("ticketPage.discard")}
+        cancelLabel={t("ticketPage.keep")}
         onConfirm={guard.discard}
         onCancel={guard.keep}
       />

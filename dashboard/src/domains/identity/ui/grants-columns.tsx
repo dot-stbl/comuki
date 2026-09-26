@@ -1,5 +1,9 @@
 import { X } from "lucide-react"
 
+import {
+  sharedIdentityT,
+  type IdentityTranslator,
+} from "@/domains/identity/model/identity"
 import type { GrantRow } from "@/domains/identity/model/types"
 import { cn } from "@/shared/lib/utils"
 import { ROLES, can, needsLabel, type Session } from "@/shared/session"
@@ -26,6 +30,13 @@ export interface GrantColumnsOptions {
   scopes: string[]
   revokingId: string | null
   onRevoke: (grant: GrantRow) => void
+  /**
+   * Copy arrives as a parameter because `cell` is called as a plain function
+   * while the table builds a row, so a `useTranslation` inside one throws.
+   * The page passes its hook-bound `t`; tests and stories fall back to the
+   * shared instance, which answers in the active locale.
+   */
+  t?: IdentityTranslator
 }
 
 /**
@@ -41,6 +52,7 @@ export function createGrantColumns({
   scopes,
   revokingId,
   onRevoke,
+  t = sharedIdentityT,
 }: GrantColumnsOptions): DataColumn<GrantRow>[] {
   const denial = can(session, "identity.manage")
     ? null
@@ -49,7 +61,7 @@ export function createGrantColumns({
   return [
     {
       accessorKey: "subjectLabel",
-      header: "subject",
+      header: t("grantsColumn.subject"),
       cell: ({ row }) => (
         <span
           className={cn(
@@ -64,10 +76,10 @@ export function createGrantColumns({
       meta: {
         width: 200,
         pinned: true,
-        label: "subject",
+        label: t("grantsColumn.subject"),
         filter: {
           kind: "text",
-          placeholder: "filter subject, name, role…",
+          placeholder: t("grantsColumn.filterPlaceholder"),
           match: (grant, needle) =>
             `${grant.subjectLabel} ${grant.subjectName} ${grant.role} ${grant.scopeLabel}`
               .toLowerCase()
@@ -77,27 +89,29 @@ export function createGrantColumns({
     },
     {
       accessorKey: "subjectKind",
-      header: "kind",
+      header: t("grantsColumn.kind"),
       cell: ({ row }) => (
         <span className={styles.scope}>
-          {row.original.subjectKind === "api-key" ? "api key" : "user"}
+          {row.original.subjectKind === "api-key"
+            ? t("grantsColumn.apiKey")
+            : t("grantsColumn.user")}
         </span>
       ),
       meta: {
         width: 96,
         filter: {
           kind: "select",
-          placeholder: "users and keys",
+          placeholder: t("grantsColumn.usersAndKeys"),
           options: [
-            { value: "user", label: "user" },
-            { value: "api-key", label: "api key" },
+            { value: "user", label: t("grantsColumn.user") },
+            { value: "api-key", label: t("grantsColumn.apiKey") },
           ],
         },
       },
     },
     {
       accessorKey: "subjectName",
-      header: "name",
+      header: t("grantsColumn.name"),
       cell: ({ row }) => (
         <span className={styles.name} title={row.original.subjectName}>
           {row.original.subjectName}
@@ -107,7 +121,7 @@ export function createGrantColumns({
     },
     {
       accessorKey: "role",
-      header: "role",
+      header: t("grantsColumn.role"),
       sortFn: roleSort,
       cell: ({ row }) => (
         <span className={styles.role}>{row.original.role}</span>
@@ -116,7 +130,7 @@ export function createGrantColumns({
         width: 132,
         filter: {
           kind: "select",
-          placeholder: "all roles",
+          placeholder: t("grantsColumn.allRoles"),
           // The six, from the same constant the grant form reads. There is no
           // seventh anywhere in this product, including in a filter.
           options: ROLES.map((role) => ({ value: role, label: role })),
@@ -125,23 +139,23 @@ export function createGrantColumns({
     },
     {
       accessorKey: "scopeLabel",
-      header: "scope",
+      header: t("grantsColumn.scope"),
       cell: ({ row }) => (
         <span className={styles.scope}>{row.original.scopeLabel}</span>
       ),
       meta: {
         width: 132,
-        label: "scope",
+        label: t("grantsColumn.scope"),
         filter: {
           kind: "select",
-          placeholder: "all scopes",
+          placeholder: t("grantsColumn.allScopes"),
           options: scopes.map((scope) => ({ value: scope, label: scope })),
         },
       },
     },
     {
       accessorKey: "grantedAt",
-      header: "granted",
+      header: t("grantsColumn.granted"),
       cell: ({ row }) => (
         <span className={styles.scope}>{row.original.grantedAt}</span>
       ),
@@ -149,21 +163,25 @@ export function createGrantColumns({
     },
     {
       id: "actions",
-      header: "actions",
+      header: t("grantsColumn.actions"),
       enableSorting: false,
       cell: ({ row }) => {
         const grant = row.original
         const busy = revokingId === grant.id
         return (
           <span className={styles.actions}>
-            <Tooltip content={denial ?? "Revoke grant"}>
+            <Tooltip content={denial ?? t("grantsColumn.revokeGrant")}>
               <Button
                 size="icon-sm"
                 variant="destructive"
                 data-test="grant-revoke"
                 denied={denial}
                 loading={busy}
-                aria-label={`Revoke ${grant.role} on ${grant.scopeLabel} from ${grant.subjectLabel}`}
+                aria-label={t("grantsColumn.revokeGrantAria", {
+                  role: grant.role,
+                  scope: grant.scopeLabel,
+                  subject: grant.subjectLabel,
+                })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onRevoke(grant)
@@ -175,7 +193,7 @@ export function createGrantColumns({
           </span>
         )
       },
-      meta: { width: 72, align: "end", label: "actions" },
+      meta: { width: 72, align: "end", label: t("grantsColumn.actions") },
     },
   ]
 }

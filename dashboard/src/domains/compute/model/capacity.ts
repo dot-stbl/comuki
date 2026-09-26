@@ -5,6 +5,8 @@ import type {
   WorkerVersion,
 } from "./types"
 
+import { i18n } from "@/shared/i18n"
+
 /**
  * The one arithmetic this screen exists to spare an operator.
  *
@@ -103,6 +105,24 @@ export function readCapacity(
 }
 
 /**
+ * A `compute`-namespace translator, the shape the word-bearing readers below
+ * resolve their copy through (`dashboard-i18n` D7). The default is the shared
+ * i18n instance, so a caller with no translator of its own still answers in
+ * the active locale.
+ */
+export type ComputeTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+export function sharedComputeT(
+  key: string,
+  options?: Record<string, unknown>
+): string {
+  return i18n.t(key, { ...options, ns: "compute" })
+}
+
+/**
  * The sentence the reading is for, written once so the card, the summary line
  * and the test all say the same thing.
  *
@@ -111,24 +131,37 @@ export function readCapacity(
  * would have helped. Saying "65 cluster slots free" in the same breath closes
  * the question.
  */
-export function bindingSentence(reading: CapacityReading): string {
-  const slots = (n: number) => `${n} ${n === 1 ? "slot" : "slots"}`
+export function bindingSentence(
+  reading: CapacityReading,
+  t: ComputeTranslator = sharedComputeT
+): string {
+  const slots = (n: number) => t("card.slots", { count: n })
 
   switch (reading.binding) {
     case "unknown":
-      return "capacity api did not answer — no ceiling can be read for this pool"
+      return t("card.sentences.noAnswer")
     case "both":
       return reading.room === 0
-        ? "quota and cluster are both full — nothing can start here"
-        : `quota and cluster agree — room for ${slots(reading.room ?? 0)}`
+        ? t("card.sentences.bothFull")
+        : t("card.sentences.both", { slots: slots(reading.room ?? 0) })
     case "quota":
       return reading.room === 0
-        ? `quota is the ceiling — nothing can start, and the cluster still has ${slots(reading.capacityRoom ?? 0)} free`
-        : `quota is the ceiling — room for ${slots(reading.room ?? 0)}, with ${slots(reading.capacityRoom ?? 0)} free on the cluster`
+        ? t("card.sentences.quotaFull", {
+            slots: slots(reading.capacityRoom ?? 0),
+          })
+        : t("card.sentences.quota", {
+            slots: slots(reading.room ?? 0),
+            spare: slots(reading.capacityRoom ?? 0),
+          })
     case "capacity":
       return reading.room === 0
-        ? `the cluster is the ceiling — nothing can start, and the quota still allows ${slots(reading.quotaRoom)}`
-        : `the cluster is the ceiling — room for ${slots(reading.room ?? 0)}, with ${slots(reading.quotaRoom)} left under the quota`
+        ? t("card.sentences.clusterFull", {
+            slots: slots(reading.quotaRoom),
+          })
+        : t("card.sentences.cluster", {
+            slots: slots(reading.room ?? 0),
+            spare: slots(reading.quotaRoom),
+          })
   }
 }
 
@@ -144,13 +177,16 @@ export function bindingSentence(reading: CapacityReading): string {
  * The idle ceiling rides along when the source carries it; a snapshot that
  * cannot answer it says the floor alone rather than inventing a ceiling.
  */
-export function idleReading(pool: ComputePool): string {
+export function idleReading(
+  pool: ComputePool,
+  t: ComputeTranslator = sharedComputeT
+): string {
   if (pool.minIdle === 0) {
-    return "min idle 0 — create-per-task"
+    return t("card.idleKnob.perTask")
   }
   return pool.maxIdle === null
-    ? `min idle ${pool.minIdle}`
-    : `min idle ${pool.minIdle} · max idle ${pool.maxIdle}`
+    ? t("card.idleKnob.min", { min: pool.minIdle })
+    : t("card.idleKnob.range", { min: pool.minIdle, max: pool.maxIdle })
 }
 
 /** True when the pool keeps no warm containers at all, by configuration. */
@@ -195,7 +231,8 @@ export function strandedIdle(versions: WorkerVersion[]): number {
 /** Which half of the label moved — the reason a row is stale. */
 export function staleReason(
   version: WorkerVersion,
-  target: WorkerVersion | undefined
+  target: WorkerVersion | undefined,
+  t: ComputeTranslator = sharedComputeT
 ): string | null {
   if (!target || version.target) {
     return null
@@ -204,13 +241,13 @@ export function staleReason(
   const profilesMoved = version.profilesRef !== target.profilesRef
 
   if (imageMoved && profilesMoved) {
-    return "image and profiles ref both moved"
+    return t("versions.reason.both")
   }
   if (imageMoved) {
-    return "a release behind on the image"
+    return t("versions.reason.image")
   }
   if (profilesMoved) {
-    return "same image, the profiles ref moved"
+    return t("versions.reason.profiles")
   }
   return null
 }

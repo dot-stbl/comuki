@@ -1,0 +1,83 @@
+{
+  "actions": {
+    "retry": "Retry"
+  },
+  "errors": {
+    "unknown": "Unknown error"
+  },
+  "status": {
+    "new": "new",
+    "queued": "queued",
+    "planning": "planning"
+  },
+  "priority": {
+    "low": "low",
+    "normal": "normal",
+    "high": "high"
+  },
+  "registry": {
+    "title": "Tasks",
+    "summary": "<total/> in backlog · <fresh/> new",
+    "newTask": "New task",
+    "count": {
+      "one": "{{count}} shown",
+      "other": "{{count}} shown"
+    },
+    "loading": "Loading the backlog",
+    "errorTitle": "The backlog did not load",
+    "empty": {
+      "filtered": "no tasks match the current filters",
+      "none": "the backlog is empty"
+    }
+  },
+  "dispatch": {
+    "toast": "Dispatched to orchestrator",
+    "fallback": "The orchestrator did not take that.",
+    "tail": "Nothing was queued — the ticket is still in the backlog."
+  },
+  "column": {
+    "source": "source",
+    "task": "task",
+    "evidence": "evidence",
+    "project": "project",
+    "app": "app",
+    "priority": "priority",
+    "status": "status",
+    "age": "age",
+    "action": "action",
+    "filterPlaceholder": "filter title, id, app…",
+    "allProjects": "all projects",
+    "allApps": "all apps",
+    "allPriority": "all priority",
+    "allStatus": "all status",
+    "dispatch": "Dispatch",
+    "dispatchTask": "Dispatch {{title}}"
+  },
+  "create": {
+    "title": "New task",
+    "crumb": "new",
+    "summary": "One ticket in front of the swarm: where it came from, which project's backlog it lands in, and how urgent it is.",
+    "toastCreated": "Task created",
+    "failureTail": "Nothing was queued — what you typed is still exactly as you left it.",
+    "guardTitle": "Leave without creating the task?",
+    "guardBody": "The title and brief you typed are not saved anywhere yet. Leaving this page drops them, and nothing reaches intake.",
+    "guardConfirm": "Discard",
+    "guardCancel": "Keep editing",
+    "submit": "Create & queue",
+    "cancel": "Cancel",
+    "sourceLabel": "source",
+    "sourceNote": "where the ticket came from. every card but native expects a connection watching that provider — writing a ticket here records where it came from, it does not file one there.",
+    "ticketLabel": "the ticket",
+    "ticketNote": "what to do, where it lands, how urgent it is.",
+    "briefLabel": "brief",
+    "briefNote": "context, acceptance criteria, links — for the person who picks this up, not for the form.",
+    "titleLabel": "title",
+    "titlePlaceholder": "what to do, in one line",
+    "projectLabel": "project",
+    "appLabel": "app",
+    "briefPlaceholder": "context, acceptance criteria, links…"
+  },
+  "priorityField": {
+    "label": "priority"
+  }
+}

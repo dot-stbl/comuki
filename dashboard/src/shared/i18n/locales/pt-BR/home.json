@@ -1,0 +1,95 @@
+{
+  "errors": {
+    "unknown": "erro desconhecido"
+  },
+  "actions": {
+    "retry": "tentar de novo"
+  },
+  "header": {
+    "title": "Turno",
+    "crumb": "turno",
+    "summary": {
+      "one": "<owed/> precisa de você · <running/> em execução · <total/> execuções",
+      "other": "<owed/> precisam de você · <running/> em execução · <total/> execuções"
+    },
+    "errorTitle": "O turno não carregou",
+    "errorTail": "{{detail}} — até carregar, nada nesta tela pode dizer se uma decisão é esperada."
+  },
+  "notice": {
+    "fallback": "A decisão falhou.",
+    "tail": "{{detail}} Nada mudou — a execução voltou ao que era."
+  },
+  "verdict": {
+    "clear": "Nada precisa de você",
+    "owed": {
+      "one": "execução espera uma decisão",
+      "other": "execuções esperam uma decisão"
+    },
+    "swarmEmpty": "O enxame está vazio — nada na fila, nada em voo.",
+    "moving": "<running/> em execução · <queued/> na fila — o enxame se move sozinho."
+  },
+  "attention": {
+    "section": "Precisa de você",
+    "column": {
+      "run": "execução",
+      "project": "projeto",
+      "task": "tarefa",
+      "step": "passo",
+      "inStep": "no passo"
+    },
+    "status": {
+      "escalated": "escalada",
+      "failed": "falha",
+      "waiting": "espera"
+    },
+    "reason": {
+      "escalated": "escalada do enxame para uma pessoa",
+      "failed": "parada num portão de verificação",
+      "waiting": "esperando um humano"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "Aprovar",
+    "stop": "Parar",
+    "open": "Abrir",
+    "approveRun": "Aprovar {{title}}",
+    "stopRun": "Parar {{title}}",
+    "openRun": "Abrir {{title}}",
+    "more": "e mais {{count}} — abrir execuções ao vivo"
+  },
+  "list": {
+    "waitingOnPlan": "esperando um plano",
+    "timeInStep": "tempo no passo"
+  },
+  "running": {
+    "section": "Em execução agora",
+    "note": "{{running}} em voo · {{queued}} na fila",
+    "empty": "Nada está em voo.",
+    "more": "mais {{count}} em voo — abrir execuções ao vivo"
+  },
+  "outcomes": {
+    "loading": "Carregando os resultados da semana",
+    "failed": "A semana atrás deste turno não carregou, não há histórico para comparar. Nada mais nesta tela depende disso — o que está em voo abaixo é a leitura ao vivo.",
+    "reading": "<today/> concluídas hoje · <week/> nesta semana · <failed/> falharam",
+    "chartLabel": "Resultados das execuções por dia. {{today}} concluídas hoje, {{week}} nesta semana, {{failed}} delas falharam.",
+    "status": {
+      "success": "sucesso",
+      "failed": "falha",
+      "escalated": "escalada"
+    }
+  },
+  "shortcuts": {
+    "section": "Atalhos",
+    "newRun": "nova execução",
+    "newRunNote": "pegar um ticket na caixa",
+    "liveRuns": "execuções ao vivo",
+    "liveRunsNote": "o enxame inteiro, com o quadro de fluxo e filtros",
+    "approvals": "aprovações",
+    "approvalsNote": "planos na fila por uma decisão"
+  },
+  "stopDialog": {
+    "title": "Parar esta execução?",
+    "body": "{{title}} — o contêiner é demolido e o lease liberado. O trabalho já mesclado fica.",
+    "confirm": "Parar",
+    "cancel": "Deixar rodando"
+  }
+}

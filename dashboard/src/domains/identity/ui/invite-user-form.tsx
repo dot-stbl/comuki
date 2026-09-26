@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
 import type { InviteUserInput } from "@/domains/identity/model/types"
@@ -8,11 +9,6 @@ import { Button, SelectField, TextField } from "@/shared/ui"
 
 /** Deliberately loose: an address is validated by sending to it, not by a regex. */
 const ADDRESS = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-const ARRIVAL = [
-  { value: "invite", label: "send an invitation" },
-  { value: "local", label: "create a local account" },
-]
 
 export interface InviteUserFormProps {
   /** Addresses already on the platform — an account is its address. */
@@ -38,6 +34,7 @@ export function InviteUserForm({
   onCancel,
   onDirtyChange,
 }: InviteUserFormProps) {
+  const { t } = useTranslation("identity")
   // A platform act, asked without a project: platform roles alone answer for
   // Identity, and no project role has ever opened it.
   const manage = useCan("identity.manage")
@@ -48,14 +45,19 @@ export function InviteUserForm({
   const [emailTouched, setEmailTouched] = useState(false)
   const [attempted, setAttempted] = useState(false)
 
+  const arrivalOptions = [
+    { value: "invite", label: t("inviteForm.arrivalInvite") },
+    { value: "local", label: t("inviteForm.arrivalLocal") },
+  ]
+
   const address = email.trim().toLowerCase()
   const addressError =
     address.length === 0
-      ? "an address is required"
+      ? t("inviteForm.addressRequired")
       : !ADDRESS.test(address)
-        ? "that does not look like an address"
+        ? t("inviteForm.addressInvalid")
         : takenAddresses.includes(address)
-          ? "somebody already has that address"
+          ? t("inviteForm.addressTaken")
           : null
 
   /* Edited-or-already-tried, the one model this product shows a field error
@@ -89,7 +91,7 @@ export function InviteUserForm({
       <FormFields>
         <TextField
           id="user-name"
-          label="name"
+          label={t("inviteForm.nameLabel")}
           /* Both fields carry the marker, because both genuinely gate the
              act — the button refuses without a name, and the handler refuses
              without a valid address. Marking only the one the button watches
@@ -98,12 +100,12 @@ export function InviteUserForm({
           autoFocus
           value={name}
           disabled={busy}
-          placeholder="who this is"
+          placeholder={t("inviteForm.namePlaceholder")}
           onValueChange={setName}
         />
         <TextField
           id="user-email"
-          label="address"
+          label={t("inviteForm.addressLabel")}
           required
           type="email"
           value={email}
@@ -119,11 +121,11 @@ export function InviteUserForm({
         />
         <SelectField
           id="user-arrival"
-          label="how"
+          label={t("inviteForm.howLabel")}
           value={arrival}
           disabled={busy}
-          options={ARRIVAL}
-          hint="An invitation waits to be accepted. A local account works immediately."
+          options={arrivalOptions}
+          hint={t("inviteForm.arrivalHint")}
           onValueChange={setArrival}
         />
       </FormFields>
@@ -136,7 +138,9 @@ export function InviteUserForm({
           loading={busy}
           disabled={name.trim().length === 0}
         >
-          {arrival === "invite" ? "Send invitation" : "Create account"}
+          {arrival === "invite"
+            ? t("inviteForm.submitInvite")
+            : t("inviteForm.submitLocal")}
         </Button>
         <Button
           variant="secondary"
@@ -144,7 +148,7 @@ export function InviteUserForm({
           disabled={busy}
           onClick={onCancel}
         >
-          Cancel
+          {t("actions.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

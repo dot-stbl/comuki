@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type {
   ComputePool,
@@ -45,6 +46,7 @@ export function ProvidersPanel({
   onTakeWork,
 }: ProvidersPanelProps) {
   const session = useSession()
+  const { t } = useTranslation("compute")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
@@ -58,8 +60,9 @@ export function ProvidersPanel({
         switchingId,
         onTakeWork,
         session,
+        t,
       }),
-    [pools, switchingId, onTakeWork, session]
+    [pools, switchingId, onTakeWork, session, t]
   )
 
   const rows = useMemo(
@@ -68,8 +71,8 @@ export function ProvidersPanel({
   )
 
   const emptyLabel = hasActiveFilters(filters)
-    ? "no providers match the current filters"
-    : "no compute provider is registered"
+    ? t("providers.emptyFiltered")
+    : t("providers.empty")
 
   return (
     <>
@@ -82,7 +85,7 @@ export function ProvidersPanel({
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="providers-count">
-              {rows.length} shown
+              {t("providers.count", { count: rows.length })}
             </span>
           }
         />

@@ -1,6 +1,11 @@
 import { Target, Trash2 } from "lucide-react"
 
-import { staleReason, versionLabel } from "@/domains/compute/model/capacity"
+import {
+  staleReason,
+  versionLabel,
+  sharedComputeT,
+  type ComputeTranslator,
+} from "@/domains/compute/model/capacity"
 import type { WorkerVersion } from "@/domains/compute/model/types"
 import { formatDuration } from "@/shared/lib/duration"
 import { can, needsLabel, type Session } from "@/shared/session"
@@ -16,6 +21,11 @@ export interface VersionColumnsOptions {
   onRetire: (version: WorkerVersion) => void
   /** The shift itself — see the note on `ProviderColumnsOptions.session`. */
   session: Session
+  /**
+   * Copy arrives as a parameter because `cell` is a plain function, so a
+   * `useTranslation` inside one throws. The panel passes its hook-bound `t`.
+   */
+  t?: ComputeTranslator
 }
 
 /** Row identity. A label is both halves, so the id is both halves. */
@@ -43,12 +53,13 @@ export function createVersionColumns({
   retiringLabel,
   onRetire,
   session,
+  t = sharedComputeT,
 }: VersionColumnsOptions): DataColumn<WorkerVersion>[] {
   return [
     {
       id: "label",
       accessorFn: versionLabel,
-      header: "worker label",
+      header: t("versions.column.label"),
       cell: ({ row }) => (
         <span className={styles.label} title={versionLabel(row.original)}>
           <span className={styles.digest}>{row.original.digest}</span>
@@ -58,10 +69,10 @@ export function createVersionColumns({
       meta: {
         width: 260,
         pinned: true,
-        label: "worker label",
+        label: t("versions.column.label"),
         filter: {
           kind: "text",
-          placeholder: "filter digest, profiles ref…",
+          placeholder: t("versions.filterPlaceholder"),
           match: (version, needle) =>
             versionLabel(version).toLowerCase().includes(needle.toLowerCase()),
         },
@@ -70,32 +81,32 @@ export function createVersionColumns({
     {
       id: "target",
       accessorFn: (version) => (version.target ? "target" : "stale"),
-      header: "matching",
+      header: t("versions.column.matching"),
       cell: ({ row }) =>
         row.original.target ? (
           <span className={styles.target}>
             <Target className={styles.targetIcon} aria-hidden="true" />
-            new starts
+            {t("versions.newStarts")}
           </span>
         ) : (
-          <span className={styles.faint}>never matched</span>
+          <span className={styles.faint}>{t("versions.neverMatched")}</span>
         ),
       meta: {
         width: 132,
-        label: "matching",
+        label: t("versions.column.matching"),
         filter: {
           kind: "select",
-          placeholder: "all labels",
+          placeholder: t("versions.allLabels"),
           options: [
-            { value: "target", label: "new starts" },
-            { value: "stale", label: "never matched" },
+            { value: "target", label: t("versions.newStarts") },
+            { value: "stale", label: t("versions.neverMatched") },
           ],
         },
       },
     },
     {
       accessorKey: "workers",
-      header: "workers",
+      header: t("versions.column.workers"),
       cell: ({ row }) => (
         // A label the source cannot count per says so; a zero would read as
         // "nothing runs this image", which is a different sentence.
@@ -105,7 +116,7 @@ export function createVersionColumns({
     },
     {
       accessorKey: "idle",
-      header: "idle",
+      header: t("versions.column.idle"),
       sortFn: numericSort,
       // The number that is wrong. On the target label an idle worker is the
       // pool doing its job; on any other label it is a container that will sit
@@ -122,7 +133,7 @@ export function createVersionColumns({
             data-stranded={stranded ? "" : undefined}
             title={
               stranded
-                ? `${idle} idle on a label nothing is matched to — they will not claim an item`
+                ? t("versions.strandedTitle", { count: idle })
                 : undefined
             }
           >
@@ -134,7 +145,7 @@ export function createVersionColumns({
     },
     {
       accessorKey: "oldestUpSec",
-      header: "oldest up",
+      header: t("versions.column.oldestUp"),
       cell: ({ row }) => (
         <span className={styles.value}>
           {row.original.oldestUpSec === null
@@ -142,17 +153,17 @@ export function createVersionColumns({
             : formatDuration(row.original.oldestUpSec)}
         </span>
       ),
-      meta: { width: 96, numeric: true, label: "oldest up" },
+      meta: { width: 96, numeric: true, label: t("versions.column.oldestUp") },
     },
     {
       id: "reason",
       accessorFn: (version) => staleReason(version, target) ?? "",
-      header: "why",
+      header: t("versions.column.why"),
       // The half that moved. Without it two stale rows look like one problem,
       // and the second one — the right image on a moved profiles ref — is the
       // one nobody expects.
       cell: ({ row }) => {
-        const reason = staleReason(row.original, target)
+        const reason = staleReason(row.original, target, t)
         return reason ? (
           <span className={styles.note} title={reason}>
             {reason}
@@ -161,11 +172,11 @@ export function createVersionColumns({
           <span className={styles.faint}>—</span>
         )
       },
-      meta: { label: "why" },
+      meta: { label: t("versions.column.why") },
     },
     {
       id: "actions",
-      header: "actions",
+      header: t("versions.column.actions"),
       enableSorting: false,
       cell: ({ row }) => {
         const version = row.original
@@ -188,16 +199,17 @@ export function createVersionColumns({
         // keeps the control focusable and hoverable exactly so it can.
         return (
           <span className={styles.actions}>
-            <Tooltip
-              content={denial ?? "Retire the idle workers on this label"}
-            >
+            <Tooltip content={denial ?? t("versions.retireTooltip")}>
               <Button
                 size="icon-sm"
                 variant="destructive"
                 data-test="version-retire"
                 loading={busy}
                 denied={denial}
-                aria-label={`Retire ${version.idle ?? 0} idle workers on ${versionLabel(version)}`}
+                aria-label={t("versions.retireAria", {
+                  count: version.idle ?? 0,
+                  label: versionLabel(version),
+                })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onRetire(version)
@@ -209,7 +221,7 @@ export function createVersionColumns({
           </span>
         )
       },
-      meta: { width: 80, align: "end", label: "actions" },
+      meta: { width: 80, align: "end", label: t("versions.column.actions") },
     },
   ]
 }

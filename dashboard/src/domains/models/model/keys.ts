@@ -8,7 +8,26 @@ import type {
   VirtualKey,
 } from "./types"
 
+import { i18n } from "@/shared/i18n"
 import { formatRelativeTime } from "@/shared/lib/relative-time"
+
+/**
+ * A `models`-namespace translator, the shape the word-bearing readers below
+ * resolve their copy through (`dashboard-i18n` D7). The default is the shared
+ * i18n instance, so a caller with no translator of its own still answers in
+ * the active locale.
+ */
+export type ModelsTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+export function sharedModelsT(
+  key: string,
+  options?: Record<string, unknown>
+): string {
+  return i18n.t(key, { ...options, ns: "models" })
+}
 
 /**
  * What a spend key is worth to whoever is holding it.
@@ -102,22 +121,26 @@ export function budgetLeftUsd(key: VirtualKey): number {
  * other copy of it; only "never" and the past-tense word are really this
  * column's, so only those are still spelled here.
  */
-export function expiryReading(key: VirtualKey): string {
+export function expiryReading(
+  key: VirtualKey,
+  t: ModelsTranslator = sharedModelsT
+): string {
   if (key.expiresInSec === null) {
-    return "never"
+    return t("word.never")
   }
   // A positive TTL is time ahead, so the delta this reads from is negative.
   const reading = formatRelativeTime(-key.expiresInSec * 1000)
-  return key.expiresInSec > 0 ? reading : `expired ${reading}`
+  return key.expiresInSec > 0 ? reading : t("word.expired", { reading })
 }
 
 /** Where a key may be used, in the words the operator uses for it. */
 export function scopeReading(
   key: VirtualKey,
-  projectKey: (projectId: string) => string
+  projectKey: (projectId: string) => string,
+  t: ModelsTranslator = sharedModelsT
 ): string {
   return key.scope.kind === "platform"
-    ? "platform"
+    ? t("word.platform")
     : projectKey(key.scope.projectId)
 }
 
@@ -130,10 +153,11 @@ export function scopeReading(
  */
 export function grantReading(
   grant: KeyGrant,
-  projectKey: (projectId: string) => string
+  projectKey: (projectId: string) => string,
+  t: ModelsTranslator = sharedModelsT
 ): string {
   const where =
-    grant.projectId === null ? "platform" : projectKey(grant.projectId)
+    grant.projectId === null ? t("word.platform") : projectKey(grant.projectId)
   return `${grant.role} · ${where}`
 }
 
@@ -147,9 +171,14 @@ export function grantReading(
  * and says so. A drawer that answered "never used" about a catalogue key would
  * be inventing a fact about a security object.
  */
-export function lastUsedReading(key: VirtualKey): string {
+export function lastUsedReading(
+  key: VirtualKey,
+  t: ModelsTranslator = sharedModelsT
+): string {
   if (key.lastUsedAgoSec === null) {
-    return key.createdAgoSec === null ? "not on this wire" : "never used"
+    return key.createdAgoSec === null
+      ? t("word.notOnThisWire")
+      : t("word.neverUsed")
   }
   return formatRelativeTime(key.lastUsedAgoSec * 1000)
 }
@@ -159,9 +188,12 @@ export function lastUsedReading(key: VirtualKey): string {
  * the admin listing carries no issued-at column, and a drawer that guessed a
  * date would be inventing a fact about a security object.
  */
-export function createdReading(key: VirtualKey): string {
+export function createdReading(
+  key: VirtualKey,
+  t: ModelsTranslator = sharedModelsT
+): string {
   if (key.createdAgoSec === null) {
-    return "not on this wire"
+    return t("word.notOnThisWire")
   }
   return formatRelativeTime(key.createdAgoSec * 1000)
 }
@@ -234,8 +266,14 @@ export function endpointOf(
 }
 
 /** The wire, spelled the way the product says it out loud. */
-export function wireLabel(wire: ModelWire): string {
-  return wire === "openai" ? "openai-compatible" : "anthropic-compatible"
+export function wireLabel(
+  wire: ModelWire,
+  t: ModelsTranslator = sharedModelsT
+): string {
+  return t(`wire.${wire}`, {
+    defaultValue:
+      wire === "openai" ? "openai-compatible" : "anthropic-compatible",
+  })
 }
 
 /** A role and what it is doing, as one reading: `lead · plan`. */
@@ -250,10 +288,11 @@ export function routeLabel(route: ModelRoute): string {
  * section means, and "proxy: off" alone does not say so. Naming the three
  * things that stop happening is the difference between a status and a warning.
  */
-export function proxySentence(enabled: boolean): string {
-  return enabled
-    ? "Spend keys are checked, budgets are enforced and every run is metered"
-    : "workers get a url and a key injected directly — Spend keys are not checked, budgets are not enforced and nothing is metered"
+export function proxySentence(
+  enabled: boolean,
+  t: ModelsTranslator = sharedModelsT
+): string {
+  return enabled ? t("proxy.sentenceOn") : t("proxy.sentenceOff")
 }
 
 /** An hour of the burn series, in the clock's own spelling (`15:00`). */

@@ -1,0 +1,95 @@
+{
+  "errors": {
+    "unknown": "erreur inconnue"
+  },
+  "actions": {
+    "retry": "réessayer"
+  },
+  "header": {
+    "title": "Garde",
+    "crumb": "garde",
+    "summary": {
+      "one": "<owed/> vous attend · <running/> en cours · <total/> runs",
+      "other": "<owed/> vous attendent · <running/> en cours · <total/> runs"
+    },
+    "errorTitle": "La garde n'a pas chargé",
+    "errorTail": "{{detail}} — tant qu'elle ne charge pas, rien sur cet écran ne peut dire si une décision est attendue."
+  },
+  "notice": {
+    "fallback": "La décision a échoué.",
+    "tail": "{{detail}} Rien n'a changé — le run est revenu comme il était."
+  },
+  "verdict": {
+    "clear": "Rien ne vous attend",
+    "owed": {
+      "one": "run attend une décision",
+      "other": "runs attendent une décision"
+    },
+    "swarmEmpty": "L'essaim est vide — rien en file, rien en vol.",
+    "moving": "<running/> en cours · <queued/> en file — l'essaim avance seul."
+  },
+  "attention": {
+    "section": "Vous attend",
+    "column": {
+      "run": "run",
+      "project": "projet",
+      "task": "tâche",
+      "step": "étape",
+      "inStep": "en étape"
+    },
+    "status": {
+      "escalated": "escalade",
+      "failed": "échec",
+      "waiting": "attente"
+    },
+    "reason": {
+      "escalated": "remonté de l'essaim à une personne",
+      "failed": "arrêté à une porte de vérification",
+      "waiting": "attend un humain"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "Approuver",
+    "stop": "Arrêter",
+    "open": "Ouvrir",
+    "approveRun": "Approuver {{title}}",
+    "stopRun": "Arrêter {{title}}",
+    "openRun": "Ouvrir {{title}}",
+    "more": "et {{count}} de plus — ouvrir les runs en direct"
+  },
+  "list": {
+    "waitingOnPlan": "attend un plan",
+    "timeInStep": "temps en étape"
+  },
+  "running": {
+    "section": "En cours maintenant",
+    "note": "{{running}} en vol · {{queued}} en file",
+    "empty": "Rien n'est en vol.",
+    "more": "{{count}} de plus en vol — ouvrir les runs en direct"
+  },
+  "outcomes": {
+    "loading": "Chargement des résultats de la semaine",
+    "failed": "La semaine derrière cette garde n'a pas chargé, aucun historique pour comparer. Tout le reste de cet écran n'en dépend pas — ce qui est en vol ci-dessous est la lecture en direct.",
+    "reading": "<today/> terminés aujourd'hui · <week/> cette semaine · <failed/> en échec",
+    "chartLabel": "Résultats des runs par jour. {{today}} terminés aujourd'hui, {{week}} cette semaine, dont {{failed}} en échec.",
+    "status": {
+      "success": "succès",
+      "failed": "échec",
+      "escalated": "escalade"
+    }
+  },
+  "shortcuts": {
+    "section": "Raccourcis",
+    "newRun": "nouveau run",
+    "newRunNote": "prendre un ticket dans la boîte",
+    "liveRuns": "runs en direct",
+    "liveRunsNote": "tout l'essaim, avec le tableau de flux et les filtres",
+    "approvals": "approbations",
+    "approvalsNote": "plans en attente d'une décision"
+  },
+  "stopDialog": {
+    "title": "Arrêter ce run ?",
+    "body": "{{title}} — le conteneur est démonté et le bail libéré. Le travail déjà fusionné reste.",
+    "confirm": "Arrêter",
+    "cancel": "Laisser tourner"
+  }
+}

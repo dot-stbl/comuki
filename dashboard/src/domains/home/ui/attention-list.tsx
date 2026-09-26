@@ -1,5 +1,6 @@
 import { ArrowRight, Check, X } from "lucide-react"
 import { Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import type {
   AttentionGroup,
@@ -54,6 +55,7 @@ function AttentionRow({
   onApprove,
   onStop,
 }: AttentionRowProps) {
+  const { t } = useTranslation("home")
   const session = useSession()
   const { run } = item
   const approve = useCan("plans.approve", run.projectId)
@@ -87,10 +89,10 @@ function AttentionRow({
       </span>
 
       <span className={step ? styles.step : styles.faint} title={step}>
-        {step || "waiting on a plan"}
+        {step || t("list.waitingOnPlan")}
       </span>
 
-      <span className={styles.clock} title="time in step">
+      <span className={styles.clock} title={t("list.timeInStep")}>
         {formatDuration(run.durationSec)}
       </span>
 
@@ -102,27 +104,27 @@ function AttentionRow({
       <span className={styles.actions}>
         {decides ? (
           <>
-            <Tooltip content={approve.denial ?? "Approve"}>
+            <Tooltip content={approve.denial ?? t("attention.approve")}>
               <Button
                 size="icon"
                 data-test="attention-approve"
                 loading={approving}
                 disabled={busy}
                 denied={approve.denial}
-                aria-label={`Approve ${run.title}`}
+                aria-label={t("attention.approveRun", { title: run.title })}
                 onClick={() => onApprove(run)}
               >
                 <Check aria-hidden="true" />
               </Button>
             </Tooltip>
-            <Tooltip content={stop.denial ?? "Stop"}>
+            <Tooltip content={stop.denial ?? t("attention.stop")}>
               <Button
                 size="icon"
                 variant="destructive"
                 data-test="attention-stop"
                 disabled={busy}
                 denied={stop.denial}
-                aria-label={`Stop ${run.title}`}
+                aria-label={t("attention.stopRun", { title: run.title })}
                 onClick={() => onStop(run)}
               >
                 <X aria-hidden="true" />
@@ -136,12 +138,12 @@ function AttentionRow({
             or not, so the column ends the same way everywhere and the eye can
             run straight down it. An arrow rather than a second cross or tick:
             this is the one control in the row that goes somewhere. */}
-        <Tooltip content="Open">
+        <Tooltip content={t("attention.open")}>
           <Link
             to="/runs/$runId"
             params={{ runId: run.id }}
             data-test="attention-open"
-            aria-label={`Open ${run.title}`}
+            aria-label={t("attention.openRun", { title: run.title })}
             className={buttonClass({ variant: "outline", size: "icon" })}
           >
             <ArrowRight aria-hidden="true" />
@@ -169,17 +171,19 @@ export function AttentionList({
   onApprove,
   onStop,
 }: AttentionListProps) {
+  const { t } = useTranslation("home")
+
   return (
     <div className={styles.list} data-test="attention-list">
       {/* Column names, once for the whole list rather than once per bucket.
           Hidden from assistive tech: each row already reads as a sentence, and
           a repeated header would only add six words in front of every one. */}
       <div className={styles.columns} aria-hidden="true">
-        <span>run</span>
-        <span>project</span>
-        <span>task</span>
-        <span>step</span>
-        <span className={styles.clockHead}>in step</span>
+        <span>{t("attention.column.run")}</span>
+        <span>{t("attention.column.project")}</span>
+        <span>{t("attention.column.task")}</span>
+        <span>{t("attention.column.step")}</span>
+        <span className={styles.clockHead}>{t("attention.column.inStep")}</span>
         <span />
       </div>
 
@@ -189,11 +193,15 @@ export function AttentionList({
           className={styles.group}
           data-test="attention-group"
           data-status={group.status}
-          aria-label={`${group.items.length} ${group.status} — ${group.reason}`}
+          aria-label={t("attention.groupLabel", {
+            count: group.items.length,
+            status: t(`attention.status.${group.status}`),
+            reason: t(group.reasonKey),
+          })}
         >
           <h3 className={styles.groupHead}>
             <StatusBadge status={group.status} size="sm" />
-            <span className={styles.reason}>{group.reason}</span>
+            <span className={styles.reason}>{t(group.reasonKey)}</span>
             <span className={styles.groupCount}>{group.items.length}</span>
           </h3>
 
@@ -219,7 +227,7 @@ export function AttentionList({
             className={styles.moreLink}
             data-test="attention-more"
           >
-            and {hidden} more — open live runs
+            {t("attention.more", { count: hidden })}
           </Link>
         </p>
       ) : null}

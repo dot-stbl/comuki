@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { ModelEndpoint } from "@/domains/models/model/types"
 import {
@@ -29,13 +30,14 @@ export interface EndpointsPanelProps {
  * the screen a single table with gaps in the middle.
  */
 export function EndpointsPanel({ endpoints }: EndpointsPanelProps) {
+  const { t } = useTranslation("models")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
   const [sorting, setSorting] = useState<DataTableSorting>([])
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
 
-  const columns = useMemo(() => createEndpointColumns(), [])
+  const columns = useMemo(() => createEndpointColumns(t), [t])
 
   const rows = useMemo(
     () => applyDataFilters(endpoints, filters, columns),
@@ -43,8 +45,8 @@ export function EndpointsPanel({ endpoints }: EndpointsPanelProps) {
   )
 
   const emptyLabel = hasActiveFilters(filters)
-    ? "no endpoints match the current filters"
-    : "no upstream endpoint is configured"
+    ? t("endpoints.emptyFiltered")
+    : t("endpoints.empty")
 
   return (
     <>
@@ -57,7 +59,7 @@ export function EndpointsPanel({ endpoints }: EndpointsPanelProps) {
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="endpoints-count">
-              {rows.length} shown
+              {t("endpoints.count", { count: rows.length })}
             </span>
           }
         />

@@ -1,0 +1,247 @@
+{
+  "actions": {
+    "retry": "Réessayer"
+  },
+  "errors": {
+    "unknown": "Erreur inconnue"
+  },
+  "page": {
+    "title": "Console",
+    "summary": "le même plan de contrôle que pilotent les écrans, atteint au clavier",
+    "onboard": "Intégrer un dépôt"
+  },
+  "console": {
+    "sendFailure": "Le message n'est pas parti",
+    "decisionFailure": "La décision n'a pas été enregistrée",
+    "startFailure": "La conversation n'a pas démarré",
+    "consoleErrorTitle": "La console n'a pas chargé",
+    "transcriptErrorTitle": "La transcription n'a pas chargé",
+    "loading": "Chargement de la conversation"
+  },
+  "sessions": {
+    "navLabel": "Conversations",
+    "head": "conversations",
+    "new": "Nouvelle conversation",
+    "loading": "Chargement des conversations",
+    "emptyTitle": "Pas encore de conversations",
+    "emptyDescription": "Commencez-en une avec le plus ci-dessus. Chaque conversation reste ici pour y revenir."
+  },
+  "thread": {
+    "emptyTitle": "Rien dit pour l'instant",
+    "emptyBody": "C'est le même plan de contrôle que pilotent les écrans, atteint en tapant. Demandez-lui ce que fait l'essaim, ou commencez par un slash pour voir tout ce qu'il sait faire. Tout ce qui changerait quelque chose revient en proposition que vous pressez — il n'agit jamais seul.",
+    "logLabel": "Conversation",
+    "jump": "aller au dernier",
+    "announceReplying": "l'assistant répond",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "vous",
+    "comuki": "comuki",
+    "iteration": "itér. {{iteration}}",
+    "blank": "ce tour est arrivé vide"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "réfléchit",
+    "tokenWord": "jetons"
+  },
+  "memory": {
+    "label": "mémoire",
+    "facts": {
+      "one": "{{count}} fait",
+      "other": "{{count}} faits"
+    }
+  },
+  "composer": {
+    "boxLabel": "Message à la console",
+    "placeholder": "Demandez, ou commencez par un slash",
+    "commandsHead": "commandes",
+    "originFrom": "de {{project}}",
+    "seedAbout": "à propos",
+    "seedDrop": "Retirer la référence à {{id}}",
+    "scopeRunsIn": "s'exécute dans",
+    "scopePick": "choisir un projet",
+    "scopeAria": "Projet dans lequel {{command}} s'exécute",
+    "sendTooltip": "Envoyer — entrée",
+    "send": "Envoyer"
+  },
+  "scope": {
+    "needsProject": "{{command}} exige un projet",
+    "notAvailable": "indisponible"
+  },
+  "command": {
+    "init": {
+      "description": "intégrer un dépôt : accès git, compute, modèles, connaissances"
+    },
+    "project": {
+      "description": "lister les projets où ce poste peut agir"
+    },
+    "run": {
+      "description": "démarrer une exécution depuis un ticket"
+    },
+    "status": {
+      "description": "ce que l'essaim fait en ce moment"
+    },
+    "stop": {
+      "description": "arrêter une exécution et démonter son conteneur"
+    },
+    "plan": {
+      "description": "lire le plan d'une exécution et trancher"
+    },
+    "debug": {
+      "description": "activer les logs détaillés des workers pendant une heure"
+    },
+    "help": {
+      "description": "ce que la console sait faire"
+    }
+  },
+  "panel": {
+    "label": "Panneau latéral de la console",
+    "awaiting": "en attente d'une décision",
+    "noProject": "sans projet",
+    "steps": {
+      "one": "{{count}} étape",
+      "other": "{{count}} étapes"
+    },
+    "quiet": "rien ne vous attend ici",
+    "slashHelp": "aide des slash"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "démarrer une exécution",
+        "stop": "arrêter une exécution"
+      },
+      "plan": {
+        "approve": "approuver un plan"
+      },
+      "settings": {
+        "debug": "changer un réglage en direct"
+      }
+    },
+    "words": {
+      "run": {
+        "start": { "confirm": "Démarrer", "refuse": "Jeter" },
+        "stop": { "confirm": "Arrêter", "refuse": "Laisser tourner" }
+      },
+      "plan": {
+        "approve": { "confirm": "Approuver", "refuse": "Rejeter" }
+      },
+      "settings": {
+        "debug": { "confirm": "Allumer", "refuse": "Laisser éteint" }
+      }
+    },
+    "inProject": "dans {{project}}",
+    "decidedConfirmed": "confirmé par une humain et enregistré là où chaque décision l'est",
+    "decidedRejected": "refusé par une humain et enregistré là où chaque décision l'est",
+    "needsProjectDenial": "exige un projet où agir"
+  },
+  "handoff": {
+    "searchFor": "chercher dans {{where}}"
+  },
+  "dock": {
+    "tooltip": "Console — {{chord}}",
+    "openAria": "Ouvrir la console — {{chord}}",
+    "title": "Console"
+  },
+  "wizard": {
+    "title": "Intégrer un dépôt",
+
+    "running": "L'intégration est en cours.",
+    "streamHead": "intégration",
+    "stageWord": {
+      "done": "fait",
+
+      "running": "en cours",
+      "queued": "en file"
+    },
+    "doneNotice": "Le projet est enregistré. Son jeu de règles, son image de worker et ses points de terminaison sont ce que l'essaim utilisera dès la prochaine exécution.",
+    "backToConsole": "Retour à la console",
+    "start": "Lancer l'intégration",
+    "continue": "Continuer",
+    "back": "Retour",
+    "cancel": "Annuler",
+    "confirmNotice": "Rien n'a encore été créé. Confirmer lance l'exécution d'intégration, et tout ce qu'elle fait est enregistré là où va toute autre exécution.",
+    "guardTitle": "Quitter l'assistant sans intégrer ?",
+    "guardBody": "Le dépôt, les points de terminaison des modèles et la référence de secret que vous avez saisis ne sont enregistrés nulle part. Quitter cette page les perd.",
+    "guardConfirm": "Jeter",
+    "guardCancel": "Continuer l'édition",
+    "step": {
+      "repo": {
+        "title": "Dépôt et accès git",
+        "summary": "Où vit le code et ce que l'essaim peut lui faire. Cette étape décide quel projet le reste de l'assistant configure."
+      },
+      "compute": {
+        "title": "Fournisseur de compute",
+        "summary": "Où les conteneurs de workers démarrent, et le plafond d'exécutions simultanées."
+      },
+      "models": {
+        "title": "Points de terminaison des modèles",
+        "summary": "Une url de base compatible OpenAI ou Anthropic pour le modèle pilote et les workers. Les secrets y sont nommés, jamais saisis."
+      },
+      "knowledge": {
+        "title": "Connaissances",
+        "summary": "Si ce projet garde un jeu de règles indexé, et ce que la première passe doit lire."
+      },
+      "confirm": {
+        "title": "Confirmer",
+        "summary": "Ce que l'intégration fera, dans l'ordre où elle le fera. Rien n'a encore été créé."
+      }
+    },
+    "stage": {
+      "clone": "cloner le dépôt",
+      "rules": "lire les règles et skills du client",
+      "image": "tirer l'image de worker",
+      "endpoints": "joindre les points de terminaison des modèles",
+      "knowledge": "semer l'index de connaissances",
+      "register": "enregistrer le projet auprès de l'essaim"
+    },
+    "field": {
+      "project": "projet",
+      "projectHint": "Seuls les projets où vous pouvez connecter une source sont listés.",
+      "pickProject": "choisir un projet",
+      "remote": "git remote",
+      "branch": "branche par défaut",
+      "write": "peut pousser des branches",
+      "writeHint": "Éteint : l'essaim lit le dépôt et n'ouvre rien.",
+      "provider": "fournisseur",
+      "workers": "workers à la fois",
+      "workersHint": "Le plafond de conteneurs que ce projet peut contenir.",
+      "lead": "point de terminaison du modèle pilote",
+      "leadHint": "Compatible OpenAI ou Anthropic.",
+      "workerModel": "point de terminaison du modèle des workers",
+      "workerPlaceholder": "laisser vide pour utiliser celui du modèle pilote",
+      "secret": "référence de secret",
+      "secretHint": "Le nom du secret, pas le secret. Les clés ne sont jamais saisies dans ce produit.",
+      "knowledge": "garder un jeu de règles indexé",
+      "knowledgeHint": "Un worker de docs l'écrit. Il n'y a pas d'éditeur de documents ici.",
+      "seed": "graine",
+      "seedHint": "Ce que la première passe lit, en globs."
+    },
+    "error": {
+      "project": "choisissez le projet auquel appartient ce dépôt",
+      "remote": "un git remote est requis",
+      "branch": "une branche par défaut est requise",
+      "workers": "un nombre entier de workers, au moins un",
+      "lead": "le modèle pilote exige une url de base",
+      "secret": "nommez le secret qui porte la clé"
+    },
+    "review": {
+      "project": "projet",
+      "remote": "remote",
+      "branch": "branche",
+      "pushAccess": "accès push",
+      "compute": "compute",
+      "workers": "workers",
+      "lead": "modèle pilote",
+      "workerModel": "modèle des workers",
+      "secret": "secret",
+      "knowledge": "connaissances",
+      "on": "activé",
+      "off": "désactivé",
+      "sameAsLead": "comme le pilote"
+    }
+  }
+}

@@ -1,7 +1,9 @@
 import { Plus } from "lucide-react"
 import { Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { ThemeControl } from "@/app/layout/theme-control"
+import { LocaleSwitcher } from "@/app/layout/locale-switcher"
 import { LiveBadge } from "@/app/layout/live-badge"
 import { ThemePicker } from "@/app/theme"
 import { GlobalSearch } from "@/app/search"
@@ -13,6 +15,7 @@ import { BrandIcon, buttonClass, ComukiMark, Tooltip } from "@/shared/ui"
 import styles from "./app-shell-topbar.module.css"
 
 export function AppShellTopbar() {
+  const { t } = useTranslation("shell")
   const session = useSession()
   const hubStatus = useRunsHubStatus()
 
@@ -22,7 +25,7 @@ export function AppShellTopbar() {
           board or in the bar. A container is a shape an operator learns in one
           shift, and a word beside it was saying a second time what the shape
           already said. It is the one link that always goes home. */}
-      <Link to="/" aria-label="Comuki — home" className={styles.brand}>
+      <Link to="/" aria-label={t("topbar.home")} className={styles.brand}>
         <ComukiMark className={styles.mark} />
       </Link>
 
@@ -58,7 +61,7 @@ export function AppShellTopbar() {
         {can(session, "inbox.take") ? (
           <Link to="/tasks" data-test="new-run" className={buttonClass()}>
             <Plus aria-hidden="true" />
-            New run
+            {t("topbar.newRun")}
           </Link>
         ) : null}
 
@@ -75,6 +78,12 @@ export function AppShellTopbar() {
         <ThemePicker />
         <ThemeControl />
 
+        {/* Language beside appearance: both are properties of the person
+            reading the board, chosen once and left alone. The options name
+            themselves in their own tongue, so the control works from inside
+            any locale (and from inside none of them yet). */}
+        <LocaleSwitcher />
+
         {/* The source, at the far edge. It renders only when there is
             somewhere for it to go — `repoUrl` is `null` for a deployment that
             has taken the address out of its environment, and a mark linking
@@ -83,13 +92,13 @@ export function AppShellTopbar() {
             than a glyph: "github" alone does not say what pressing it does,
             and it does not say that it leaves the product either. */}
         {env.repoUrl ? (
-          <Tooltip content="github">
+          <Tooltip content={t("topbar.github")}>
             <a
               href={env.repoUrl}
               target="_blank"
               rel="noreferrer noopener"
               data-test="repo-link"
-              aria-label="Comuki on GitHub — opens in a new tab"
+              aria-label={t("topbar.githubOpens")}
               className={buttonClass({ variant: "ghost", size: "icon" })}
             >
               <BrandIcon brand="github" label={null} />

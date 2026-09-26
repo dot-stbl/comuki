@@ -1,0 +1,174 @@
+{
+  "actions": {
+    "cancel": "Abbrechen",
+    "retry": "Erneut versuchen"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler"
+  },
+  "registry": {
+    "title": "Projekte",
+    "summary": "<count/> Projekte · <runs/> Runs in Arbeit · <spend/> heute",
+    "errorTitle": "Die Registry wurde nicht geladen",
+    "newProject": "Neues Projekt",
+    "filterByTag": "Nach Tag filtern",
+    "count": {
+      "one": "{{count}} angezeigt",
+      "other": "{{count}} angezeigt"
+    },
+    "empty": {
+      "filtered": "kein Projekt passt auf die aktuellen Filter",
+      "none": "noch keine Projekte"
+    }
+  },
+  "column": {
+    "slug": "slug",
+    "name": "name",
+    "tags": "tags",
+    "inFlight": "in Arbeit",
+    "runs": "runs",
+    "costToday": "kosten heute",
+    "profiles": "profile",
+    "created": "erstellt",
+    "slugFilterPlaceholder": "slug, name, repository filtern…"
+  },
+  "identity": {
+    "icon": "icon",
+    "accentColour": "akzentfarbe",
+    "tags": "tags",
+    "repo": "git-profil-repository",
+    "iconPlaceholder": "🛰️ oder https://example.com/mark.png",
+    "platformDefaults": "plattform-standardprofile"
+  },
+  "mark": {
+    "stored": "gespeichertes Icon",
+    "neutral": "Projekt-Zeichen",
+    "brand": "{{brand}}-Zeichen"
+  },
+  "slug": {
+    "error": {
+      "required": "ein slug ist erforderlich",
+      "spaces": "keine Leerzeichen — Bindestrich verwenden",
+      "lowercase": "slugs sind kleingeschrieben",
+      "min": "mindestens {{min}} Zeichen",
+      "max": "höchstens {{max}} Zeichen",
+      "edges": "muss mit einem Buchstaben oder einer Ziffer beginnen und enden",
+      "pattern": "nur Buchstaben, Ziffern und einzelne Bindestriche",
+      "taken": "dieser slug ist vergeben"
+    }
+  },
+  "form": {
+    "nameLabel": "name",
+    "slugLabel": "slug",
+    "namePlaceholder": "was dieses Projekt ist, in wenigen Worten",
+    "slugPlaceholder": "kleinschreibung, bindestriche, keine leerzeichen",
+    "slugHint": "Erscheint als Spalte in jeder Liste des Produkts. Kleinbuchstaben, Ziffern und Bindestriche.",
+    "repoPlaceholder": "git@github.com:org/worker-profiles.git",
+    "repoHint": "Optional. Wo die Worker-Profile dieses Projekts gepflegt werden — leer lassen für die Plattform-Standardprofile.",
+    "iconHint": "Optional. Ein einzelnes Emoji oder eine Bild-URL, neben dem Slug angezeigt. Ohne eines kommt das Zeichen vom Host des Repositorys.",
+    "colorClear": "keine Farbe",
+    "colorHint": "Optional. Färbt den Punkt neben dem Zeichen und tönt die Tags — nie die Oberfläche.",
+    "tagsHint": "Optional. Was dieses Projekt ist — Enter oder Komma fügt jeden Tag hinzu, Backspace entfernt den letzten.",
+    "submit": "Projekt erstellen"
+  },
+  "tagEntry": {
+    "placeholder": "web, billing…",
+    "remove": "Tag {{tag}} entfernen"
+  },
+  "create": {
+    "title": "Neues Projekt",
+    "crumb": "neu",
+    "summary": "Ein Projekt besitzt seine Anwendungen, seine Runs und sein Budget. Der Slug ist der Name, unter dem es überall bekannt ist.",
+    "toastCreated": "Projekt erstellt",
+    "failureFallback": "Das Projekt wurde nicht erstellt.",
+    "failureTail": "Es wurde nichts erstellt — Ihre Eingaben sind genau so erhalten, wie Sie sie verlassen haben.",
+    "guardTitle": "Ohne Erstellen des Projekts verlassen?",
+    "guardBody": "Name, Slug und Repository sind noch nirgends gespeichert. Wer diese Seite verlässt, verwirft sie.",
+    "guardConfirm": "Verwerfen",
+    "guardCancel": "Weiter bearbeiten"
+  },
+  "detail": {
+    "fallbackTitle": "Projekt",
+    "crumbFallback": "projekt",
+    "summary": "<slug/> · erstellt <created/>",
+    "notFoundTitle": "Kein Projekt mit dieser ID",
+    "notFoundDescription": "Die Registry hält nichts unter <id/>. Eine Projekt-ID aus einem alten Link ist der gewöhnliche Weg hierher — eine Adresse überlebt das Projekt, das sie benannte, und die Registry ist der Ort, an dem die noch existierenden leben.",
+    "notFoundBack": "Zurück zu den Projekten",
+    "factsSection": "das Projekt selbst",
+    "editIdentity": "Zeichen bearbeiten",
+    "editIdentityFailure": "Das Zeichen wurde nicht gespeichert.",
+    "rolesSection": "Rollen in diesem Projekt",
+    "rolesForbiddenSubject": "Rollen in diesem Projekt",
+    "rolesHeld": {
+      "one": "{{count}} gehalten",
+      "other": "{{count}} gehalten"
+    },
+    "fact": {
+      "slug": "slug",
+      "name": "name",
+      "mark": "zeichen",
+      "created": "erstellt",
+      "iconAbsent": "keines gespeichert",
+      "colourAbsent": "nicht gesetzt",
+      "tagsAbsent": "noch keine"
+    },
+    "rolesEmpty": "Niemand hält eine Rolle in diesem Projekt. Jeder, der es erreichen kann, erreicht es über eine Plattform-Rolle — die gilt überall und wird hier nicht aufgeführt.",
+    "rolesAll": "jede Zuweisung in diesem Projekt",
+    "rolesGrant": "Rolle vergeben"
+  },
+  "editor": {
+    "iconHint": "Ein einzelnes Emoji oder eine Bild-URL. Leer lässt das aktuelle Zeichen bestehen.",
+    "colorClear": "gespeicherte Farbe behalten",
+    "colorHint": "Färbt den Punkt neben dem Zeichen und tönt die Tags — nie die Oberfläche.",
+    "tagsHint": "Was dieses Projekt ist. Ein leerer Liste beim Speichern löscht die Tags.",
+    "save": "Zeichen speichern"
+  },
+  "handoff": {
+    "section": "wo die Arbeit dieses Projekts ist",
+    "counting": "zählen",
+    "runsWhat": "laufende Runs",
+    "runsCount": "<count/> in Arbeit von <total/> gesehen",
+    "runsNote": "Dienstliste auf dieses Projekt eingeengt öffnen",
+    "queueWhat": "Queue & Worker",
+    "queueCount": "<items/> Arbeitselemente · <workers/> Worker oben",
+    "queueNote": "Claim-Queue auf dieses Projekt eingeengt öffnen",
+    "sourcesWhat": "Quellen",
+    "sourcesCount": "<count/> Verbindungen",
+    "sourcesNote": "Intake auf dieses Projekt eingeengt öffnen",
+    "costWhat": "Kosten & Fehler",
+    "costToday": "<spend/> heute",
+    "costNothing": "<dash/> noch nichts zugeordnet",
+    "costNote": "die Zahl gehört diesem Projekt — der Bericht dahinter gehört der Plattform"
+  },
+  "jobs": {
+    "section": "geplante Jobs",
+    "unknown": "unbekannt",
+    "counting": "zählen",
+    "loading": "Geplante Jobs werden geladen",
+    "errorTitle": "Die Zeitpläne wurden nicht geladen",
+    "statusEnabled": "aktiv",
+    "statusPaused": "pausiert",
+    "pause": "Zeitplan pausieren",
+    "resume": "Zeitplan fortsetzen",
+    "delete": "Zeitplan löschen",
+    "emptyTitle": "Hier läuft nichts nach Uhr",
+    "emptyDescription": "Kein Zeitplan startet von selbst Arbeit in diesem Projekt. Alles, was hier läuft, wurde von einer Person eingereicht oder dispatcht.",
+    "create": "Job einplanen",
+    "dialogDescription": "Ein Cron-Eintrag, den die Plattform selbst in dieses Projekt einreicht — das Brief wird das Ticket, das Profil wird der erste Schritt.",
+    "dialogSubmit": "Einplanen",
+    "cronLabel": "cron",
+    "cronHint": "Fünffeld-Cron, in der eigenen Zeitzonen-Richtlinie des Projekts. Preset wählen oder den Ausdruck direkt schreiben.",
+    "profileLabel": "profil-schlüssel",
+    "profilePlaceholder": "implementer",
+    "profileHint": "Das Work-Item-Profil, von dem der Run startet — der Katalog liegt im Git des Kunden.",
+    "briefLabel": "brief json",
+    "briefHint": "Wörtlich gespeichert. Nichts zwischen diesem Feld und dem Host fasst es an.",
+    "deleteTitle": "Diesen Zeitplan löschen?",
+    "deleteBody": "<cron/> für <profile/> feuert nicht mehr und wird entfernt. Läuft wegen ihm bereits Arbeit, bleibt sie unangetastet.",
+    "deleteCancel": "Behalten",
+    "configured": {
+      "one": "{{count}} konfiguriert",
+      "other": "{{count}} konfiguriert"
+    }
+  }
+}

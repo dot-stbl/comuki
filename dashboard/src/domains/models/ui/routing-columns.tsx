@@ -1,4 +1,8 @@
-import { endpointOf } from "@/domains/models/model/keys"
+import {
+  endpointOf,
+  sharedModelsT,
+  type ModelsTranslator,
+} from "@/domains/models/model/keys"
 import type { ModelEndpoint, ModelRoute } from "@/domains/models/model/types"
 import { rankSort, type DataColumn } from "@/shared/ui"
 
@@ -7,6 +11,11 @@ import styles from "./models-table.module.css"
 
 export interface RoutingColumnsOptions {
   endpoints: ModelEndpoint[]
+  /**
+   * Copy as a parameter because `cell` is a plain function, so a
+   * `useTranslation` inside one throws. The panel passes its hook-bound `t`.
+   */
+  t?: ModelsTranslator
 }
 
 /** Row identity: a role and a duty together are the key. */
@@ -35,12 +44,13 @@ const roleSort = rankSort({ lead: 0, worker: 1 })
  */
 export function createRoutingColumns({
   endpoints,
+  t = sharedModelsT,
 }: RoutingColumnsOptions): DataColumn<ModelRoute>[] {
   return [
     {
       id: "role",
       accessorFn: (route) => route.role,
-      header: "role",
+      header: t("routing.column.role"),
       sortFn: roleSort,
       cell: ({ row }) => (
         <span className={styles.route}>
@@ -53,7 +63,7 @@ export function createRoutingColumns({
         pinned: true,
         filter: {
           kind: "select",
-          placeholder: "all roles",
+          placeholder: t("routing.allRoles"),
           options: [
             { value: "lead", label: "lead" },
             { value: "worker", label: "worker" },
@@ -63,7 +73,7 @@ export function createRoutingColumns({
     },
     {
       accessorKey: "model",
-      header: "model",
+      header: t("routing.column.model"),
       cell: ({ row }) => (
         <span className={styles.strong}>{row.original.model}</span>
       ),
@@ -72,7 +82,7 @@ export function createRoutingColumns({
     {
       id: "endpoint",
       accessorFn: (route) => route.endpointId,
-      header: "endpoint",
+      header: t("routing.column.endpoint"),
       cell: ({ row }) => {
         const endpoint = endpointOf(endpoints, row.original.endpointId)
         return endpoint ? (
@@ -87,7 +97,7 @@ export function createRoutingColumns({
         width: 136,
         filter: {
           kind: "select",
-          placeholder: "all endpoints",
+          placeholder: t("routing.allEndpoints"),
           options: endpoints.map((endpoint) => ({
             value: endpoint.id,
             label: endpoint.name,
@@ -99,29 +109,29 @@ export function createRoutingColumns({
       id: "reachable",
       accessorFn: (route) =>
         endpointOf(endpoints, route.endpointId)?.state ?? "disabled",
-      header: "upstream",
+      header: t("routing.column.upstream"),
       // A resolution that lands on a degraded or disabled endpoint is the one
       // failure this table can see and no other screen can — the routing is
       // fine, the wire under it is not.
       cell: ({ row }) => {
         const endpoint = endpointOf(endpoints, row.original.endpointId)
         return endpoint ? (
-          <EndpointStateBadge state={endpoint.state} />
+          <EndpointStateBadge state={endpoint.state} t={t} />
         ) : (
-          <span className={styles.faint}>unknown</span>
+          <span className={styles.faint}>{t("routing.unknown")}</span>
         )
       },
-      meta: { width: 116, label: "upstream" },
+      meta: { width: 116, label: t("routing.column.upstream") },
     },
     {
       accessorKey: "note",
-      header: "used for",
+      header: t("routing.column.usedFor"),
       cell: ({ row }) => (
         <span className={styles.note} title={row.original.note}>
           {row.original.note}
         </span>
       ),
-      meta: { label: "used for" },
+      meta: { label: t("routing.column.usedFor") },
     },
   ]
 }

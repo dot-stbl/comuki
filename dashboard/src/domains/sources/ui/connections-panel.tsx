@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type {
   SourceConnection,
@@ -62,6 +63,7 @@ export function ConnectionsPanel({
   connections,
   initialFilter,
 }: ConnectionsPanelProps) {
+  const { t } = useTranslation("sources")
   // `name` is the promoted text filter's key — the column the toolbar lifts
   // into its search field — so seeding it is the same act as typing in the box.
   const [filters, setFilters] = useState<DataTableFilterValues>(() => {
@@ -84,8 +86,8 @@ export function ConnectionsPanel({
   }, [connections, filters, columns])
 
   const emptyLabel = hasActiveFilters(filters)
-    ? "No connections match the current filters."
-    : "No sources are connected."
+    ? t("connectionsPanel.emptyFiltered")
+    : t("connectionsPanel.emptyNone")
 
   return (
     <div className={styles.panel} data-test="connections-panel">
@@ -98,7 +100,7 @@ export function ConnectionsPanel({
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={styles.count} data-test="connections-count">
-              {rows.length} shown
+              {t("connectionsPanel.shown", { count: rows.length })}
             </span>
           }
         />

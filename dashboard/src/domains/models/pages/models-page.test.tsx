@@ -7,8 +7,10 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { fireEvent, render, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { resetSeedModels } from "@/shared/api/mock/models.store"
@@ -450,5 +452,27 @@ describe("the key drawer", () => {
     // The selection is gone, not merely covered: opening the sheet again is a
     // fresh visit with no drawer state left over from the last one.
     expect(find('[data-test="key-detail-sheet"]')).toBeNull()
+  })
+})
+
+describe("the models registry in russian", () => {
+  it("renders the title and the section names in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    try {
+      renderScreen()
+
+      expect(
+        await screen.findByRole("heading", { name: "Модели" })
+      ).toBeTruthy()
+      // The four sections name themselves in russian, in reading order.
+      expect(await screen.findByText("Прокси")).toBeTruthy()
+      expect(screen.getByText("Апстрим-эндпоинты")).toBeTruthy()
+      expect(screen.getByText("Спенд-ключи")).toBeTruthy()
+      expect(screen.getByText("Роль → модель")).toBeTruthy()
+    } finally {
+      await i18n.changeLanguage("en")
+    }
   })
 })

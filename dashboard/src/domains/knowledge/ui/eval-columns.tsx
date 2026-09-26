@@ -1,8 +1,27 @@
 import type { EvalCase } from "@/domains/knowledge/model/types"
+import { i18n } from "@/shared/i18n"
 import { StatusBadge, rankSort, type DataColumn } from "@/shared/ui"
 
 import { EvalDeltaMark } from "./knowledge-badges"
 import styles from "./knowledge-table.module.css"
+
+/**
+ * A `knowledge`-namespace translator, the shape the page hands down to this
+ * factory (`dashboard-i18n` D7). `cell` is a plain function, so a hook inside
+ * one throws; the page passes its hook-bound `t`, and tests fall back to the
+ * shared instance, which answers in the active locale.
+ */
+export type KnowledgeTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+function sharedKnowledgeT(
+  key: string,
+  options?: Record<string, unknown>
+): string {
+  return i18n.t(key, { ...options, ns: "knowledge" })
+}
 
 /** Row identity for the virtualized body. Module scope keeps it stable. */
 export const getEvalId = (item: EvalCase) => item.task
@@ -28,11 +47,13 @@ const deltaSort = rankSort({ "-": 0, "+": 1, "=": 2 })
  * called as a plain function while the table builds a row, so a hook inside one
  * throws.
  */
-export function createEvalColumns(): DataColumn<EvalCase>[] {
+export function createEvalColumns(
+  t: KnowledgeTranslator = sharedKnowledgeT
+): DataColumn<EvalCase>[] {
   return [
     {
       accessorKey: "task",
-      header: "task",
+      header: t("eval.column.task"),
       cell: ({ row }) => (
         <span className={styles.task} title={row.original.task}>
           {row.original.task}
@@ -42,7 +63,7 @@ export function createEvalColumns(): DataColumn<EvalCase>[] {
     },
     {
       accessorKey: "before",
-      header: "before",
+      header: t("eval.column.before"),
       cell: ({ row }) => (
         <StatusBadge
           status={row.original.before === "pass" ? "success" : "failed"}
@@ -55,7 +76,7 @@ export function createEvalColumns(): DataColumn<EvalCase>[] {
     },
     {
       accessorKey: "after",
-      header: "after",
+      header: t("eval.column.after"),
       cell: ({ row }) => (
         <StatusBadge
           status={row.original.after === "pass" ? "success" : "failed"}
@@ -68,10 +89,10 @@ export function createEvalColumns(): DataColumn<EvalCase>[] {
     },
     {
       accessorKey: "delta",
-      header: "delta",
+      header: t("eval.column.delta"),
       sortFn: deltaSort,
       cell: ({ row }) => <EvalDeltaMark delta={row.original.delta} />,
-      meta: { width: 132, align: "end", label: "delta" },
+      meta: { width: 132, align: "end", label: t("eval.column.delta") },
     },
   ]
 }

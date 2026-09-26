@@ -1,5 +1,6 @@
 import { KeyRound, LogOut, Settings, UserRound } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import {
   Button as AriaButton,
   Menu,
@@ -37,6 +38,7 @@ export interface RailAccountProps {
  */
 export function RailAccount({ collapsed = false }: RailAccountProps) {
   const navigate = useNavigate()
+  const { t } = useTranslation("shell")
   const session = useSession()
   const { user } = session
   const initial = user.name.trim().charAt(0).toUpperCase() || "?"
@@ -47,7 +49,7 @@ export function RailAccount({ collapsed = false }: RailAccountProps) {
       <AriaButton
         className={styles.trigger}
         data-test="rail-account"
-        aria-label={`Account — ${user.name}`}
+        aria-label={t("account.named", { name: user.name })}
       >
         <span
           className={styles.avatar}
@@ -79,35 +81,35 @@ export function RailAccount({ collapsed = false }: RailAccountProps) {
           </span>
         </div>
 
-        <Menu className={styles.menu} aria-label="Account">
+        <Menu className={styles.menu} aria-label={t("account.label")}>
           <MenuItem
             className={styles.item}
             onAction={() => void navigate({ to: "/settings" })}
             isDisabled={!can(session, "settings.live")}
-            textValue="Settings"
+            textValue={t("account.settings")}
           >
             <Settings aria-hidden="true" className={styles.itemIcon} />
-            <span className={styles.itemLabel}>Settings</span>
+            <span className={styles.itemLabel}>{t("account.settings")}</span>
           </MenuItem>
 
           <MenuItem
             className={styles.item}
             onAction={() => void navigate({ to: "/identity" })}
             isDisabled={!can(session, "identity.manage")}
-            textValue="API keys"
+            textValue={t("account.apiKeys")}
           >
             <KeyRound aria-hidden="true" className={styles.itemIcon} />
-            <span className={styles.itemLabel}>API keys</span>
+            <span className={styles.itemLabel}>{t("account.apiKeys")}</span>
           </MenuItem>
 
           <MenuItem
             className={styles.item}
             onAction={() => void navigate({ to: "/identity" })}
             isDisabled={!can(session, "identity.manage")}
-            textValue="Profile"
+            textValue={t("account.profile")}
           >
             <UserRound aria-hidden="true" className={styles.itemIcon} />
-            <span className={styles.itemLabel}>Profile</span>
+            <span className={styles.itemLabel}>{t("account.profile")}</span>
           </MenuItem>
 
           {/* Clears the session first, *then* lands. The order is the whole
@@ -145,10 +147,10 @@ export function RailAccount({ collapsed = false }: RailAccountProps) {
                      /login would 401 them back to the same screen. */
                 })
             }}
-            textValue="Sign out"
+            textValue={t("account.signOut")}
           >
             <LogOut aria-hidden="true" className={styles.itemIcon} />
-            <span className={styles.itemLabel}>Sign out</span>
+            <span className={styles.itemLabel}>{t("account.signOut")}</span>
           </MenuItem>
         </Menu>
       </Popover>

@@ -1,0 +1,171 @@
+{
+  "actions": {
+    "retry": "Erneut versuchen"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler"
+  },
+  "workStatus": {
+    "queued": "in der Warteschlange",
+    "running": "läuft",
+    "blocked": "blockiert",
+    "failed": "fehlgeschlagen",
+    "cancelled": "abgebrochen",
+    "succeeded": "erfolgreich"
+  },
+  "workerState": {
+    "busy": "beschäftigt",
+    "idle": "frei",
+    "draining": "leert sich",
+    "offline": "offline"
+  },
+  "registry": {
+    "title": "Warteschlange & Worker",
+    "summary": "<queued/> in der Warteschlange · <stalled/> länger als fünf Minuten ohne Anspruch · <total/> Worker, <idle/> frei · <lost/> ohne Heartbeat",
+    "errorTitle": "Die Warteschlange konnte nicht geladen werden",
+    "loading": "Warteschlange wird geladen",
+    "expandPool": "Pool ausklappen",
+    "collapsePool": "Pool einklappen",
+    "resizePool": "Größe des Worker-Pools ändern"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "auf diesem Profil steht nichts in der Warteschlange",
+      "filtered": "kein Arbeitselement passt auf die aktuellen Filter",
+      "none": "die Warteschlange ist leer"
+    },
+    "shown": {
+      "one": "{{count}} angezeigt",
+      "other": "{{count}} angezeigt"
+    },
+    "waitingTooLong": {
+      "one": "{{count}} wartet zu lange · ",
+      "other": "{{count}} warten zu lange · "
+    }
+  },
+  "queueColumn": {
+    "status": "status",
+    "item": "element",
+    "run": "lauf",
+    "project": "projekt",
+    "profile": "profil",
+    "step": "schritt",
+    "claimedBy": "genommen von",
+    "age": "alter",
+    "allStatuses": "alle statuses",
+    "allProjects": "alle projekte",
+    "allProfiles": "alle profile",
+    "filterPlaceholder": "element, lauf, schritt filtern…"
+  },
+  "ageMeter": {
+    "stalled": "länger als {{limit}} in der Warteschlange — kein Worker dieses Profils hat es genommen"
+  },
+  "lease": {
+    "noHeartbeat": "keine Heartbeat-Anzeige — der Lease läuft ab und das Element wird erneut eingereiht",
+    "lostHeartbeat": "kein Heartbeat seit {{quiet}} — der Lease läuft ab und das Element wird erneut eingereiht"
+  },
+  "depth": {
+    "label": "Warteschlangentiefe pro Tag",
+    "figure": "<today/> jetzt in der Warteschlange · die Woche lief <week/>",
+    "deepest": " · heute der tiefste Tag der Woche",
+    "chartLabel": "Warteschlangentiefe pro Tag, Elemente in Anspruchswartestellung. Heute {{today}} in der Warteschlange; die Woche lief von {{weekMin}} bis {{weekMax}}.",
+    "chartLabelDeepest": "Warteschlangentiefe pro Tag, Elemente in Anspruchswartestellung. Heute {{today}} in der Warteschlange — der tiefste Tag einer Woche, die von {{weekMin}} bis {{weekMax}} lief."
+  },
+  "poolStrip": {
+    "expandEmpty": "Pool ausklappen. Es sind keine Worker oben.",
+    "expand": "Pool ausklappen. {{total}} Worker: {{busy}} beschäftigt, {{draining}} leeren sich, {{idle}} frei."
+  },
+  "workerColumn": {
+    "state": "zustand",
+    "worker": "worker",
+    "project": "projekt",
+    "profile": "profil",
+    "currentWork": "aktuelle arbeit",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "image",
+    "lease": "lease",
+    "up": "oben",
+    "actions": "aktionen",
+    "idle": "frei",
+    "allStates": "alle zustände",
+    "allProjects": "alle projekte",
+    "allProfiles": "alle profile",
+    "allProviders": "alle anbieter",
+    "filterPlaceholder": "worker, handle, image filtern…",
+    "drain": "Leeren",
+    "forceStop": "Zwangsstopp",
+    "drainWorker": "{{id}} leeren",
+    "forceStopWorker": "{{id}} zwangsstoppen"
+  },
+  "workersPanel": {
+    "count": "{{shown}} von {{total}} Workern",
+    "fallback": "Der Pool hat das nicht angenommen.",
+    "tail": "Nichts hat sich geändert — der Worker ist wie zuvor.",
+    "stopTitle": "Diesen Worker zwangsstoppen?",
+    "stopIdle": "{{id}} ist frei. Der Container wird jetzt abgerissen, und Scale hebt einen anderen, wenn es Arbeit gibt.",
+    "stopBusy": "{{id}} hält \"{{label}}\" auf Lauf {{runId}}. Der Container wird jetzt abgerissen, der Lease freigegeben, und das Element geht zurück in die Warteschlange, damit ein anderer Worker es nimmt.",
+    "stopConfirm": "Zwangsstopp",
+    "stopCancel": "Laufen lassen"
+  },
+  "workerEmpty": {
+    "clearFilters": "Filter zurücksetzen",
+    "filteredTitle": "Kein Worker passt auf die Filter",
+    "filteredDescription": {
+      "one": "Der Pool ist oben — <pool/> Worker{{where}} läuft, nur nicht diese.",
+      "other": "Der Pool ist oben — <pool/> Worker{{where}} laufen, nur nicht diese."
+    },
+    "backlogTitle": "Noch keine Worker",
+    "backlogDescription": {
+      "one": "min idle = <zero/>{{where}}, also steht der Pool leer, bis es Arbeit gibt. Die gibt es jetzt: <backlog/> Element in der Warteschlange ohne Anspruch. Scale hebt einen Worker, um es zu nehmen.",
+      "other": "min idle = <zero/>{{where}}, also steht der Pool leer, bis es Arbeit gibt. Die gibt es jetzt: <backlog/> Elemente in der Warteschlange ohne Anspruch. Scale hebt einen Worker, um sie zu nehmen."
+    },
+    "atRestTitle": "Keine Worker — und keine erwünscht",
+    "atRestDescription": "min idle = <zero/>{{where}} und nichts ist in der Warteschlange. Ein leerer Pool ist hier der konfigurierte Ruhezustand, kein Ausfall — ein Container wird pro Aufgabe erzeugt und danach abgerissen.",
+    "underTargetTitle": "Der Pool ist unter seinem Ziel",
+    "underTargetDescription": {
+      "one": "min idle = <minIdle/>{{where}} und kein Worker ist oben. Das ist kein Ruhezustand: Compute hebt sie nicht, und <backlog/> Element wird warten, bis es tut.",
+      "other": "min idle = <minIdle/>{{where}} und kein Worker ist oben. Das ist kein Ruhezustand: Compute hebt sie nicht, und <backlog/> Elemente werden warten, bis es tut."
+    },
+    "onProject": " auf {{project}}"
+  },
+  "worker": {
+    "loading": "Worker wird geladen",
+    "errorTitle": "Der Pool konnte nicht geladen werden",
+    "fallback": "Der Pool hat das nicht angenommen.",
+    "tail": "Nichts hat sich geändert — der Worker ist wie zuvor.",
+    "live": "live",
+    "container": "container",
+    "currentWork": "aktuelle arbeit",
+    "leaseLeft": "lease übrig",
+    "leaseNone": "nichts genommen, also gibt es keinen Lease zu verteidigen",
+    "sinceHeartbeat": "seit Heartbeat",
+    "heartbeatStale": "veraltet nach {{limit}}",
+    "up": "oben",
+    "upNote": "seit der Container oben ist",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "image",
+    "imageNote": "jeder Container auf diesem Image",
+    "profile": "profil",
+    "profileNote": "die Achse, auf der ein Anspruch matcht",
+    "project": "projekt",
+    "workNote": "Hält ein Element, das die Warteschlange mit dieser Antwort nicht mitgeschickt hat.",
+    "idle": "frei",
+    "idleNote": "Hält nichts und kann das nächste Element nehmen, das auf sein Profil passt.",
+    "tornDownTitle": "Dieser Container ist weg",
+    "tornDownDescription": "<id/> wurde abgerissen, während diese Seite offen war. Ein gestoppter Container wird nicht aufbewahrt — es gibt keine Aufzeichnung, zu der man zurückkehren könnte, und das ist so gemeint. Worker werden für die Arbeit vor ihnen gehoben und entfernt, wenn sie erledigt oder von jemandem gestoppt ist; das ist der Pool, der sich so verhält, wie er konfiguriert ist, kein Ausfall.",
+    "tornDownHolding": "Er hielt <label/>. Diese Arbeit ging nicht mit ihm unter: Der Lease wurde freigegeben und das Element ging zurück in die Warteschlange, damit ein anderer Worker es nimmt.",
+    "tornDownIdle": "Er war frei, als er ging — er hielt nichts, und nichts kehrte in die Warteschlange zurück.",
+    "tornDownItem": "{{id}}",
+    "poolLink": "Warteschlange & Worker",
+    "notFoundTitle": "Kein Worker namens <id/>",
+    "notFoundDescription": "Nichts im Pool antwortet auf diese id. Worker sind vergänglich — einer wird für ein Stück Arbeit gehoben und danach entfernt —, also landen eine id aus dem Log von gestern, ein altes Lesezeichen oder ein Link, der seinen Schwanz verloren hat, alle hier, und keiner davon bedeutet, dass etwas falsch ist.",
+    "notFoundLook": "{{id}} im Pool suchen",
+    "stopTitle": "Diesen Worker zwangsstoppen?",
+    "stopIdle": "<id/> ist frei. Der Container wird jetzt abgerissen, und Scale hebt einen anderen, wenn es Arbeit gibt.",
+    "stopBusy": "<id/> hält <label/> auf Lauf <run/>. Der Container wird jetzt abgerissen, der Lease freigegeben, und das Element geht zurück in die Warteschlange, damit ein anderer Worker es nimmt.",
+    "stopConfirm": "Zwangsstopp",
+    "stopCancel": "Laufen lassen"
+  }
+}

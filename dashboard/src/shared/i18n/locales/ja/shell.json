@@ -1,0 +1,139 @@
+{
+  "locale": {
+    "label": "言語"
+  },
+  "nav": {
+    "intake": "受付",
+    "observe": "監視",
+    "configure": "設定",
+    "platform": "プラットフォーム",
+    "inbox": "受信箱",
+    "liveRuns": "ライブ実行",
+    "queue": "キュー",
+    "approvals": "承認",
+    "cost": "コスト",
+    "sources": "ソース",
+    "knowledge": "ナレッジ",
+    "settings": "設定",
+    "projects": "プロジェクト",
+    "identity": "アイデンティティ",
+    "compute": "コンピュート",
+    "models": "モデル"
+  },
+  "crumb": {
+    "platform": "プラットフォーム",
+    "projects": "プロジェクト",
+    "attention": "当番",
+    "liveRuns": "ライブ実行",
+    "tasks": "タスク",
+    "queue": "キュー",
+    "observe": "観測",
+    "identity": "アイデンティティ",
+    "sources": "ソース",
+    "approvals": "承認",
+    "configure": "設定",
+    "console": "コンソール",
+    "onboard": "オンボーディング",
+    "knowledge": "ナレッジ",
+    "models": "モデル",
+    "compute": "コンピュート"
+  },
+  "topbar": {
+    "home": "Comuki — ホーム",
+    "newRun": "新しい実行",
+    "github": "github",
+    "githubOpens": "Comuki の GitHub — 新しいタブで開く"
+  },
+  "page": {
+    "breadcrumb": "パンくず",
+    "showRail": "ナビゲーションレールを表示",
+    "hideRail": "ナビゲーションレールを隠す",
+    "resizeRail": "ナビゲーションレールの幅を変更"
+  },
+  "account": {
+    "label": "アカウント",
+    "named": "アカウント — {{name}}",
+    "settings": "設定",
+    "apiKeys": "API キー",
+    "profile": "プロフィール",
+    "signOut": "サインアウト"
+  },
+  "appearance": {
+    "label": "外観",
+    "current": "外観 — {{mode}}",
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム"
+  },
+  "palette": {
+    "label": "パレット",
+    "current": "パレット — {{name}}"
+  },
+  "live": {
+    "demo": "デモ",
+    "polling": "ポーリング",
+    "mockOnly": "合成データで動作中 — 切り替えは bun run dev:real",
+    "mockAndDown": "合成データで動作中、バックエンドに到達できません",
+    "down": "バックエンドに到達できません — 最後の既知状態を表示",
+    "pollingDown": "ライブ更新が落ちています — この画面は代わりに {{seconds}} 秒ごとに更新されます"
+  },
+  "search": {
+    "open": "検索 — {{chord}}",
+    "label": "Comuki を検索",
+    "placeholder": "id を貼るか画面を指して…",
+    "results": "結果",
+    "empty": "ここにはそれに応えるものはありません",
+    "keys": {
+      "move": "↑↓ 移動",
+      "open": "enter 開く",
+      "close": "esc 閉じる"
+    },
+    "band": {
+      "resolved": "移動",
+      "section": "セクション",
+      "act": "アクション",
+      "handoff": "検索"
+    },
+    "kind": {
+      "run": "実行",
+      "workItem": "ワークアイテム",
+      "worker": "ワーカー",
+      "approval": "承認",
+      "project": "プロジェクト",
+      "app": "アプリ",
+      "person": "人物",
+      "apiKey": "api キー",
+      "image": "イメージ",
+      "section": "セクション",
+      "act": "アクション",
+      "search": "検索"
+    },
+    "act": {
+      "newTask": "新しいタスク",
+      "newTaskHint": "チケットをバックログに入れる",
+      "newProject": "新しいプロジェクト",
+      "newProjectHint": "プロジェクトを登録する",
+      "newUser": "新しいユーザー",
+      "newUserHint": "人を招待する",
+      "newApiKey": "新しい api キー",
+      "newApiKeyHint": "キーを発行する",
+      "grantRole": "ロールを付与",
+      "grantRoleHint": "誰かにアクセスを与える"
+    },
+    "resolvedHint": {
+      "liveRuns": "ライブ実行で",
+      "claimQueue": "クレームキューで",
+      "workerPool": "ワーカープールで",
+      "approvals": "承認で",
+      "image": "このイメージのワーカー",
+      "apiKeys": "api キーで",
+      "people": "人物で",
+      "app": "このアプリの実行"
+    },
+    "handoffHint": {
+      "runs": "ライブ実行で",
+      "queue": "キューで",
+      "inbox": "受信箱で"
+    }
+  }
+}

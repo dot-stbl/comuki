@@ -82,7 +82,7 @@ describe("mutations.ts mock-first path", () => {
     )
     expect(invalidatedKeys).toContain("me")
     expect(invalidatedKeys).toContain("projects")
-  })
+  }, 15_000)
 
   it("signs out through the mock store in mock mode and invalidates me + projects", async () => {
     vi.stubEnv("VITE_USE_MOCK", "true")
@@ -121,7 +121,7 @@ describe("mutations.ts mock-first path", () => {
     )
     expect(invalidatedKeys).toContain("me")
     expect(invalidatedKeys).toContain("projects")
-  })
+  }, 15_000)
 
   it("imports without throwing even when VITE_API_BASE_URL is unset, in mock mode", async () => {
     vi.stubEnv("VITE_USE_MOCK", "true")

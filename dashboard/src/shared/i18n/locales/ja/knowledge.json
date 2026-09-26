@@ -1,0 +1,96 @@
+{
+  "actions": {
+    "retry": "再試行",
+    "close": "閉じる"
+  },
+  "errors": {
+    "unknown": "不明なエラー"
+  },
+  "page": {
+    "title": "ナレッジ",
+    "summary": "ルールセット、リビジョン、評価ハーネス",
+    "tabsLabel": "ナレッジのセクション"
+  },
+  "tab": {
+    "library": "ライブラリ",
+    "gate": "ゲート"
+  },
+  "load": {
+    "errorTitle": "ナレッジが読み込めませんでした"
+  },
+  "search": {
+    "label": "ルール、ドキュメント、スキルを絞り込む",
+    "placeholder": "ルール、ドキュメント、スキルを検索…",
+    "errorTitle": "検索が応答しませんでした",
+    "searching": "検索中",
+    "emptyTitle": "一致なし",
+    "emptySemantic": "ライブラリにクエリに十分近いものはありません。",
+    "emptyPlain": "ピンされたルールとドキュメントに対して別のクエリを試してください。",
+    "sectionTitle": "セマンティック一致",
+    "sectionNote": "コサイン類似度の上位 {{count}} 件",
+    "count": "{{total}} 件中 {{shown}} 件"
+  },
+  "revision": {
+    "section": "有効なリビジョン",
+    "current": "現在のリビジョン",
+    "sub": "{{sdk}} · 更新 {{updated}}",
+    "rules": "アクティブなルール",
+    "rulesSub": "{{hard}} ハード · {{soft}} ソフト",
+    "reproducibility": "再現性",
+    "reproducibilitySub": "すべてのランがルールセット + SDK を固定"
+  },
+  "entries": {
+    "section": "ルール、ドキュメント、スキル",
+    "updated": "更新 {{updated}}"
+  },
+  "sheet": {
+    "close": "エントリを閉じる",
+    "revisionAt": "リビジョン @{{revision}}",
+    "scope": "スコープ",
+    "updated": "更新"
+  },
+  "badge": {
+    "kind": {
+      "rule": "ルール",
+      "doc": "ドキュメント",
+      "skill": "スキル"
+    },
+    "ruleKind": {
+      "hard": "ハード",
+      "soft": "ソフト"
+    },
+    "pinned": "ピン済み",
+    "pinnedAt": "ピン @ {{revision}}",
+    "delta": {
+      "improved": "改善",
+      "regressed": "劣化",
+      "noChange": "変化なし"
+    }
+  },
+  "eval": {
+    "section": "ゴールデンタスク",
+    "note": "ルール編集の前 → 後",
+    "empty": "このリビジョンに対してゴールデンタスクは実行されていません",
+    "column": {
+      "task": "タスク",
+      "before": "前",
+      "after": "後",
+      "delta": "差分"
+    }
+  },
+  "gate": {
+    "errorTitle": "ゲートが読み込めませんでした",
+    "changeFailed": "変更に失敗しました。",
+    "nothingMoved": "何も動いていません — ゲートは元のままです。",
+    "intro": "ランは、着地する前にクライアント自身のチェックを通る必要があります。チェックは彼らのリポジトリにあります — 他の何かと同じようにコミットされる一つのファイルです — ので、このセクションはゲートのオン/オフを切り替え、各チェックが最後に何と言ったかを示します。コマンドを編集するとはファイルを編集するということです。下の各セクションは自分のファイルがどこにあるかを正確に示します。",
+    "emptyTitle": "ここにゲートを持つプロジェクトはありません",
+    "emptyDescription": "このセッションのプロジェクトのどれも、クライアント自身のチェックを宣言していません。それらを含むファイルをコミットすれば、ゲートが現れます。",
+    "onToast": "ゲート オン",
+    "onToastDescription": "{{name}} — ランはクライアントのチェックを通る必要があります",
+    "offToast": "ゲート オフ",
+    "offToastDescription": "{{name}} — ランはクライアントのチェックなしで着地します",
+    "summary": "<total/> 個中 <on/> 個のゲートがオン · <checks/> 個のチェックが宣言済み",
+    "summaryFailing": "<failing/> 件失敗",
+    "summaryNeverRan": "<never/> 件は未実行"
+  }
+}

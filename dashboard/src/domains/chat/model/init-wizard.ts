@@ -1,5 +1,8 @@
 import { can, type ProjectRef, type Session } from "@/shared/session"
 
+import type { ChatTranslator } from "./commands"
+import { sharedChatT } from "./commands"
+
 /**
  * `/init`, as a state machine rather than as five forms that happen to know
  * about each other.
@@ -28,7 +31,11 @@ export const INIT_STEPS = [
 
 export type InitStep = (typeof INIT_STEPS)[number]
 
-/** The heading each step gets, and the one line under it. */
+/**
+ * The heading each step gets, and the one line under it. The registry holds
+ * the EN words; the readers below resolve through the `chat` catalogue with
+ * these as `defaultValue` (D11 map-edge rule).
+ */
 export const STEP_META: Record<InitStep, { title: string; summary: string }> = {
   repo: {
     title: "Repository and git access",
@@ -55,6 +62,26 @@ export const STEP_META: Record<InitStep, { title: string; summary: string }> = {
     summary:
       "What onboarding will do, in the order it will do it. Nothing has been created yet.",
   },
+}
+
+/** A step's heading, in the active locale. */
+export function stepTitle(
+  step: InitStep,
+  t: ChatTranslator = sharedChatT
+): string {
+  return t(`wizard.step.${step}.title`, {
+    defaultValue: STEP_META[step].title,
+  })
+}
+
+/** The one line under a step's heading, in the active locale. */
+export function stepSummary(
+  step: InitStep,
+  t: ChatTranslator = sharedChatT
+): string {
+  return t(`wizard.step.${step}.summary`, {
+    defaultValue: STEP_META[step].summary,
+  })
 }
 
 /** Everything the wizard collects. One flat object — it is one act. */
@@ -120,18 +147,19 @@ export function initProjects(session: Session): ProjectRef[] {
  */
 export function stepErrors(
   step: InitStep,
-  draft: InitDraft
+  draft: InitDraft,
+  t: ChatTranslator = sharedChatT
 ): Partial<Record<keyof InitDraft, string>> {
   if (step === "repo") {
     const errors: Partial<Record<keyof InitDraft, string>> = {}
     if (!draft.projectId) {
-      errors.projectId = "choose the project this repository belongs to"
+      errors.projectId = t("wizard.error.project")
     }
     if (!draft.remote.trim()) {
-      errors.remote = "a git remote is required"
+      errors.remote = t("wizard.error.remote")
     }
     if (!draft.branch.trim()) {
-      errors.branch = "a default branch is required"
+      errors.branch = t("wizard.error.branch")
     }
     return errors
   }
@@ -139,7 +167,7 @@ export function stepErrors(
   if (step === "compute") {
     const workers = Number(draft.maxWorkers)
     if (!Number.isInteger(workers) || workers < 1) {
-      return { maxWorkers: "a whole number of workers, at least one" }
+      return { maxWorkers: t("wizard.error.workers") }
     }
     return {}
   }
@@ -147,10 +175,10 @@ export function stepErrors(
   if (step === "models") {
     const errors: Partial<Record<keyof InitDraft, string>> = {}
     if (!draft.leadEndpoint.trim()) {
-      errors.leadEndpoint = "the lead model needs a base url"
+      errors.leadEndpoint = t("wizard.error.lead")
     }
     if (!draft.secretRef.trim()) {
-      errors.secretRef = "name the secret that holds the key"
+      errors.secretRef = t("wizard.error.secret")
     }
     return errors
   }
@@ -158,7 +186,11 @@ export function stepErrors(
   return {}
 }
 
-/** The stages the progress stream reports, in the order they happen. */
+/**
+ * The stages the progress stream reports, in the order they happen. Registry
+ * data — the reader below resolves the active locale's word with these as
+ * `defaultValue`.
+ */
 export const INIT_STAGES = [
   "clone the repository",
   "read the client's rules and skills",
@@ -167,3 +199,24 @@ export const INIT_STAGES = [
   "seed the knowledge index",
   "register the project with the swarm",
 ] as const
+
+/** The stage keys, in the same order as `INIT_STAGES`. */
+export const INIT_STAGE_KEYS = [
+  "clone",
+  "rules",
+  "image",
+  "endpoints",
+  "knowledge",
+  "register",
+] as const
+
+/** A progress-stream stage's label, in the active locale. */
+export function initStageLabel(
+  index: number,
+  t: ChatTranslator = sharedChatT
+): string {
+  const key = INIT_STAGE_KEYS[index] ?? INIT_STAGE_KEYS[0]
+  return t(`wizard.stage.${key}`, {
+    defaultValue: INIT_STAGES[index] ?? INIT_STAGES[0],
+  })
+}

@@ -1,5 +1,5 @@
 import type { SidebarNavGroup } from "@/app/layout/app-shell-sidebar"
-import { productNav, visibleNav } from "@/app/layout/nav"
+import { navWord, productNav, visibleNav } from "@/app/layout/nav"
 import { can, type Permission, type Session } from "@/shared/session"
 
 /**
@@ -30,10 +30,13 @@ export interface SearchSection {
 /** A thing to start, rather than a place to go. */
 export interface SearchAct {
   label: string
+  /** The words in the `shell` namespace; the English pair is the identity. */
+  labelKey?: string
   href: string
   permission: Permission
   /** What it produces, in the product's words. */
   hint: string
+  hintKey?: string
 }
 
 /**
@@ -47,11 +50,13 @@ export function navSections(
   session: Session,
   groups: SidebarNavGroup[] = productNav
 ): SearchSection[] {
+  // The words resolve through the shared instance at call time (D7), so the
+  // palette matches — and shows — the vocabulary of the active language.
   return visibleNav(groups, session).flatMap((group) =>
     group.items.map((item) => ({
-      label: item.label,
+      label: navWord(item),
       href: item.href,
-      group: group.label,
+      group: navWord(group),
     }))
   )
 }
@@ -68,33 +73,43 @@ export function navSections(
 export const SEARCH_ACTS: SearchAct[] = [
   {
     label: "New task",
+    labelKey: "search.act.newTask",
     href: "/tasks/new",
     permission: "inbox.take",
     hint: "put a ticket in the backlog",
+    hintKey: "search.act.newTaskHint",
   },
   {
     label: "New project",
+    labelKey: "search.act.newProject",
     href: "/projects/new",
     permission: "projects.create",
     hint: "register a project",
+    hintKey: "search.act.newProjectHint",
   },
   {
     label: "New user",
+    labelKey: "search.act.newUser",
     href: "/identity/users/new",
     permission: "identity.manage",
     hint: "invite a person",
+    hintKey: "search.act.newUserHint",
   },
   {
     label: "New api key",
+    labelKey: "search.act.newApiKey",
     href: "/identity/keys/new",
     permission: "identity.manage",
     hint: "issue a key",
+    hintKey: "search.act.newApiKeyHint",
   },
   {
     label: "Grant a role",
+    labelKey: "search.act.grantRole",
     href: "/identity/grants/new",
     permission: "identity.manage",
     hint: "give somebody access",
+    hintKey: "search.act.grantRoleHint",
   },
 ]
 

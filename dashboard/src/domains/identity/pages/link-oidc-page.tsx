@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { FormPage } from "@/app/layout/form-page"
@@ -32,6 +33,8 @@ export interface LinkOidcPageProps {
 export function LinkOidcPage({ userId }: LinkOidcPageProps) {
   const navigate = useNavigate()
   const router = useRouter()
+  const { t } = useTranslation("identity")
+  const { t: tShell } = useTranslation("shell")
   const { data, isLoading } = useIdentityQuery()
   const linkOidc = useLinkOidcMutation()
 
@@ -51,15 +54,15 @@ export function LinkOidcPage({ userId }: LinkOidcPageProps) {
      shorter path. */
   const crumbs = user
     ? [
-        { label: "platform" },
-        { label: "identity", to: "/identity" },
+        { label: tShell("crumb.platform") },
+        { label: tShell("crumb.identity"), to: "/identity" },
         { label: user.email, to: `/identity/users/${user.id}` },
-        { label: "link an oidc subject" },
+        { label: t("linkPage.crumb") },
       ]
     : [
-        { label: "platform" },
-        { label: "identity", to: "/identity" },
-        { label: "link an oidc subject" },
+        { label: tShell("crumb.platform") },
+        { label: tShell("crumb.identity"), to: "/identity" },
+        { label: t("linkPage.crumb") },
       ]
 
   /* Back to the person, not back to the list.
@@ -81,7 +84,7 @@ export function LinkOidcPage({ userId }: LinkOidcPageProps) {
   const onLink = (input: LinkOidcInput) => {
     linkOidc.mutate(input, {
       onSuccess: () => {
-        toast.message("Subject linked", { description: input.subject })
+        toast.message(t("linkPage.toast"), { description: input.subject })
         guard.leave(() => {
           // The subject was written *on this person*, so the answer is shown
           // on this person — with the new subject already in the facts, which
@@ -100,19 +103,17 @@ export function LinkOidcPage({ userId }: LinkOidcPageProps) {
 
   if (!user) {
     return (
-      <FormPage title="Link an oidc subject" crumbs={crumbs}>
+      <FormPage title={t("linkPage.title")} crumbs={crumbs}>
         <Notice tone={isLoading ? "warn" : "bad"} data-test="user-missing">
-          {isLoading
-            ? "Looking this account up."
-            : "No account on this platform has that id. It may have been removed since the link was opened."}
+          {isLoading ? t("linkPage.lookingUp") : t("linkPage.missing")}
         </Notice>
         {/* Nowhere to send them but the section: there is no person here to
             go back to, which is the whole content of this state. */}
         <span>
-          <Tooltip content="Back to identity">
+          <Tooltip content={t("linkPage.backToIdentity")}>
             <Link
               to="/identity"
-              aria-label="Back to identity"
+              aria-label={t("linkPage.backToIdentity")}
               className={buttonClass({ size: "icon-sm" })}
             >
               <ArrowLeft aria-hidden="true" />
@@ -126,25 +127,24 @@ export function LinkOidcPage({ userId }: LinkOidcPageProps) {
   if (user.oidcSubject) {
     return (
       <FormPage
-        title="Link an oidc subject"
+        title={t("linkPage.title")}
         crumbs={crumbs}
-        summary={`${user.email} is already linked.`}
+        summary={t("linkPage.summaryLinked", { email: user.email })}
       >
         {/* Relinking is not an act this product has. Offering a form that
             would overwrite a subject silently would be inventing one. */}
         <Notice tone="ok" data-test="already-linked">
-          This account is already linked to {user.oidcSubject}. A subject is
-          written once; changing it is a platform operation, not a screen.
+          {t("linkPage.alreadyLinked", { subject: user.oidcSubject })}
         </Notice>
         {/* There *is* a person here, so the way out is them rather than the
             section. The name says which account, because "back" on its own is
             not the name of anywhere. */}
         <span>
-          <Tooltip content={`Back to ${user.email}`}>
+          <Tooltip content={t("linkPage.backToUser", { email: user.email })}>
             <Link
               to="/identity/users/$userId"
               params={{ userId }}
-              aria-label={`Back to ${user.email}`}
+              aria-label={t("linkPage.backToUser", { email: user.email })}
               className={buttonClass({ size: "icon-sm" })}
             >
               <ArrowLeft aria-hidden="true" />
@@ -157,9 +157,9 @@ export function LinkOidcPage({ userId }: LinkOidcPageProps) {
 
   return (
     <FormPage
-      title="Link an oidc subject"
+      title={t("linkPage.title")}
       crumbs={crumbs}
-      summary={`The provider's subject for ${user.email}. Roles stay here — the provider says who they are, not what they hold.`}
+      summary={t("linkPage.summary", { email: user.email })}
     >
       {/* The page already had two Notices for the states it can arrive in;
           this is the one for the state it can be left in. The host's own
@@ -167,12 +167,8 @@ export function LinkOidcPage({ userId }: LinkOidcPageProps) {
           rule the platform answers with and the transport does not. */}
       {linkOidc.error ? (
         <Notice tone="bad" data-test="link-failure">
-          {requestFailureMessage(
-            linkOidc.error,
-            "The platform refused to write the subject."
-          )}{" "}
-          Nothing was linked — the account is still local only, and the subject
-          below is still exactly as you typed it.
+          {requestFailureMessage(linkOidc.error, t("linkPage.refused"))}{" "}
+          {t("linkPage.tail")}
         </Notice>
       ) : null}
 
@@ -186,10 +182,10 @@ export function LinkOidcPage({ userId }: LinkOidcPageProps) {
 
       <ConfirmDialog
         open={guard.asking}
-        title="Leave without linking the subject?"
-        body="The subject you typed is not saved anywhere yet. Leaving this page drops it, and the account stays local only."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
+        title={t("linkPage.leaveTitle")}
+        body={t("linkPage.leaveBody")}
+        confirmLabel={t("linkPage.discard")}
+        cancelLabel={t("linkPage.keep")}
         onConfirm={guard.discard}
         onCancel={guard.keep}
       />

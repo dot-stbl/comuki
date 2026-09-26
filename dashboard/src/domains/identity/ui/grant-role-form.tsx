@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import {
   FormActions,
@@ -15,16 +16,6 @@ import type {
 } from "@/domains/identity/model/types"
 import { ROLES, useCan, type Role } from "@/shared/session"
 import { Button, SelectField } from "@/shared/ui"
-
-const KINDS = [
-  { value: "user", label: "user" },
-  { value: "api-key", label: "api key" },
-]
-
-const SCOPES = [
-  { value: "platform", label: "platform" },
-  { value: "project", label: "a project" },
-]
 
 export interface GrantRoleFormProps {
   users: readonly UserRow[]
@@ -74,7 +65,18 @@ export function GrantRoleForm({
   onCancel,
   onDirtyChange,
 }: GrantRoleFormProps) {
+  const { t } = useTranslation("identity")
   const manage = useCan("identity.manage")
+
+  const kinds = [
+    { value: "user", label: t("grantForm.kindUser") },
+    { value: "api-key", label: t("grantForm.kindApiKey") },
+  ]
+
+  const scopes = [
+    { value: "platform", label: t("grantForm.scopePlatform") },
+    { value: "project", label: t("grantForm.scopeProject") },
+  ]
 
   const [kind, setKind] = useState<SubjectKind>("user")
   const [subjectId, setSubjectId] = useState("")
@@ -145,10 +147,10 @@ export function GrantRoleForm({
         <FormRow>
           <SelectField
             id="grant-kind"
-            label="subject kind"
+            label={t("grantForm.kindLabel")}
             value={kind}
             disabled={busy}
-            options={KINDS}
+            options={kinds}
             onValueChange={(next) => {
               setKind(next as SubjectKind)
               // The subject list changes entirely, so the held id is
@@ -158,7 +160,7 @@ export function GrantRoleForm({
           />
           <SelectField
             id="grant-subject"
-            label="subject"
+            label={t("grantForm.subjectLabel")}
             required
             value={subject}
             disabled={busy || loading || subjects.length === 0}
@@ -168,9 +170,9 @@ export function GrantRoleForm({
                payload say the platform was empty. */
             hint={
               loading
-                ? "Looking up what can hold a role."
+                ? t("grantForm.subjectLooking")
                 : subjects.length === 0
-                  ? "Nothing of that kind to grant to yet."
+                  ? t("grantForm.subjectNone")
                   : undefined
             }
             onValueChange={setSubjectId}
@@ -179,28 +181,28 @@ export function GrantRoleForm({
 
         <SelectField
           id="grant-role"
-          label="role"
+          label={t("grantForm.roleLabel")}
           value={role}
           disabled={busy}
           options={ROLES.map((entry) => ({ value: entry, label: entry }))}
-          hint="Roles live in code — these six are the whole set, and there is no way to add one."
+          hint={t("grantForm.roleHint")}
           onValueChange={(next) => setRole(next as Role)}
         />
 
         <FormRow>
           <SelectField
             id="grant-scope"
-            label="scope"
+            label={t("grantForm.scopeLabel")}
             value={scope}
             disabled={busy}
-            options={SCOPES}
-            hint="A platform grant holds everywhere. A project grant holds on one project and nowhere else."
+            options={scopes}
+            hint={t("grantForm.scopeHint")}
             onValueChange={setScope}
           />
           {onProject ? (
             <SelectField
               id="grant-project"
-              label="project"
+              label={t("grantForm.projectLabel")}
               /* Only while the scope is a project — which is the only time
                  this field is rendered and the only time it gates the
                  submit. */
@@ -210,9 +212,9 @@ export function GrantRoleForm({
               options={projectOptions}
               hint={
                 loading
-                  ? "Looking up which projects a grant can be scoped to."
+                  ? t("grantForm.projectLooking")
                   : projectOptions.length === 0
-                    ? "No projects to scope a grant to yet."
+                    ? t("grantForm.projectNone")
                     : undefined
               }
               onValueChange={setProjectId}
@@ -229,7 +231,7 @@ export function GrantRoleForm({
           loading={busy}
           disabled={blocked}
         >
-          Grant
+          {t("grantForm.submit")}
         </Button>
         <Button
           variant="secondary"
@@ -237,7 +239,7 @@ export function GrantRoleForm({
           disabled={busy}
           onClick={onCancel}
         >
-          Cancel
+          {t("actions.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

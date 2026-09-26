@@ -1,4 +1,5 @@
 import type { SidebarNavGroup } from "@/app/layout/app-shell-sidebar"
+import { i18n } from "@/shared/i18n"
 import { can, type Permission, type Session } from "@/shared/session"
 
 import {
@@ -68,8 +69,8 @@ export interface ResolveContext {
  * first — see the note on `q` in `routes/runs/index.tsx`.
  */
 interface Handoff {
-  /** The screen, in its own words. */
-  where: string
+  /** The words after the query, as a `shell` key (D7 — resolved at build). */
+  hintKey: string
   /** Path, without the search string — the query is appended. */
   path: string
   /** The parameter that screen narrows on. */
@@ -78,10 +79,30 @@ interface Handoff {
 }
 
 const HANDOFFS: Handoff[] = [
-  { where: "live runs", path: "/runs", param: "q", permission: "runs.view" },
-  { where: "the queue", path: "/queue", param: "q", permission: "queue.view" },
-  { where: "the inbox", path: "/tasks", param: "q", permission: "inbox.view" },
+  {
+    hintKey: "search.handoffHint.runs",
+    path: "/runs",
+    param: "q",
+    permission: "runs.view",
+  },
+  {
+    hintKey: "search.handoffHint.queue",
+    path: "/queue",
+    param: "q",
+    permission: "queue.view",
+  },
+  {
+    hintKey: "search.handoffHint.inbox",
+    path: "/tasks",
+    param: "q",
+    permission: "inbox.view",
+  },
 ]
+
+/** An entry's own word when it carries a key, its literal when it does not. */
+function word(text: string, key: string | undefined): string {
+  return key ? i18n.t(`shell:${key}`) : text
+}
 
 function matches(needle: string, ...fields: (string | undefined)[]): boolean {
   return fields.some((field) => field?.toLowerCase().includes(needle))
@@ -104,9 +125,9 @@ function actItem(act: SearchAct): SearchItem {
     id: `act:${act.href}`,
     group: "act",
     kind: "act",
-    label: act.label,
+    label: word(act.label, act.labelKey),
     value: false,
-    hint: act.hint,
+    hint: word(act.hint, act.hintKey),
     href: act.href,
   }
 }
@@ -176,19 +197,31 @@ export function resolveQuery(
     kind: "search",
     label: trimmed,
     value: true,
-    hint: `in ${handoff.where}`,
+    hint: i18n.t(`shell:${handoff.hintKey}`),
     href: `${handoff.path}?${handoff.param}=${encodeURIComponent(trimmed)}`,
   }))
 
   return [...resolved, ...places, ...handoffs]
 }
 
-/** The region heading each band carries, in the product's own words. */
-export const GROUP_LABELS: Record<SearchGroup, string> = {
-  resolved: "go to",
-  section: "sections",
-  act: "acts",
-  handoff: "search",
+/**
+ * The palette's word for a row's kind, keyed for the `shell` namespace. The
+ * machine word on the item stays as the closed vocabulary; the word an
+ * operator reads is translated at the display edge.
+ */
+export const KIND_KEYS: Record<string, string> = {
+  run: "search.kind.run",
+  "work item": "search.kind.workItem",
+  worker: "search.kind.worker",
+  approval: "search.kind.approval",
+  project: "search.kind.project",
+  app: "search.kind.app",
+  person: "search.kind.person",
+  "api key": "search.kind.apiKey",
+  image: "search.kind.image",
+  section: "search.kind.section",
+  act: "search.kind.act",
+  search: "search.kind.search",
 }
 
 /** The bands, in the order the palette lays them out. */

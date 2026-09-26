@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { Wand2 } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
@@ -25,6 +26,8 @@ import { buttonClass } from "@/shared/ui"
  * else is the console's own or the store's.
  */
 export function ChatPage() {
+  const { t } = useTranslation("chat")
+  const { t: tShell } = useTranslation("shell")
   const [chosenId, setChosenId] = useState<string | null>(null)
   const [draft, setDraft] = useState("")
 
@@ -39,9 +42,9 @@ export function ChatPage() {
       padded={false}
       header={
         <PageHeader
-          breadcrumbs={[{ label: "console" }]}
-          title="Console"
-          summary="the same control plane the screens drive, typed at instead of clicked"
+          breadcrumbs={[{ label: tShell("crumb.console") }]}
+          title={t("page.title")}
+          summary={t("page.summary")}
           actions={
             onboard.allowed ? (
               <Link
@@ -50,7 +53,7 @@ export function ChatPage() {
                 className={buttonClass({ variant: "outline", size: "sm" })}
               >
                 <Wand2 aria-hidden="true" />
-                Onboard a repo
+                {t("page.onboard")}
               </Link>
             ) : null
           }

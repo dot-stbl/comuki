@@ -1,0 +1,163 @@
+{
+  "actions": {
+    "retry": "再試行"
+  },
+  "errors": {
+    "unknown": "不明なエラー"
+  },
+  "status": {
+    "running": "実行中",
+    "waiting": "待機中",
+    "queued": "キュー投入",
+    "escalated": "エスカレーション",
+    "failed": "失敗",
+    "success": "成功",
+    "cancelled": "キャンセル済み"
+  },
+  "registry": {
+    "title": "ライブ実行",
+    "summary": "<total/> 実行 · <running/> 実行中 · <blocked/> が人を待っている",
+    "errorTitle": "実行が読み込めませんでした",
+    "anomaliesOnly": "異常のみ表示",
+    "count": {
+      "other": "{{count}} 件表示"
+    },
+    "empty": {
+      "profile": "このプロファイルの実行はありません。",
+      "filtered": "現在のフィルタに一致する実行はありません。",
+      "none": "まだ実行はありません。"
+    },
+    "unplannedTitle": "まだプランがありません",
+    "unplannedDescription": "これらの実行は受け付け済みですが、ブレインがまだ計画していません。最初のプランに作業項目ができるとフローが現れます。",
+    "expandFlow": "フローを展開",
+    "collapseFlow": "フローを折りたたむ",
+    "resizeBoard": "フローボードのサイズ変更",
+    "expandStrip": "フローボードを展開"
+  },
+  "notice": {
+    "fallback": "決定に失敗しました。",
+    "tail": "何も変わっていません — 実行は元のままです。"
+  },
+  "cancelDialog": {
+    "title": "この実行をキャンセルしますか？",
+    "body": "{{title}} · {{where}} — コンテナは解体され、リースは解放されます。すでにマージ済みの作業は残ります。",
+    "confirm": "実行をキャンセル",
+    "cancel": "実行を続ける"
+  },
+  "column": {
+    "status": "ステータス",
+    "run": "実行",
+    "project": "プロジェクト",
+    "app": "アプリ",
+    "task": "タスク",
+    "profile": "プロファイル",
+    "step": "ステップ",
+    "inStep": "ステップ内",
+    "cost": "コスト",
+    "worker": "worker",
+    "actions": "操作",
+    "allStatuses": "すべてのステータス",
+    "allProjects": "すべてのプロジェクト",
+    "allApps": "すべてのアプリ",
+    "allProfiles": "すべてのプロファイル",
+    "filterPlaceholder": "実行、タスク、ステップで絞り込み…",
+    "waitingOnPlan": "プランを待っている",
+    "approve": "承認",
+    "cancelRun": "実行をキャンセル",
+    "approveRun": "{{title}} を承認",
+    "cancelTask": "{{title}} をキャンセル"
+  },
+  "detail": {
+    "fallbackTitle": "実行 {{runId}}",
+    "tok": "tok",
+    "errorTitle": "この実行は読み込めませんでした",
+    "notFoundTitle": "この id の実行はありません",
+    "notFoundDescription": "スウォームには <id/> に該当するものがありません。古いリンク由来の実行 id でここに来るのはごく普通の経路です — アドレスはそれが指していた実行より長生きし、まだ飛んでいるものは当直リストにいます。",
+    "backToList": "ライブ実行に戻る",
+    "unplannedTitle": "まだ計画されていません",
+    "unplannedDescription": "この実行は受け付け済みで、ブレインがまだ作業項目に分解していません。何も悪くなく、あなたを待っているものもありません — プランに最初の項目ができると、グラフと項目インスペクタがここに現れます。",
+    "unplannedHint": "{{status}} · 作業項目なし · インスペクトするものなし",
+    "noInspectorTitle": "この項目の詳細はありません",
+    "noInspectorDescription": "上のプランは完全です。この項目にはまだインスペクタ記録がありません。別の項目を選ぶか、開始してから戻ってきてください。",
+    "resizeGraph": "実行グラフのサイズ変更"
+  },
+  "river": {
+    "group": "プロファイルフロー。矢印キーでプロファイル間を移動します。",
+    "cleared": "通過済み",
+    "waitingOnHuman": "人を待っている",
+    "noWork": "作業なし",
+    "poolEntry": "{{count}} {{status}}",
+    "clearedProfile": {
+      "other": "{{count}} がプロファイルを通過"
+    },
+    "mark": {
+      "other": "{{count}} が人を待っている"
+    },
+    "pinched": {
+      "other": " {{count}} が人を待っている — 他のどのプロファイルより多い。"
+    },
+    "node": "{{profile}}: {{pool}}。{{cleared}}。{{mark}}"
+  },
+  "evidence": {
+    "title": "エビデンス",
+    "empty": "まだスクリーンショットは公開されていません"
+  },
+  "anomaly": {
+    "badgeLabel": "中央値の {{multiplier}}×",
+    "badgeTip": "コストはこのプロジェクトの中央値 {{median}} の {{multiplier}}× — {{threshold}}× のしきい値を超えています。クリックで内訳を表示。",
+    "badgeAria": "コスト異常 — {{label}}。内訳を開く。",
+    "dialogTitle": "コスト急増 · 実行 {{runId}}",
+    "acknowledge": "確認済みにする",
+    "cancelRun": "実行をキャンセル",
+    "summary": "概要",
+    "spend": "支出の内訳",
+    "why": "フラグされた理由",
+    "project": "プロジェクト",
+    "profile": "プロファイル",
+    "status": "ステータス",
+    "cost": "コスト",
+    "tokensInOut": "トークン（入 / 出）",
+    "total": "（合計 {{total}}）",
+    "reason": "<spent/> を使いました。これは <project/> の中央コスト <median/> の <multiplier/> です。",
+    "rule": "ルール: コスト > プロジェクトの中央実行コストの {{threshold}}×。",
+    "openCost": "コストページを開く →"
+  },
+  "graph": {
+    "group": "実行グラフ。矢印キーで作業項目間を移動します。",
+    "empty": "このプランに作業項目はありません。",
+    "parallel": {
+      "other": "{{count}} 並列"
+    },
+    "here": "ここ",
+    "dependsOnEarlier": {
+      "other": "{{count}} 个の先行に依存"
+    },
+    "blocked": "ブロック済み",
+    "standingHere": "実行はここに立っています。",
+    "blockedByFailure": "上流の失敗によりブロックされています。",
+    "blockedByEscalation": "上流のエスカレーションによりブロックされています。",
+    "longEdges": "1 列より離れた {{count}} 個の項目に依存: {{named}}。",
+    "longEdgesPlural": "1 列より離れた {{count}} 個の項目に依存: {{named}}。"
+  },
+  "inspector": {
+    "itemOf": "項目 {{index}} / {{total}}",
+    "env": "環境",
+    "tokens": "トークン",
+    "cost": "コスト",
+    "started": "開始",
+    "waitsOn": "待機中",
+    "waitsOnLong": "{{count}} が 1 列より後ろ",
+    "waitsOnNone": "なし — この項目がプランを開始します。",
+    "distancePrevious": "前の列",
+    "distanceBack": {
+      "other": "{{count}} 列後ろ"
+    },
+    "dependencyAria": "{{label}}、{{profile}}、{{status}}、{{distance}} を表示。",
+    "input": "入力 — 何を与えたか",
+    "log": "ログ",
+    "appendOnly": "追記のみ",
+    "gate": "検証ゲート",
+    "output": "出力 — 何を生んだか",
+    "outputNone": "まだありません。"
+  }
+}

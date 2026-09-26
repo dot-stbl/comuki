@@ -1,0 +1,96 @@
+{
+  "actions": {
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "errors": {
+    "unknown": "Unknown error"
+  },
+  "page": {
+    "title": "Knowledge",
+    "summary": "rule set, revisions, eval harness",
+    "tabsLabel": "Knowledge sections"
+  },
+  "tab": {
+    "library": "library",
+    "gate": "gate"
+  },
+  "load": {
+    "errorTitle": "Knowledge did not load"
+  },
+  "search": {
+    "label": "Filter rules, docs and skills",
+    "placeholder": "Search rules, docs, skills…",
+    "errorTitle": "Search did not answer",
+    "searching": "Searching",
+    "emptyTitle": "No matches",
+    "emptySemantic": "Nothing in the library is close enough to the query.",
+    "emptyPlain": "Try another query over pinned rules and docs.",
+    "sectionTitle": "semantic matches",
+    "sectionNote": "top {{count}} by cosine similarity",
+    "count": "{{shown}} of {{total}}"
+  },
+  "revision": {
+    "section": "revision in force",
+    "current": "current revision",
+    "sub": "{{sdk}} · updated {{updated}}",
+    "rules": "active rules",
+    "rulesSub": "{{hard}} hard · {{soft}} soft",
+    "reproducibility": "reproducibility",
+    "reproducibilitySub": "every run pins the rule set + SDK"
+  },
+  "entries": {
+    "section": "rules, docs and skills",
+    "updated": "updated {{updated}}"
+  },
+  "sheet": {
+    "close": "Close the entry",
+    "revisionAt": "revision @{{revision}}",
+    "scope": "scope",
+    "updated": "updated"
+  },
+  "badge": {
+    "kind": {
+      "rule": "rule",
+      "doc": "doc",
+      "skill": "skill"
+    },
+    "ruleKind": {
+      "hard": "hard",
+      "soft": "soft"
+    },
+    "pinned": "pinned",
+    "pinnedAt": "pinned @ {{revision}}",
+    "delta": {
+      "improved": "improved",
+      "regressed": "regressed",
+      "noChange": "no change"
+    }
+  },
+  "eval": {
+    "section": "golden tasks",
+    "note": "before → after on rule edits",
+    "empty": "no golden task has been run against this revision",
+    "column": {
+      "task": "task",
+      "before": "before",
+      "after": "after",
+      "delta": "delta"
+    }
+  },
+  "gate": {
+    "errorTitle": "Couldn't load the gate",
+    "changeFailed": "The change failed.",
+    "nothingMoved": "Nothing moved — the gate is back as it was.",
+    "intro": "A run has to clear the client's own checks before it can land. The checks live in their repository — one file, committed like anything else — so this section turns the gate on and off and shows what each check last said. Editing a command means editing the file; every section below says exactly where its file is.",
+    "emptyTitle": "No project has a gate here",
+    "emptyDescription": "Nothing in this session's projects declares the client's own checks. A gate appears as soon as one of them commits the file that holds them.",
+    "onToast": "Gate on",
+    "onToastDescription": "{{name}} — runs must clear the client's checks",
+    "offToast": "Gate off",
+    "offToastDescription": "{{name}} — runs land without the client's checks",
+    "summary": "<on/> of <total/> gates on · <checks/> checks declared",
+    "summaryFailing": "<failing/> failing",
+    "summaryNeverRan": "<never/> never ran"
+  }
+}

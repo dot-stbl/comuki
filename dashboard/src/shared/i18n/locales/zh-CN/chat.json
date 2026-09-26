@@ -1,0 +1,245 @@
+{
+  "actions": {
+    "retry": "重试"
+  },
+  "errors": {
+    "unknown": "未知错误"
+  },
+  "page": {
+    "title": "控制台",
+    "summary": "与各屏幕驱动的是同一个控制面，只是改为键入",
+    "onboard": "接入仓库"
+  },
+  "console": {
+    "sendFailure": "消息未发送",
+    "decisionFailure": "决定未记录",
+    "startFailure": "会话未开始",
+    "consoleErrorTitle": "控制台未加载",
+    "transcriptErrorTitle": "对话记录未加载",
+    "loading": "正在加载会话"
+  },
+  "sessions": {
+    "navLabel": "会话",
+    "head": "会话",
+    "new": "新会话",
+    "loading": "正在加载会话列表",
+    "emptyTitle": "还没有会话",
+    "emptyDescription": "用上方的加号开始一个。每个会话都留在这里，随时可以回来。"
+  },
+  "thread": {
+    "emptyTitle": "还没有说过话",
+    "emptyBody": "这是各屏幕驱动的同一个控制面，通过键入到达。问它蜂群在做什么，或以斜杠开头看看它能做的一切。任何会改变状态的操作都会作为待你按下的提案返回——它从不自行行动。",
+    "logLabel": "会话",
+    "jump": "跳到最新",
+    "announceReplying": "助手正在回复",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "你",
+    "comuki": "comuki",
+    "iteration": "迭代 {{iteration}}",
+    "blank": "这一轮到达时是空的"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "思考中",
+    "tokenWord": "tokens"
+  },
+  "memory": {
+    "label": "记忆",
+    "facts": {
+      "other": "{{count}} 条事实"
+    }
+  },
+  "composer": {
+    "boxLabel": "向控制台发消息",
+    "placeholder": "提问，或以斜杠开头",
+    "commandsHead": "命令",
+    "originFrom": "来自 {{project}}",
+    "seedAbout": "关于",
+    "seedDrop": "移除对 {{id}} 的引用",
+    "scopeRunsIn": "运行于",
+    "scopePick": "选择项目",
+    "scopeAria": "{{command}} 运行所在的项目",
+    "sendTooltip": "发送 — 回车",
+    "send": "发送"
+  },
+  "scope": {
+    "needsProject": "{{command}} 需要一个项目",
+    "notAvailable": "不可用"
+  },
+  "command": {
+    "init": {
+      "description": "接入仓库：git 访问、算力、模型、知识"
+    },
+    "project": {
+      "description": "列出本次值班可以操作的项目"
+    },
+    "run": {
+      "description": "从工单启动一次运行"
+    },
+    "status": {
+      "description": "蜂群现在正在做什么"
+    },
+    "stop": {
+      "description": "停止一次运行并拆除其容器"
+    },
+    "plan": {
+      "description": "读取某次运行的计划并做出决定"
+    },
+    "debug": {
+      "description": "开启一小时的 worker 详细日志"
+    },
+    "help": {
+      "description": "控制台能做什么"
+    }
+  },
+  "panel": {
+    "label": "控制台侧面板",
+    "awaiting": "等待决定",
+    "noProject": "无项目",
+    "steps": {
+      "other": "{{count}} 个步骤"
+    },
+    "quiet": "这里没有等着你的事",
+    "slashHelp": "斜杠命令帮助"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "启动一次运行",
+        "stop": "停止一次运行"
+      },
+      "plan": {
+        "approve": "批准一个计划"
+      },
+      "settings": {
+        "debug": "更改一项实时设置"
+      }
+    },
+    "words": {
+      "run": {
+        "start": { "confirm": "启动", "refuse": "丢弃" },
+        "stop": { "confirm": "停止", "refuse": "保持运行" }
+      },
+      "plan": {
+        "approve": { "confirm": "批准", "refuse": "驳回" }
+      },
+      "settings": {
+        "debug": { "confirm": "开启", "refuse": "保持关闭" }
+      }
+    },
+    "inProject": "在 {{project}}",
+    "decidedConfirmed": "已由人确认，并记录在所有决定记录的地方",
+    "decidedRejected": "已由人拒绝，并记录在所有决定记录的地方",
+    "needsProjectDenial": "需要一个可操作的项目"
+  },
+  "handoff": {
+    "searchFor": "在 {{where}} 中搜索"
+  },
+  "dock": {
+    "tooltip": "控制台 — {{chord}}",
+    "openAria": "打开控制台 — {{chord}}",
+    "title": "控制台"
+  },
+  "wizard": {
+    "title": "接入仓库",
+
+    "running": "接入正在进行。",
+    "streamHead": "接入",
+    "stageWord": {
+      "done": "完成",
+
+      "running": "进行中",
+      "queued": "排队中"
+    },
+    "doneNotice": "项目已注册。它的规则集、worker 镜像和端点就是蜂群从下次运行起使用的内容。",
+    "backToConsole": "返回控制台",
+    "start": "开始接入",
+    "continue": "继续",
+    "back": "上一步",
+    "cancel": "取消",
+    "confirmNotice": "尚未创建任何内容。确认后会启动接入运行，它做的一切都记录在其他运行记录的地方。",
+    "guardTitle": "不接入就离开向导？",
+    "guardBody": "你输入的仓库、模型端点和密钥引用还没有保存到任何地方。离开本页将丢失它们。",
+    "guardConfirm": "丢弃",
+    "guardCancel": "继续编辑",
+    "step": {
+      "repo": {
+        "title": "仓库与 git 访问",
+        "summary": "代码在哪里，蜂群可以对它做什么。这一步决定向导其余部分配置哪个项目。"
+      },
+      "compute": {
+        "title": "算力提供方",
+        "summary": "worker 容器在哪里启动，以及同时运行数量的上限。"
+      },
+      "models": {
+        "title": "模型端点",
+        "summary": "为主模型和 worker 提供 OpenAI 或 Anthropic 兼容的 base url。密钥在这里只被命名，绝不被输入。"
+      },
+      "knowledge": {
+        "title": "知识",
+        "summary": "本项目是否保留索引化的规则集，以及首轮应读取什么。"
+      },
+      "confirm": {
+        "title": "确认",
+        "summary": "接入将按顺序做什么。尚未创建任何内容。"
+      }
+    },
+    "stage": {
+      "clone": "克隆仓库",
+      "rules": "读取客户的规则与技能",
+      "image": "拉取 worker 镜像",
+      "endpoints": "连通模型端点",
+      "knowledge": "填充知识索引",
+      "register": "向蜂群注册项目"
+    },
+    "field": {
+      "project": "项目",
+      "projectHint": "只列出你可以连接来源的项目。",
+      "pickProject": "选择项目",
+      "remote": "git remote",
+      "branch": "默认分支",
+      "write": "可以推送分支",
+      "writeHint": "关闭表示蜂群只读取仓库，不会开启任何东西。",
+      "provider": "提供方",
+      "workers": "同时 worker 数",
+      "workersHint": "本项目可持有容器的上限。",
+      "lead": "主模型端点",
+      "leadHint": "兼容 OpenAI 或 Anthropic。",
+      "workerModel": "worker 模型端点",
+      "workerPlaceholder": "留空以使用主模型端点",
+      "secret": "密钥引用",
+      "secretHint": "是密钥的名字，不是密钥本身。密钥永远不会被输入到这个产品里。",
+      "knowledge": "保留索引化的规则集",
+      "knowledgeHint": "由 docs worker 写入。这里没有文档编辑器。",
+      "seed": "种子",
+      "seedHint": "首轮读取的内容，以 glob 表示。"
+    },
+    "error": {
+      "project": "选择该仓库所属的项目",
+      "remote": "需要 git remote",
+      "branch": "需要默认分支",
+      "workers": "worker 数需为不小于一的整数",
+      "lead": "主模型需要 base url",
+      "secret": "说出保存密钥的 secret 的名字"
+    },
+    "review": {
+      "project": "项目",
+      "remote": "remote",
+      "branch": "分支",
+      "pushAccess": "推送权限",
+      "compute": "算力",
+      "workers": "worker",
+      "lead": "主模型",
+      "workerModel": "worker 模型",
+      "secret": "密钥",
+      "knowledge": "知识",
+      "on": "开",
+      "off": "关",
+      "sameAsLead": "与主模型相同"
+    }
+  }
+}

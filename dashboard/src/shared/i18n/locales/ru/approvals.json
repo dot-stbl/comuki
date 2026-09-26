@@ -1,0 +1,55 @@
+{
+  "actions": {
+    "retry": "повторить"
+  },
+  "registry": {
+    "title": "Согласования",
+    "summary": {
+      "one": "<count/> ждёт решения",
+      "few": "<count/> ждут решения",
+      "many": "<count/> ждут решения",
+      "other": "<count/> ждут решения"
+    },
+    "errorTitle": "согласования не загрузились"
+  },
+  "errors": {
+    "unknown": "неизвестная ошибка"
+  },
+  "decide": {
+    "approvedToast": "согласовано",
+    "rejectedToast": "отклонено",
+    "openedToast": "ревью открыто",
+    "refused": "решение не легло.",
+    "tail": "очередь как была — run всё ещё ждёт."
+  },
+  "empty": {
+    "title": "очередь пуста",
+    "description": "ничего не ждёт человека."
+  },
+  "card": {
+    "details": "подробнее",
+    "hide": "скрыть",
+    "review": "ревью",
+    "reject": "отклонить",
+    "approve": "согласовать",
+    "reviewAria": "ревью {{noun}} для {{app}}",
+    "rejectAria": "отклонить {{noun}} для {{app}}",
+    "approveAria": "согласовать {{noun}} для {{app}}",
+    "planHead": "план — граф рабочих элементов",
+    "assumptionsFallback": "допущения планировщика",
+    "paneBaseline": "базовая",
+    "paneNew": "новая"
+  },
+  "type": {
+    "plan": "план",
+    "deploy": "деплой",
+    "baseline": "базовая линия",
+    "gate": "гейт",
+    "learning": "правило"
+  },
+  "risk": {
+    "high": "высокий",
+    "medium": "средний",
+    "low": "низкий"
+  }
+}

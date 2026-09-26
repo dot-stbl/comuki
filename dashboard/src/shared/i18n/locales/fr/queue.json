@@ -1,0 +1,171 @@
+{
+  "actions": {
+    "retry": "Réessayer"
+  },
+  "errors": {
+    "unknown": "Erreur inconnue"
+  },
+  "workStatus": {
+    "queued": "en file",
+    "running": "en cours",
+    "blocked": "bloqué",
+    "failed": "échoué",
+    "cancelled": "annulé",
+    "succeeded": "réussi"
+  },
+  "workerState": {
+    "busy": "occupé",
+    "idle": "libre",
+    "draining": "se vide",
+    "offline": "hors ligne"
+  },
+  "registry": {
+    "title": "File et workers",
+    "summary": "<queued/> en file · <stalled/> non réclamés depuis plus de cinq minutes · <total/> workers, <idle/> libres · <lost/> sans battement",
+    "errorTitle": "La file n'a pas chargé",
+    "loading": "Chargement de la file",
+    "expandPool": "Déplier le pool",
+    "collapsePool": "Replier le pool",
+    "resizePool": "Redimensionner le pool de workers"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "rien en file sur ce profil",
+      "filtered": "aucun élément de travail ne correspond aux filtres actuels",
+      "none": "la file est vide"
+    },
+    "shown": {
+      "one": "{{count}} affiché",
+      "other": "{{count}} affichés"
+    },
+    "waitingTooLong": {
+      "one": "{{count}} attend trop longtemps · ",
+      "other": "{{count}} attendent trop longtemps · "
+    }
+  },
+  "queueColumn": {
+    "status": "statut",
+    "item": "élément",
+    "run": "exécution",
+    "project": "projet",
+    "profile": "profil",
+    "step": "étape",
+    "claimedBy": "réclamé par",
+    "age": "âge",
+    "allStatuses": "tous les statuts",
+    "allProjects": "tous les projets",
+    "allProfiles": "tous les profils",
+    "filterPlaceholder": "filtrer élément, exécution, étape…"
+  },
+  "ageMeter": {
+    "stalled": "en file depuis plus de {{limit}} — aucun worker de ce profil ne l'a réclamé"
+  },
+  "lease": {
+    "noHeartbeat": "aucune lecture de battement — le bail expire et l'élément retourne en file",
+    "lostHeartbeat": "sans battement depuis {{quiet}} — le bail expire et l'élément retourne en file"
+  },
+  "depth": {
+    "label": "Profondeur de file par jour",
+    "figure": "<today/> en file maintenant · la semaine a tourné à <week/>",
+    "deepest": " · aujourd'hui est le jour le plus profond de la semaine",
+    "chartLabel": "Profondeur de file par jour, éléments en attente de réclamation. Aujourd'hui {{today}} en file ; la semaine a tourné de {{weekMin}} à {{weekMax}}.",
+    "chartLabelDeepest": "Profondeur de file par jour, éléments en attente de réclamation. Aujourd'hui {{today}} en file — le jour le plus profond d'une semaine qui a tourné de {{weekMin}} à {{weekMax}}."
+  },
+  "poolStrip": {
+    "expandEmpty": "Déplier le pool. Aucun worker n'est debout.",
+    "expand": "Déplier le pool. {{total}} workers : {{busy}} occupés, {{draining}} se vident, {{idle}} libres."
+  },
+  "workerColumn": {
+    "state": "état",
+    "worker": "worker",
+    "project": "projet",
+    "profile": "profil",
+    "currentWork": "travail en cours",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "image",
+    "lease": "bail",
+    "up": "debout",
+    "actions": "actions",
+    "idle": "libre",
+    "allStates": "tous les états",
+    "allProjects": "tous les projets",
+    "allProfiles": "tous les profils",
+    "allProviders": "tous les fournisseurs",
+    "filterPlaceholder": "filtrer worker, handle, image…",
+    "drain": "Vider",
+    "forceStop": "Arrêt forcé",
+    "drainWorker": "Vider {{id}}",
+    "forceStopWorker": "Arrêt forcé de {{id}}"
+  },
+  "workersPanel": {
+    "count": "{{shown}} sur {{total}} workers",
+    "fallback": "Le pool ne l'a pas pris.",
+    "tail": "Rien n'a changé — le worker est comme avant.",
+    "stopTitle": "Arrêt forcé de ce worker ?",
+    "stopIdle": "{{id}} est libre. Le conteneur est détruit maintenant, et scale en relève un autre quand il y a du travail pour lui.",
+    "stopBusy": "{{id}} tient « {{label}} » sur l'exécution {{runId}}. Le conteneur est détruit maintenant, le bail est libéré, et l'élément retourne en file pour qu'un autre worker le réclame.",
+    "stopConfirm": "Arrêt forcé",
+    "stopCancel": "Le laisser tourner"
+  },
+  "workerEmpty": {
+    "clearFilters": "Effacer les filtres",
+    "filteredTitle": "Aucun worker ne correspond aux filtres",
+    "filteredDescription": {
+      "one": "Le pool est debout — <pool/> worker{{where}} tourne, simplement pas ceux-là.",
+      "other": "Le pool est debout — <pool/> workers{{where}} tournent, simplement pas ceux-là."
+    },
+    "backlogTitle": "Pas encore de workers",
+    "backlogDescription": {
+      "one": "min idle = <zero/>{{where}}, donc le pool reste vide jusqu'à ce qu'il y ait du travail. Il y en a maintenant : <backlog/> élément en file et non réclamé. Scale relèvera un worker pour le prendre.",
+      "other": "min idle = <zero/>{{where}}, donc le pool reste vide jusqu'à ce qu'il y ait du travail. Il y en a maintenant : <backlog/> éléments en file et non réclamés. Scale relèvera un worker pour les prendre."
+    },
+    "atRestTitle": "Aucun worker — et aucun voulu",
+    "atRestDescription": "min idle = <zero/>{{where}} et rien en file. Un pool vide est l'état de repos configuré ici, pas une panne — un conteneur est créé par tâche et détruit après elle.",
+    "underTargetTitle": "Le pool est sous sa cible",
+    "underTargetDescription": {
+      "one": "min idle = <minIdle/>{{where}} et aucun worker n'est debout. Ce n'est pas un état de repos : compute ne les relève pas, et <backlog/> élément attendra qu'il le fasse.",
+      "other": "min idle = <minIdle/>{{where}} et aucun worker n'est debout. Ce n'est pas un état de repos : compute ne les relève pas, et <backlog/> éléments attendront qu'il le fasse."
+    },
+    "onProject": " sur {{project}}"
+  },
+  "worker": {
+    "loading": "Chargement du worker",
+    "errorTitle": "Le pool n'a pas chargé",
+    "fallback": "Le pool ne l'a pas pris.",
+    "tail": "Rien n'a changé — le worker est comme avant.",
+    "live": "live",
+    "container": "conteneur",
+    "currentWork": "travail en cours",
+    "leaseLeft": "bail restant",
+    "leaseNone": "rien réclamé, donc aucun bail à défendre",
+    "sinceHeartbeat": "depuis le battement",
+    "heartbeatStale": "périmé après {{limit}}",
+    "up": "debout",
+    "upNote": "depuis que le conteneur est debout",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "image",
+    "imageNote": "tous les conteneurs sur cette image",
+    "profile": "profil",
+    "profileNote": "l'axe sur lequel une réclamation matche",
+    "project": "projet",
+    "workNote": "Tient un élément que la file n'a pas envoyé avec cette réponse.",
+    "idle": "libre",
+    "idleNote": "Ne tient rien et peut réclamer le prochain élément qui correspond à son profil.",
+    "tornDownTitle": "Ce conteneur n'est plus",
+    "tornDownDescription": "<id/> a été détruit pendant que cette page était ouverte. Un conteneur arrêté n'est pas conservé — il n'existe aucun enregistrement auquel revenir, et ce n'est pas voulu autrement. Les workers sont relevés pour le travail devant eux et retirés quand il est fini ou que quelqu'un les arrête ; c'est le pool se comportant comme il est configuré, pas une panne.",
+    "tornDownHolding": "Il tenait <label/>. Ce travail n'est pas parti avec lui : le bail a été libéré et l'élément est retourné en file pour qu'un autre worker le réclame.",
+    "tornDownIdle": "Il était libre en partant — il ne tenait rien et rien n'est retourné en file.",
+    "tornDownItem": "{{id}}",
+    "poolLink": "file et workers",
+    "notFoundTitle": "Aucun worker appelé <id/>",
+    "notFoundDescription": "Rien dans le pool ne répond à cet id. Les workers sont éphémères — un est relevé pour un morceau de travail et retiré après —, donc un id du log d'hier, un vieux marque-page ou un lien qui a perdu sa fin atterrissent tous ici, et aucun ne signifie que quelque chose ne va pas.",
+    "notFoundLook": "chercher {{id}} dans le pool",
+    "stopTitle": "Arrêt forcé de ce worker ?",
+    "stopIdle": "<id/> est libre. Le conteneur est détruit maintenant, et scale en relève un autre quand il y a du travail pour lui.",
+    "stopBusy": "<id/> tient <label/> sur l'exécution <run/>. Le conteneur est détruit maintenant, le bail est libéré, et l'élément retourne en file pour qu'un autre worker le réclame.",
+    "stopConfirm": "Arrêt forcé",
+    "stopCancel": "Le laisser tourner"
+  }
+}

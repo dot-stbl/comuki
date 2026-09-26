@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react"
 import type { FormEvent } from "react"
+import { useTranslation } from "react-i18next"
 
 import { FormActions, FormFields, FormLayout } from "@/app/layout/form-page"
 import { useIdentityQuery } from "@/domains/identity/api/queries"
 import type { CreateApiKeyInput } from "@/domains/identity/model/types"
 import { useCan } from "@/shared/session"
 import { Button, Notice, SelectField, TextField } from "@/shared/ui"
-
-const LIFETIMES = [
-  { value: "0", label: "no expiry" },
-  { value: "30", label: "in 30 days" },
-  { value: "90", label: "in 90 days" },
-  { value: "365", label: "in a year" },
-]
 
 /** The chosen lifetime as an ISO day, or `null` for a key that never expires. */
 function expiryDay(days: string): string | null {
@@ -55,8 +49,16 @@ export function CreateKeyForm({
   onCancel,
   onDirtyChange,
 }: CreateKeyFormProps) {
+  const { t } = useTranslation("identity")
   const manage = useCan("identity.manage")
   const identity = useIdentityQuery()
+
+  const lifetimes = [
+    { value: "0", label: t("keyForm.lifetimeNone") },
+    { value: "30", label: t("keyForm.lifetime30") },
+    { value: "90", label: t("keyForm.lifetime90") },
+    { value: "365", label: t("keyForm.lifetime365") },
+  ]
 
   const [name, setName] = useState("")
   const [lifetime, setLifetime] = useState("0")
@@ -98,15 +100,11 @@ export function CreateKeyForm({
     <FormLayout data-test="create-key" onSubmit={submit}>
       <FormFields>
         {/* Before the key exists, not after it has scrolled away. */}
-        <Notice>
-          The secret appears once, in a dialog over this page. Copy it there —
-          it is stored hashed, it is not in this page's address, and it cannot
-          be shown again.
-        </Notice>
+        <Notice>{t("keyForm.notice")}</Notice>
 
         <TextField
           id="key-name"
-          label="name"
+          label={t("keyForm.nameLabel")}
           /* The submit is already gated on it — the marker only says so
              before the operator finds it out by being refused. */
           required
@@ -115,31 +113,32 @@ export function CreateKeyForm({
           disabled={busy}
           spellCheck={false}
           autoComplete="off"
-          placeholder="what this key is for"
-          hint="The name is how the key is recognised in the list. It is not part of the secret."
+          placeholder={t("keyForm.namePlaceholder")}
+          hint={t("keyForm.nameHint")}
           onValueChange={setName}
         />
 
         <SelectField
           id="key-lifetime"
-          label="expires"
+          label={t("keyForm.expiresLabel")}
           value={lifetime}
           disabled={busy}
-          options={LIFETIMES}
-          hint="A key with no expiry is a key nobody will notice is still working."
+          options={lifetimes}
+          hint={t("keyForm.expiresHint")}
           onValueChange={setLifetime}
         />
 
         <SelectField
           id="key-tenant"
-          label="tenant project"
+          label={t("keyForm.tenantLabel")}
           value={tenantProjectId}
           disabled={busy || scopesLoading}
-          options={[{ value: "", label: "no tenant scope" }, ...projectOptions]}
+          options={[
+            { value: "", label: t("keyForm.noTenantScope") },
+            ...projectOptions,
+          ]}
           hint={
-            scopesLoading
-              ? "Looking up which projects a key can be scoped to."
-              : "Optional. When set, the key only authenticates requests carrying the matching X-Comuki-Tenant header."
+            scopesLoading ? t("keyForm.tenantLooking") : t("keyForm.tenantHint")
           }
           onValueChange={setTenantProjectId}
         />
@@ -153,7 +152,7 @@ export function CreateKeyForm({
           loading={busy}
           disabled={name.trim().length === 0}
         >
-          Create key
+          {t("keyForm.submit")}
         </Button>
         <Button
           variant="secondary"
@@ -161,7 +160,7 @@ export function CreateKeyForm({
           disabled={busy}
           onClick={onCancel}
         >
-          Cancel
+          {t("actions.cancel")}
         </Button>
       </FormActions>
     </FormLayout>

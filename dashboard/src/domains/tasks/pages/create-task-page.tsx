@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate, useRouter } from "@tanstack/react-router"
 import { toast } from "sonner"
+import { useTranslation } from "react-i18next"
 
 import { FormPage } from "@/app/layout/form-page"
 import { useUnsavedGuard } from "@/app/layout/use-unsaved-guard"
@@ -40,6 +41,8 @@ import { ConfirmDialog, Notice } from "@/shared/ui"
  *   already been submitted is not somewhere back should be able to return.
  */
 export function CreateTaskPage() {
+  const { t } = useTranslation("tasks")
+  const { t: tShell } = useTranslation("shell")
   const navigate = useNavigate()
   const router = useRouter()
   const session = useSession()
@@ -79,7 +82,7 @@ export function CreateTaskPage() {
     }
     createTask.mutate(input, {
       onSuccess: () => {
-        toast.success("Task created", { description: input.title })
+        toast.success(t("create.toastCreated"), { description: input.title })
         guard.leave(() => {
           void navigate({
             to: "/tasks",
@@ -93,14 +96,16 @@ export function CreateTaskPage() {
 
   return (
     <FormPage
-      title="New task"
-      crumbs={[{ label: "tasks", to: "/tasks" }, { label: "new" }]}
-      summary="One ticket in front of the swarm: where it came from, which project's backlog it lands in, and how urgent it is."
+      title={t("create.title")}
+      crumbs={[
+        { label: tShell("crumb.tasks"), to: "/tasks" },
+        { label: t("create.crumb") },
+      ]}
+      summary={t("create.summary")}
     >
       {createTask.error ? (
         <Notice tone="bad" data-test="create-failure">
-          {createTask.error.message} Nothing was queued — what you typed is
-          still exactly as you left it.
+          {createTask.error.message} {t("create.failureTail")}
         </Notice>
       ) : null}
 
@@ -117,10 +122,10 @@ export function CreateTaskPage() {
           asks about something the operator did by accident. */}
       <ConfirmDialog
         open={guard.asking}
-        title="Leave without creating the task?"
-        body="The title and brief you typed are not saved anywhere yet. Leaving this page drops them, and nothing reaches intake."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
+        title={t("create.guardTitle")}
+        body={t("create.guardBody")}
+        confirmLabel={t("create.guardConfirm")}
+        cancelLabel={t("create.guardCancel")}
         onConfirm={guard.discard}
         onCancel={guard.keep}
       />

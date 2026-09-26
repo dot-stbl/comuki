@@ -1,0 +1,294 @@
+{
+  "actions": {
+    "retry": "Wiederholen",
+    "cancel": "Abbrechen"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler",
+    "changeFailed": "Die Änderung ist fehlgeschlagen."
+  },
+  "state": {
+    "connected": "verbunden",
+    "error": "fehler",
+    "disabled": "deaktiviert"
+  },
+  "word": {
+    "never": "nie"
+  },
+  "provider": {
+    "github": {
+      "label": "github",
+      "target": "Repository",
+      "intakeNote": "Issues landen aus einem beobachteten Repository. Ein hier geschriebenes wird als das des Repositorys gestempelt."
+    },
+    "gitlab": {
+      "label": "gitlab",
+      "target": "Repository",
+      "intakeNote": "Issues landen aus einem beobachteten Repository. Ein hier geschriebenes wird als das des Repositorys gestempelt."
+    },
+    "yandex-tracker": {
+      "label": "yandex tracker",
+      "target": "Queue-Schlüssel",
+      "intakeNote": "Tickets landen aus einer beobachteten Tracker-Queue. Ein hier geschriebenes wird als das der Queue gestempelt."
+    },
+    "jira": {
+      "label": "jira",
+      "target": "Projektschlüssel",
+      "intakeNote": "Tickets landen von einem beobachteten Board. Ein hier geschriebenes wird als das des Boards gestempelt."
+    },
+    "native": {
+      "label": "native",
+      "target": "Name",
+      "intakeNote": "hier geschrieben, von einer Person — die eigene Annahme des Produkts, ohne Tracker dahinter."
+    }
+  },
+  "intakeNoteUnknown": "Tickets landen aus einer beobachteten Verbindung. Ein hier geschriebenes wird als das dieses Providers gestempelt.",
+  "auth": {
+    "pat": "Personal Access Token",
+    "oauth": "OAuth-Grant",
+    "app-install": "App-Installation",
+    "none": "keine"
+  },
+  "authSecret": {
+    "pat": "Access Token",
+    "oauth": "OAuth-Client-Secret",
+    "app-install": "privater App-Schlüssel",
+    "other": "Secret"
+  },
+  "nativeRefusal": "die eigene Annahme kann nicht getrennt werden — sie ist die Art des Produkts, ein Ticket anzunehmen",
+  "admission": {
+    "watch": {
+      "label": "watch",
+      "description": "ein passendes Ticket startet einen Run. niemand muss es übernehmen."
+    },
+    "inbox-only": {
+      "label": "nur Inbox",
+      "description": "ein passendes Ticket landet im Katalog und wartet auf eine Person, die es nimmt."
+    },
+    "both": {
+      "label": "beides",
+      "description": "das Ticket startet einen Run und bleibt im Katalog, sodass der Run über das Ticket gefunden werden kann, das ihn verursacht hat."
+    },
+    "nativeIntake": "native-Annahme",
+    "watchOff": "watch aus"
+  },
+  "host": {
+    "inPlatform": "in der Plattform",
+    "cloud": "cloud"
+  },
+  "note": {
+    "refusedSilent": "der Provider hat abgelehnt und nichts Brauchbares gesagt.",
+    "filedHere": {
+      "one": "{{count}} Ticket hier eingereicht",
+      "other": "{{count}} Tickets hier eingereicht"
+    },
+    "turnedOff": "ausgeschaltet — zuletzt synchronisiert {{when}}",
+    "watchOff": "watch aus — von hier wird nichts zugelassen",
+    "matchedNothing": "der Filter hat am letzten Tag nichts getroffen",
+    "lastSynced": "zuletzt synchronisiert {{when}}"
+  },
+  "registry": {
+    "title": "Quellen",
+    "errorTitle": "Quellen konnten nicht geladen werden",
+    "connect": "Quelle verbinden",
+    "connectionsWord": "Verbindungen",
+    "admittingWord": "lassen Arbeit zu",
+    "errorWord": "im Fehler",
+    "failureTail": "Nichts hat sich bewegt — die Liste ist wie zuvor.",
+    "sectionTitle": "Verbindungen",
+    "sectionNote": "Jede Quelle der Plattform, egal welches Projekt sie speist. Eine Verbindung trägt das Credential; ihr <em>watch</em> trägt, was dieses Credential zulassen darf — sie brechen getrennt, also lesen sie getrennt. Das Bearbeiten ist pro Projekt vergeben, deshalb steht eine Zeile, die Sie verwalten, über einer, die Sie nur ansehen, und jede sagt, welche sie ist. <code>native</code> ist in jedem Projekt und kann nicht getrennt werden."
+  },
+  "connectionsPanel": {
+    "shown": {
+      "one": "{{count}} angezeigt",
+      "other": "{{count}} angezeigt"
+    },
+    "emptyFiltered": "Keine Verbindung passt auf die aktuellen Filter.",
+    "emptyNone": "Keine Quellen sind verbunden."
+  },
+  "disconnect": {
+    "title": "Diese Quelle trennen?",
+    "body": "{{name}} · {{project}} — das Credential wird verworfen und von hier wird nichts mehr zugelassen. Bereits übernommene Tickets behalten ihre Runs; wiederverbinden bedeutet ein neues Secret.",
+    "confirm": "Trennen",
+    "keep": "Behalten",
+    "toast": "Quelle getrennt"
+  },
+  "column": {
+    "state": "zustand",
+    "source": "quelle",
+    "provider": "provider",
+    "project": "projekt",
+    "instance": "instanz",
+    "account": "konto",
+    "admission": "zulassung",
+    "admitted": "zugelassen",
+    "note": "was passiert",
+    "actions": "aktionen",
+    "allStates": "alle Zustände",
+    "allProviders": "alle Provider",
+    "allProjects": "alle Projekte",
+    "allModes": "alle Modi",
+    "filterPlaceholder": "quelle, konto, host filtern…",
+    "newTicket": "Neues Ticket",
+    "newTicketAria": "Neues Ticket in {{name}} auf {{where}}",
+    "watchAndFilter": "Watch und Filter",
+    "watchAndFilterAria": "Watch auf {{name}} bearbeiten",
+    "testConnection": "Verbindung testen",
+    "testConnectionAria": "Verbindung zu {{name}} testen",
+    "disconnect": "Trennen",
+    "disconnectAria": "{{name}} trennen"
+  },
+  "connectPage": {
+    "title": "Quelle verbinden",
+    "crumbNew": "neu",
+    "summary": "Eine Verbindung gehört zu einem Projekt und trägt ein Credential. Sie erscheint mit ausgeschaltetem watch — Tickets zuzulassen ist eine eigene Entscheidung, getroffen auf der Seite der Quelle.",
+    "refused": "Die Verbindung wurde abgelehnt.",
+    "tail": "Nichts wurde gespeichert — die Details unten sind exakt wie eingegeben.",
+    "leaveTitle": "Ohne Verbindung der Quelle verlassen?",
+    "leaveBody": "Hier ist noch nichts gespeichert, und das eingegebene Credential wird nirgends gehalten — diese Seite zu verlassen verwirft es, und später verbinden bedeutet, es erneut zu besorgen.",
+    "discard": "Verwerfen",
+    "keep": "Weiter bearbeiten",
+    "toast": "Quelle verbunden"
+  },
+  "connectForm": {
+    "providerCard": "provider",
+    "providerCardNote": "welchen Tracker diese Verbindung beobachtet und welchen Dialekt sie spricht.",
+    "providerHint": "die native Annahme ist nicht hier: jedes Projekt hat bereits eine, und es gibt nichts, worauf man ein Credential richten könnte.",
+    "connectionCard": "die Verbindung",
+    "connectionCardNote": "welches Projekt sie speist, wo die Instanz ist und welches Credential sie erreicht.",
+    "projectLabel": "projekt",
+    "projectHint": "das Projekt, das diese Quelle speist. Quellen zu bearbeiten ist pro Projekt vergeben, deshalb antwortet das Speichern vor dieser Wahl.",
+    "settingsPreview": "Der Host speichert dies als ein einzelnes Settings-JSON:",
+    "probeProbing": "Provider wird erreicht…",
+    "probePending": "testen Sie die Verbindung vor dem Speichern — eine unerreichbare Quelle sieht exakt wie eine gesunde aus, bis etwas sie braucht.",
+    "credentialCard": "das Credential",
+    "credentialCardNote": "der Env-Variablen-Name auf dem Host, der das Credential hält. Der Host löst den Wert auf — das Dashboard sieht ihn nie.",
+    "secretEnvLabel": "Secret-Env-Variable",
+    "secretEnvHint": "der Name der Env-Variable auf dem Host, die das Credential hält. Der Host löst den Wert bei Probe / Webhook auf — das Dashboard sieht ihn nie.",
+    "mockNotice": "Nur Mock-Modus: das Formular hält ein literales Credential gerade lange genug, um den Seed-Store zu testen. Der echte Modus liest die Env-Variable auf dem Host und sieht den Wert nie.",
+    "mockSecretLabel": "Credential (nur Mock)",
+    "submit": "Verbindung speichern",
+    "testConnection": "Verbindung testen"
+  },
+  "connectionFields": {
+    "baseUrlLabel": "Basis-URL",
+    "baseUrlHint": "nur self-hosted. https, weil das Credential über diesen Draht geht.",
+    "accountLabel": "konto",
+    "accountPlaceholder": "der Bot oder die App, der das Credential gehört",
+    "accountHint": "hinterher in der Zeile sichtbar, damit ein veraltetes Credential zu einer Person zurückverfolgt werden kann.",
+    "authKindLabel": "Credential-Art"
+  },
+  "authChoice": {
+    "hint": "was {{provider}} akzeptiert, und nichts sonst. Wörtlich im Settings-JSON gespeichert; hält nie ein Credential."
+  },
+  "connectionForm": {
+    "cardLabel": "der Weg hinein",
+    "cardNote": "wo die Instanz ist, welches Credential sie erreicht und welche Env-Variable auf dem Host es hält.",
+    "secretEnvLabel": "Secret-Env-Variable",
+    "secretEnvHint": "der Env-Variablen-Name auf dem Host. Das Dashboard sieht den Wert nie; der Host löst ihn bei Probe / Webhook auf.",
+    "probeProbing": "Provider wird erreicht…",
+    "probePending": "testen Sie die Verbindung vor dem Speichern — zu ändern, wie eine Quelle erreicht wird, ist nichts, was man tut, während niemand weiß, ob es noch geht.",
+    "testConnectionAria": "Verbindung zu {{name}} testen",
+    "submit": "Verbindung speichern"
+  },
+  "watchForm": {
+    "cardLabel": "Zulassung",
+    "cardNote": "ob etwas zugelassen wird, welche Tickets und wer als Nächstes handelt, wenn eines zugelassen ist.",
+    "watchLabel": "diese Quelle beobachten",
+    "watchHint": "aus bedeutet: die Verbindung bleibt authentifiziert und bringt nichts mehr hinein. Das ist nicht dasselbe wie Trennen.",
+    "admissionModeLabel": "Zulassungsmodus",
+    "submit": "Watch speichern"
+  },
+  "filterField": {
+    "label": "Filterausdruck",
+    "placeholder": "leer lassen, um alles zuzulassen, was diese Verbindung sehen kann",
+    "hintsLabel": "Felder, die auf {{kind}}-Tickets vorkommen",
+    "verbatim": "wörtlich gespeichert und nicht geparst — die Filtersprache ist noch nicht entschieden, deshalb geht dieser Text exakt wie eingegeben an den Connector."
+  },
+  "statusPreview": {
+    "head": "Status, der zurück nach {{provider}} geschrieben wird",
+    "nativeNone": "die native Annahme ist der Tracker. Der Status eines Runs ist der Status des Tickets, es gibt also nichts, wohin man ihn zurückschreibt.",
+    "unknownNone": "nichts wird nach {{provider}} zurückgeschrieben — dieser Build hat kein Mapping für diesen Provider, also bleibt der Run-Status beim Run."
+  },
+  "detailPage": {
+    "titleFallback": "Quelle",
+    "crumbFallback": "quelle",
+    "errorTitle": "Diese Quelle wurde nicht geladen",
+    "notFoundTitle": "Keine Verbindung mit dieser ID",
+    "notFoundBody": "Auf dieser Plattform ist unter dieser ID nichts verbunden. Eine getrennte Quelle — hier oder in einem anderen Tab — ist der gewöhnliche Weg zu dieser Adresse, und die Verbindungsliste ist der Ort, an dem die noch existierenden stehen.",
+    "backToSources": "Zurück zu den Quellen",
+    "failureTail": "Nichts hat sich bewegt — diese Seite ist wie zuvor.",
+    "factsTitle": "was diese Verbindung ist",
+    "factProvider": "provider",
+    "factAuth": "credential",
+    "factInstance": "instanz",
+    "factAccount": "konto",
+    "factCredential": "credential",
+    "factLastSync": "letzte Synchronisierung",
+    "credentialEnvNote": "auf dem Host bei Probe / Webhook aufgelöst. Das Dashboard sieht den Wert nie — Ersetzen bedeutet, die Env-Variable auf dem Host zu ändern und <code>secretEnvRef</code> der Verbindung zu patchen.",
+    "credentialStoredNote": "write-only gespeichert und nie wieder angezeigt — nicht auf dieser Seite, nicht in einem Formular, nicht über die API. Ersetzen bedeutet neu verbinden.",
+    "credentialNoneNote": "die native Annahme hat kein gegenüberliegendes Ende, also gibt es nichts, womit man sich authentifiziert.",
+    "none": "keins",
+    "never": "nie",
+    "watchTitle": "watch und filter",
+    "noWatch": "Die native Annahme hat keinen watch. Tickets kommen hierher, weil jemand eines eingereicht hat, nicht weil ein Filter es zugelassen hat — es gibt nichts einzuschalten und nichts einzuengen.",
+    "connectionTitle": "die Verbindung",
+    "rotationTitle": "Webhook-Secret",
+    "rotationBody": "Ein Klick erzeugt ein frisches Webhook-Secret und zeigt es einmal. Kopieren Sie es in die Webhook-Einstellungen des Trackers — diese Seite zeigt es nicht wieder.",
+    "rotateButton": "Secret rotieren",
+    "rotateAria": "Webhook-Secret für {{name}} rotieren",
+    "rotateLabel": "Webhook-Secret rotieren",
+    "rotatedLabel": "neues Webhook-Secret — jetzt kopieren, dieses Panel überlebt keine Navigation",
+    "handoffsTitle": "wohin das geht",
+    "handoffFiled": "hier eingereichte Tickets. Sie sind im Katalog bei allem anderen — ",
+    "handoffAdmitted": "von hier zugelassene Tickets. Sie sind im Katalog bei allem anderen — ",
+    "handoffCatalogTail": "der Katalog ist nicht auf diese Quelle eingeengt.",
+    "openCatalog": "Katalog öffnen",
+    "handoffProject": "das Projekt, das diese Verbindung speist. Quellen bearbeiten ist pro Projekt vergeben, also ist das, wofür jeder Akt auf dieser Seite geradesteht.",
+    "openProject": "Projekt öffnen",
+    "handoffTicket": "ein Ticket direkt in die Annahme dieses Projekts schreiben. Es ist der Akt eines Mitglieds, nicht eines Administrators, deshalb hat es einen eigenen Bildschirm und eine eigene Berechtigung.",
+    "fileTicket": "Ticket einreichen",
+    "rotateTitle": "Webhook-Secret dieser Quelle rotieren?",
+    "rotateBody": "{{name}} · {{project}} — ein neues Secret wird erzeugt und einmal angezeigt. Mit dem vorherigen Secret signierte Webhooks werden abgewiesen, bis Sie das neue in den Tracker kopieren.",
+    "rotateConfirm": "Rotieren",
+    "rotateKeep": "Aktuelles behalten",
+    "leaveTitle": "Ohne Speichern verlassen?",
+    "leaveBody": "Die auf dieser Seite geänderten Watch- und Verbindungsdetails sind noch nicht gespeichert. Verlassen verwirft sie, und die Quelle bleibt exakt wie zuvor.",
+    "discard": "Verwerfen",
+    "keep": "Weiter bearbeiten",
+    "watchSavedToast": "Watch gespeichert",
+    "connectionSavedToast": "Verbindung gespeichert",
+    "rotatedToast": "Webhook-Secret rotiert",
+    "rotatedToastDescription": "{{name}} — kopieren Sie den neuen Wert in den Tracker"
+  },
+  "ticketPage": {
+    "title": "Neues Ticket in {{project}}",
+    "titleFallback": "Neues Ticket",
+    "crumb": "neues ticket",
+    "summary": "Die native Annahme ist die eigene des Produkts. Ein hier geschriebenes Ticket hat keinen Tracker dahinter, also ist sein Status der des Runs, und es gibt nichts, wohin man ihn zurücksynchronisiert.",
+    "errorTitle": "Diese Quelle konnte nicht nachgeschlagen werden",
+    "notFoundTitle": "Keine Verbindung mit dieser ID",
+    "notFoundBody": "Auf dieser Plattform hat keine Verbindung die ID {{id}}. Eine Quelle, die getrennt wurde, während dieser Tab offen stand, ist der gewöhnliche Weg hierher.",
+    "backToSources": "Zurück zu den Quellen",
+    "refused": "Das Ticket wurde abgelehnt.",
+    "tail": "Nichts wurde eingereicht — was Sie getippt haben, ist noch hier.",
+    "leaveTitle": "Ohne Einreichen des Tickets verlassen?",
+    "leaveBody": "Titel, Text und Labels sind noch nirgends gespeichert. Diese Seite zu verlassen verwirft sie, und nichts erreicht die Annahme.",
+    "discard": "Verwerfen",
+    "keep": "Weiter bearbeiten",
+    "toast": "Ticket eingereicht"
+  },
+  "ticketForm": {
+    "titleLabel": "titel",
+    "titlePlaceholder": "was kaputt ist, in einer Zeile",
+    "bodyLabel": "text",
+    "bodyPlaceholder": "was Sie gesehen haben und wo. Das Gehirn liest dies, bevor es irgendwas plant.",
+    "labelsLabel": "labels",
+    "labelsPlaceholder": "checkout-web, bug",
+    "labelsHint": "komma-getrennt. Dies sind die eigenen Labels des Tickets — kein Filterausdruck.",
+    "straightLabel": "direkt zur Arbeit",
+    "straightHint": "aus lässt es jemanden übernehmen — derselbe Akt, eine Minute später.",
+    "submitStart": "Erzeugen und starten",
+    "submit": "Ticket erzeugen"
+  }
+}

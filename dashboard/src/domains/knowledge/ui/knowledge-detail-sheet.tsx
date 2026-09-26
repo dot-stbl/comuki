@@ -1,5 +1,6 @@
 import { X } from "lucide-react"
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components"
+import { useTranslation } from "react-i18next"
 
 import type { KnowledgeEntry } from "@/domains/knowledge/model/types"
 import { Button, Fact, FactList, Tooltip } from "@/shared/ui"
@@ -37,6 +38,7 @@ export function KnowledgeDetailSheet({
   open,
   onOpenChange,
 }: KnowledgeDetailSheetProps) {
+  const { t } = useTranslation("knowledge")
   return (
     <ModalOverlay
       isOpen={open}
@@ -56,12 +58,12 @@ export function KnowledgeDetailSheet({
                 </div>
                 {/* Escape and the scrim both close this; the glyph is the third
                     way, for a pointer that never learned either. */}
-                <Tooltip content="Close">
+                <Tooltip content={t("actions.close")}>
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     data-test="knowledge-sheet-close"
-                    aria-label="Close the entry"
+                    aria-label={t("sheet.close")}
                     onClick={() => onOpenChange(false)}
                   >
                     <X aria-hidden="true" />
@@ -78,7 +80,7 @@ export function KnowledgeDetailSheet({
                   <PinnedMark revision={entry.revision} />
                 ) : (
                   <span className={styles.revision}>
-                    revision @{entry.revision}
+                    {t("sheet.revisionAt", { revision: entry.revision })}
                   </span>
                 )}
               </div>
@@ -88,8 +90,8 @@ export function KnowledgeDetailSheet({
                   end edge, which is what makes a short column of them scannable
                   in a box this narrow. */}
               <FactList layout="split" size="sm">
-                <Fact name="scope">{entry.scope}</Fact>
-                <Fact name="updated">{entry.updated}</Fact>
+                <Fact name={t("sheet.scope")}>{entry.scope}</Fact>
+                <Fact name={t("sheet.updated")}>{entry.updated}</Fact>
               </FactList>
 
               <p className={styles.body}>{entry.body}</p>

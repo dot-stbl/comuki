@@ -1,6 +1,10 @@
 import { Play } from "lucide-react"
 
-import { headroom } from "@/domains/compute/model/capacity"
+import {
+  headroom,
+  sharedComputeT,
+  type ComputeTranslator,
+} from "@/domains/compute/model/capacity"
 import type {
   ComputePool,
   ComputeProvider,
@@ -30,6 +34,13 @@ export interface ProviderColumnsOptions {
    * exported beside the hook.
    */
   session: Session
+  /**
+   * Copy arrives as a parameter for the same reason the session does: a
+   * `cell` is a plain function, so a `useTranslation` inside one throws.
+   * The panel passes its hook-bound `t`; tests fall back to the shared
+   * instance, which answers in the active locale.
+   */
+  t?: ComputeTranslator
 }
 
 /** Row identity for the virtualized body. Module scope keeps it stable. */
@@ -70,6 +81,7 @@ export function createProviderColumns({
   switchingId,
   onTakeWork,
   session,
+  t = sharedComputeT,
 }: ProviderColumnsOptions): DataColumn<ComputeProvider>[] {
   const poolCount = (providerId: string) =>
     pools.filter((pool) => pool.providerId === providerId).length
@@ -82,7 +94,7 @@ export function createProviderColumns({
   return [
     {
       accessorKey: "kind",
-      header: "kind",
+      header: t("providers.column.kind"),
       // The backend's own mark, not its name spelled out. The word is still the
       // filter's option, the mark's accessible name and its hover reading — it
       // has stopped being the thing occupying the column.
@@ -92,7 +104,7 @@ export function createProviderColumns({
         pinned: true,
         filter: {
           kind: "select",
-          placeholder: "all kinds",
+          placeholder: t("providers.allKinds"),
           options: [
             { value: "docker", label: "docker" },
             { value: "kubernetes", label: "kubernetes" },
@@ -102,7 +114,7 @@ export function createProviderColumns({
     },
     {
       accessorKey: "endpoint",
-      header: "endpoint",
+      header: t("providers.column.endpoint"),
       cell: ({ row }) => (
         <span className={styles.endpoint} title={row.original.endpoint}>
           {row.original.endpoint}
@@ -112,7 +124,7 @@ export function createProviderColumns({
         width: 300,
         filter: {
           kind: "text",
-          placeholder: "filter endpoint, note…",
+          placeholder: t("providers.filterPlaceholder"),
           match: (provider, needle) =>
             `${provider.endpoint} ${provider.note} ${provider.id}`
               .toLowerCase()
@@ -122,17 +134,19 @@ export function createProviderColumns({
     },
     {
       accessorKey: "state",
-      header: "state",
-      cell: ({ row }) => <ProviderStateBadge state={row.original.state} />,
+      header: t("providers.column.state"),
+      cell: ({ row }) => (
+        <ProviderStateBadge state={row.original.state} t={t} />
+      ),
       sortFn: stateSort,
       meta: {
         width: 128,
         filter: {
           kind: "select",
-          placeholder: "all states",
+          placeholder: t("providers.allStates"),
           options: PROVIDER_STATES.map((state) => ({
             value: state,
-            label: state,
+            label: t(`state.${state}`, { defaultValue: state }),
           })),
         },
       },
@@ -140,7 +154,7 @@ export function createProviderColumns({
     {
       id: "takingWork",
       accessorFn: (provider) => (provider.takingWork ? "yes" : "no"),
-      header: "new starts",
+      header: t("providers.column.newStarts"),
       // The single most consequential fact on the row, and it is a yes or a no
       // rather than a badge: a second badge beside `state` would read as a
       // second state, and there is only one.
@@ -148,17 +162,17 @@ export function createProviderColumns({
         row.original.takingWork ? (
           <span className={styles.target}>
             <Play className={styles.targetIcon} aria-hidden="true" />
-            taking work
+            {t("providers.takingWork")}
           </span>
         ) : (
           <span className={styles.faint}>—</span>
         ),
-      meta: { width: 128, label: "new starts" },
+      meta: { width: 128, label: t("providers.column.newStarts") },
     },
     {
       id: "pools",
       accessorFn: (provider) => poolCount(provider.id),
-      header: "pools",
+      header: t("providers.column.pools"),
       cell: ({ row }) => (
         <span className={styles.value}>{poolCount(row.original.id)}</span>
       ),
@@ -167,7 +181,7 @@ export function createProviderColumns({
     {
       id: "workers",
       accessorFn: (provider) => workerCount(provider.id),
-      header: "workers",
+      header: t("providers.column.workers"),
       cell: ({ row }) => (
         <span className={styles.value}>{workerCount(row.original.id)}</span>
       ),
@@ -177,14 +191,14 @@ export function createProviderColumns({
       id: "allocatable",
       accessorFn: (provider) =>
         provider.allocatable ? headroom(provider.allocatable) : -1,
-      header: "allocatable",
+      header: t("providers.column.allocatable"),
       // A provider that did not answer has no capacity reading, and `0` would
       // be a lie in the shape of a number: it reads as a full cluster, which is
       // an entirely different thing an operator would act on differently.
       cell: ({ row }) => {
         const allocatable = row.original.allocatable
         if (!allocatable) {
-          return <span className={styles.faint}>no answer</span>
+          return <span className={styles.faint}>{t("providers.noAnswer")}</span>
         }
         return (
           <span className={styles.value}>
@@ -192,21 +206,25 @@ export function createProviderColumns({
           </span>
         )
       },
-      meta: { width: 112, numeric: true, label: "allocatable" },
+      meta: {
+        width: 112,
+        numeric: true,
+        label: t("providers.column.allocatable"),
+      },
     },
     {
       accessorKey: "note",
-      header: "note",
+      header: t("providers.column.note"),
       cell: ({ row }) => (
         <span className={styles.note} title={row.original.note}>
           {row.original.note}
         </span>
       ),
-      meta: { label: "note" },
+      meta: { label: t("providers.column.note") },
     },
     {
       id: "actions",
-      header: "actions",
+      header: t("providers.column.actions"),
       enableSorting: false,
       cell: ({ row }) => {
         const provider = row.original
@@ -233,14 +251,16 @@ export function createProviderColumns({
                 that is already taking work — the act and the state it
                 produces are one object, and they never appear on the same
                 row because this cell is empty once the state is true. */}
-            <Tooltip content={denial ?? "Hand new starts to this provider"}>
+            <Tooltip content={denial ?? t("providers.handWork")}>
               <Button
                 size="icon-sm"
                 variant="outline"
                 data-test="provider-take-work"
                 loading={busy}
                 denied={denial}
-                aria-label={`Hand new starts to ${provider.endpoint}`}
+                aria-label={t("providers.handWorkAria", {
+                  endpoint: provider.endpoint,
+                })}
                 onClick={(event) => {
                   event.stopPropagation()
                   onTakeWork(provider)
@@ -252,7 +272,7 @@ export function createProviderColumns({
           </span>
         )
       },
-      meta: { width: 80, align: "end", label: "actions" },
+      meta: { width: 80, align: "end", label: t("providers.column.actions") },
     },
   ]
 }

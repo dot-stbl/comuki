@@ -1,0 +1,127 @@
+{
+  "actions": {
+    "retry": "Retry"
+  },
+  "errors": {
+    "unknown": "Unknown error",
+    "changeFailed": "The change failed."
+  },
+  "page": {
+    "title": "Compute",
+    "summary": "<providers/> providers · <workers/> workers up · <takes/>",
+    "summaryTakes": "<kind/> takes new starts",
+    "summaryNothing": "nothing takes new starts",
+    "summaryStranded": "<count/> idle on a label nothing matches",
+    "loading": "Loading the registry",
+    "errorTitle": "Couldn't load compute",
+    "failureTail": "Nothing moved — the registry is back as it was."
+  },
+  "providers": {
+    "section": "Providers",
+    "note": "Docker for dev and compose, Kubernetes for prod — the two <code>IComputeProvider</code> implementations v1 has. One takes new starts; the rest hold the leases they already handed out.",
+    "emptyFiltered": "no providers match the current filters",
+    "empty": "no compute provider is registered",
+    "count": "{{count}} shown",
+    "column": {
+      "kind": "kind",
+      "endpoint": "endpoint",
+      "state": "state",
+      "newStarts": "new starts",
+      "pools": "pools",
+      "workers": "workers",
+      "allocatable": "allocatable",
+      "note": "note",
+      "actions": "actions"
+    },
+    "allKinds": "all kinds",
+    "allStates": "all states",
+    "filterPlaceholder": "filter endpoint, note…",
+    "takingWork": "taking work",
+    "noAnswer": "no answer",
+    "handWork": "Hand new starts to this provider",
+    "handWorkAria": "Hand new starts to {{endpoint}}"
+  },
+  "pools": {
+    "section": "Pools",
+    "note": "Scaling is quota-aware plus the provider's capacity api, so every pool has two ceilings with two different owners. The one marked <tag>binding</tag> is the one refusing the next container — the other is what it had spare.",
+    "empty": "no pool is configured"
+  },
+  "card": {
+    "on": "on",
+    "unknown": "unknown",
+    "noReading": "no reading",
+    "slotFree": "slot free",
+    "slotsFree": "slots free",
+    "trackQuota": "quota",
+    "trackAllocatable": "allocatable",
+    "binding": "binding",
+    "noAnswer": "no answer",
+    "full": "full",
+    "free": "{{room}} free",
+    "up": "up",
+    "idle": "idle",
+    "sentences": {
+      "noAnswer": "capacity api did not answer — no ceiling can be read for this pool",
+      "bothFull": "quota and cluster are both full — nothing can start here",
+      "both": "quota and cluster agree — room for {{slots}}",
+      "quotaFull": "quota is the ceiling — nothing can start, and the cluster still has {{slots}} free",
+      "quota": "quota is the ceiling — room for {{slots}}, with {{spare}} free on the cluster",
+      "clusterFull": "the cluster is the ceiling — nothing can start, and the quota still allows {{slots}}",
+      "cluster": "the cluster is the ceiling — room for {{slots}}, with {{spare}} left under the quota"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — create-per-task",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "one": "{{count}} slot",
+      "other": "{{count}} slots"
+    }
+  },
+  "versions": {
+    "section": "Worker versions",
+    "note": "A worker is labelled by image digest <em>and</em> profiles git-ref. Changing either only affects a new start — an idle worker on any other label is never matched to an item, which is how a full pool sits beside a growing queue.",
+    "emptyFiltered": "no labels match the current filters",
+    "empty": "no workers are up",
+    "count": "{{count}} shown",
+    "countStranded": "{{count}} idle never matched · ",
+    "column": {
+      "label": "worker label",
+      "matching": "matching",
+      "workers": "workers",
+      "idle": "idle",
+      "oldestUp": "oldest up",
+      "why": "why",
+      "actions": "actions"
+    },
+    "filterPlaceholder": "filter digest, profiles ref…",
+    "allLabels": "all labels",
+    "newStarts": "new starts",
+    "neverMatched": "never matched",
+    "strandedTitle": "{{count}} idle on a label nothing is matched to — they will not claim an item",
+    "retireTooltip": "Retire the idle workers on this label",
+    "retireAria": "Retire {{count}} idle workers on {{label}}",
+    "retireTitle": "Retire the idle workers on this label?",
+    "retireBody": "{{label}} — {{idle}} idle containers are torn down. The {{rest}} still holding a lease keep running until their item lands.",
+    "retireConfirm": "Retire idle",
+    "retireCancel": "Leave them up",
+    "reason": {
+      "both": "image and profiles ref both moved",
+      "image": "a release behind on the image",
+      "profiles": "same image, the profiles ref moved"
+    }
+  },
+  "boards": {
+    "section": "Boards",
+    "note": "The grafana boards, folded in from the screen that used to own them. They open in a new tab and are not embedded here on purpose: infra metrics and a run's own timeline are read on different clocks by people asking different questions, and a surface that showed both would teach an operator to look for a run's story in a metrics board, where only half of it is. A run's story is on <code>/runs</code>. One board covers every project at once, and the definitions are versioned with the platform — the guide under the list says how to connect an installation that has nothing in it yet.",
+    "loading": "Loading the boards",
+    "errorTitle": "Couldn't load the boards"
+  },
+  "state": {
+    "active": "active",
+    "draining": "draining",
+    "standby": "standby",
+    "unreachable": "unreachable"
+  }
+}

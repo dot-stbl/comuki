@@ -1,3 +1,4 @@
+import { i18n } from "@/shared/i18n"
 import type { Permission, ProjectRef } from "@/shared/session"
 
 /**
@@ -150,39 +151,39 @@ export const KEYED_SHAPES: SearchShape[] = [
   keyed("run", RUN, (id) => ({
     href: `/runs/${id}`,
     permission: "runs.view",
-    hint: "in live runs",
+    hint: i18n.t("shell:search.resolvedHint.liveRuns"),
   })),
   keyed("work item", WORK_ITEM, (id) => ({
     href: `/queue?q=${q(id)}`,
     permission: "queue.view",
-    hint: "in the claim queue",
+    hint: i18n.t("shell:search.resolvedHint.claimQueue"),
   })),
   keyed("worker", WORKER, (id) => ({
     href: `/queue?w=${q(id)}`,
     permission: "queue.view",
-    hint: "in the worker pool",
+    hint: i18n.t("shell:search.resolvedHint.workerPool"),
   })),
   keyed("approval", APPROVAL, (id) => ({
     href: `/approvals?q=${q(id)}`,
     permission: "plans.approve",
-    hint: "in approvals",
+    hint: i18n.t("shell:search.resolvedHint.approvals"),
   })),
   keyed("image", DIGEST, (id) => ({
     // The pool is where a digest is *actionable* — it is the column that
     // explains why one container is draining while its neighbours are not.
     href: `/queue?w=${q(id)}`,
     permission: "queue.view",
-    hint: "workers on this image",
+    hint: i18n.t("shell:search.resolvedHint.image"),
   })),
   keyed("api key", API_KEY_PREFIX, (id) => ({
     href: `/identity?tab=keys&q=${q(id)}`,
     permission: "identity.manage",
-    hint: "in api keys",
+    hint: i18n.t("shell:search.resolvedHint.apiKeys"),
   })),
   keyed("person", EMAIL, (id) => ({
     href: `/identity?tab=users&q=${q(id)}`,
     permission: "identity.manage",
-    hint: "in people",
+    hint: i18n.t("shell:search.resolvedHint.people"),
   })),
   // The two internal ids. Neither is shown anywhere in the product, but both
   // get pasted out of a log or an api response, and both lists now carry the
@@ -190,12 +191,12 @@ export const KEYED_SHAPES: SearchShape[] = [
   keyed("person", USER_ID, (id) => ({
     href: `/identity?tab=users&q=${q(id)}`,
     permission: "identity.manage",
-    hint: "in people",
+    hint: i18n.t("shell:search.resolvedHint.people"),
   })),
   keyed("api key", API_KEY_ID, (id) => ({
     href: `/identity?tab=keys&q=${q(id)}`,
     permission: "identity.manage",
-    hint: "in api keys",
+    hint: i18n.t("shell:search.resolvedHint.apiKeys"),
   })),
   {
     // A project id resolves through the session's own catalogue, because the
@@ -268,7 +269,7 @@ export const CATALOGUE_SHAPES: SearchShape[] = [
           id: app,
           href: `/runs?q=${q(app)}`,
           permission: "runs.view" as const,
-          hint: "runs on this app",
+          hint: i18n.t("shell:search.resolvedHint.app"),
         }))
     },
   },

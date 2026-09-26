@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ArrowLeft, KeyRound, RotateCw, Unplug } from "lucide-react"
 import { Link, useNavigate } from "@tanstack/react-router"
+import { Trans, useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { FormPage } from "@/app/layout/form-page"
@@ -15,14 +16,15 @@ import {
 } from "@/domains/sources/api/mutations"
 import { useSourcesQuery } from "@/domains/sources/api/queries"
 import {
-  AUTH_LABEL,
-  NATIVE_DISCONNECT_REFUSAL,
   admittedCount,
+  authLabel,
   connectionHost,
   connectionNote,
   isNativeIntake,
+  nativeDisconnectRefusal,
   providerBrand,
   providerLabel,
+  sharedSourcesT,
 } from "@/domains/sources/model/providers"
 import type {
   AdmissionMode,
@@ -130,6 +132,8 @@ export interface SourceDetailPageProps {
  */
 export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   const navigate = useNavigate()
+  const { t } = useTranslation("sources")
+  const { t: tShell } = useTranslation("shell")
   const session = useSession()
   const { data, isLoading, isError, error, refetch } = useSourcesQuery()
 
@@ -162,14 +166,14 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   const admissionRules = useAdmissionRules(connection?.projectId)
 
   const crumbs = [
-    { label: "configure" },
-    { label: "sources", to: "/sources" },
-    { label: connection?.name ?? "source" },
+    { label: tShell("crumb.configure") },
+    { label: tShell("crumb.sources"), to: "/sources" },
+    { label: connection?.name ?? t("detailPage.crumbFallback") },
   ]
 
   if (isLoading) {
     return (
-      <FormPage title="Source" crumbs={crumbs}>
+      <FormPage title={t("detailPage.titleFallback")} crumbs={crumbs}>
         <Skeleton lines={SKELETON_WIDTHS} data-test="source-loading" />
       </FormPage>
     )
@@ -177,17 +181,17 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
 
   if (isError) {
     return (
-      <FormPage title="Source" crumbs={crumbs}>
+      <FormPage title={t("detailPage.titleFallback")} crumbs={crumbs}>
         <ScreenState
           kind="error"
-          title="Couldn't load this source"
-          description={requestFailureMessage(error, "Unknown error")}
+          title={t("detailPage.errorTitle")}
+          description={requestFailureMessage(error, t("errors.unknown"))}
           action={
-            <Tooltip content="Retry">
+            <Tooltip content={t("actions.retry")}>
               <Button
                 size="icon-sm"
                 data-test="source-retry"
-                aria-label="Retry"
+                aria-label={t("actions.retry")}
                 onClick={() => {
                   void refetch()
                 }}
@@ -209,20 +213,20 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
        operator is going to compare it with whatever they pasted — says what
        usually happened, and hands back the list. */
     return (
-      <FormPage title="Source" crumbs={crumbs}>
+      <FormPage title={t("detailPage.titleFallback")} crumbs={crumbs}>
         <ScreenState
           kind="notFound"
-          title="No connection with that id"
-          description="Nothing on this platform is connected under this id. A source that was disconnected — here or in another tab — is the ordinary way to arrive at this address, and the connections list is where the ones that still exist are."
+          title={t("detailPage.notFoundTitle")}
+          description={t("detailPage.notFoundBody")}
           hint={sourceId}
           data-test="source-not-found"
           action={
-            <Tooltip content="Back to sources">
+            <Tooltip content={t("detailPage.backToSources")}>
               <Link
                 to="/sources"
                 search={{}}
                 data-test="source-not-found-back"
-                aria-label="Back to sources"
+                aria-label={t("detailPage.backToSources")}
                 className={buttonClass({ size: "icon-sm" })}
               >
                 <ArrowLeft aria-hidden="true" />
@@ -250,7 +254,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
      reason a denial uses it — a disabled control fires no pointer events, so
      the sentence explaining the refusal would exist and be unreachable. */
   const disconnectDenial = !connection.removable
-    ? NATIVE_DISCONNECT_REFUSAL
+    ? nativeDisconnectRefusal(t)
     : editDenial
 
   const testing = testConnection.isPending
@@ -296,7 +300,9 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
              the two there is a window where a departure would be asked
              about a save that already landed. */
           setWatchDirty(false)
-          toast.success("Watch saved", { description: connection.name })
+          toast.success(t("detailPage.watchSavedToast"), {
+            description: connection.name,
+          })
         },
       }
     )
@@ -319,7 +325,9 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
           // departure question is settled when the save is accepted, not a
           // refetch later.
           setConnectionDirty(false)
-          toast.success("Connection saved", { description: connection.name })
+          toast.success(t("detailPage.connectionSavedToast"), {
+            description: connection.name,
+          })
         },
       }
     )
@@ -332,7 +340,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     }
     disconnect.mutate(connection.id, {
       onSuccess: () => {
-        toast.success("Source disconnected", { description: connection.name })
+        toast.success(t("disconnect.toast"), { description: connection.name })
         // The record this page is about is gone, so the page is about nothing.
         // `guard.leave` because this departure is the point rather than an
         // accident — the same free pass a cancel and a successful save get.
@@ -355,8 +363,10 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         // (the new secretStoredAt shows up on a follow-up refetch), but the
         // only place the secret value lives is the local state below.
         setRotatedSecret(response.secret)
-        toast.success("Webhook secret rotated", {
-          description: `${connection.name} — copy the new value into the tracker`,
+        toast.success(t("detailPage.rotatedToast"), {
+          description: t("detailPage.rotatedToastDescription", {
+            name: connection.name,
+          }),
         })
       },
       onSettled: () => {
@@ -395,7 +405,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
           </span>
           <span className={styles.summaryKey}>{projectKey}</span>
           <span className={styles.summaryNote}>
-            {connectionNote(connection, tickets)}
+            {connectionNote(connection, tickets, t)}
           </span>
         </span>
       }
@@ -409,14 +419,16 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
               still acting on the record rather than the draft — see
               `ConnectionForm`. */}
 
-          <Tooltip content={disconnectDenial ?? "Disconnect"}>
+          <Tooltip content={disconnectDenial ?? t("column.disconnect")}>
             <Button
               size="icon-sm"
               variant="destructive"
               data-test="source-disconnect"
               denied={disconnectDenial}
               disabled={disconnect.isPending}
-              aria-label={`Disconnect ${connection.name}`}
+              aria-label={t("column.disconnectAria", {
+                name: connection.name,
+              })}
               onClick={() => setDisconnecting(true)}
             >
               <Unplug aria-hidden="true" />
@@ -427,8 +439,8 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
     >
       {failure ? (
         <Notice tone="bad" data-test="source-failure">
-          {requestFailureMessage(failure, "The change failed.")} Nothing moved —
-          this page is back as it was.
+          {requestFailureMessage(failure, t("errors.changeFailed"))}{" "}
+          {t("detailPage.failureTail")}
         </Notice>
       ) : null}
 
@@ -438,15 +450,14 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         // bare code would send the operator to the provider to find out what a
         // line here could have told them.
         <Notice tone="bad" announce={false} data-test="source-error">
-          {connection.reason ??
-            "the provider refused, and said nothing useful."}
+          {connection.reason ?? sharedSourcesT("note.refusedSilent")}
         </Notice>
       ) : null}
 
       <Section
         variant="region"
         id="source-facts"
-        title="what this connection is"
+        title={t("detailPage.factsTitle")}
         data-test="source-facts"
       >
         {/* The kit's pair, at the page step. This screen had been reading a
@@ -454,7 +465,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
             show the same kind of thing at the same width — drift rather than a
             decision, and `FactList`'s `sm` is the *sheet* step, not a page's. */}
         <FactList>
-          <Fact name="provider">
+          <Fact name={t("detailPage.factProvider")}>
             <span className={styles.factBrand}>
               {/* The mark where the provider has one that survives being
                   drained to the chrome's own colour, and the word where it does
@@ -467,15 +478,17 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
             </span>
           </Fact>
 
-          <Fact name="auth">{AUTH_LABEL[connection.auth]}</Fact>
-
-          <Fact name="instance">
-            {connection.baseUrl ?? connectionHost(connection)}
+          <Fact name={t("detailPage.factAuth")}>
+            {authLabel(connection.auth, t)}
           </Fact>
 
-          <Fact name="account">{connection.account}</Fact>
+          <Fact name={t("detailPage.factInstance")}>
+            {connection.baseUrl ?? connectionHost(connection, t)}
+          </Fact>
 
-          <Fact name="credential">
+          <Fact name={t("detailPage.factAccount")}>{connection.account}</Fact>
+
+          <Fact name={t("detailPage.factCredential")}>
             {connection.secretEnvRef ? (
               /* code-shaped name the host resolves — the dashboard never
                * shows the value, only the name, which is the structural
@@ -485,34 +498,32 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                   {connection.secretEnvRef}
                 </code>
                 <span className={styles.factNote}>
-                  resolved on the host at probe / webhook time. The dashboard
-                  never sees the value — replacing it means changing the env var
-                  on the host and patching the connection&apos;s{" "}
-                  <code>secretEnvRef</code>.
+                  <Trans
+                    ns="sources"
+                    i18nKey="detailPage.credentialEnvNote"
+                    components={{ code: <code>secretEnvRef</code> }}
+                  />
                 </span>
               </>
             ) : (
-              (connection.secretStoredAt ?? "none")
+              (connection.secretStoredAt ?? t("detailPage.none"))
             )}
             {!connection.secretEnvRef && connection.secretStoredAt ? (
               <span className={styles.factNote}>
                 {/* Mock mode (legacy): the seed stamps a date and the
                  * product will never say anything about the secret itself. */}
-                stored write-only, and never shown again — not on this page, not
-                in a form, not through the api. Replacing it means connecting
-                again.
+                {t("detailPage.credentialStoredNote")}
               </span>
             ) : null}
             {!connection.secretEnvRef && !connection.secretStoredAt ? (
               <span className={styles.factNote}>
-                native intake has no remote end, so there is nothing to
-                authenticate against.
+                {t("detailPage.credentialNoneNote")}
               </span>
             ) : null}
           </Fact>
 
-          <Fact name="last sync">
-            {native ? "—" : (connection.lastSyncAt ?? "never")}
+          <Fact name={t("detailPage.factLastSync")}>
+            {native ? "—" : (connection.lastSyncAt ?? t("detailPage.never"))}
           </Fact>
         </FactList>
       </Section>
@@ -521,7 +532,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         <Section
           variant="region"
           id="source-watch"
-          title="watch and filter"
+          title={t("detailPage.watchTitle")}
           data-test="source-watch"
         >
           <WatchForm
@@ -545,18 +556,14 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         <Section
           variant="region"
           id="source-watch"
-          title="watch and filter"
+          title={t("detailPage.watchTitle")}
           data-test="source-no-watch"
         >
           {/* `null` rather than a watch that is off, which is the honest shape:
               there is no remote system to watch, so there is no filter, no
               admission mode and nothing to map a status back onto. Native
               tickets arrive because a person wrote one. */}
-          <Notice data-test="native-no-watch">
-            Native intake has no watch. Tickets arrive here because somebody
-            filed one, not because a filter admitted it — so there is nothing to
-            turn on and nothing to narrow.
-          </Notice>
+          <Notice data-test="native-no-watch">{t("detailPage.noWatch")}</Notice>
 
           {/* The write-back preview still stands, and it is the one place that
               says the other half out loud: there is nowhere to write a status
@@ -571,7 +578,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         <Section
           variant="region"
           id="source-connection"
-          title="the connection"
+          title={t("detailPage.connectionTitle")}
           data-test="source-connection"
         >
           <ConnectionForm
@@ -591,7 +598,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
         <Section
           variant="region"
           id="source-rotation"
-          title="webhook secret"
+          title={t("detailPage.rotationTitle")}
           data-test="source-rotation"
         >
           <div className={styles.rotation}>
@@ -601,17 +608,17 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                   confirmation dialog after a click — copying it into the
                   tracker's webhook settings is the operator's next move,
                   and the dashboard never holds the value past this turn. */}
-              A click generates a fresh webhook secret and shows it once. Copy
-              it into the tracker's webhook settings — this page will not show
-              it again.
+              {t("detailPage.rotationBody")}
             </p>
-            <Tooltip content={editDenial ?? "Rotate webhook secret"}>
+            <Tooltip content={editDenial ?? t("detailPage.rotateLabel")}>
               <Button
                 variant="outline"
                 data-test="source-rotate-secret"
                 denied={editDenial}
                 loading={rotateSecret.isPending || rotating}
-                aria-label={`Rotate the webhook secret for ${connection.name}`}
+                aria-label={t("detailPage.rotateAria", {
+                  name: connection.name,
+                })}
                 onClick={() => {
                   if (editDenial) {
                     return
@@ -620,7 +627,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                 }}
               >
                 <KeyRound aria-hidden="true" />
-                Rotate secret
+                {t("detailPage.rotateButton")}
               </Button>
             </Tooltip>
             {/* Once the rotation resolves, surface the plaintext in a
@@ -629,8 +636,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
             {rotatedSecret ? (
               <Notice tone="ok" announce data-test="source-rotated-secret">
                 <span className={styles.rotationSecretLabel}>
-                  new webhook secret — copy now, this panel does not survive a
-                  navigation
+                  {t("detailPage.rotatedLabel")}
                 </span>
                 <code
                   className={styles.rotationSecretValue}
@@ -647,7 +653,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
       <Section
         variant="region"
         id="source-handoffs"
-        title="where this goes"
+        title={t("detailPage.handoffsTitle")}
         data-test="source-handoffs"
       >
         <div className={styles.handoffs}>
@@ -655,14 +661,14 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
             <span className={styles.handoffCount}>{admitted}</span>
             <span className={styles.handoffText}>
               {native
-                ? "tickets filed here. They are in the catalog with everything else — "
-                : "tickets admitted from here. They are in the catalog with everything else — "}
+                ? t("detailPage.handoffFiled")
+                : t("detailPage.handoffAdmitted")}
               {/* Deliberately not `/tasks?q=<name>`. The catalog's search reads
                   a ticket's title, id and app, and a connection's name is none
                   of those — a link that carried one would land the operator on
                   an empty screen, which is worse than not narrowing at all.
                   Said out loud rather than implied. */}
-              the catalog is not narrowed to this source.
+              {t("detailPage.handoffCatalogTail")}
             </span>
             <Link
               to="/tasks"
@@ -670,15 +676,14 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
               className={styles.handoffLink}
               data-test="handoff-tasks"
             >
-              open the catalog
+              {t("detailPage.openCatalog")}
             </Link>
           </div>
 
           <div className={styles.handoff}>
             <span className={styles.handoffCount}>{projectKey}</span>
             <span className={styles.handoffText}>
-              the project this connection feeds. Editing a source is granted per
-              project, so this is what every act on this page answers to.
+              {t("detailPage.handoffProject")}
             </span>
             <Link
               to="/projects/$projectId"
@@ -686,7 +691,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
               className={styles.handoffLink}
               data-test="handoff-project"
             >
-              open the project
+              {t("detailPage.openProject")}
             </Link>
           </div>
 
@@ -694,9 +699,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
             <div className={styles.handoff}>
               <span className={styles.handoffCount}>+</span>
               <span className={styles.handoffText}>
-                write a ticket straight into this project&apos;s intake. It is a
-                member&apos;s act rather than an administrator&apos;s, so it has
-                its own screen and its own permission.
+                {t("detailPage.handoffTicket")}
               </span>
               <Link
                 to="/sources/$sourceId/ticket/new"
@@ -704,7 +707,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
                 className={styles.handoffLink}
                 data-test="handoff-new-ticket"
               >
-                file a ticket
+                {t("detailPage.fileTicket")}
               </Link>
             </div>
           ) : null}
@@ -714,13 +717,16 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
       <ConfirmDialog
         open={disconnecting}
         danger
-        title="Disconnect this source?"
+        title={t("disconnect.title")}
         /* The project is named for the same reason the row names it: the list
            this page is reached from mixes them, and cutting a credential is the
            last moment to notice it is the wrong project's. */
-        body={`${connection.name} · ${projectKey} — the credential is dropped and nothing more is admitted from here. Tickets already taken keep their runs; reconnecting means a new secret.`}
-        confirmLabel="Disconnect"
-        cancelLabel="Keep it"
+        body={t("disconnect.body", {
+          name: connection.name,
+          project: projectKey,
+        })}
+        confirmLabel={t("disconnect.confirm")}
+        cancelLabel={t("disconnect.keep")}
         onConfirm={onDisconnect}
         onCancel={() => setDisconnecting(false)}
       />
@@ -732,20 +738,23 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
           courtesy as the disconnect dialog above. */}
       <ConfirmDialog
         open={rotating}
-        title="Rotate this source's webhook secret?"
-        body={`${connection.name} · ${projectKey} — a new secret is generated and shown once. Webhooks signed with the previous secret will be rejected until you copy the new one into the tracker.`}
-        confirmLabel="Rotate"
-        cancelLabel="Keep current"
+        title={t("detailPage.rotateTitle")}
+        body={t("detailPage.rotateBody", {
+          name: connection.name,
+          project: projectKey,
+        })}
+        confirmLabel={t("detailPage.rotateConfirm")}
+        cancelLabel={t("detailPage.rotateKeep")}
         onConfirm={onRotateSecret}
         onCancel={() => setRotating(false)}
       />
 
       <ConfirmDialog
         open={guard.asking}
-        title="Leave without saving?"
-        body="The watch and connection details you changed on this page are not saved yet. Leaving drops them and the source stays exactly as it was."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
+        title={t("detailPage.leaveTitle")}
+        body={t("detailPage.leaveBody")}
+        confirmLabel={t("detailPage.discard")}
+        cancelLabel={t("detailPage.keep")}
         onConfirm={guard.discard}
         onCancel={guard.keep}
       />

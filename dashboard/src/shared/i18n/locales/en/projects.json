@@ -1,0 +1,174 @@
+{
+  "actions": {
+    "cancel": "Cancel",
+    "retry": "Retry"
+  },
+  "errors": {
+    "unknown": "Unknown error"
+  },
+  "registry": {
+    "title": "Projects",
+    "summary": "<count/> projects · <runs/> runs in flight · <spend/> today",
+    "errorTitle": "The registry did not load",
+    "newProject": "New project",
+    "filterByTag": "Filter by tag",
+    "count": {
+      "one": "{{count}} shown",
+      "other": "{{count}} shown"
+    },
+    "empty": {
+      "filtered": "no projects match the current filters",
+      "none": "no projects yet"
+    }
+  },
+  "column": {
+    "slug": "slug",
+    "name": "name",
+    "tags": "tags",
+    "inFlight": "in flight",
+    "runs": "runs",
+    "costToday": "cost today",
+    "profiles": "profiles",
+    "created": "created",
+    "slugFilterPlaceholder": "filter slug, name, repository…"
+  },
+  "identity": {
+    "icon": "icon",
+    "accentColour": "accent colour",
+    "tags": "tags",
+    "repo": "git profile repository",
+    "iconPlaceholder": "🛰️ or https://example.com/mark.png",
+    "platformDefaults": "platform defaults"
+  },
+  "mark": {
+    "stored": "stored icon",
+    "neutral": "project mark",
+    "brand": "{{brand}} mark"
+  },
+  "slug": {
+    "error": {
+      "required": "a slug is required",
+      "spaces": "no spaces — use a hyphen",
+      "lowercase": "slugs are lowercase",
+      "min": "at least {{min}} characters",
+      "max": "at most {{max}} characters",
+      "edges": "must start and end with a letter or digit",
+      "pattern": "letters, digits and single hyphens only",
+      "taken": "that slug is taken"
+    }
+  },
+  "form": {
+    "nameLabel": "name",
+    "slugLabel": "slug",
+    "namePlaceholder": "what this project is, in a few words",
+    "slugPlaceholder": "lowercase, hyphens, no spaces",
+    "slugHint": "Shown as a column in every list in the product. Lowercase letters, digits and hyphens.",
+    "repoPlaceholder": "git@github.com:org/worker-profiles.git",
+    "repoHint": "Optional. Where this project's worker profiles are authored — leave it empty to run on the platform defaults.",
+    "iconHint": "Optional. A single emoji or an image URL, shown beside the slug. Without one, the mark comes from the repository's host.",
+    "colorClear": "no colour",
+    "colorHint": "Optional. Paints the dot beside the mark and tints the tags — never the interface.",
+    "tagsHint": "Optional. What this project is — press Enter or comma to add each one, Backspace to remove the last.",
+    "submit": "Create project"
+  },
+  "tagEntry": {
+    "placeholder": "web, billing…",
+    "remove": "Remove tag {{tag}}"
+  },
+  "create": {
+    "title": "New project",
+    "crumb": "new",
+    "summary": "A project owns its applications, its runs and its budget. The slug is the handle it is known by everywhere else.",
+    "toastCreated": "Project created",
+    "failureFallback": "The project was not created.",
+    "failureTail": "Nothing was created — what you typed is still exactly as you left it.",
+    "guardTitle": "Leave without creating the project?",
+    "guardBody": "The name, slug and repository you typed are not saved anywhere yet. Leaving this page drops them.",
+    "guardConfirm": "Discard",
+    "guardCancel": "Keep editing"
+  },
+  "detail": {
+    "fallbackTitle": "Project",
+    "crumbFallback": "project",
+    "summary": "<slug/> · created <created/>",
+    "notFoundTitle": "No project with that id",
+    "notFoundDescription": "The registry holds nothing under <id/>. A project id out of an old link is the ordinary way to arrive here — an address outlives the project it named, and the registry is where the ones that still exist are.",
+    "notFoundBack": "Back to projects",
+    "factsSection": "the project itself",
+    "editIdentity": "edit identity",
+    "editIdentityFailure": "The identity was not saved.",
+    "rolesSection": "roles on this project",
+    "rolesForbiddenSubject": "Roles on this project",
+    "rolesHeld": {
+      "one": "{{count}} held",
+      "other": "{{count}} held"
+    },
+    "fact": {
+      "slug": "slug",
+      "name": "name",
+      "mark": "mark",
+      "created": "created",
+      "iconAbsent": "none stored",
+      "colourAbsent": "not set",
+      "tagsAbsent": "none yet"
+    },
+    "rolesEmpty": "Nobody holds a role on this project. Anyone who can reach it reaches it through a platform grant, which holds everywhere and is not listed here.",
+    "rolesAll": "every assignment on this project",
+    "rolesGrant": "grant a role"
+  },
+  "editor": {
+    "iconHint": "A single emoji or an image URL. Empty keeps the current mark.",
+    "colorClear": "keep stored colour",
+    "colorHint": "Paints the dot beside the mark and tints the tags — never the interface.",
+    "tagsHint": "What this project is. Saving an empty list clears the tags.",
+    "save": "Save identity"
+  },
+  "handoff": {
+    "section": "where this project's work is",
+    "counting": "counting",
+    "runsWhat": "live runs",
+    "runsCount": "<count/> in flight of <total/> seen",
+    "runsNote": "open the duty list narrowed to this project",
+    "queueWhat": "queue & workers",
+    "queueCount": "<items/> work items · <workers/> workers up",
+    "queueNote": "open the claim queue narrowed to this project",
+    "sourcesWhat": "sources",
+    "sourcesCount": "<count/> connections",
+    "sourcesNote": "open the intake narrowed to this project",
+    "costWhat": "cost & failures",
+    "costToday": "<spend/> today",
+    "costNothing": "<dash/> nothing attributed yet",
+    "costNote": "the figure is this project's — the report behind it is the platform's"
+  },
+  "jobs": {
+    "section": "scheduled jobs",
+    "unknown": "unknown",
+    "counting": "counting",
+    "loading": "Loading scheduled jobs",
+    "errorTitle": "The schedules did not load",
+    "statusEnabled": "enabled",
+    "statusPaused": "paused",
+    "pause": "Pause schedule",
+    "resume": "Resume schedule",
+    "delete": "Delete schedule",
+    "emptyTitle": "Nothing runs here on a clock",
+    "emptyDescription": "No schedule starts work on this project on its own. Everything that runs here was filed or dispatched by a person.",
+    "create": "Schedule a job",
+    "dialogDescription": "A cron entry the platform files on this project by itself — the brief becomes the ticket, the profile becomes the first step.",
+    "dialogSubmit": "Schedule",
+    "cronLabel": "cron",
+    "cronHint": "Five-field cron, in the project's own timezone policy. Pick a preset or compose the wire directly.",
+    "profileLabel": "profile key",
+    "profilePlaceholder": "implementer",
+    "profileHint": "The work-item profile the run starts from — the catalog lives in the client's git.",
+    "briefLabel": "brief json",
+    "briefHint": "Stored verbatim. Nothing between this box and the host touches it.",
+    "deleteTitle": "Delete this schedule?",
+    "deleteBody": "<cron/> for <profile/> stops firing and is removed. Work already running because of it is not touched.",
+    "deleteCancel": "Keep it",
+    "configured": {
+      "one": "{{count}} configured",
+      "other": "{{count}} configured"
+    }
+  }
+}

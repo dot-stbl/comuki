@@ -1,3 +1,5 @@
+import { Trans } from "react-i18next"
+
 import { useVerifyQuery } from "@/domains/verify/api/queries"
 import { failingCount, neverRanCount } from "@/domains/verify/model/gate"
 
@@ -27,16 +29,46 @@ export function GateSummary() {
 
   return (
     <>
-      <span className={styles.strong}>{gatesOn}</span> of{" "}
-      <span className={styles.strong}>{projects.length}</span> gates on ·{" "}
-      <span className={styles.strong}>{commands.length}</span> checks declared
+      {/* The figures are values in their own voice and the words are the
+          product's; the slots stringify the counts because a Trans slot
+          holding a bare falsy `0` renders empty, and zero is a reading. */}
+      <Trans
+        ns="knowledge"
+        i18nKey="gate.summary"
+        components={{
+          on: <span className={styles.strong}>{String(gatesOn)}</span>,
+          total: (
+            <span className={styles.strong}>{String(projects.length)}</span>
+          ),
+          checks: (
+            <span className={styles.strong}>{String(commands.length)}</span>
+          ),
+        }}
+      />
       {failing > 0 ? (
         <>
           {" · "}
-          <span className={styles.warn}>{failing}</span> failing
+          <Trans
+            ns="knowledge"
+            i18nKey="gate.summaryFailing"
+            components={{
+              failing: <span className={styles.warn}>{String(failing)}</span>,
+            }}
+          />
         </>
       ) : null}
-      {never > 0 ? <> · {never} never ran</> : null}
+      {never > 0 ? (
+        <>
+          {" · "}
+          <Trans
+            ns="knowledge"
+            i18nKey="gate.summaryNeverRan"
+            components={{
+              never: <span className={styles.strong}>{String(never)}</span>,
+            }}
+          />
+        </>
+      ) : null}
     </>
   )
 }

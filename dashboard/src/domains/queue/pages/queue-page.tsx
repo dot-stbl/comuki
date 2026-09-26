@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ChevronsDownUp, ChevronsUpDown, RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 import type { PanelImperativeHandle, PanelSize } from "react-resizable-panels"
 
 import { AppShell } from "@/app/layout/app-shell"
@@ -75,6 +76,8 @@ export function QueuePage({
   workerSearch,
   onWorkerSearchChange,
 }: QueuePageProps = {}) {
+  const { t } = useTranslation("queue")
+  const { t: tShell } = useTranslation("shell")
   /* Two queries, one screen. The items half (queue, pools, depth) and the
      workers half (the pool) were one payload when both were mock seeds; the
      workers now have their own endpoint, their own cadence and their own
@@ -143,27 +146,57 @@ export function QueuePage({
       padded={false}
       header={
         <PageHeader
-          breadcrumbs={[{ label: "observe", to: "/runs" }, { label: "queue" }]}
-          title="Queue & workers"
+          breadcrumbs={[
+            { label: tShell("crumb.observe"), to: "/runs" },
+            { label: tShell("crumb.queue") },
+          ]}
+          title={t("registry.title")}
           summary={
-            <>
-              <span className={styles.strong}>{queued}</span> queued ·{" "}
-              <span className={stalled > 0 ? styles.warn : styles.strong}>
-                {stalled}
-              </span>{" "}
-              unclaimed over five minutes ·{" "}
-              <span className={styles.strong}>{counts.total}</span> workers,{" "}
-              <span className={styles.strong}>{counts.idle}</span> idle ·{" "}
-              <span className={lost > 0 ? styles.warn : styles.strong}>
-                {lost}
-              </span>{" "}
-              without a heartbeat
-            </>
+            /* The figures are values in their own voice and the words are
+               prose in theirs, so the emphasis rides slot elements and the
+               sentence — word order included — belongs to the locale. The
+               counts stringify: a Trans slot holding a falsy child (a bare
+               `0`) renders empty, and zero is a reading, not a blank. */
+            <Trans
+              ns="queue"
+              i18nKey="registry.summary"
+              components={{
+                queued: (
+                  <span className={styles.strong}>{String(queued)}</span>
+                ),
+                stalled: (
+                  <span
+                    className={
+                      stalled > 0 ? styles.warn : styles.strong
+                    }
+                  >
+                    {String(stalled)}
+                  </span>
+                ),
+                total: (
+                  <span className={styles.strong}>{String(counts.total)}</span>
+                ),
+                idle: (
+                  <span className={styles.strong}>{String(counts.idle)}</span>
+                ),
+                lost: (
+                  <span
+                    className={lost > 0 ? styles.warn : styles.strong}
+                  >
+                    {String(lost)}
+                  </span>
+                ),
+              }}
+            />
           }
           actions={
             ready ? (
               <Tooltip
-                content={poolCollapsed ? "Expand pool" : "Collapse pool"}
+                content={
+                  poolCollapsed
+                    ? t("registry.expandPool")
+                    : t("registry.collapsePool")
+                }
               >
                 <Button
                   variant="ghost"
@@ -171,7 +204,11 @@ export function QueuePage({
                   data-test="pool-toggle"
                   aria-controls="pool"
                   aria-expanded={!poolCollapsed}
-                  aria-label={poolCollapsed ? "Expand pool" : "Collapse pool"}
+                  aria-label={
+                    poolCollapsed
+                      ? t("registry.expandPool")
+                      : t("registry.collapsePool")
+                  }
                   onClick={togglePool}
                 >
                   {poolCollapsed ? (
@@ -192,7 +229,7 @@ export function QueuePage({
             lines={SKELETON_WIDTHS}
             inset="gutter"
             fill
-            label="Loading the queue"
+            label={t("registry.loading")}
             data-test="queue-loading"
           />
         ) : null}
@@ -200,17 +237,17 @@ export function QueuePage({
         {isError ? (
           <ScreenState
             kind="error"
-            title="Couldn't load the queue"
+            title={t("registry.errorTitle")}
             description={
-              error instanceof Error ? error.message : "Unknown error"
+              error instanceof Error ? error.message : t("errors.unknown")
             }
             inset="gutter"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="queue-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -254,7 +291,7 @@ export function QueuePage({
 
               <SplitSeparator
                 orientation="vertical"
-                aria-label="Resize the worker pool"
+                aria-label={t("registry.resizePool")}
               />
 
               <SplitPanel

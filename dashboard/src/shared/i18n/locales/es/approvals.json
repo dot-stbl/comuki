@@ -1,0 +1,53 @@
+{
+  "actions": {
+    "retry": "Reintentar"
+  },
+  "registry": {
+    "title": "Aprobaciones",
+    "summary": {
+      "one": "<count/> esperando decisión",
+      "other": "<count/> esperando decisión"
+    },
+    "errorTitle": "No se pudieron cargar las aprobaciones"
+  },
+  "errors": {
+    "unknown": "Error desconocido"
+  },
+  "decide": {
+    "approvedToast": "Aprobado",
+    "rejectedToast": "Rechazado",
+    "openedToast": "Revisión abierta",
+    "refused": "La decisión no llegó.",
+    "tail": "La cola quedó como estaba — el run sigue esperando."
+  },
+  "empty": {
+    "title": "Cola vacía",
+    "description": "Nada esperando a un humano."
+  },
+  "card": {
+    "details": "Detalles",
+    "hide": "Ocultar",
+    "review": "Revisar",
+    "reject": "Rechazar",
+    "approve": "Aprobar",
+    "reviewAria": "Revisar el {{noun}} de {{app}}",
+    "rejectAria": "Rechazar el {{noun}} de {{app}}",
+    "approveAria": "Aprobar el {{noun}} de {{app}}",
+    "planHead": "Plan — grafo de elementos de trabajo",
+    "assumptionsFallback": "Supuestos del planificador",
+    "paneBaseline": "línea base",
+    "paneNew": "nueva"
+  },
+  "type": {
+    "plan": "plan",
+    "deploy": "deploy",
+    "baseline": "línea base",
+    "gate": "gate",
+    "learning": "regla"
+  },
+  "risk": {
+    "high": "alto",
+    "medium": "medio",
+    "low": "bajo"
+  }
+}

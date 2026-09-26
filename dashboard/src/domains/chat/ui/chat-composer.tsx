@@ -1,8 +1,10 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { AlertTriangle, SendHorizontal, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type { SearchTarget } from "@/app/search"
 import {
+  commandDescription,
   commandMenuQuery,
   commandOf,
   matchCommands,
@@ -129,6 +131,7 @@ export function ChatComposer({
   failure,
 }: ChatComposerProps) {
   const session = useSession()
+  const { t } = useTranslation("chat")
   const box = useRef<HTMLTextAreaElement | null>(null)
   const menu = useRef<HTMLUListElement | null>(null)
 
@@ -143,7 +146,7 @@ export function ChatComposer({
   )
   const menuOpen = !dismissed && matches.length > 0
 
-  const scope = scopeState(session, command, projectId)
+  const scope = scopeState(session, command, projectId, t)
   const rows = Math.min(MAX_ROWS, Math.max(MIN_ROWS, value.split("\n").length))
 
   const empty = value.trim().length === 0
@@ -244,7 +247,7 @@ export function ChatComposer({
     <div className={styles.composer} data-test="chat-composer">
       {menuOpen ? (
         <div className={styles.menuWrap}>
-          <p className={styles.menuHead}>commands</p>
+          <p className={styles.menuHead}>{t("composer.commandsHead")}</p>
           <ul className={styles.menu} ref={menu} data-test="chat-slash-menu">
             {matches.map((entry, index) => (
               <li key={entry.name}>
@@ -258,7 +261,7 @@ export function ChatComposer({
                 >
                   <span className={styles.optionName}>{entry.name}</span>
                   <span className={styles.optionDescription}>
-                    {entry.description}
+                    {commandDescription(entry, t)}
                   </span>
                   {/* A client command says whose it is. It is not a lesser
                       command — it just did not come from the platform, and the
@@ -269,7 +272,9 @@ export function ChatComposer({
                       row promising an answer it does not have. */}
                   {entry.origin === "client" && entry.projectId ? (
                     <span className={styles.optionOrigin}>
-                      from {entry.projectId.replace(/^p_/, "")}
+                      {t("composer.originFrom", {
+                        project: entry.projectId.replace(/^p_/, ""),
+                      })}
                     </span>
                   ) : null}
                 </button>
@@ -312,8 +317,8 @@ export function ChatComposer({
           rows={rows}
           value={value}
           autoFocus={autoFocus}
-          aria-label="Message the console"
-          placeholder="Ask, or start with a slash"
+          aria-label={t("composer.boxLabel")}
+          placeholder={t("composer.placeholder")}
           onKeyDown={onBoxKeyDown}
           onChange={(event) => {
             onValueChange(event.target.value)
@@ -334,10 +339,12 @@ export function ChatComposer({
               className={styles.seed}
               data-test="chat-seed"
               data-kind={seed.kind}
-              aria-label={`Drop the reference to ${seed.id}`}
+              aria-label={t("composer.seedDrop", { id: seed.id })}
               onClick={() => onSeedChange?.(null)}
             >
-              <span className={styles.seedAbout}>about</span>
+              <span className={styles.seedAbout}>
+                {t("composer.seedAbout")}
+              </span>
               <span className={styles.seedId}>{seed.id}</span>
               <X className={styles.seedX} aria-hidden="true" />
             </button>
@@ -349,7 +356,7 @@ export function ChatComposer({
                 <span className={styles.scopeCommand}>
                   {scope.command.name}
                 </span>{" "}
-                runs in
+                {t("composer.scopeRunsIn")}
               </span>
               {scope.choices.length > 0 ? (
                 <Select
@@ -360,8 +367,10 @@ export function ChatComposer({
                     value: project.id,
                     label: project.key,
                   }))}
-                  placeholder="pick a project"
-                  aria-label={`Project ${scope.command.name} runs in`}
+                  placeholder={t("composer.scopePick")}
+                  aria-label={t("composer.scopeAria", {
+                    command: scope.command.name,
+                  })}
                   data-test="chat-scope-select"
                 />
               ) : (
@@ -378,11 +387,11 @@ export function ChatComposer({
             </span>
           ) : null}
 
-          <Tooltip content="Send — enter">
+          <Tooltip content={t("composer.sendTooltip")}>
             <Button
               size="icon-sm"
               data-test="chat-send"
-              aria-label="Send"
+              aria-label={t("composer.send")}
               disabled={sendDisabled}
               denied={sendDenied}
               onClick={send}

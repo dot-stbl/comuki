@@ -1,0 +1,247 @@
+{
+  "actions": {
+    "retry": "Erneut versuchen"
+  },
+  "errors": {
+    "unknown": "Unbekannter Fehler"
+  },
+  "page": {
+    "title": "Konsole",
+    "summary": "dieselbe Steuerungsebene, die die Bildschirme bedienen — nur getippt",
+    "onboard": "Repository anbinden"
+  },
+  "console": {
+    "sendFailure": "Die Nachricht wurde nicht gesendet",
+    "decisionFailure": "Die Entscheidung wurde nicht aufgezeichnet",
+    "startFailure": "Das Gespräch wurde nicht gestartet",
+    "consoleErrorTitle": "Die Konsole wurde nicht geladen",
+    "transcriptErrorTitle": "Der Verlauf wurde nicht geladen",
+    "loading": "Gespräch wird geladen"
+  },
+  "sessions": {
+    "navLabel": "Gespräche",
+    "head": "gespräche",
+    "new": "Neues Gespräch",
+    "loading": "Gespräche werden geladen",
+    "emptyTitle": "Noch keine Gespräche",
+    "emptyDescription": "Beginnen Sie mit dem Plus oben. Jedes Gespräch bleibt hier, um zurückzukehren."
+  },
+  "thread": {
+    "emptyTitle": "Noch nichts gesagt",
+    "emptyBody": "Dieselbe Steuerungsebene, die die Bildschirme bedienen, nur per Tastatur. Fragen Sie, was der Schwarm tut, oder beginnen Sie mit einem Slash, um alles zu sehen. Alles, was etwas ändert, kommt als Vorschlag zurück, den Sie drücken — es handelt nie von selbst.",
+    "logLabel": "Gespräch",
+    "jump": "zum Neuesten",
+    "announceReplying": "der Assistent antwortet",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "Sie",
+    "comuki": "comuki",
+    "iteration": "Iter. {{iteration}}",
+    "blank": "dieser Zug kam leer an"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "denkt",
+    "tokenWord": "Tokens"
+  },
+  "memory": {
+    "label": "gedächtnis",
+    "facts": {
+      "one": "{{count}} Fakt",
+      "other": "{{count}} Fakten"
+    }
+  },
+  "composer": {
+    "boxLabel": "Nachricht an die Konsole",
+    "placeholder": "Fragen Sie oder beginnen Sie mit einem Slash",
+    "commandsHead": "befehle",
+    "originFrom": "aus {{project}}",
+    "seedAbout": "über",
+    "seedDrop": "Referenz auf {{id}} entfernen",
+    "scopeRunsIn": "läuft in",
+    "scopePick": "Projekt wählen",
+    "scopeAria": "Projekt, in dem {{command}} läuft",
+    "sendTooltip": "Senden — Enter",
+    "send": "Senden"
+  },
+  "scope": {
+    "needsProject": "{{command}} braucht ein Projekt",
+    "notAvailable": "nicht verfügbar"
+  },
+  "command": {
+    "init": {
+      "description": "Repository anbinden: Git-Zugriff, Compute, Modelle, Wissen"
+    },
+    "project": {
+      "description": "Projekte auflisten, in denen diese Schicht handeln darf"
+    },
+    "run": {
+      "description": "einen Run aus einem Ticket starten"
+    },
+    "status": {
+      "description": "was der Schwarm gerade tut"
+    },
+    "stop": {
+      "description": "einen Run stoppen und seinen Container abreißen"
+    },
+    "plan": {
+      "description": "den Plan eines Runs lesen und darüber entscheiden"
+    },
+    "debug": {
+      "description": "ausführliche Worker-Logs für eine Stunde einschalten"
+    },
+    "help": {
+      "description": "was die Konsole kann"
+    }
+  },
+  "panel": {
+    "label": "Seitenpanel der Konsole",
+    "awaiting": "wartet auf eine Entscheidung",
+    "noProject": "ohne Projekt",
+    "steps": {
+      "one": "{{count}} Schritt",
+      "other": "{{count}} Schritte"
+    },
+    "quiet": "hier wartet nichts auf Sie",
+    "slashHelp": "Slash-Hilfe"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "einen Run starten",
+        "stop": "einen Run stoppen"
+      },
+      "plan": {
+        "approve": "einen Plan genehmigen"
+      },
+      "settings": {
+        "debug": " eine Live-Einstellung ändern"
+      }
+    },
+    "words": {
+      "run": {
+        "start": { "confirm": "Starten", "refuse": "Verwerfen" },
+        "stop": { "confirm": "Stoppen", "refuse": "Laufen lassen" }
+      },
+      "plan": {
+        "approve": { "confirm": "Genehmigen", "refuse": "Ablehnen" }
+      },
+      "settings": {
+        "debug": { "confirm": "Einschalten", "refuse": "Aus lassen" }
+      }
+    },
+    "inProject": "in {{project}}",
+    "decidedConfirmed": "von einem Menschen bestätigt und dort aufgezeichnet, wo jede Entscheidung aufgezeichnet wird",
+    "decidedRejected": "von einem Menschen abgelehnt und dort aufgezeichnet, wo jede Entscheidung aufgezeichnet wird",
+    "needsProjectDenial": "braucht ein Projekt, in dem gehandelt wird"
+  },
+  "handoff": {
+    "searchFor": "in {{where}} suchen nach"
+  },
+  "dock": {
+    "tooltip": "Konsole — {{chord}}",
+    "openAria": "Konsole öffnen — {{chord}}",
+    "title": "Konsole"
+  },
+  "wizard": {
+    "title": "Repository anbinden",
+
+    "running": "Onboarding läuft.",
+    "streamHead": "onboarding",
+    "stageWord": {
+      "done": "fertig",
+
+      "running": "läuft",
+      "queued": "in Warteschlange"
+    },
+    "doneNotice": "Das Projekt ist registriert. Sein Regelwerk, sein Worker-Image und seine Endpunkte sind es, die der Schwarm ab dem nächsten Run verwendet.",
+    "backToConsole": "Zurück zur Konsole",
+    "start": "Onboarding starten",
+    "continue": "Weiter",
+    "back": "Zurück",
+    "cancel": "Abbrechen",
+    "confirmNotice": "Noch wurde nichts erstellt. Bestätigen startet den Onboarding-Run, und alles, was er tut, wird dort aufgezeichnet wie jeder andere Run.",
+    "guardTitle": "Den Assistenten ohne Onboarding verlassen?",
+    "guardBody": "Repository, Modell-Endpunkte und Geheimnisreferenz, die Sie getippt haben, sind noch nirgends gespeichert. Diese Seite zu verlassen verwirft sie.",
+    "guardConfirm": "Verwerfen",
+    "guardCancel": "Weiter bearbeiten",
+    "step": {
+      "repo": {
+        "title": "Repository und Git-Zugriff",
+        "summary": "Wo der Code lebt und was der Schwarm damit darf. Dieser Schritt bestimmt, welches Projekt der Rest des Assistenten konfiguriert."
+      },
+      "compute": {
+        "title": "Compute-Anbieter",
+        "summary": "Wo Worker-Container gestartet werden und die Obergrenze, wie viele gleichzeitig laufen."
+      },
+      "models": {
+        "title": "Modell-Endpunkte",
+        "summary": "Eine mit OpenAI oder Anthropic kompatible Basis-URL für das Leitmodell und die Worker. Geheimnisse werden hier benannt, nie eingetippt."
+      },
+      "knowledge": {
+        "title": "Wissen",
+        "summary": "Ob dieses Projekt einen indizierten Regelsatz hält und was der erste Durchlauf lesen soll."
+      },
+      "confirm": {
+        "title": "Bestätigen",
+        "summary": "Was das Onboarding tun wird, in der Reihenfolge, in der es es tut. Noch wurde nichts erstellt."
+      }
+    },
+    "stage": {
+      "clone": "Repository klonen",
+      "rules": "Regeln und Skills des Clients lesen",
+      "image": "Worker-Image ziehen",
+      "endpoints": "Modell-Endpunkte erreichen",
+      "knowledge": "Wissensindex säen",
+      "register": "Projekt beim Schwarm registrieren"
+    },
+    "field": {
+      "project": "Projekt",
+      "projectHint": "Nur Projekte, in denen Sie eine Quelle verbinden dürfen, sind aufgeführt.",
+      "pickProject": "Projekt wählen",
+      "remote": "Git-Remote",
+      "branch": "Standard-Branch",
+      "write": "darf Branches pushen",
+      "writeHint": "Aus bedeutet: der Schwarm liest das Repository und öffnet nichts.",
+      "provider": "Anbieter",
+      "workers": "Worker gleichzeitig",
+      "workersHint": "Die Obergrenze an Containern, die dieses Projekt halten darf.",
+      "lead": "Endpunkt des Leitmodells",
+      "leadHint": "OpenAI- oder Anthropic-kompatibel.",
+      "workerModel": "Endpunkt des Worker-Modells",
+      "workerPlaceholder": "leer lassen, um den Endpunkt des Leitmodells zu verwenden",
+      "secret": "Geheimnisreferenz",
+      "secretHint": "Der Name des Geheimnisses, nicht das Geheimnis. Schlüssel werden nie in dieses Produkt eingetippt.",
+      "knowledge": "indizierten Regelsatz halten",
+      "knowledgeHint": "Ein Docs-Worker schreibt ihn. Einen Dokumenten-Editor gibt es hier nicht.",
+      "seed": "Seed",
+      "seedHint": "Was der erste Durchlauf liest, als Globs."
+    },
+    "error": {
+      "project": "wählen Sie das Projekt, zu dem dieses Repository gehört",
+      "remote": "eine Git-Remote ist erforderlich",
+      "branch": "ein Standard-Branch ist erforderlich",
+      "workers": "eine ganze Zahl von Workern, mindestens eins",
+      "lead": "dem Leitmodell fehlt eine Basis-URL",
+      "secret": "nennen Sie das Geheimnis, das den Schlüssel hält"
+    },
+    "review": {
+      "project": "Projekt",
+      "remote": "Remote",
+      "branch": "Branch",
+      "pushAccess": "Push-Zugriff",
+      "compute": "Compute",
+      "workers": "Worker",
+      "lead": "Leitmodell",
+      "workerModel": "Worker-Modell",
+      "secret": "Geheimnis",
+      "knowledge": "Wissen",
+      "on": "an",
+      "off": "aus",
+      "sameAsLead": "wie Leitmodell"
+    }
+  }
+}

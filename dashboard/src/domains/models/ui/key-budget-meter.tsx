@@ -3,6 +3,8 @@ import {
   budgetLeftUsd,
   budgetShare,
   isLive,
+  sharedModelsT,
+  type ModelsTranslator,
 } from "@/domains/models/model/keys"
 import type { VirtualKey } from "@/domains/models/model/types"
 import { formatCost } from "@/domains/runs/model/format"
@@ -19,6 +21,11 @@ export interface KeyBudgetMeterProps {
    * the one lie this screen must not tell.
    */
   enforced: boolean
+  /**
+   * Copy arrives as a parameter so the table's `cell` (a plain function, not
+   * a component) can hand its factory-bound translator down without a hook.
+   */
+  t?: ModelsTranslator
   className?: string
 }
 
@@ -45,6 +52,7 @@ export interface KeyBudgetMeterProps {
 export function KeyBudgetMeter({
   entry,
   enforced,
+  t = sharedModelsT,
   className,
 }: KeyBudgetMeterProps) {
   const heat = budgetHeat(entry)
@@ -60,10 +68,10 @@ export function KeyBudgetMeter({
         className={cn(styles.meter, className)}
         data-test="budget-meter"
         data-heat="idle"
-        title="this key carries no cap — it spends until it is revoked or expires"
+        title={t("meter.noCapTitle")}
       >
         <span className={styles.figures}>
-          <span className={styles.spent}>no cap</span>
+          <span className={styles.spent}>{t("meter.noCap")}</span>
         </span>
       </span>
     )
@@ -75,13 +83,13 @@ export function KeyBudgetMeter({
         className={cn(styles.meter, className)}
         data-test="budget-meter"
         data-heat="idle"
-        title="the cap is live but this surface does not meter spend"
+        title={t("meter.notMeteredHereTitle")}
       >
         <span className={styles.figures}>
           <span className={styles.spent}>
-            cap {formatCost(entry.budgetUsd)}
+            {t("meter.capOnly", { cap: formatCost(entry.budgetUsd) })}
           </span>
-          <span className={styles.left}>spend not metered here</span>
+          <span className={styles.left}>{t("meter.notMeteredHere")}</span>
         </span>
       </span>
     )
@@ -93,11 +101,7 @@ export function KeyBudgetMeter({
       data-test="budget-meter"
       data-heat={live ? heat : "idle"}
       data-enforced={enforced ? "" : undefined}
-      title={
-        enforced
-          ? undefined
-          : "the proxy is off — this cap is recorded but not applied"
-      }
+      title={enforced ? undefined : t("meter.unforcedTitle")}
     >
       <span className={styles.figures}>
         <span className={styles.spent}>{formatCost(entry.spentUsd)}</span>
@@ -105,8 +109,8 @@ export function KeyBudgetMeter({
         <span className={styles.cap}>{formatCost(entry.budgetUsd)}</span>
         <span className={styles.left}>
           {heat === "over"
-            ? "over"
-            : `${formatCost(budgetLeftUsd(entry))} left`}
+            ? t("meter.over")
+            : t("meter.left", { left: formatCost(budgetLeftUsd(entry)) })}
         </span>
       </span>
       {/* The kit's channel on the row track, hidden from the a11y tree by its

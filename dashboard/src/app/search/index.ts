@@ -1,7 +1,7 @@
 export { CommandPalette, type CommandPaletteProps } from "./command-palette"
 export { GlobalSearch } from "./global-search"
 export {
-  GROUP_LABELS,
+  KIND_KEYS,
   GROUP_ORDER,
   resolveQuery,
   type ResolveContext,

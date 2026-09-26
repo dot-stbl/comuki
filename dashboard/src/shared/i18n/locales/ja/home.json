@@ -1,0 +1,93 @@
+{
+  "errors": {
+    "unknown": "不明なエラー"
+  },
+  "actions": {
+    "retry": "再試行"
+  },
+  "header": {
+    "title": "当番",
+    "crumb": "当番",
+    "summary": {
+      "other": "<owed/> 件があなた待ち · <running/> 実行中 · <total/> 実行"
+    },
+    "errorTitle": "当番が読み込めませんでした",
+    "errorTail": "{{detail}} — 読み込まれるまで、この画面の何ものも判断が待たれているかを語れません。"
+  },
+  "notice": {
+    "fallback": "判断に失敗しました。",
+    "tail": "{{detail}} 何も変わっていません — 実行は元のままです。"
+  },
+  "verdict": {
+    "clear": "あなたを必要とするものはありません",
+    "owed": {
+      "other": "件の実行が判断待ち"
+    },
+    "swarmEmpty": "群れは空です — キューにも実行中にも何もありません。",
+    "moving": "<running/> 実行中 · <queued/> 待機中 — 群れは自力で動いています。"
+  },
+  "attention": {
+    "section": "あなた待ち",
+    "column": {
+      "run": "実行",
+      "project": "プロジェクト",
+      "task": "タスク",
+      "step": "ステップ",
+      "inStep": "ステップ経過"
+    },
+    "status": {
+      "escalated": "エスカレーション",
+      "failed": "失敗",
+      "waiting": "待機"
+    },
+    "reason": {
+      "escalated": "群れから人へ引き上げられた",
+      "failed": "検証ゲートで止まった",
+      "waiting": "人を待っている"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "承認",
+    "stop": "停止",
+    "open": "開く",
+    "approveRun": "{{title}} を承認",
+    "stopRun": "{{title}} を停止",
+    "openRun": "{{title}} を開く",
+    "more": "ほか {{count}} 件 — ライブ実行を開く"
+  },
+  "list": {
+    "waitingOnPlan": "プラン待ち",
+    "timeInStep": "ステップ経過時間"
+  },
+  "running": {
+    "section": "現在実行中",
+    "note": "{{running}} 実行中 · {{queued}} 待機中",
+    "empty": "実行中のものはありません。",
+    "more": "ほか {{count}} 件が実行中 — ライブ実行を開く"
+  },
+  "outcomes": {
+    "loading": "今週の結果を読み込み中",
+    "failed": "この当番の背後の週が読み込めず、比較する履歴がありません。この画面の他の部分は依存していません — 下の実行中の内容がライブの読みです。",
+    "reading": "今日 <today/> 件完了 · 今週 <week/> 件 · 失敗 <failed/> 件",
+    "chartLabel": "日別の実行結果。今日 {{today}} 件完了、今週 {{week}} 件、うち {{failed}} 件が失敗。",
+    "status": {
+      "success": "成功",
+      "failed": "失敗",
+      "escalated": "エスカレーション"
+    }
+  },
+  "shortcuts": {
+    "section": "ショートカット",
+    "newRun": "新しい実行",
+    "newRunNote": "受信箱からチケットを取る",
+    "liveRuns": "ライブ実行",
+    "liveRunsNote": "フローボードとフィルター付きの群れ全体",
+    "approvals": "承認",
+    "approvalsNote": "判断待ちのプラン"
+  },
+  "stopDialog": {
+    "title": "この実行を停止しますか？",
+    "body": "{{title}} — コンテナは解体され、リースは解放されます。すでにマージ済みの仕事は残ります。",
+    "confirm": "停止",
+    "cancel": "実行を続ける"
+  }
+}

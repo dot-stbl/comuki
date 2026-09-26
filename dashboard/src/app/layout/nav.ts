@@ -14,7 +14,19 @@ import {
 } from "lucide-react"
 
 import type { SidebarNavGroup } from "@/app/layout/app-shell-sidebar"
+import { i18n } from "@/shared/i18n"
 import { can, type Session } from "@/shared/session"
+
+/**
+ * An entry's word in the active language, for the non-React consumers of the
+ * rail (the search resolver reads the same vocabulary). React consumers take
+ * `useTranslation("shell")` so a switch re-renders them; this is the same
+ * question answered through the shared instance (`dashboard-i18n` D7). An
+ * entry without a `labelKey` — a hand-built rail in a test — keeps its label.
+ */
+export function navWord(entry: { label: string; labelKey?: string }): string {
+  return entry.labelKey ? i18n.t(`shell:${entry.labelKey}`) : entry.label
+}
 
 /**
  * The rail, in two tiers.
@@ -31,9 +43,13 @@ import { can, type Session } from "@/shared/session"
  * inside it without any of the three agreeing on a role list first — see
  * `shared/session/permissions.ts`.
  */
+/* `labelKey` addresses the word in the `shell` namespace (`dashboard-i18n`
+   D2/D7); the English `label` beside it stays as the entry's stable identity
+   and as the fallback a hand-built rail (tests) relies on. */
 export const productNav: SidebarNavGroup[] = [
   {
     label: "Intake",
+    labelKey: "nav.intake",
     items: [
       // The console is not a section: its one door in the chrome is the
       // floating trigger over the board (see `domains/chat`, the dock), so a
@@ -41,6 +57,7 @@ export const productNav: SidebarNavGroup[] = [
       // route remains for a URL somebody pastes, and nothing here links it.
       {
         label: "Inbox",
+        labelKey: "nav.inbox",
         href: "/tasks",
         icon: ListTodo,
         permission: "inbox.view",
@@ -49,12 +66,14 @@ export const productNav: SidebarNavGroup[] = [
   },
   {
     label: "Observe",
+    labelKey: "nav.observe",
     items: [
       // Attention has no rail item: the Comuki mark is the home link and has
       // been since the topbar was built, so a second door to the same screen
       // was costing a row in a rail that had grown to sixteen.
       {
         label: "Live runs",
+        labelKey: "nav.liveRuns",
         href: "/runs",
         icon: PlayCircle,
         exact: false,
@@ -63,25 +82,35 @@ export const productNav: SidebarNavGroup[] = [
       },
       {
         label: "Queue",
+        labelKey: "nav.queue",
         href: "/queue",
         icon: ListOrdered,
         permission: "queue.view",
       },
       {
         label: "Approvals",
+        labelKey: "nav.approvals",
         href: "/approvals",
         icon: CheckCircle2,
         badge: "needsHuman",
         permission: "plans.approve",
       },
-      { label: "Cost", href: "/cost", icon: Coins, permission: "cost.view" },
+      {
+        label: "Cost",
+        labelKey: "nav.cost",
+        href: "/cost",
+        icon: Coins,
+        permission: "cost.view",
+      },
     ],
   },
   {
     label: "Configure",
+    labelKey: "nav.configure",
     items: [
       {
         label: "Sources",
+        labelKey: "nav.sources",
         href: "/sources",
         icon: Plug,
         permission: "sources.view",
@@ -91,6 +120,7 @@ export const productNav: SidebarNavGroup[] = [
       // gate tab there.
       {
         label: "Knowledge",
+        labelKey: "nav.knowledge",
         href: "/knowledge",
         icon: BookOpen,
         exact: false,
@@ -98,6 +128,7 @@ export const productNav: SidebarNavGroup[] = [
       },
       {
         label: "Settings",
+        labelKey: "nav.settings",
         href: "/settings",
         icon: Settings,
         permission: "settings.live",
@@ -106,16 +137,19 @@ export const productNav: SidebarNavGroup[] = [
   },
   {
     label: "Platform",
+    labelKey: "nav.platform",
     tier: "platform",
     items: [
       {
         label: "Projects",
+        labelKey: "nav.projects",
         href: "/projects",
         icon: FolderGit2,
         permission: "projects.view",
       },
       {
         label: "Identity",
+        labelKey: "nav.identity",
         href: "/identity",
         icon: Users,
         permission: "identity.manage",
@@ -124,6 +158,7 @@ export const productNav: SidebarNavGroup[] = [
       // guide are a section of Compute — same tier, same permission class.
       {
         label: "Compute",
+        labelKey: "nav.compute",
         href: "/compute",
         icon: Server,
         exact: false,
@@ -131,6 +166,7 @@ export const productNav: SidebarNavGroup[] = [
       },
       {
         label: "Models",
+        labelKey: "nav.models",
         href: "/models",
         icon: RouteIcon,
         permission: "models.view",

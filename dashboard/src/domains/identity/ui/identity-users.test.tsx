@@ -8,7 +8,8 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it } from "vitest"
+import { beforeAll, beforeEach, afterEach, describe, expect, it } from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { buildIdentitySnapshot } from "@/domains/identity/model/identity"
 import { UsersPanel } from "@/domains/identity/ui/users-panel"
@@ -252,5 +253,31 @@ describe("a shift that may not administer identity", () => {
 
     fireEvent.click(disable)
     expect(screen.queryByText("Disable this account?")).toBeNull()
+  })
+})
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the panel's own
+   words — columns, toolbar, acts — arrive in russian while every value
+   (addresses, names, scopes) stays as it was. Language resets after the case
+   so the file's other readings keep their en posture. */
+describe("the people list in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the columns and the toolbar count in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    const router = makeRouter()
+    render(
+      <Providers roles={["platform-admin"]} router={router}>
+        <UsersPanel users={USERS} />
+      </Providers>
+    )
+
+    expect(await screen.findByText("адрес")).toBeTruthy()
+    expect(screen.getByText(/показано/)).toBeTruthy()
+    expect(screen.getByText("никогда")).toBeTruthy()
   })
 })

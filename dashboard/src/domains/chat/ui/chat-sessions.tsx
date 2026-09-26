@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type { ChatSession } from "@/domains/chat/model/types"
 import { cn } from "@/shared/lib/utils"
@@ -54,16 +55,17 @@ export function ChatSessions({
   loading,
   failed,
 }: ChatSessionsProps) {
+  const { t } = useTranslation("chat")
   return (
-    <nav className={styles.sessions} aria-label="Conversations">
+    <nav className={styles.sessions} aria-label={t("sessions.navLabel")}>
       <div className={styles.head}>
-        <p className={styles.headLabel}>conversations</p>
-        <Tooltip content="New conversation">
+        <p className={styles.headLabel}>{t("sessions.head")}</p>
+        <Tooltip content={t("sessions.new")}>
           <Button
             size="icon-sm"
             variant="ghost"
             data-test="chat-new"
-            aria-label="New conversation"
+            aria-label={t("sessions.new")}
             disabled={busy}
             onClick={onStart}
           >
@@ -75,7 +77,7 @@ export function ChatSessions({
       {loading ? (
         <Skeleton
           lines={SKELETON_WIDTHS}
-          label="Loading conversations"
+          label={t("sessions.loading")}
           data-test="chat-sessions-loading"
         />
       ) : failed ? null : sessions.length === 0 ? (
@@ -84,8 +86,8 @@ export function ChatSessions({
            with the column it belongs to. */
         <ScreenState
           kind="empty"
-          title="No conversations yet"
-          description="Start one with the plus above. Every conversation stays here to come back to."
+          title={t("sessions.emptyTitle")}
+          description={t("sessions.emptyDescription")}
           inset="flush"
           data-test="chat-sessions-empty"
         />

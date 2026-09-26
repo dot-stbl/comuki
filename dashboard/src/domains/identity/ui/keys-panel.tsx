@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { useRevokeApiKeyMutation } from "@/domains/identity/api/queries"
@@ -47,6 +48,7 @@ export interface KeysPanelProps {
  * to answer it would lose the row they were on.
  */
 export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
+  const { t } = useTranslation("identity")
   const session = useSession()
   const manage = useCan("identity.manage")
   const revokeKey = useRevokeApiKeyMutation()
@@ -68,8 +70,14 @@ export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
   const revokingId = revokeKey.isPending ? (revokeKey.variables ?? null) : null
 
   const columns = useMemo(
-    () => createApiKeyColumns({ session, revokingId, onRevoke: setRevoking }),
-    [session, revokingId]
+    () =>
+      createApiKeyColumns({
+        session,
+        revokingId,
+        onRevoke: setRevoking,
+        t,
+      }),
+    [session, revokingId, t]
   )
 
   const rows = useMemo(
@@ -91,23 +99,23 @@ export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
             // the words. The `aria-label` keeps them either way — a tooltip
             // describes, it never becomes the name.
             manage.allowed ? (
-              <Tooltip content="New key">
+              <Tooltip content={t("keysPanel.newKey")}>
                 <Link
                   to="/identity/keys/new"
                   data-test="key-new"
-                  aria-label="New key"
+                  aria-label={t("keysPanel.newKey")}
                   className={buttonClass({ size: "icon-sm" })}
                 >
                   <Plus aria-hidden="true" />
                 </Link>
               </Tooltip>
             ) : (
-              <Tooltip content={manage.denial ?? "New key"}>
+              <Tooltip content={manage.denial ?? t("keysPanel.newKey")}>
                 <Button
                   size="icon-sm"
                   data-test="key-new"
                   denied={manage.denial}
-                  aria-label="New key"
+                  aria-label={t("keysPanel.newKey")}
                 >
                   <Plus aria-hidden="true" />
                 </Button>
@@ -116,7 +124,7 @@ export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
           }
           trailing={
             <span className={tableStyles.count} data-test="keys-count">
-              {rows.length} shown
+              {t("keysPanel.shown", { count: rows.length })}
             </span>
           }
         />
@@ -130,9 +138,9 @@ export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
           <Notice tone="bad" data-test="key-revoke-failure">
             {requestFailureMessage(
               revokeKey.error,
-              "The platform refused to revoke the key."
+              t("keysPanel.revokeRefused")
             )}{" "}
-            Nothing was revoked — the key below is still working.
+            {t("keysPanel.revokeTail")}
           </Notice>
         </div>
       ) : null}
@@ -151,8 +159,8 @@ export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
           onColumnSizingChange={setColumnSizing}
           emptyLabel={
             hasActiveFilters(filters)
-              ? "no keys match the current filters"
-              : "no keys have been made yet"
+              ? t("keysPanel.emptyFiltered")
+              : t("keysPanel.emptyNone")
           }
         />
       </div>
@@ -160,14 +168,12 @@ export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
       <ConfirmDialog
         open={revoking !== null}
         danger
-        title="Revoke this key?"
+        title={t("keysPanel.revokeTitle")}
         body={
-          revoking
-            ? `${revoking.prefix} stops working immediately and its grants go with it. Anything still presenting it starts failing to authenticate. This cannot be undone — a replacement is a new key with a new secret.`
-            : ""
+          revoking ? t("keysPanel.revokeBody", { prefix: revoking.prefix }) : ""
         }
-        confirmLabel="Revoke key"
-        cancelLabel="Cancel"
+        confirmLabel={t("keysPanel.revokeConfirm")}
+        cancelLabel={t("actions.cancel")}
         onCancel={() => setRevoking(null)}
         onConfirm={() => {
           const key = revoking
@@ -177,7 +183,9 @@ export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
           }
           revokeKey.mutate(key.id, {
             onSuccess: () => {
-              toast.message("Key revoked", { description: key.prefix })
+              toast.message(t("keysPanel.revokedToast"), {
+                description: key.prefix,
+              })
             },
           })
         }}

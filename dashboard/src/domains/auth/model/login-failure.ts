@@ -1,3 +1,5 @@
+import { i18n } from "@/shared/i18n"
+
 /**
  * Turning a rejected sign-in into a sentence a person can act on.
  *
@@ -7,6 +9,10 @@
  * is a log line, not an answer. The mock branch still throws plain `Error`
  * with copy that is already human — it falls through to the message
  * unchanged.
+ *
+ * The product's own sentences live in the `auth` namespace and resolve
+ * through the shared instance (D7); the host's own `detail`, when it carries
+ * one, passes through verbatim (D11).
  *
  * The mappings follow what the host actually answers on
  * `POST /api/v1/auth/login`:
@@ -35,7 +41,7 @@ interface TransportFailure {
 
 const INVALID_CREDENTIALS = "auth.invalid_credentials"
 
-const GENERIC = "Sign-in failed. Check the address and try again."
+const generic = () => i18n.t("auth:failure.generic")
 
 export function loginFailureMessage(error: unknown): string {
   const failure = error as TransportFailure | null
@@ -48,23 +54,23 @@ export function loginFailureMessage(error: unknown): string {
     // 401 this screen has no sentence for yet — the generic fallback, not
     // a raw "auth boundary 401".
     return code === INVALID_CREDENTIALS || code === undefined
-      ? "Incorrect email or password"
-      : GENERIC
+      ? i18n.t("auth:failure.invalidCredentials")
+      : generic()
   }
   if (status === 400) {
-    return "Enter a valid email address"
+    return i18n.t("auth:failure.invalidEmail")
   }
   if (status === 429) {
-    return "Too many attempts — try again in a minute"
+    return i18n.t("auth:failure.tooMany")
   }
   if (typeof status === "number" && status >= 500) {
-    return "The sign-in service is not answering — try again shortly"
+    return i18n.t("auth:failure.serviceDown")
   }
   if (error instanceof TypeError) {
-    return "Cannot reach the server — check your connection"
+    return i18n.t("auth:failure.unreachable")
   }
   if (error instanceof Error && error.message.length > 0) {
     return error.message
   }
-  return GENERIC
+  return generic()
 }

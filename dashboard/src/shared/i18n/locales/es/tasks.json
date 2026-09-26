@@ -1,0 +1,83 @@
+{
+  "actions": {
+    "retry": "Reintentar"
+  },
+  "errors": {
+    "unknown": "Error desconocido"
+  },
+  "status": {
+    "new": "nueva",
+    "queued": "en cola",
+    "planning": "planificándose"
+  },
+  "priority": {
+    "low": "baja",
+    "normal": "normal",
+    "high": "alta"
+  },
+  "registry": {
+    "title": "Tareas",
+    "summary": "<total/> en backlog · <fresh/> nuevas",
+    "newTask": "Nueva tarea",
+    "count": {
+      "one": "{{count}} mostrada",
+      "other": "{{count}} mostradas"
+    },
+    "loading": "Cargando el backlog",
+    "errorTitle": "El backlog no cargó",
+    "empty": {
+      "filtered": "ninguna tarea coincide con los filtros actuales",
+      "none": "el backlog está vacío"
+    }
+  },
+  "dispatch": {
+    "toast": "Enviado al orquestador",
+    "fallback": "El orquestador no lo tomó.",
+    "tail": "Nada entró en la cola — el ticket sigue en el backlog."
+  },
+  "column": {
+    "source": "origen",
+    "task": "tarea",
+    "evidence": "evidencias",
+    "project": "proyecto",
+    "app": "app",
+    "priority": "prioridad",
+    "status": "estado",
+    "age": "edad",
+    "action": "acción",
+    "filterPlaceholder": "filtrar título, id, app…",
+    "allProjects": "todos los proyectos",
+    "allApps": "todas las apps",
+    "allPriority": "toda prioridad",
+    "allStatus": "todo estado",
+    "dispatch": "Enviar",
+    "dispatchTask": "Enviar {{title}}"
+  },
+  "create": {
+    "title": "Nueva tarea",
+    "crumb": "nueva",
+    "summary": "Un ticket frente al enjambre: de dónde vino, en qué backlog aterriza y cuán urgente es.",
+    "toastCreated": "Tarea creada",
+    "failureTail": "Nada entró en la cola — lo que escribiste quedó exactamente como lo dejaste.",
+    "guardTitle": "¿Salir sin crear la tarea?",
+    "guardBody": "El título y el brief que escribiste no están guardados en ninguna parte. Salir de esta página los descarta, y nada llega a la admisión.",
+    "guardConfirm": "Descartar",
+    "guardCancel": "Seguir editando",
+    "submit": "Crear y encolar",
+    "cancel": "Cancelar",
+    "sourceLabel": "origen",
+    "sourceNote": "de dónde vino el ticket. cada tarjeta menos la nativa espera una conexión vigilando ese proveedor — escribir un ticket aquí registra de dónde vino, no lo presenta allí.",
+    "ticketLabel": "el ticket",
+    "ticketNote": "qué hacer, dónde aterriza, cuán urgente es.",
+    "briefLabel": "brief",
+    "briefNote": "contexto, criterios de aceptación, enlaces — para quien lo tome, no para el formulario.",
+    "titleLabel": "título",
+    "titlePlaceholder": "qué hacer, en una línea",
+    "projectLabel": "proyecto",
+    "appLabel": "app",
+    "briefPlaceholder": "contexto, criterios de aceptación, enlaces…"
+  },
+  "priorityField": {
+    "label": "prioridad"
+  }
+}

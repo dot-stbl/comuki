@@ -19,6 +19,7 @@ import {
   type ProjectRef,
   type Session,
 } from "@/shared/session"
+import { i18n } from "@/shared/i18n"
 import {
   Button,
   Tooltip,
@@ -48,11 +49,35 @@ export interface TaskColumnsOptions {
    * Taking a ticket is a decision inside its project, and the backlog mixes
    * them — so the question is `inbox.take` *on this row's project*, asked per
    * row, never once for the screen. It arrives as the session rather than as a
-   * `useCan` below for the reason `RunColumnsOptions` spells out: a `cell` is a
-   * function TanStack calls while building a row, not a component, so a hook
+   * `useCan` below for the reason `RunColumnsOptions` spells out: a `cell` is
+   * a function TanStack calls while building a row, not a component, so a hook
    * inside one is a hook outside a render.
    */
   session: Session
+  /**
+   * Copy arrives as a parameter for the same reason the session does: a
+   * `cell` is a plain function, so a `useTranslation` inside one throws.
+   * The page passes its hook-bound `t`; tests and stories fall back to the
+   * shared instance, which answers in the active locale.
+   */
+  t?: TasksTranslator
+}
+
+/**
+ * Copy arrives as a parameter because `cell` is called as a plain function
+ * while the table builds a row, so a `useTranslation` inside one throws. The
+ * page passes its hook-bound `t` (a language change re-renders the page and
+ * rebuilds the columns); tests and stories fall back to the shared instance,
+ * which answers in the active locale without either having to know the
+ * machinery exists.
+ */
+export type TasksTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+function sharedTasksT(key: string, options?: Record<string, unknown>): string {
+  return i18n.t(key, { ...options, ns: "tasks" })
 }
 
 /** Row identity for the virtualized body. Module scope keeps it stable. */
@@ -123,11 +148,12 @@ export function createTaskColumns({
   onDispatch,
   onArtifactOpen,
   session,
+  t = sharedTasksT,
 }: TaskColumnsOptions): DataColumn<Task>[] {
   return [
     {
       accessorKey: "source",
-      header: "source",
+      header: t("column.source"),
       cell: ({ row }) => (
         <TaskSourceBadge source={row.original.source} id={row.original.id} />
       ),
@@ -140,7 +166,7 @@ export function createTaskColumns({
     },
     {
       accessorKey: "title",
-      header: "task",
+      header: t("column.task"),
       cell: ({ row }) => (
         <span className={styles.title} title={row.original.title}>
           {row.original.title}
@@ -149,7 +175,7 @@ export function createTaskColumns({
       meta: {
         filter: {
           kind: "text",
-          placeholder: "filter title, id, app…",
+          placeholder: t("column.filterPlaceholder"),
           // The placeholder names three fields, so the predicate reads three
           // fields. Without a `match` the default one compares this column's
           // own `title` and nothing else, and the box quietly promised two
@@ -167,12 +193,12 @@ export function createTaskColumns({
       // with no artifacts, and the column's `meta.width` keeps that
       // empty column from collapsing.
       id: "artifact",
-      header: "evidence",
+      header: t("column.evidence"),
       enableSorting: false,
       cell: ({ row }) => (
         <TaskArtifactCell task={row.original} onActivate={onArtifactOpen} />
       ),
-      meta: { width: 56, label: "evidence" },
+      meta: { width: 56, label: t("column.evidence") },
     },
     {
       // The ticket's project, as the key the operator reads — the same column
@@ -180,7 +206,7 @@ export function createTaskColumns({
       // value; `accessorKey` names the field the default predicate compares.
       id: "project",
       accessorKey: "projectId",
-      header: "project",
+      header: t("column.project"),
       cell: ({ row }) => {
         const project = projectOf(session, row.original.projectId)
         return project ? (
@@ -193,7 +219,7 @@ export function createTaskColumns({
         width: 120,
         filter: {
           kind: "select",
-          placeholder: "all projects",
+          placeholder: t("column.allProjects"),
           options: projects.map((project) => ({
             value: project.id,
             label: project.key,
@@ -203,62 +229,62 @@ export function createTaskColumns({
     },
     {
       accessorKey: "app",
-      header: "app",
+      header: t("column.app"),
       cell: ({ row }) => <span className={styles.app}>{row.original.app}</span>,
       meta: {
         width: 144,
         filter: {
           kind: "select",
-          placeholder: "all apps",
+          placeholder: t("column.allApps"),
           options: apps.map((app) => ({ value: app, label: app })),
         },
       },
     },
     {
       accessorKey: "priority",
-      header: "priority",
+      header: t("column.priority"),
       cell: ({ row }) => <TaskPriorityBadge priority={row.original.priority} />,
       sortFn: prioritySort,
       meta: {
         width: 104,
         filter: {
           kind: "select",
-          placeholder: "all priority",
+          placeholder: t("column.allPriority"),
           options: [
-            { value: "high", label: "high" },
-            { value: "normal", label: "normal" },
-            { value: "low", label: "low" },
+            { value: "high", label: t("priority.high") },
+            { value: "normal", label: t("priority.normal") },
+            { value: "low", label: t("priority.low") },
           ],
         },
       },
     },
     {
       accessorKey: "status",
-      header: "status",
+      header: t("column.status"),
       cell: ({ row }) => <TaskStatusBadge status={row.original.status} />,
       sortFn: statusSort,
       meta: {
         width: 112,
         filter: {
           kind: "select",
-          placeholder: "all status",
+          placeholder: t("column.allStatus"),
           options: [
-            { value: "new", label: "new" },
-            { value: "queued", label: "queued" },
-            { value: "planning", label: "planning" },
+            { value: "new", label: t("status.new") },
+            { value: "queued", label: t("status.queued") },
+            { value: "planning", label: t("status.planning") },
           ],
         },
       },
     },
     {
       accessorKey: "age",
-      header: "age",
+      header: t("column.age"),
       sortFn: ageSort,
       meta: { width: 88, numeric: true },
     },
     {
       id: "action",
-      header: "action",
+      header: t("column.action"),
       // A dispatch button has no order.
       enableSorting: false,
       cell: ({ row }) => {
@@ -278,14 +304,14 @@ export function createTaskColumns({
           // ticket rides in the accessible name and the bolt carries the act.
           // The tooltip hands the word back on hover and on focus; a refused
           // row puts its sentence there instead.
-          <Tooltip content={denial ?? "Dispatch"}>
+          <Tooltip content={denial ?? t("column.dispatch")}>
             <Button
               variant="ghost"
               size="icon-sm"
               data-test="task-dispatch"
               disabled={dispatching}
               denied={denial}
-              aria-label={`Dispatch ${task.title}`}
+              aria-label={t("column.dispatchTask", { title: task.title })}
               onClick={(event) => {
                 event.stopPropagation()
                 onDispatch(task)
@@ -301,7 +327,7 @@ export function createTaskColumns({
       },
       // Wide enough for the "planning" pill this cell shows instead of a
       // button on a row already taken; the glyph alone would fit in half of it.
-      meta: { width: 96, align: "end", label: "action" },
+      meta: { width: 96, align: "end", label: t("column.action") },
     },
   ]
 }

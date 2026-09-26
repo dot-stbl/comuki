@@ -1,0 +1,292 @@
+{
+  "actions": {
+    "retry": "再試行",
+    "cancel": "キャンセル"
+  },
+  "errors": {
+    "unknown": "不明なエラー",
+    "changeFailed": "変更に失敗しました。"
+  },
+  "state": {
+    "connected": "接続済み",
+    "error": "エラー",
+    "disabled": "無効"
+  },
+  "word": {
+    "never": "未実行"
+  },
+  "provider": {
+    "github": {
+      "label": "github",
+      "target": "リポジトリ",
+      "intakeNote": "issue は監視対象のリポジトリから届きます。ここに書かれたものはそのリポジトリのものとして刻印されます。"
+    },
+    "gitlab": {
+      "label": "gitlab",
+      "target": "リポジトリ",
+      "intakeNote": "issue は監視対象のリポジトリから届きます。ここに書かれたものはそのリポジトリのものとして刻印されます。"
+    },
+    "yandex-tracker": {
+      "label": "yandex tracker",
+      "target": "キュー名",
+      "intakeNote": "チケットは監視対象の tracker キューから届きます。ここに書かれたものはそのキューのものとして刻印されます。"
+    },
+    "jira": {
+      "label": "jira",
+      "target": "プロジェクトキー",
+      "intakeNote": "チケットは監視対象のボードから届きます。ここに書かれたものはそのボードのものとして刻印されます。"
+    },
+    "native": {
+      "label": "native",
+      "target": "名前",
+      "intakeNote": "ここに人が書く — 裏に tracker のない製品自身の受け口です。"
+    }
+  },
+  "intakeNoteUnknown": "チケットは監視対象の接続から届きます。ここに書かれたものはそのプロバイダーのものとして刻印されます。",
+  "auth": {
+    "pat": "personal access token",
+    "oauth": "oauth グラント",
+    "app-install": "アプリインストール",
+    "none": "なし"
+  },
+  "authSecret": {
+    "pat": "access token",
+    "oauth": "oauth client secret",
+    "app-install": "アプリ秘密鍵",
+    "other": "シークレット"
+  },
+  "nativeRefusal": "製品自身の受け口は切断できません — チケットを受け入れる製品の方法だからです",
+  "admission": {
+    "watch": {
+      "label": "watch",
+      "description": "一致するチケットが run を開始します。誰かが取る必要はありません。"
+    },
+    "inbox-only": {
+      "label": "受信箱のみ",
+      "description": "一致するチケットはカタログに届き、人が取るのを待ちます。"
+    },
+    "both": {
+      "label": "両方",
+      "description": "チケットは run を開始し、カタログにも残るので、発生元のチケットから run を見つけられます。"
+    },
+    "nativeIntake": "native 受け口",
+    "watchOff": "watch オフ"
+  },
+  "host": {
+    "inPlatform": "プラットフォーム内",
+    "cloud": "クラウド"
+  },
+  "note": {
+    "refusedSilent": "プロバイダーは拒否し、有用なことは何も言いませんでした。",
+    "filedHere": {
+      "other": "ここに {{count}} 件のチケットが提出されました"
+    },
+    "turnedOff": "オフ — 最終同期 {{when}}",
+    "watchOff": "watch オフ — ここからは何も許可されていません",
+    "matchedNothing": "フィルタはこの一日で何にも一致しませんでした",
+    "lastSynced": "最終同期 {{when}}"
+  },
+  "registry": {
+    "title": "ソース",
+    "errorTitle": "ソースを読み込めませんでした",
+    "connect": "ソースを接続",
+    "connectionsWord": "接続",
+    "admittingWord": "仕事を許可中",
+    "errorWord": "エラー中",
+    "failureTail": "何も動いていません — リストは元に戻っています。",
+    "sectionTitle": "接続",
+    "sectionNote": "プラットフォーム上のすべてのソース。接続はクレデンシャルを運び、その <em>watch</em> がそのクレデンシャルに許可されたものを運びます — 二つは別々に壊れるので、別々に読みます。編集権はプロジェクトごとに付与されるため、あなたが管理する行はあなたが見るだけの行の上に置かれ、各行がどちらかを名乗ります。<code>native</code> はすべてのプロジェクトにあり、切断できません。"
+  },
+  "connectionsPanel": {
+    "shown": {
+      "other": "{{count}} 件表示"
+    },
+    "emptyFiltered": "現在のフィルタに一致する接続はありません。",
+    "emptyNone": "接続されているソースはありません。"
+  },
+  "disconnect": {
+    "title": "このソースを切断しますか？",
+    "body": "{{name}} · {{project}} — クレデンシャルは破棄され、ここからはもう何も許可されません。取られたチケットは run を保持します。再接続は新しいシークレットを意味します。",
+    "confirm": "切断",
+    "keep": "維持する",
+    "toast": "ソースを切断しました"
+  },
+  "column": {
+    "state": "状態",
+    "source": "ソース",
+    "provider": "プロバイダー",
+    "project": "プロジェクト",
+    "instance": "インスタンス",
+    "account": "アカウント",
+    "admission": "許可",
+    "admitted": "許可数",
+    "note": "今どうなっているか",
+    "actions": "操作",
+    "allStates": "すべての状態",
+    "allProviders": "すべてのプロバイダー",
+    "allProjects": "すべてのプロジェクト",
+    "allModes": "すべてのモード",
+    "filterPlaceholder": "ソース、アカウント、ホストで絞り込み…",
+    "newTicket": "新規チケット",
+    "newTicketAria": "{{where}} の {{name}} に新規チケット",
+    "watchAndFilter": "watch とフィルタ",
+    "watchAndFilterAria": "{{name}} の watch を編集",
+    "testConnection": "接続をテスト",
+    "testConnectionAria": "{{name}} への接続をテスト",
+    "disconnect": "切断",
+    "disconnectAria": "{{name}} を切断"
+  },
+  "connectPage": {
+    "title": "ソースを接続",
+    "crumbNew": "新規",
+    "summary": "接続は一つのプロジェクトに属し、一つのクレデンシャルを運びます。watch をオフにした状態で届きます — チケットを許可するのは別の決定で、ソース自身のページで行われます。",
+    "refused": "接続は拒否されました。",
+    "tail": "何も保存されていません — 下の詳細は入力したままです。",
+    "leaveTitle": "ソースを接続せずに離れますか？",
+    "leaveBody": "ここにはまだ何も保存されておらず、入力したクレデンシャルもどこにも保持されていません — このページを離れると破棄され、後で接続するには再取得が必要です。",
+    "discard": "破棄",
+    "keep": "編集を続ける",
+    "toast": "ソースを接続しました"
+  },
+  "connectForm": {
+    "providerCard": "プロバイダー",
+    "providerCardNote": "この接続がどの tracker を監視し、誰の方言を話すか。",
+    "providerHint": "native 受け口はここにありません。すべてのプロジェクトが既に一つ持ち、クレデンシャルを向ける先もないからです。",
+    "connectionCard": "接続",
+    "connectionCardNote": "どのプロジェクトに供給し、インスタンスがどこにあり、どのクレデンシャルが届くか。",
+    "projectLabel": "プロジェクト",
+    "projectHint": "このソースが供給するプロジェクト。ソースの編集はプロジェクトごとに付与されるため、保存はこの選択に対して責任を持ちます。",
+    "settingsPreview": "ホストはこれを単一の settings json として保存します:",
+    "probeProbing": "プロバイダーに到達中…",
+    "probePending": "保存前に接続をテストしてください — 到達できないソースは、何かが必要とするまで健全なものとまったく同じに見えます。",
+    "credentialCard": "クレデンシャル",
+    "credentialCardNote": "クレデンシャルを保持するホスト上の環境変数名。ホストが値を解決します — ダッシュボードは決して見ません。",
+    "secretEnvLabel": "シークレット環境変数",
+    "secretEnvHint": "クレデンシャルを保持するホスト上の環境変数の名前。ホストはプローブ / webhook 時に値を解決します — ダッシュボードは決して見ません。",
+    "mockNotice": "mock モードのみ: フォームはシードストアをプローブする間だけリテラルのクレデンシャルを保持します。本番モードはホスト上の環境変数を読み、値を決して見ません。",
+    "mockSecretLabel": "クレデンシャル（mock のみ）",
+    "submit": "接続を保存",
+    "testConnection": "接続をテスト"
+  },
+  "connectionFields": {
+    "baseUrlLabel": "ベース url",
+    "baseUrlHint": "セルフホストのみ。クレデンシャルがこの回線を通るため、https です。",
+    "accountLabel": "アカウント",
+    "accountPlaceholder": "クレデンシャルが属するボットまたはアプリ",
+    "accountHint": "後に行に表示されるため、期限切れのクレデンシャルを人までたどれます。",
+    "authKindLabel": "クレデンシャル種別"
+  },
+  "authChoice": {
+    "hint": "{{provider}} が受け入れるもの、それだけです。settings json にそのまま保存され、クレデンシャルは決して保持しません。"
+  },
+  "connectionForm": {
+    "cardLabel": "入り口",
+    "cardNote": "インスタンスがどこにあり、どのクレデンシャルが届き、ホスト上のどの環境変数がそれを保持するか。",
+    "secretEnvLabel": "シークレット環境変数",
+    "secretEnvHint": "ホスト上の環境変数名。ダッシュボードは値を決して見ません。ホストがプローブ / webhook 時に解決します。",
+    "probeProbing": "プロバイダーに到達中…",
+    "probePending": "保存前に接続をテストしてください — ソースへの到達方法を変えるのは、まだ到達できるか誰も知らない間にやることではありません。",
+    "testConnectionAria": "{{name}} への接続をテスト",
+    "submit": "接続を保存"
+  },
+  "watchForm": {
+    "cardLabel": "許可",
+    "cardNote": "何かを許可するか、どのチケットを、そして一つ許可されたとき次に動くのは誰か。",
+    "watchLabel": "このソースを監視",
+    "watchHint": "オフは接続が認証されたまま何も取り込まなくなることを意味します。切断とは同じではありません。",
+    "admissionModeLabel": "許可モード",
+    "submit": "watch を保存"
+  },
+  "filterField": {
+    "label": "フィルタ式",
+    "placeholder": "この接続が見えるすべてを許可するには空のままにします",
+    "hintsLabel": "{{kind}} チケットで見られるフィールド",
+    "verbatim": "そのまま保存されパースされません — フィルタ言語はまだ決まっていないため、このテキストは入力された通りコネクタに渡されます。"
+  },
+  "statusPreview": {
+    "head": "{{provider}} に書き戻されるステータス",
+    "nativeNone": "native 受け口が tracker です。run のステータスがチケットのステータスなので、書き戻し先はありません。",
+    "unknownNone": "{{provider}} には何も書き戻されません — このビルドにはそのプロバイダーのマッピングがないため、run のステータスは run に残ります。"
+  },
+  "detailPage": {
+    "titleFallback": "ソース",
+    "crumbFallback": "ソース",
+    "errorTitle": "このソースを読み込めませんでした",
+    "notFoundTitle": "この id の接続はありません",
+    "notFoundBody": "このプラットフォームではこの id のもとに何も接続されていません。切断されたソース — ここか別のタブで — はこのアドレスに来る通常の経路で、接続リストがまだ存在するものの場所です。",
+    "backToSources": "ソースに戻る",
+    "failureTail": "何も動いていません — このページは元に戻っています。",
+    "factsTitle": "この接続が何か",
+    "factProvider": "プロバイダー",
+    "factAuth": "クレデンシャル",
+    "factInstance": "インスタンス",
+    "factAccount": "アカウント",
+    "factCredential": "クレデンシャル",
+    "factLastSync": "最終同期",
+    "credentialEnvNote": "プローブ / webhook 時にホスト上で解決されます。ダッシュボードは値を決して見ません — 置き換えるにはホスト上の環境変数を変え、接続の <code>secretEnvRef</code> をパッチします。",
+    "credentialStoredNote": "書き込み専用で保存され、二度と表示されません — このページでも、フォームでも、api 経由でも。置き換えは再接続を意味します。",
+    "credentialNoneNote": "native 受け口には遠端がないため、認証する相手がありません。",
+    "none": "なし",
+    "never": "未実行",
+    "watchTitle": "watch とフィルタ",
+    "noWatch": "native 受け口に watch はありません。チケットがここに届くのは誰かが提出したからで、フィルタが許可したからではありません — オフにするものも絞り込むものもありません。",
+    "connectionTitle": "接続",
+    "rotationTitle": "webhook シークレット",
+    "rotationBody": "クリック一つで新しい webhook シークレットが生成され、一度だけ表示されます。tracker の webhook 設定にコピーしてください — このページは再度表示しません。",
+    "rotateButton": "シークレットをローテート",
+    "rotateAria": "{{name}} の webhook シークレットをローテート",
+    "rotateLabel": "webhook シークレットをローテート",
+    "rotatedLabel": "新しい webhook シークレット — 今すぐコピーしてください。このパネルはナビゲーションを生き延びません",
+    "handoffsTitle": "行き先",
+    "handoffFiled": "ここで提出されたチケット。他のすべてと一緒にカタログにあります — ",
+    "handoffAdmitted": "ここから許可されたチケット。他のすべてと一緒にカタログにあります — ",
+    "handoffCatalogTail": "カタログはこのソースに絞り込まれていません。",
+    "openCatalog": "カタログを開く",
+    "handoffProject": "この接続が供給するプロジェクト。ソースの編集はプロジェクトごとに付与されるため、このページのすべての操作がこれに責任を持ちます。",
+    "openProject": "プロジェクトを開く",
+    "handoffTicket": "このプロジェクトの受け口に直接チケットを書きます。管理者ではなくメンバーの操作なので、独自の画面と権限を持ちます。",
+    "fileTicket": "チケットを提出",
+    "rotateTitle": "このソースの webhook シークレットをローテートしますか？",
+    "rotateBody": "{{name}} · {{project}} — 新しいシークレットが生成され、一度だけ表示されます。以前のシークレットで署名された webhook は、新しいものを tracker にコピーするまで拒否されます。",
+    "rotateConfirm": "ローテート",
+    "rotateKeep": "現行を維持",
+    "leaveTitle": "保存せずに離れますか？",
+    "leaveBody": "このページで変更した watch と接続の詳細はまだ保存されていません。離れると破棄され、ソースは元のままです。",
+    "discard": "破棄",
+    "keep": "編集を続ける",
+    "watchSavedToast": "watch を保存しました",
+    "connectionSavedToast": "接続を保存しました",
+    "rotatedToast": "webhook シークレットをローテートしました",
+    "rotatedToastDescription": "{{name}} — 新しい値を tracker にコピーしてください"
+  },
+  "ticketPage": {
+    "title": "{{project}} の新規チケット",
+    "titleFallback": "新規チケット",
+    "crumb": "新規チケット",
+    "summary": "native 受け口は製品自身のものです。ここに書かれたチケットの裏に tracker はなく、ステータスは run のステータスで、同期先もありません。",
+    "errorTitle": "このソースを検索できませんでした",
+    "notFoundTitle": "この id の接続はありません",
+    "notFoundBody": "このプラットフォームに id {{id}} の接続はありません。このタブが開いている間に切断されたソースが、ここに来る通常の経路です。",
+    "backToSources": "ソースに戻る",
+    "refused": "チケットは拒否されました。",
+    "tail": "何も提出されていません — 入力した内容はまだここにあります。",
+    "leaveTitle": "チケットを提出せずに離れますか？",
+    "leaveBody": "入力したタイトル、本文、ラベルはまだどこにも保存されていません。このページを離れると破棄され、受け口には何も届きません。",
+    "discard": "破棄",
+    "keep": "編集を続ける",
+    "toast": "チケットを提出しました"
+  },
+  "ticketForm": {
+    "titleLabel": "タイトル",
+    "titlePlaceholder": "何が悪いか、一行で",
+    "bodyLabel": "本文",
+    "bodyPlaceholder": "何を見て、どこで。脳は計画する前にこれを読みます。",
+    "labelsLabel": "ラベル",
+    "labelsPlaceholder": "checkout-web, bug",
+    "labelsHint": "カンマ区切り。これはチケット自身のラベルです — フィルタ式ではありません。",
+    "straightLabel": "すぐに作業へ",
+    "straightHint": "オフは誰かが取るのを残します。一分後の同じ操作です。",
+    "submitStart": "作成して開始",
+    "submit": "チケットを作成"
+  }
+}

@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next"
+
+import { commandDescription } from "@/domains/chat/model/commands"
 import { proposalCheck } from "@/domains/chat/model/proposals"
 import type { ChatMessage, SlashCommand } from "@/domains/chat/model/types"
 import { projectOf, useSession } from "@/shared/session"
@@ -24,6 +27,7 @@ export interface ChatSidePanelProps {
  */
 export function ChatSidePanel({ messages, commands }: ChatSidePanelProps) {
   const session = useSession()
+  const { t } = useTranslation("chat")
 
   // The newest undecided proposal — the one the conversation is standing on.
   const open = [...messages]
@@ -31,22 +35,24 @@ export function ChatSidePanel({ messages, commands }: ChatSidePanelProps) {
     .map((message) => message.proposal)
     .find((proposal) => proposal && proposal.decision === undefined)
 
-  const check = open ? proposalCheck(session, open) : null
+  const check = open ? proposalCheck(session, open, t) : null
   const project = open ? projectOf(session, open.projectId) : null
 
   return (
-    <aside className={styles.panel} aria-label="Console side panel">
+    <aside className={styles.panel} aria-label={t("panel.label")}>
       <section className={styles.section}>
-        <h2 className={styles.head}>awaiting a decision</h2>
+        <h2 className={styles.head}>{t("panel.awaiting")}</h2>
         {open ? (
           <div className={styles.reading} data-test="chat-panel-proposal">
             <p className={styles.readingSummary}>{open.summary}</p>
             <p className={styles.readingMeta}>
               <span className={styles.value}>
-                {project ? project.key : "no project"}
+                {project ? project.key : t("panel.noProject")}
               </span>
               {open.steps ? (
-                <span className={styles.value}>{open.steps.length} steps</span>
+                <span className={styles.value}>
+                  {t("panel.steps", { count: open.steps.length })}
+                </span>
               ) : null}
             </p>
             {check?.denial ? (
@@ -54,17 +60,19 @@ export function ChatSidePanel({ messages, commands }: ChatSidePanelProps) {
             ) : null}
           </div>
         ) : (
-          <p className={styles.quiet}>nothing is waiting on you here</p>
+          <p className={styles.quiet}>{t("panel.quiet")}</p>
         )}
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.head}>slash help</h2>
+        <h2 className={styles.head}>{t("panel.slashHelp")}</h2>
         <dl className={styles.help} data-test="chat-panel-help">
           {commands.map((command) => (
             <div key={command.name} className={styles.helpRow}>
               <dt className={styles.helpName}>{command.name}</dt>
-              <dd className={styles.helpDescription}>{command.description}</dd>
+              <dd className={styles.helpDescription}>
+                {commandDescription(command, t)}
+              </dd>
             </div>
           ))}
         </dl>

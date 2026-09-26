@@ -1,3 +1,5 @@
+import { Trans, useTranslation } from "react-i18next"
+
 import { depthReadings } from "@/domains/queue/model/queue"
 import type { QueueDepthDay } from "@/domains/queue/model/types"
 import { cn } from "@/shared/lib/utils"
@@ -24,27 +26,38 @@ export interface DepthBandProps {
  * beside it already name the one day that deserves a second look.
  */
 export function DepthBand({ days, className }: DepthBandProps) {
+  const { t } = useTranslation("queue")
   const readings = depthReadings(days)
 
   if (readings === null) {
     return null
   }
 
-  const deepest = readings.todayIsDeepest ? " · deepest of the week today" : ""
-
   return (
     <section
       className={cn(styles.band, className)}
       data-test="queue-depth"
-      aria-label="Queue depth by day"
+      aria-label={t("depth.label")}
     >
       <p className={styles.figure}>
-        <span className={styles.figureValue}>{readings.today}</span> queued now
-        · the week ran{" "}
-        <span className={styles.figureValue}>
-          {readings.weekMin}–{readings.weekMax}
-        </span>
-        {deepest}
+        {/* The figures are values in their own voice and the words are prose
+            in theirs, so the emphasis rides slot elements and the sentence —
+            word order included — belongs to the locale. */}
+        <Trans
+          ns="queue"
+          i18nKey="depth.figure"
+          components={{
+            today: (
+              <span className={styles.figureValue}>{String(readings.today)}</span>
+            ),
+            week: (
+              <span className={styles.figureValue}>
+                {readings.weekMin}–{readings.weekMax}
+              </span>
+            ),
+          }}
+        />
+        {readings.todayIsDeepest ? t("depth.deepest") : ""}
       </p>
 
       <BarSeries
@@ -56,8 +69,16 @@ export function DepthBand({ days, className }: DepthBandProps) {
         }))}
         label={
           readings.todayIsDeepest
-            ? `Queue depth by day, items waiting for a claim. ${readings.today} queued today — the deepest day of a week that ran ${readings.weekMin} to ${readings.weekMax}.`
-            : `Queue depth by day, items waiting for a claim. ${readings.today} queued today; the week ran ${readings.weekMin} to ${readings.weekMax}.`
+            ? t("depth.chartLabelDeepest", {
+                today: readings.today,
+                weekMin: readings.weekMin,
+                weekMax: readings.weekMax,
+              })
+            : t("depth.chartLabel", {
+                today: readings.today,
+                weekMin: readings.weekMin,
+                weekMax: readings.weekMax,
+              })
         }
       />
     </section>

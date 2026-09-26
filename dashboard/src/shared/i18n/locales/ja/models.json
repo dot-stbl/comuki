@@ -1,0 +1,169 @@
+{
+  "actions": {
+    "retry": "再試行",
+    "close": "閉じる"
+  },
+  "errors": {
+    "unknown": "不明なエラー",
+    "changeFailed": "変更に失敗しました。"
+  },
+  "page": {
+    "title": "モデル",
+    "modelsErrorTitle": "モデルが読み込めませんでした",
+    "keysErrorTitle": "スペンドキーが読み込めませんでした",
+    "failureTail": "何も動いていません — レジストリは元のままです。",
+    "summaryProxyOn": "<endpoints/> エンドポイント · <keys/> スペンドキー · プロキシ <proxy/>",
+    "summaryProxyOff": "<endpoints/> エンドポイント · <keys/> スペンドキー · プロキシ <proxy/>、何も計測されていません",
+    "summaryNearCap": "<count/> 件が上限近く",
+    "summaryExpired": "<count/> 件が期限切れ"
+  },
+  "proxy": {
+    "section": "プロキシ",
+    "note": "アップストリームの前にある薄いオプションのホップです。スペンドキーの発行、予算への拘束、ランの計測、リース終了時のキーの回収を行うのはここで、そのスイッチが下の 3 つのセクションが構成なのか強制なのかを決めます。",
+    "on": "オン",
+    "off": "オフ",
+    "since": "{{when}} から",
+    "sentenceOn": "スペンドキーは検査され、予算は強制され、すべてのランが計測されます",
+    "sentenceOff": "worker は url とキーを直接注入されます — スペンドキーは検査されず、予算は強制されず、何も計測されません",
+    "immutableSentence": "仮想キーは構成からシードされ、ランタイムでは不変です — スペンドはプロキシで計測され、ここでは報告されません",
+    "turnOff": "プロキシをオフにする",
+    "turnOn": "プロキシをオンにする",
+    "costPerRun": "ランあたりコスト",
+    "spend": "スペンド",
+    "runs": "ラン",
+    "burnByHour": "時間別消費",
+    "burnNothing": "時間別スペンド：計測なし。",
+    "burnLabel": "計測日の時間別スペンド、ピーク {{peak}} は {{hour}}。",
+    "burnPeak": "ピーク {{peak}} は {{hour}}",
+    "windowOver": "過去 ",
+    "windowStale": "最終計測は過去 ",
+    "windowNotCurrent": " — 現在ではありません",
+    "offConfirmTitle": "プロキシをオフにしますか？",
+    "offConfirmBody": "worker は url とキーを直接注入されます。スペンドキーの検査が止まり、下のすべての予算の強制が止まり、オンに戻すまでどのランも計測されません。",
+    "offConfirm": "オフにする",
+    "offCancel": "オンのままにする"
+  },
+  "endpoints": {
+    "section": "アップストリームエンドポイント",
+    "note": "2 本のワイヤ、openai 互換と anthropic 互換、それ以外はありません。worker はプロバイダ設定経由で url とキーを取り、リードとチャットはチャットクライアント経由で同じエンドポイントを使います。セルフホストの url はごく普通の行です。",
+    "emptyFiltered": "現在のフィルターに一致するエンドポイントはありません",
+    "empty": "アップストリームエンドポイントが設定されていません",
+    "count": "{{count}} 件表示",
+    "column": {
+      "endpoint": "エンドポイント",
+      "wire": "ワイヤ",
+      "baseUrl": "ベース url",
+      "state": "状態",
+      "models": "モデル",
+      "note": "メモ"
+    },
+    "filterPlaceholder": "エンドポイント、url、モデルで絞り込み…",
+    "allWires": "すべてのワイヤ",
+    "allStates": "すべての状態"
+  },
+  "keys": {
+    "section": "スペンドキー",
+    "note": "キーは自身のルート、上限、モデルリスト、スコープ、TTL を内包します — 漏えたキーが買えるのは 1 つのエンドポイント、そこに名前のあるモデル、予算の残り、保有者の管理できない日までです。シークレットは発行時に一度だけ示され、二度と表示されません。",
+    "noteUnenforced": " プロキシがオフの場合、そのどれも検査されません。",
+    "emptyFiltered": "現在のフィルターに一致するキーはありません",
+    "empty": "スペンドキーは発行されていません",
+    "countExpired": "{{count}} 件期限切れ · ",
+    "countNearCap": "{{count}} 件が上限近く · ",
+    "count": "{{count}} 件表示",
+    "column": {
+      "key": "キー",
+      "whatFor": "用途",
+      "scope": "スコープ",
+      "route": "ルート",
+      "mayReach": "呼べる範囲",
+      "spentOfCap": "上限のうち使用",
+      "expires": "期限",
+      "state": "状態",
+      "actions": "操作"
+    },
+    "filterPlaceholder": "キー、ラベル、モデルで絞り込み…",
+    "allScopes": "すべてのスコープ",
+    "allRoutes": "すべてのルート",
+    "allStates": "すべての状態",
+    "openAria": "{{prefix}} の詳細を開く",
+    "allModels": "すべてのモデル",
+    "allModelsTitle": "空の allow-list — すべてのモデルが許可",
+    "revokeTooltip": "このキーを失効させる",
+    "revokeAria": "{{prefix}} を失効させる",
+    "revokeConfirmTitle": "このキーを失効させますか？",
+    "revokeConfirmBody": "{{prefix}} · {{label}} — キーは即時に機能を停止し、元に戻せません。保持していた worker は、ランの途中でリースとともに失います。",
+    "revokeRestartNote": " キーストアは構成からシードされます — ホストの再起動は、Proxy:VirtualKeys の行が削除されるまでこのキーを蘇らせます。",
+    "revokeConfirm": "キーを失効",
+    "revokeCancel": "キーを残す"
+  },
+  "routing": {
+    "section": "ロールからモデルへ",
+    "note": "プラットフォームはロールで語り、ベンダーでは語りません：リードは計画し、契約を書き、結果をレビューし、失敗したランを修理します。worker はコンテナ内でプロファイルのステップを実行します。ロールが物理的なモデルになるのはここで、このマッピングが存在する唯一の場所です。",
+    "emptyFiltered": "現在のフィルターに一致するロールはありません",
+    "empty": "どのロールもモデルにルーティングされていません",
+    "column": {
+      "role": "ロール",
+      "model": "モデル",
+      "endpoint": "エンドポイント",
+      "upstream": "アップストリーム",
+      "usedFor": "用途"
+    },
+    "allRoles": "すべてのロール",
+    "allEndpoints": "すべてのエンドポイント",
+    "unknown": "不明",
+    "count": "{{count}} 件表示"
+  },
+  "sheet": {
+    "closeTooltip": "閉じる — escape",
+    "closeAria": "キーを閉じる",
+    "routeNotKnown": "ルートはここでは不明",
+    "issued": "発行",
+    "lastUsed": "最終使用",
+    "expires": "期限",
+    "scope": "スコープ",
+    "grants": "グラント",
+    "notRecorded": "このワイヤでは記録されていません",
+    "issuedToNobody": "特定の誰にも発行されていません",
+    "mayReach": "呼べる範囲",
+    "everyModel": "エンドポイント上のすべてのモデル",
+    "everyModelTitle": "空の allow-list — すべてのモデルが許可",
+    "alreadyStopped": "このキーは既に停止しています — 失効させるものはありません",
+    "irreversible": "取り消し不可 — 先に確認します",
+    "revoke": "このキーを失効させる",
+    "spend": "スペンド",
+    "notMetered": "このワイヤでは計測されていません",
+    "noSpend": "スペンドの記録がありません",
+    "reading": "過去 {{days}} 日で {{total}} · 1 日 {{average}} · 最重の {{day}} は {{peak}}",
+    "silentDays": " · 直近 {{count}} 日のスペンド記録なし",
+    "chartLabel": "日別スペンド、ドル。{{reading}}。"
+  },
+  "meter": {
+    "noCap": "上限なし",
+    "noCapTitle": "このキーには上限がありません — 失効または期限切れまで費やし続けます",
+    "capOnly": "上限 {{cap}}",
+    "notMeteredHere": "ここではスペンドを計測しません",
+    "notMeteredHereTitle": "上限は生きていますが、この画面はスペンドを計測しません",
+    "unforcedTitle": "プロキシがオフ — この上限は記録されているだけで適用されていません",
+    "over": "超過",
+    "left": "残り {{left}}"
+  },
+  "word": {
+    "never": "無期限",
+    "expired": "{{reading}} 前に期限切れ",
+    "platform": "プラットフォーム",
+    "notOnThisWire": "このワイヤにはありません",
+    "neverUsed": "未使用"
+  },
+  "wire": {
+    "openai": "openai 互換",
+    "anthropic": "anthropic 互換"
+  },
+  "state": {
+    "live": "有効",
+    "expired": "期限切れ",
+    "revoked": "失効済み",
+    "ok": "正常",
+    "degraded": "劣化",
+    "disabled": "無効"
+  }
+}

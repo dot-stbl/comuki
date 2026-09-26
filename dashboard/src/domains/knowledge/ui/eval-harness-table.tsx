@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { EvalCase } from "@/domains/knowledge/model/types"
 import { DataTable, type DataTableSorting } from "@/shared/ui"
@@ -21,7 +22,8 @@ export interface EvalHarnessTableProps {
  * own frame instead of pushing the rest of the screen off the page.
  */
 export function EvalHarnessTable({ cases }: EvalHarnessTableProps) {
-  const columns = useMemo(() => createEvalColumns(), [])
+  const { t } = useTranslation("knowledge")
+  const columns = useMemo(() => createEvalColumns(t), [t])
   const [sorting, setSorting] = useState<DataTableSorting>([])
 
   return (
@@ -33,7 +35,7 @@ export function EvalHarnessTable({ cases }: EvalHarnessTableProps) {
         density="compact"
         sorting={sorting}
         onSortingChange={setSorting}
-        emptyLabel="no golden task has been run against this revision"
+        emptyLabel={t("eval.empty")}
       />
     </div>
   )

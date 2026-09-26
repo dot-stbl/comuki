@@ -1,0 +1,170 @@
+{
+  "actions": {
+    "retry": "Retry"
+  },
+  "errors": {
+    "unknown": "Unknown error"
+  },
+  "status": {
+    "running": "running",
+    "waiting": "waiting",
+    "queued": "queued",
+    "escalated": "escalated",
+    "failed": "failed",
+    "success": "success",
+    "cancelled": "cancelled"
+  },
+  "registry": {
+    "title": "Live runs",
+    "summary": "<total/> runs · <running/> running · <blocked/> waiting on a human",
+    "errorTitle": "Couldn't load runs",
+    "anomaliesOnly": "Show only anomalies",
+    "count": {
+      "one": "{{count}} shown",
+      "other": "{{count}} shown"
+    },
+    "empty": {
+      "profile": "No runs on this profile.",
+      "filtered": "No runs match the current filters.",
+      "none": "No runs yet."
+    },
+    "unplannedTitle": "No plans yet",
+    "unplannedDescription": "These runs are accepted but the brain has not planned them. The flow appears once the first plan has work items.",
+    "expandFlow": "Expand flow",
+    "collapseFlow": "Collapse flow",
+    "resizeBoard": "Resize the flow board",
+    "expandStrip": "Expand the flow board"
+  },
+  "notice": {
+    "fallback": "The decision failed.",
+    "tail": "Nothing changed — the run is back as it was."
+  },
+  "cancelDialog": {
+    "title": "Cancel this run?",
+    "body": "{{title}} · {{where}} — the container is torn down and the lease released. Work already merged stays.",
+    "confirm": "Cancel run",
+    "cancel": "Keep running"
+  },
+  "column": {
+    "status": "status",
+    "run": "run",
+    "project": "project",
+    "app": "app",
+    "task": "task",
+    "profile": "profile",
+    "step": "step",
+    "inStep": "in step",
+    "cost": "cost",
+    "worker": "worker",
+    "actions": "actions",
+    "allStatuses": "all statuses",
+    "allProjects": "all projects",
+    "allApps": "all apps",
+    "allProfiles": "all profiles",
+    "filterPlaceholder": "filter run, task, step…",
+    "waitingOnPlan": "waiting on a plan",
+    "approve": "Approve",
+    "cancelRun": "Cancel run",
+    "approveRun": "Approve {{title}}",
+    "cancelTask": "Cancel {{title}}"
+  },
+  "detail": {
+    "fallbackTitle": "Run {{runId}}",
+    "tok": "tok",
+    "errorTitle": "Couldn't load this run",
+    "notFoundTitle": "No run with that id",
+    "notFoundDescription": "The swarm holds nothing under <id/>. A run id out of an old link is the ordinary way to arrive here — an address outlives the run it named, and the duty list is where the ones still in flight are.",
+    "backToList": "Back to live runs",
+    "unplannedTitle": "Not planned yet",
+    "unplannedDescription": "This run is accepted and the brain has not decomposed it into work items. Nothing is wrong and nothing is waiting on you — the graph and the item inspector appear here as soon as the plan has its first item.",
+    "unplannedHint": "{{status}} · no work items · nothing to inspect",
+    "noInspectorTitle": "No detail for this item",
+    "noInspectorDescription": "The plan above is complete; this item has no inspector record yet. Pick another item, or come back once it starts.",
+    "resizeGraph": "Resize the run graph"
+  },
+  "river": {
+    "group": "Profile flow. Arrow keys move between profiles.",
+    "cleared": "cleared",
+    "waitingOnHuman": "waiting on a human",
+    "noWork": "no work",
+    "poolEntry": "{{count}} {{status}}",
+    "clearedProfile": {
+      "one": "{{count}} cleared the profile",
+      "other": "{{count}} cleared the profile"
+    },
+    "mark": {
+      "one": "{{count}} waiting on a human",
+      "other": "{{count}} waiting on a human"
+    },
+    "pinched": {
+      "one": " {{count}} waiting on a human, more than any other profile.",
+      "other": " {{count}} waiting on a human, more than any other profile."
+    },
+    "node": "{{profile}}: {{pool}}. {{cleared}}.{{mark}}"
+  },
+  "evidence": {
+    "title": "evidence",
+    "empty": "no screenshots published yet"
+  },
+  "anomaly": {
+    "badgeLabel": "{{multiplier}}× median",
+    "badgeTip": "Cost {{multiplier}}× this project's median of {{median}} — exceeds the {{threshold}}× threshold. Click for breakdown.",
+    "badgeAria": "Cost anomaly — {{label}}. Open breakdown.",
+    "dialogTitle": "Cost spike · run {{runId}}",
+    "acknowledge": "Acknowledge",
+    "cancelRun": "Cancel run",
+    "summary": "Summary",
+    "spend": "Spend breakdown",
+    "why": "Why it's flagged",
+    "project": "project",
+    "profile": "profile",
+    "status": "status",
+    "cost": "cost",
+    "tokensInOut": "tokens (in / out)",
+    "total": "({{total}} total)",
+    "reason": "Spent <spent/>, which is <multiplier/> the median cost of <median/> for <project/>.",
+    "rule": "Rule: cost > {{threshold}}× the project's median run cost.",
+    "openCost": "Open cost page →"
+  },
+  "graph": {
+    "group": "Run graph. Arrow keys move between work items.",
+    "empty": "No work items in this plan.",
+    "parallel": {
+      "one": "{{count}} parallel",
+      "other": "{{count}} parallel"
+    },
+    "here": "here",
+    "dependsOnEarlier": {
+      "one": "depends on {{count}} earlier",
+      "other": "depends on {{count}} earlier"
+    },
+    "blocked": "blocked",
+    "standingHere": "the run is standing here.",
+    "blockedByFailure": "blocked by a failure upstream.",
+    "blockedByEscalation": "blocked by an escalation upstream.",
+    "longEdges": "depends on {{count}} item more than one column back: {{named}}.",
+    "longEdgesPlural": "depends on {{count}} items more than one column back: {{named}}."
+  },
+  "inspector": {
+    "itemOf": "item {{index}} of {{total}}",
+    "env": "env",
+    "tokens": "tokens",
+    "cost": "cost",
+    "started": "started",
+    "waitsOn": "waits on",
+    "waitsOnLong": "{{count}} more than one column back",
+    "waitsOnNone": "Nothing — this item starts the plan.",
+    "distancePrevious": "previous column",
+    "distanceBack": {
+      "one": "{{count}} column back",
+      "other": "{{count}} columns back"
+    },
+    "dependencyAria": "Show {{label}}, {{profile}}, {{status}}, {{distance}}.",
+    "input": "input — what fed it",
+    "log": "log",
+    "appendOnly": "append-only",
+    "gate": "verification gate",
+    "output": "output — what it produced",
+    "outputNone": "Nothing yet."
+  }
+}

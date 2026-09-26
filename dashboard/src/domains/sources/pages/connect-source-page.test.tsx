@@ -7,7 +7,16 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { ConnectSourcePage } from "@/domains/sources/pages/connect-source-page"
@@ -345,5 +354,29 @@ describe("leaving a half-filled form", () => {
     expect(
       screen.queryByText("Leave without connecting the source?")
     ).toBeNull()
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the form's own
+   words — cards, fields, acts — arrive in russian while the project names
+   stay as they were. Language resets after the case so the file's other
+   readings keep their en posture. */
+describe("the connect form in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the page and its cards in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    mount(["/sources/new"])
+
+    expect(
+      await screen.findByRole("heading", { name: "подключить источник" })
+    ).toBeTruthy()
+    expect(screen.getByText("провайдер")).toBeTruthy()
+    expect(screen.getByText("кред")).toBeTruthy()
   })
 })

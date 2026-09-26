@@ -1,0 +1,171 @@
+{
+  "actions": {
+    "cancel": "キャンセル",
+    "retry": "再試行"
+  },
+  "errors": {
+    "unknown": "不明なエラー"
+  },
+  "registry": {
+    "title": "プロジェクト",
+    "summary": "<count/> プロジェクト · 実行中 <runs/> 件 · 本日 <spend/>",
+    "errorTitle": "レジストリが読み込めませんでした",
+    "newProject": "新しいプロジェクト",
+    "filterByTag": "タグで絞り込む",
+    "count": {
+      "other": "{{count}} 件表示"
+    },
+    "empty": {
+      "filtered": "現在のフィルタに一致するプロジェクトはありません",
+      "none": "プロジェクトはまだありません"
+    }
+  },
+  "column": {
+    "slug": "slug",
+    "name": "名前",
+    "tags": "タグ",
+    "inFlight": "実行中",
+    "runs": "実行",
+    "costToday": "本日の費用",
+    "profiles": "プロファイル",
+    "created": "作成日",
+    "slugFilterPlaceholder": "slug、名前、リポジトリで絞り込み…"
+  },
+  "identity": {
+    "icon": "アイコン",
+    "accentColour": "アクセント色",
+    "tags": "タグ",
+    "repo": "git プロファイルリポジトリ",
+    "iconPlaceholder": "🛰️ または https://example.com/mark.png",
+    "platformDefaults": "プラットフォームのデフォルト"
+  },
+  "mark": {
+    "stored": "保存済みアイコン",
+    "neutral": "プロジェクトマーク",
+    "brand": "{{brand}} マーク"
+  },
+  "slug": {
+    "error": {
+      "required": "slug は必須です",
+      "spaces": "スペースは使えません — ハイフンを使ってください",
+      "lowercase": "slug は小文字です",
+      "min": "最低 {{min}} 文字",
+      "max": "最大 {{max}} 文字",
+      "edges": "文字または数字で始まり、終わる必要があります",
+      "pattern": "文字・数字・単一のハイフンのみ",
+      "taken": "その slug は既に使われています"
+    }
+  },
+  "form": {
+    "nameLabel": "名前",
+    "slugLabel": "slug",
+    "namePlaceholder": "このプロジェクトが何かを数語で",
+    "slugPlaceholder": "小文字、ハイフン、スペースなし",
+    "slugHint": "製品のすべてのリストで列として表示されます。小文字・数字・ハイフン。",
+    "repoPlaceholder": "git@github.com:org/worker-profiles.git",
+    "repoHint": "任意。このプロジェクトのワーカープロファイルが書かれる場所 — 空のままにするとプラットフォームのデフォルトで動きます。",
+    "iconHint": "任意。emoji 1 つまたは画像 URL、slug の横に表示されます。なければ、マークはリポジトリのホストから取られます。",
+    "colorClear": "色なし",
+    "colorHint": "任意。マークの横のドットを塗り、タグを色づけします — インターフェースは変えません。",
+    "tagsHint": "任意。このプロジェクトが何か — Enter かカンマで追加、Backspace で最後の 1 つを削除。",
+    "submit": "プロジェクトを作成"
+  },
+  "tagEntry": {
+    "placeholder": "web、billing…",
+    "remove": "タグ {{tag}} を削除"
+  },
+  "create": {
+    "title": "新しいプロジェクト",
+    "crumb": "新規",
+    "summary": "プロジェクトは自身のアプリケーション、実行、予算を所有します。slug は他のどこでも知られる名前です。",
+    "toastCreated": "プロジェクトを作成しました",
+    "failureFallback": "プロジェクトは作成されませんでした。",
+    "failureTail": "何も作成されていません — 入力した内容はそのまま残っています。",
+    "guardTitle": "プロジェクトを作成せずに離れますか？",
+    "guardBody": "入力した名前、slug、リポジトリはまだどこにも保存されていません。このページを離れると破棄されます。",
+    "guardConfirm": "破棄",
+    "guardCancel": "編集を続ける"
+  },
+  "detail": {
+    "fallbackTitle": "プロジェクト",
+    "crumbFallback": "プロジェクト",
+    "summary": "<slug/> · 作成 <created/>",
+    "notFoundTitle": "その id のプロジェクトはありません",
+    "notFoundDescription": "レジストリに <id/> のデータはありません。古いリンク由来のプロジェクト id でここに来るのはよくあることです — アドレスは名指したプロジェクトより長生きし、レジストリは今も存在するものたちの居場所です。",
+    "notFoundBack": "プロジェクトに戻る",
+    "factsSection": "プロジェクト自身",
+    "editIdentity": "マークを編集",
+    "editIdentityFailure": "マークは保存されませんでした。",
+    "rolesSection": "このプロジェクトでの役割",
+    "rolesForbiddenSubject": "このプロジェクトでの役割",
+    "rolesHeld": {
+      "other": "{{count}} 件付与済み"
+    },
+    "fact": {
+      "slug": "slug",
+      "name": "名前",
+      "mark": "マーク",
+      "created": "作成日",
+      "iconAbsent": "保存なし",
+      "colourAbsent": "未設定",
+      "tagsAbsent": "まだなし"
+    },
+    "rolesEmpty": "このプロジェクトで役割を持つ人はいません。アクセスできる人はすべてプラットフォーム権限を通じてアクセスしています — それはどこでも有効で、ここには列挙されません。",
+    "rolesAll": "このプロジェクトでのすべての付与",
+    "rolesGrant": "役割を付与"
+  },
+  "editor": {
+    "iconHint": "emoji 1 つまたは画像 URL。空にすると現在のマークを維持します。",
+    "colorClear": "保存済みの色を維持",
+    "colorHint": "マークの横のドットを塗り、タグを色づけします — インターフェースは変えません。",
+    "tagsHint": "このプロジェクトが何か。空のリストを保存するとタグがクリアされます。",
+    "save": "マークを保存"
+  },
+  "handoff": {
+    "section": "このプロジェクトの仕事のある場所",
+    "counting": "集計中",
+    "runsWhat": "実行中の run",
+    "runsCount": "<count/> 件実行中 / 計 <total/> 件",
+    "runsNote": "このプロジェクトに絞った当直リストを開く",
+    "queueWhat": "キューとワーカー",
+    "queueCount": "<items/> 件の作業項目 · <workers/> 台のワーカーが起動中",
+    "queueNote": "このプロジェクトに絞ったクレームキューを開く",
+    "sourcesWhat": "ソース",
+    "sourcesCount": "<count/> 件の接続",
+    "sourcesNote": "このプロジェクトに絞った受付を開く",
+    "costWhat": "費用と失敗",
+    "costToday": "本日 <spend/>",
+    "costNothing": "<dash/> まだ帰属なし",
+    "costNote": "数字はこのプロジェクトのもの — その背後のレポートはプラットフォームのもの"
+  },
+  "jobs": {
+    "section": "スケジュールジョブ",
+    "unknown": "不明",
+    "counting": "集計中",
+    "loading": "スケジュールジョブを読み込み中",
+    "errorTitle": "スケジュールが読み込めませんでした",
+    "statusEnabled": "有効",
+    "statusPaused": "一時停止",
+    "pause": "スケジュールを一時停止",
+    "resume": "スケジュールを再開",
+    "delete": "スケジュールを削除",
+    "emptyTitle": "ここでは時計で動くものはありません",
+    "emptyDescription": "このプロジェクトでスケジュールが単独で仕事を始めることはありません。ここで動くものはすべて人が提出またはディスパッチしたものです。",
+    "create": "ジョブをスケジュール",
+    "dialogDescription": "プラットフォームがこのプロジェクトに自ら提出する cron エントリ — ブリーフがチケットになり、プロファイルが最初のステップになります。",
+    "dialogSubmit": "スケジュール",
+    "cronLabel": "cron",
+    "cronHint": "5 フィールドの cron、プロジェクト自身のタイムゾーンポリシーに従います。プリセットを選ぶか、式を直接書いてください。",
+    "profileLabel": "プロファイルキー",
+    "profilePlaceholder": "implementer",
+    "profileHint": "run の起点となる作業項目プロファイル — カタログはクライアントの git にあります。",
+    "briefLabel": "ブリーフ json",
+    "briefHint": "そのまま保存されます。このボックスとホストの間で触れるものはありません。",
+    "deleteTitle": "このスケジュールを削除しますか？",
+    "deleteBody": "<profile/> の <cron/> は発火を止め、削除されます。それによって既に動いている仕事は影響を受けません。",
+    "deleteCancel": "維持する",
+    "configured": {
+      "other": "{{count}} 件設定済み"
+    }
+  }
+}

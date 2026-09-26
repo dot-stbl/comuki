@@ -1,0 +1,139 @@
+{
+  "locale": {
+    "label": "Язык"
+  },
+  "nav": {
+    "intake": "Приём",
+    "observe": "Наблюдение",
+    "configure": "Настройка",
+    "platform": "Платформа",
+    "inbox": "Входящие",
+    "liveRuns": "Живые запуски",
+    "queue": "Очередь",
+    "approvals": "Согласования",
+    "cost": "Расходы",
+    "sources": "Источники",
+    "knowledge": "База знаний",
+    "settings": "Настройки",
+    "projects": "Проекты",
+    "identity": "Идентичность",
+    "compute": "Вычисления",
+    "models": "Модели"
+  },
+  "crumb": {
+    "platform": "платформа",
+    "projects": "проекты",
+    "attention": "смена",
+    "liveRuns": "живые запуски",
+    "tasks": "задачи",
+    "queue": "очередь",
+    "observe": "наблюдение",
+    "identity": "идентичность",
+    "sources": "источники",
+    "approvals": "согласования",
+    "configure": "настройка",
+    "console": "консоль",
+    "onboard": "онбординг",
+    "knowledge": "знания",
+    "models": "модели",
+    "compute": "compute"
+  },
+  "topbar": {
+    "home": "Comuki — на главную",
+    "newRun": "новый запуск",
+    "github": "github",
+    "githubOpens": "Comuki на GitHub — откроется в новой вкладке"
+  },
+  "page": {
+    "breadcrumb": "Хлебные крошки",
+    "showRail": "Показать панель навигации",
+    "hideRail": "Скрыть панель навигации",
+    "resizeRail": "Изменить ширину панели навигации"
+  },
+  "account": {
+    "label": "Учётная запись",
+    "named": "Учётная запись — {{name}}",
+    "settings": "Настройки",
+    "apiKeys": "API-ключи",
+    "profile": "Профиль",
+    "signOut": "Выйти"
+  },
+  "appearance": {
+    "label": "Оформление",
+    "current": "Оформление — {{mode}}",
+    "light": "Светлое",
+    "dark": "Тёмное",
+    "system": "Системное"
+  },
+  "palette": {
+    "label": "Палитра",
+    "current": "Палитра — {{name}}"
+  },
+  "live": {
+    "demo": "Демо",
+    "polling": "Опрос",
+    "mockOnly": "Работа на синтетических данных — bun run dev:real для переключения",
+    "mockAndDown": "Работа на синтетических данных, бэкенд недоступен",
+    "down": "Бэкенд недоступен — показано последнее известное состояние",
+    "pollingDown": "Живые обновления недоступны — экран обновляется опросом раз в {{seconds}} с"
+  },
+  "search": {
+    "open": "Поиск — {{chord}}",
+    "label": "Поиск по Comuki",
+    "placeholder": "вставьте id или назовите экран…",
+    "results": "Результаты",
+    "empty": "здесь нет ничего похожего",
+    "keys": {
+      "move": "↑↓ выбор",
+      "open": "enter открыть",
+      "close": "esc закрыть"
+    },
+    "band": {
+      "resolved": "перейти к",
+      "section": "разделы",
+      "act": "действия",
+      "handoff": "поиск"
+    },
+    "kind": {
+      "run": "запуск",
+      "workItem": "рабочий элемент",
+      "worker": "воркер",
+      "approval": "согласование",
+      "project": "проект",
+      "app": "приложение",
+      "person": "человек",
+      "apiKey": "api-ключ",
+      "image": "образ",
+      "section": "раздел",
+      "act": "действие",
+      "search": "поиск"
+    },
+    "act": {
+      "newTask": "новая задача",
+      "newTaskHint": "положить тикет в бэклог",
+      "newProject": "новый проект",
+      "newProjectHint": "зарегистрировать проект",
+      "newUser": "новый пользователь",
+      "newUserHint": "пригласить человека",
+      "newApiKey": "новый api-ключ",
+      "newApiKeyHint": "выпустить ключ",
+      "grantRole": "выдать роль",
+      "grantRoleHint": "дать кому-то доступ"
+    },
+    "resolvedHint": {
+      "liveRuns": "в живых запусках",
+      "claimQueue": "в очереди заявок",
+      "workerPool": "в пуле воркеров",
+      "approvals": "в согласованиях",
+      "image": "воркеры на этом образе",
+      "apiKeys": "в api-ключах",
+      "people": "в людях",
+      "app": "запуски этого приложения"
+    },
+    "handoffHint": {
+      "runs": "в живых запусках",
+      "queue": "в очереди",
+      "inbox": "во входящих"
+    }
+  }
+}

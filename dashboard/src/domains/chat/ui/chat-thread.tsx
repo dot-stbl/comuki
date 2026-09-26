@@ -10,6 +10,7 @@ import {
 } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { ArrowDown } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { messageParts } from "@/domains/chat/model/parts"
 import { turnPhase, type TurnPhase } from "@/domains/chat/model/dynamics"
@@ -119,6 +120,7 @@ export function ChatThread({
   projectId,
   awaiting,
 }: ChatThreadProps) {
+  const { t } = useTranslation("chat")
   const scroll = useRef<HTMLDivElement | null>(null)
 
   /**
@@ -245,13 +247,8 @@ export function ChatThread({
       >
         {settled.length === 0 && !pending ? (
           <div className={styles.empty} data-test="chat-empty">
-            <h2 className={styles.emptyTitle}>Nothing said yet</h2>
-            <p className={styles.emptyBody}>
-              This is the same control plane the screens drive, reached by
-              typing. Ask it what the swarm is doing, or start with a slash to
-              see everything it can do. Anything that would change something
-              comes back as a proposal you press — it never acts on its own.
-            </p>
+            <h2 className={styles.emptyTitle}>{t("thread.emptyTitle")}</h2>
+            <p className={styles.emptyBody}>{t("thread.emptyBody")}</p>
           </div>
         ) : null}
 
@@ -262,7 +259,7 @@ export function ChatThread({
           role="log"
           aria-live="polite"
           aria-relevant="additions"
-          aria-label="Conversation"
+          aria-label={t("thread.logLabel")}
         >
           {/* The two spacers stand for every turn that is not mounted, so the
               scrollbar measures the conversation rather than the window. They
@@ -317,7 +314,9 @@ export function ChatThread({
             aria-hidden="true"
           >
             <div className={styles.pendingByline}>
-              <span className={styles.pendingAuthor}>comuki</span>
+              <span className={styles.pendingAuthor}>
+                {t("message.comuki")}
+              </span>
               {/* The same badge a settled turn carries, so the byline does not
                   change shape when the reply lands — only the word on it. */}
               {pendingPhase ? <TurnBadge phase={pendingPhase} /> : null}
@@ -350,7 +349,7 @@ export function ChatThread({
           onClick={jump}
         >
           <ArrowDown aria-hidden="true" />
-          <span>jump to latest</span>
+          <span>{t("thread.jump")}</span>
         </Button>
       )}
 
@@ -360,9 +359,9 @@ export function ChatThread({
           pause before the turn starts, then the turn itself arriving. */}
       <p className={styles.announce} role="status" data-test="chat-announce">
         {pending
-          ? "the assistant is replying"
+          ? t("thread.announceReplying")
           : awaiting
-            ? "Comuki думает"
+            ? t("thread.announceThinking")
             : ""}
       </p>
     </div>

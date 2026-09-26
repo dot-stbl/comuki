@@ -4,8 +4,27 @@ import {
   type ProjectRef,
   type Session,
 } from "@/shared/session"
+import { i18n } from "@/shared/i18n"
 
 import type { SlashCommand } from "./types"
+
+/**
+ * A `chat`-namespace translator, the shape the word-bearing helpers below
+ * resolve their copy through (`dashboard-i18n` D7). The default is the shared
+ * i18n instance, so a caller with no translator of its own still answers in
+ * the active locale.
+ */
+export type ChatTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+export function sharedChatT(
+  key: string,
+  options?: Record<string, unknown>
+): string {
+  return i18n.t(key, { ...options, ns: "chat" })
+}
 
 /**
  * The command catalogue, and the rule about scope.
@@ -183,6 +202,26 @@ export function commandOf(
 }
 
 /**
+ * A command's description, in the active locale.
+ *
+ * Built-in descriptions are the platform's own words and resolve through the
+ * `chat` catalogue with the registry's own field as the `defaultValue` (the
+ * map-edge rule, D11). A client-declared command's description is the
+ * client's authored words — data from the wire, spelled verbatim.
+ */
+export function commandDescription(
+  command: SlashCommand,
+  t: ChatTranslator = sharedChatT
+): string {
+  if (command.origin === "client") {
+    return command.description
+  }
+  return t(`command.${command.name.replace(/^\//, "")}.description`, {
+    defaultValue: command.description,
+  })
+}
+
+/**
  * Whether the composer's menu is open, and on what.
  *
  * Open while the *first* token is being typed and is a slash word: `/ru` is
@@ -250,7 +289,8 @@ export interface ScopeState {
 export function scopeState(
   session: Session,
   command: SlashCommand | null,
-  projectId: string
+  projectId: string,
+  t: ChatTranslator = sharedChatT
 ): ScopeState {
   if (!command || command.scope !== "required") {
     return {
@@ -274,7 +314,7 @@ export function scopeState(
       // there is no project where it would hold.
       denied: command.permission
         ? needsLabel(command.permission)
-        : "not available",
+        : t("scope.notAvailable"),
     }
   }
 
@@ -283,7 +323,9 @@ export function scopeState(
     needed: true,
     command,
     choices,
-    incomplete: chosen ? null : `${command.name} needs a project`,
+    incomplete: chosen
+      ? null
+      : t("scope.needsProject", { command: command.name }),
     denied: null,
   }
 }

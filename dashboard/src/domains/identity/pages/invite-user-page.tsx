@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { useNavigate, useRouter } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { FormPage } from "@/app/layout/form-page"
@@ -24,6 +25,8 @@ import { ConfirmDialog, Notice } from "@/shared/ui"
 export function InviteUserPage() {
   const navigate = useNavigate()
   const router = useRouter()
+  const { t } = useTranslation("identity")
+  const { t: tShell } = useTranslation("shell")
   const { data } = useIdentityQuery()
   const invite = useInviteUserMutation()
 
@@ -49,7 +52,9 @@ export function InviteUserPage() {
     invite.mutate(input, {
       onSuccess: () => {
         toast.success(
-          input.invite ? "Invitation sent" : "Local account created",
+          input.invite
+            ? t("invitePage.toastInvite")
+            : t("invitePage.toastLocal"),
           {
             description: input.email,
           }
@@ -67,13 +72,13 @@ export function InviteUserPage() {
 
   return (
     <FormPage
-      title="New user"
+      title={t("invitePage.title")}
       crumbs={[
-        { label: "platform" },
-        { label: "identity", to: "/identity" },
-        { label: "new user" },
+        { label: tShell("crumb.platform") },
+        { label: tShell("crumb.identity"), to: "/identity" },
+        { label: t("invitePage.crumb") },
       ]}
-      summary="An account can exist and hold nothing. Roles are granted separately, on the role assignments list."
+      summary={t("invitePage.summary")}
     >
       {/* The host's own sentence, not `error.message`: an invitation that the
           platform refused says why it refused in its problem body, and a
@@ -81,12 +86,8 @@ export function InviteUserPage() {
           hiding the one reading the operator can act on. */}
       {invite.error ? (
         <Notice tone="bad" data-test="invite-failure">
-          {requestFailureMessage(
-            invite.error,
-            "The platform refused to create the account."
-          )}{" "}
-          No account was made — the name and address below are still exactly as
-          you typed them.
+          {requestFailureMessage(invite.error, t("invitePage.refused"))}{" "}
+          {t("invitePage.tail")}
         </Notice>
       ) : null}
 
@@ -100,10 +101,10 @@ export function InviteUserPage() {
 
       <ConfirmDialog
         open={guard.asking}
-        title="Leave without creating the account?"
-        body="The name and address you typed are not saved anywhere yet. Leaving this page drops them."
-        confirmLabel="Discard"
-        cancelLabel="Keep editing"
+        title={t("invitePage.leaveTitle")}
+        body={t("invitePage.leaveBody")}
+        confirmLabel={t("invitePage.discard")}
+        cancelLabel={t("invitePage.keep")}
         onConfirm={guard.discard}
         onCancel={guard.keep}
       />

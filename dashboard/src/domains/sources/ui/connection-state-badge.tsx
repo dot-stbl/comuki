@@ -1,5 +1,6 @@
 import type { ComponentType } from "react"
 import { AlertTriangle, Check, PowerOff } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type { SourceState } from "@/domains/sources/model/types"
 import { cn } from "@/shared/lib/utils"
@@ -35,6 +36,7 @@ export function ConnectionStateBadge({
   state,
   className,
 }: ConnectionStateBadgeProps) {
+  const { t } = useTranslation("sources")
   const Mark = marks[state]
 
   return (
@@ -44,7 +46,7 @@ export function ConnectionStateBadge({
       data-state={state}
     >
       <Mark />
-      {state}
+      {t(`state.${state}`)}
     </span>
   )
 }

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { Button, FormDialog, Notice, SecretValue } from "@/shared/ui"
 
 /** A key that has just been made: the head that is kept, and the whole secret. */
@@ -53,29 +55,28 @@ export interface KeySecretDialogProps {
  * key had not been made.
  */
 export function KeySecretDialog({ created, onDone }: KeySecretDialogProps) {
+  const { t } = useTranslation("identity")
+
   return (
     <FormDialog
       open={created !== null}
-      title="Key created"
-      submitLabel="Done"
+      title={t("secretDialog.title")}
+      submitLabel={t("secretDialog.done")}
       onSubmit={onDone}
       onCancel={onDone}
       footer={
         <Button data-test="key-done" onClick={onDone}>
-          Done
+          {t("secretDialog.done")}
         </Button>
       }
     >
-      <Notice>
-        This is the only time this secret is shown. Once this dialog closes it
-        is gone — the platform keeps the prefix and a hash, and nothing else.
-      </Notice>
+      <Notice>{t("secretDialog.notice")}</Notice>
       {created ? (
         <SecretValue
           id="key-plaintext"
-          label="secret"
+          label={t("secretDialog.secretLabel")}
           value={created.plaintext}
-          hint={`Stored as ${created.prefix}. That prefix is all the key list will ever show.`}
+          hint={t("secretDialog.secretHint", { prefix: created.prefix })}
         />
       ) : null}
     </FormDialog>

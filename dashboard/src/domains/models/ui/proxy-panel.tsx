@@ -1,6 +1,12 @@
 import { Power, PowerOff } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
-import { burnPeak, hourLabel, proxySentence } from "@/domains/models/model/keys"
+import {
+  burnPeak,
+  hourLabel,
+  proxySentence,
+  type ModelsTranslator,
+} from "@/domains/models/model/keys"
 import type { Proxy } from "@/domains/models/model/types"
 import { formatCost } from "@/domains/runs/model/format"
 import { can, needsLabel, useSession } from "@/shared/session"
@@ -23,12 +29,15 @@ export interface ProxyPanelProps {
 }
 
 /** The burn reading in words — the sparkline's whole accessible name. */
-function burnLabel(proxy: Proxy): string {
+function burnLabel(proxy: Proxy, t: ModelsTranslator): string {
   const peak = burnPeak(proxy.burnHourlyUsd)
   if (!peak) {
-    return "Spend by hour: nothing metered."
+    return t("proxy.burnNothing")
   }
-  return `Spend by hour across the metered day, peak ${formatCost(peak.usd)} at ${hourLabel(peak.hour)}.`
+  return t("proxy.burnLabel", {
+    peak: formatCost(peak.usd),
+    hour: hourLabel(peak.hour),
+  })
 }
 
 /**
@@ -47,6 +56,7 @@ function burnLabel(proxy: Proxy): string {
  * turning the proxy back on.
  */
 export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
+  const { t } = useTranslation("models")
   const session = useSession()
   const denial = can(session, "models.manage")
     ? null
@@ -84,18 +94,20 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
             data-enabled={proxy.enabled ? "" : undefined}
           >
             <span className={styles.stateWord}>
-              {proxy.enabled ? "on" : "off"}
+              {proxy.enabled ? t("proxy.on") : t("proxy.off")}
             </span>
             {metered ? (
               <span className={styles.since}>
-                since {formatRelativeTime(proxy.changedAgoSec * 1000)}
+                {t("proxy.since", {
+                  when: formatRelativeTime(proxy.changedAgoSec * 1000),
+                })}
               </span>
             ) : null}
           </p>
           <p className={styles.sentence}>
             {metered
-              ? proxySentence(proxy.enabled)
-              : "virtual keys are seeded from configuration and immutable at runtime — spend is metered at the proxy, not reported here"}
+              ? proxySentence(proxy.enabled, t)
+              : t("proxy.immutableSentence")}
           </p>
         </div>
 
@@ -106,8 +118,7 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
         {metered && onToggle ? (
           <Tooltip
             content={
-              denial ??
-              (proxy.enabled ? "turn the proxy off" : "turn the proxy on")
+              denial ?? (proxy.enabled ? t("proxy.turnOff") : t("proxy.turnOn"))
             }
           >
             <Button
@@ -117,7 +128,7 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
               loading={busy}
               denied={denial}
               aria-label={
-                proxy.enabled ? "turn the proxy off" : "turn the proxy on"
+                proxy.enabled ? t("proxy.turnOff") : t("proxy.turnOn")
               }
               onClick={() => onToggle(!proxy.enabled)}
             >
@@ -137,17 +148,17 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
           data-test="proxy-figures"
         >
           <div className={styles.figure}>
-            <dt className={styles.figureName}>cost per run</dt>
+            <dt className={styles.figureName}>{t("proxy.costPerRun")}</dt>
             <dd className={styles.figureValue}>
               {formatCost(proxy.costPerRunUsd)}
             </dd>
           </div>
           <div className={styles.figure}>
-            <dt className={styles.figureName}>spend</dt>
+            <dt className={styles.figureName}>{t("proxy.spend")}</dt>
             <dd className={styles.figureValue}>{formatCost(proxy.spendUsd)}</dd>
           </div>
           <div className={styles.figure}>
-            <dt className={styles.figureName}>runs</dt>
+            <dt className={styles.figureName}>{t("proxy.runs")}</dt>
             <dd className={styles.figureValue}>{proxy.runs}</dd>
           </div>
           {/* The shape of the metered day, beside the figures that say it in
@@ -157,23 +168,26 @@ export function ProxyPanel({ proxy, busy = false, onToggle }: ProxyPanelProps) {
               same lie a six-day-old cost-per-run would. */}
           {peak ? (
             <div className={cn(styles.figure, styles.burn)}>
-              <dt className={styles.figureName}>burn by hour</dt>
+              <dt className={styles.figureName}>{t("proxy.burnByHour")}</dt>
               <dd className={styles.figureValue} data-test="proxy-burn">
                 <Sparkline
                   className={stale ? styles.burnStale : undefined}
                   values={proxy.burnHourlyUsd}
-                  label={burnLabel(proxy)}
+                  label={burnLabel(proxy, t)}
                 />
                 <span className={styles.burnPeak}>
-                  peak {formatCost(peak.usd)} at {hourLabel(peak.hour)}
+                  {t("proxy.burnPeak", {
+                    peak: formatCost(peak.usd),
+                    hour: hourLabel(peak.hour),
+                  })}
                 </span>
               </dd>
             </div>
           ) : null}
           <p className={styles.window} data-test="proxy-window">
-            {stale ? "last metered over " : "over "}
+            {stale ? t("proxy.windowStale") : t("proxy.windowOver")}
             {proxy.windowLabel}
-            {stale ? " — not current" : ""}
+            {stale ? t("proxy.windowNotCurrent") : ""}
           </p>
         </dl>
       ) : null}

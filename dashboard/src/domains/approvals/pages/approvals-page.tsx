@@ -1,4 +1,5 @@
 import { RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { AppShell } from "@/app/layout/app-shell"
@@ -19,6 +20,8 @@ import styles from "./approvals-page.module.css"
 const SKELETON_COUNT = 3
 
 export function ApprovalsPage() {
+  const { t } = useTranslation("approvals")
+  const { t: tShell } = useTranslation("shell")
   const { data = [], isLoading, isError, error, refetch } = useApprovalsQuery()
   const decision = useApprovalDecisionMutation()
   const session = useSession()
@@ -38,11 +41,11 @@ export function ApprovalsPage() {
       {
         onSuccess: () => {
           if (action === "approve") {
-            toast.success("Approved", { description: id })
+            toast.success(t("decide.approvedToast"), { description: id })
           } else if (action === "reject") {
-            toast.message("Rejected", { description: id })
+            toast.message(t("decide.rejectedToast"), { description: id })
           } else {
-            toast.message("Opened review", { description: id })
+            toast.message(t("decide.openedToast"), { description: id })
           }
         },
       }
@@ -62,16 +65,30 @@ export function ApprovalsPage() {
       header={
         <PageHeader
           breadcrumbs={[
-            { label: "observe", to: "/runs" },
-            { label: "approvals" },
+            { label: tShell("crumb.observe"), to: "/runs" },
+            { label: tShell("crumb.approvals") },
           ]}
-          title="Approvals"
+          title={t("registry.title")}
           summary={
             ready ? (
-              <>
-                <span className={styles.strong}>{data.length}</span> awaiting
-                decision
-              </>
+              /* The count stringifies: a Trans slot holding a falsy child (a
+                 bare `0`) renders empty, and zero is a reading, not a
+                 blank. */
+              <Trans
+                ns="approvals"
+                i18nKey="registry.summary"
+                /* The count travels as a value so the plural group resolves
+                   (ru agrees with its number), and as the slot so the figure
+                   keeps its own styling. It stringifies: a Trans slot holding
+                   a falsy child (a bare `0`) renders empty, and zero is a
+                   reading, not a blank. */
+                values={{ count: data.length }}
+                components={{
+                  count: (
+                    <span className={styles.strong}>{String(data.length)}</span>
+                  ),
+                }}
+              />
             ) : undefined
           }
         />
@@ -89,14 +106,14 @@ export function ApprovalsPage() {
         {isError ? (
           <ScreenState
             kind="error"
-            title="Failed to load approvals"
-            description={requestFailureMessage(error, "Unknown error")}
+            title={t("registry.errorTitle")}
+            description={requestFailureMessage(error, t("errors.unknown"))}
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("actions.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="approvals-retry"
-                  aria-label="Retry"
+                  aria-label={t("actions.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -114,19 +131,16 @@ export function ApprovalsPage() {
              state's prose class — which is how a banner and a state ended up
              sharing one rule and neither owning it. */
           <Notice tone="bad" data-test="approvals-decision-failed">
-            {requestFailureMessage(
-              decision.error,
-              "The decision did not land."
-            )}{" "}
-            The queue is as it was — the run is still waiting.
+            {requestFailureMessage(decision.error, t("decide.refused"))}{" "}
+            {t("decide.tail")}
           </Notice>
         ) : null}
 
         {ready && data.length === 0 ? (
           <ScreenState
             kind="empty"
-            title="Queue empty"
-            description="Nothing awaiting a human."
+            title={t("empty.title")}
+            description={t("empty.description")}
             data-test="approvals-empty"
           />
         ) : null}

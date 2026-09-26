@@ -7,7 +7,16 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
+import { i18n, loadLocale } from "@/shared/i18n"
 
 import { ThemeProvider } from "@/app/theme-provider"
 import { InviteUserPage } from "@/domains/identity/pages/invite-user-page"
@@ -306,5 +315,32 @@ describe("a write the platform refuses", () => {
     } finally {
       write.mockRestore()
     }
+  })
+})
+
+/* The locale is a property of the reader, not of the data: the ru catalogue
+   lands through the same lazy door the switcher uses, and the form's own
+   words — labels, arrival choices, submit — arrive in russian. Language
+   resets after the case so the file's other readings keep their en posture. */
+describe("the invite page in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("renders the page and its arrival choices in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    mount(["/identity/users/new"])
+
+    expect(
+      await screen.findByRole("heading", { name: "новый пользователь" })
+    ).toBeTruthy()
+    expect(screen.getAllByText("отправить приглашение").length).toBeGreaterThan(
+      0
+    )
+    expect(
+      screen.getByRole("button", { name: "отправить приглашение" })
+    ).toBeTruthy()
   })
 })

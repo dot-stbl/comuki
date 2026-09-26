@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { SearchField } from "@/shared/ui"
 
 export interface KnowledgeSearchProps {
@@ -33,14 +35,15 @@ export function KnowledgeSearch({
   onValueChange,
   className,
 }: KnowledgeSearchProps) {
+  const { t } = useTranslation("knowledge")
   return (
     <SearchField
       size="sm"
       value={value}
       onValueChange={onValueChange}
       data-test="knowledge-search"
-      aria-label="Filter rules, docs and skills"
-      placeholder="Search rules, docs, skills…"
+      aria-label={t("search.label")}
+      placeholder={t("search.placeholder")}
       className={className}
     />
   )

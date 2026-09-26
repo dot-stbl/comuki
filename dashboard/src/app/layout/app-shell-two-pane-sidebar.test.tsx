@@ -1,8 +1,9 @@
 import { render } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 
 import { AppShellTwoPaneOuter } from "@/app/layout/app-shell-two-pane-sidebar"
 import { productNavSections } from "@/app/layout/nav-sections"
+import { i18n, loadLocale } from "@/shared/i18n"
 import { TestSession } from "@/shared/session/test-session"
 
 /* CSS Module compilation cannot be observed through jsdom — `getComputedStyle`
@@ -100,5 +101,43 @@ describe("AppShellTwoPaneOuter — section buttons in the DOM", () => {
     )
     configureButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }))
     expect(calls).toEqual(["configure"])
+  })
+})
+
+/* The rail's words are a property of the reader, not of the data: the ru
+   catalogue lands through the same lazy door the switcher uses, and every
+   section is named in russian while hrefs, ids and icons stay as they were.
+   Language resets after the case so the file's other readings keep their
+   en posture. */
+describe("AppShellTwoPaneOuter in russian", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en")
+  })
+
+  it("names the sections in russian, active mark and all", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    const { container } = render(
+      <TestSession roles={["platform-admin"]}>
+        <AppShellTwoPaneOuter
+          sections={productNavSections}
+          activeId="observe"
+          onSelect={() => {}}
+        />
+      </TestSession>
+    )
+
+    const buttons = container.querySelectorAll('[data-test="two-pane-section"]')
+    expect([...buttons].map((b) => b.getAttribute("aria-label"))).toEqual([
+      "Приём",
+      "Наблюдение",
+      "Настройка",
+      "Платформа",
+    ])
+    const active = [...buttons].find(
+      (b) => b.getAttribute("aria-current") === "true"
+    )
+    expect(active?.getAttribute("aria-label")).toBe("Наблюдение")
   })
 })

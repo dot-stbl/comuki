@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { formatDuration } from "@/shared/lib/duration"
 import type { RunSummary } from "@/domains/runs/model/types"
@@ -27,13 +28,14 @@ export interface RunningNowProps {
  * block above, so the rows that matter most are the ones already at the top.
  */
 export function RunningNow({ runs, total }: RunningNowProps) {
+  const { t } = useTranslation("home")
   const session = useSession()
   const hidden = Math.max(0, total - runs.length)
 
   if (total === 0) {
     return (
       <p className={styles.quiet} data-test="running-empty">
-        Nothing is in flight.
+        {t("running.empty")}
       </p>
     )
   }
@@ -72,10 +74,10 @@ export function RunningNow({ runs, total }: RunningNowProps) {
               </span>
 
               <span className={styles.step} title={step}>
-                {step || "waiting on a plan"}
+                {step || t("list.waitingOnPlan")}
               </span>
 
-              <span className={styles.clock} title="time in step">
+              <span className={styles.clock} title={t("list.timeInStep")}>
                 {formatDuration(run.durationSec)}
               </span>
             </li>
@@ -86,7 +88,7 @@ export function RunningNow({ runs, total }: RunningNowProps) {
       {hidden > 0 ? (
         <p className={styles.more}>
           <Link to="/runs" className={styles.moreLink} data-test="running-more">
-            {hidden} more in flight — open live runs
+            {t("running.more", { count: hidden })}
           </Link>
         </p>
       ) : null}

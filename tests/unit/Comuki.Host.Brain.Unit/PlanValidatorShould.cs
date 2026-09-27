@@ -90,6 +90,18 @@ public sealed class PlanValidatorShould
         result.Errors.ShouldContain("edge 'n1' -> 'n1' is a self-loop");
     }
 
+    [Fact(DisplayName = "Given a duplicated edge, when validated, then the error calls it out")]
+    public void RefuseDuplicateEdges()
+    {
+        var result = PlanValidator.Validate(new Plan(
+            "summary",
+            [Node("n1"), Node("n2")],
+            [new PlanEdge("n1", "n2"), new PlanEdge("n1", "n2")]));
+
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain("edge 'n1' -> 'n2' is duplicated");
+    }
+
     [Fact(DisplayName = "Given a cyclic graph, when validated, then the error reports the cycle")]
     public void RefuseCyclicGraph()
     {

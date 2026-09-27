@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Application;
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Journal;
+using Comuki.Engine.Orchestration.Domain.Outbox;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure;
@@ -65,6 +66,7 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
 
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(clock);
+        services.AddLogging();
         services.AddOrchestrationPersistence(postgres.ConnectionString);
         services.AddOrchestrationQueue(configuration);
         services.AddOrchestrationApplication();
@@ -120,6 +122,15 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
         return await db.WorkItems.AsNoTracking().SingleOrDefaultAsync(item => item.Id == workItemId, TestContext.Current.CancellationToken);
     }
 
+    /// <summary>Re-reads one run from a fresh scope (no tracking).</summary>
+    /// <param name="runId"></param>
+    protected async Task<Run> LoadRunAsync(RunId runId)
+    {
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+        return await db.Runs.AsNoTracking().SingleAsync(run => run.Id == runId, TestContext.Current.CancellationToken);
+    }
+
     /// <summary>Re-reads the journal of a run from a fresh scope (no tracking).</summary>
     /// <param name="runId"></param>
     protected async Task<List<RunEvent>> LoadEventsAsync(RunId runId)
@@ -130,5 +141,16 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
             .Where(runEvent => runEvent.RunId == runId)
             .OrderBy(runEvent => runEvent.OccurredAt)
             .ToListAsync(TestContext.Current.CancellationToken);
+    }
+
+    /// <summary>Re-reads every outbox row from a fresh scope (no tracking) — the
+    /// WS7 (issue #87) "exactly one terminal outbox message" assertions in
+    /// RunJournalShould.cs use this directly; every test that calls it seeds
+    /// exactly one Run, so a plain "load everything" is precise enough.</summary>
+    protected async Task<List<OutboxMessage>> LoadOutboxMessagesAsync()
+    {
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
+        return await db.OutboxMessages.AsNoTracking().ToListAsync(TestContext.Current.CancellationToken);
     }
 }

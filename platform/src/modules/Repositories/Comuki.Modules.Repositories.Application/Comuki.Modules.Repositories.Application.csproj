@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Modules.Repositories.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Comuki.Modules.Repositories.Domain\Comuki.Modules.Repositories.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

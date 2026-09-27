@@ -116,7 +116,13 @@ services:
       # unless COMUKI_COMPUTE_ALLOWUNFENCEDEGRESS=true.
       COMUKI_COMPUTE_DOCKER_FENCEDNETWORK: ${COMUKI_DOCKER_FENCED_NETWORK:-comuki-worker-net}
       COMUKI_COMPUTE_SCALE_WORKERIMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
-      COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-host:8080
+      # Workers dial in via service DNS (comuki-host) on the worker fence
+      # network — no `ports:` publish needed for 17185, the host listener
+      # is reachable in-network the same way the REST :8080 is. The
+      # dedicated cleartext HTTP/2-only listener Comuki.Host/Program.cs
+      # binds for the worker gRPC bidi stream (issue #152) — port pool
+      # default 17185, overridable via COMUKI_HOST_WORKERGRPCPORT.
+      COMUKI_COMPUTE_SCALE_ORCHESTRATORGRPCURL: http://comuki-host:17185
       COMUKI_CHAT_WORKER_IMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
       COMUKI_SCHEDULER_WORKER_IMAGE: ${COMUKI_WORKER_IMAGE:-comuki-worker:local}
       # TLS ([Host:Tls]): flip COMUKI_TLS_ENABLED=true to add the HTTPS

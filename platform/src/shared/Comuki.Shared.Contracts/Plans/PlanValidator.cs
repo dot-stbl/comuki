@@ -57,6 +57,7 @@ public static class PlanValidator
             }
         }
 
+        var seenEdges = new HashSet<PlanEdge>();
         foreach (var edge in plan.Edges ?? [])
         {
             if (!ids.Contains(edge.From))
@@ -72,6 +73,11 @@ public static class PlanValidator
             if (edge.From == edge.To)
             {
                 errors.Add($"edge '{edge.From}' -> '{edge.To}' is a self-loop");
+            }
+
+            if (!seenEdges.Add(edge))
+            {
+                errors.Add($"edge '{edge.From}' -> '{edge.To}' is duplicated");
             }
         }
 

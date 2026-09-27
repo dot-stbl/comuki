@@ -1,0 +1,14 @@
+schema: spec-driven
+created: 2026-09-24
+goal: Hard pre-release rename of the Intake bounded context to Integrations (namespaces, schema, IncomingTicket->InboundItem, migration baseline, routes, permissions, config, generated contracts) per add-mission-cowork epic task 3.0. No behavior change, no compatibility aliases.
+affected_areas:
+  - platform/src/modules/Intake
+  - platform/src/host/Comuki.Host/Intake
+  - platform/src/host/Comuki.Migrator
+  - platform/src/shared/Comuki.Shared.Migrations
+  - platform/src/modules/Identity
+  - tests
+  - dashboard/src
+  - cli/src
+  - deploy
+retire_capabilities: true

@@ -28,7 +28,7 @@ public sealed class ClaimWorkItemHandlerShould
         var clock = new FakeTimeProvider();
         var leaseOptions = OptionsFactory.Create(new LeaseOptions { LeaseTtl = TimeSpan.FromMinutes(5) });
         var queue = Substitute.For<IWorkItemQueue>();
-        var claimed = new ClaimedWorkItem(Guid.CreateVersion7(), RunId.New(), Guid.CreateVersion7(), "implement", /*lang=json,strict*/ """{"goal":"x"}""", now.AddMinutes(5), 1);
+        var claimed = new ClaimedWorkItem(Guid.CreateVersion7(), RunId.New(), Guid.CreateVersion7(), "implement", /*lang=json,strict*/ """{"goal":"x"}""", now.AddMinutes(5), 1, 1);
         var cancellationToken = TestContext.Current.CancellationToken;
         queue.ClaimAsync(Arg.Any<WorkerId>(), Arg.Any<WorkItemLabels>(), Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), cancellationToken)
             .Returns(claimed);

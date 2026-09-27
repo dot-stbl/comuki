@@ -87,6 +87,11 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
             .HasColumnName("attempt")
             .HasDefaultValue(0);
 
+        builder.Property(static item => item.Generation)
+            .HasColumnName("generation")
+            .IsRequired()
+            .HasDefaultValue(0);
+
         builder.Property(static item => item.CreatedAt)
             .HasColumnName("created_at");
 

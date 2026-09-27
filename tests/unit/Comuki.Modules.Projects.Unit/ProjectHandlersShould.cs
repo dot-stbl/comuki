@@ -8,6 +8,9 @@ using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Application.Settings.Update;
 using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Modules.Projects.Domain.Settings;
+using Comuki.Shared.Editions.Catalog;
+using Comuki.Shared.Editions.Edition;
+using Comuki.Shared.Kernel.Exceptions;
 using Comuki.Shared.Kernel.Ids;
 using NSubstitute;
 using Shouldly;
@@ -24,6 +27,7 @@ public sealed class ProjectHandlersShould
     private readonly DateTimeOffset now = new(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
     private readonly IProjectStore projects = Substitute.For<IProjectStore>();
     private readonly IProjectSettingsStore settings = Substitute.For<IProjectSettingsStore>();
+    private readonly IEdition edition = Substitute.For<IEdition>();
     private readonly FakeTime clock;
 
     public ProjectHandlersShould()
@@ -31,11 +35,15 @@ public sealed class ProjectHandlersShould
         clock = new FakeTime(now);
     }
 
-    [Fact(DisplayName = "Given a free slug, when Create runs, then project and defaults are persisted")]
+    [Fact(DisplayName = "Given a free slug and a non-exhausted cap, when Create runs, then project and defaults are persisted under the limit lock")]
     public async Task CreatePersistsProjectAndDefaultsAsync()
     {
         projects.FindBySlugAsync("acme", Arg.Any<CancellationToken>()).Returns((Project?)null);
-        var handler = new CreateProjectHandler(projects, clock);
+        edition.Limit(Arg.Any<Limit>()).Returns(5);
+        projects
+            .TryInsertWithProjectLimitAsync(Arg.Any<Project>(), Arg.Any<ProjectSettings>(), 5, Arg.Any<CancellationToken>())
+            .Returns(true);
+        var handler = new CreateProjectHandler(projects, edition, clock);
 
         var view = await handler.HandleAsync(
             new CreateProjectCommand("Acme", "Acme", "d", "git://x", "main"),
@@ -43,10 +51,31 @@ public sealed class ProjectHandlersShould
 
         view.Slug.ShouldBe("acme");
         view.Name.ShouldBe("Acme");
-        await projects.Received(1).AddAsync(
+        await projects.Received(1).TryInsertWithProjectLimitAsync(
             Arg.Is<Project>(static project => project.Slug == "acme" && project.Name == "Acme"),
             Arg.Is<ProjectSettings>(static row => row.Version == 1 && row.MaxConcurrent == ProjectSettings.DefaultMaxConcurrent),
+            5,
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given a store refusing the insert at the cap, when Create runs, then ProviderForbiddenException carries edition.limit_exceeded")]
+    public async Task CreateRefusesWhenCapExhaustedAsync()
+    {
+        projects.FindBySlugAsync("acme", Arg.Any<CancellationToken>()).Returns((Project?)null);
+        edition.Limit(Arg.Any<Limit>()).Returns(1);
+        projects
+            .TryInsertWithProjectLimitAsync(Arg.Any<Project>(), Arg.Any<ProjectSettings>(), 1, Arg.Any<CancellationToken>())
+            .Returns(false);
+        projects.CountAsync(false, Arg.Any<CancellationToken>()).Returns(1);
+        var handler = new CreateProjectHandler(projects, edition, clock);
+
+        var exception = await Should.ThrowAsync<ProviderForbiddenException>(
+            () => handler.HandleAsync(
+                new CreateProjectCommand("Acme", "Acme", null, null, null),
+                TestContext.Current.CancellationToken));
+
+        exception.Code.ShouldBe("edition.limit_exceeded");
+        exception.Message.ShouldContain("projects");
     }
 
     [Fact(DisplayName = "Given a taken slug, when Create runs, then ProjectConflictException is thrown")]
@@ -54,7 +83,7 @@ public sealed class ProjectHandlersShould
     {
         var existing = Project.Create("Taken", "taken", null, null, null, now);
         projects.FindBySlugAsync("taken", Arg.Any<CancellationToken>()).Returns(existing);
-        var handler = new CreateProjectHandler(projects, clock);
+        var handler = new CreateProjectHandler(projects, edition, clock);
 
         await Should.ThrowAsync<ProjectConflictException>(
             () => handler.HandleAsync(new CreateProjectCommand("X", "Taken", null, null, null), TestContext.Current.CancellationToken));

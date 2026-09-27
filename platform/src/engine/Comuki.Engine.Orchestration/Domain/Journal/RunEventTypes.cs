@@ -33,4 +33,15 @@ public static class RunEventTypes
     /// from/to status and the age in seconds at the moment of the sweep.
     /// </summary>
     public const string RunEscalationTimeout = "run.escalation_timeout";
+
+    /// <summary>
+    /// WS7 (issue #87) durable outbox contract name for a Run reaching a
+    /// terminal status (Succeeded or Failed) — per the Integration Event
+    /// Contract naming convention (context.aggregate.past-tense.vMajor).
+    /// This is the dispatcher-delivered OutboxMessage.Type value, a
+    /// separate naming scheme from the journal event-type strings above
+    /// (it carries the "orchestration." context prefix and a ".v1" major
+    /// version suffix; those do not) — do not confuse the two.
+    /// </summary>
+    public const string RunTerminatedV1 = "orchestration.run.terminated.v1";
 }

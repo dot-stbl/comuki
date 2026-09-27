@@ -46,8 +46,9 @@ public sealed class ComukiDoctorShould
         lines.ShouldContain(static line => line.StartsWith("ok    database", StringComparison.Ordinal) && line.Contains("connected latency=3ms"));
         lines.ShouldContain(static line => line.StartsWith("ok    secrets:apikey-pepper", StringComparison.Ordinal) && line.Contains("COMUKI_IDENTITY_APIKEY_PEPPER is set"));
         lines.ShouldContain(static line => line.StartsWith("ok    secrets:worker-token-pepper", StringComparison.Ordinal) && line.Contains("COMUKI_TOKEN_PEPPER is set"));
+        lines.ShouldContain(static line => line.StartsWith("ok    secrets:license.validity", StringComparison.Ordinal) && line.Contains("no license configured"));
         lines.ShouldContain(static line => line.StartsWith("ok    migrations", StringComparison.Ordinal) && line.Contains("comuki-migrator status"));
-        lines.ShouldContain("# 10 ok, 0 warn, 0 fail");
+        lines.ShouldContain("# 11 ok, 0 warn, 0 fail");
     }
 
     [Fact(DisplayName = "Given an unreachable database, when doctor runs, then the database line fails and exit is 1")]
@@ -161,5 +162,24 @@ public sealed class ComukiDoctorShould
 
         exitCode.ShouldBe(1);
         writer.Lines.ShouldContain(static line => line.StartsWith("fail  secrets:apikey-pepper", StringComparison.Ordinal));
+    }
+
+    [Fact(DisplayName = "Given doctor runs in Development with no license configured, when the checklist is collected, then the secrets:license.validity row prints the Community Ok line")]
+    public async Task LicenseValidityRowIsOkWhenNoLicenseConfiguredAsync()
+    {
+        using var env = EnvVarScope.Set(
+            new EnvVarEntry("COMUKI_DB", "Host=probe"),
+            new EnvVarEntry("COMUKI_IDENTITY_APIKEY_PEPPER", "rotated-strong-apikey-pepper-2026"),
+            new EnvVarEntry("COMUKI_TOKEN_PEPPER", "rotated-strong-worker-token-pepper-2026"));
+        var writer = new LineWriter();
+
+        var exitCode = await ComukiDoctor.RunAsync(
+            writer,
+            lookupEnv: static name => name == "COMUKI_ENV" ? "development" : null,
+            probeDatabaseAsync: static (_, _) => Task.FromResult(3),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        exitCode.ShouldBe(0);
+        writer.Lines.ShouldContain(static line => line.StartsWith("ok    secrets:license.validity", StringComparison.Ordinal) && line.Contains("no license configured"));
     }
 }

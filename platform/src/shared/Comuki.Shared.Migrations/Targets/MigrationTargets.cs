@@ -7,6 +7,7 @@ using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
+using Comuki.Modules.Repositories.Infrastructure.Persistence;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence;
 using Comuki.Modules.Verify.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -19,8 +20,8 @@ namespace Comuki.Shared.Migrations.Targets;
 /// table (orchestration.__ef_migrations_history,
 /// identity.__ef_migrations_history, …) so the applications cannot
 /// collide. This is the single list the Migrator exe, the host's
-/// boot-time auto-migrate and the integration-test harness share — an
-/// eleventh module means one new entry here.
+/// boot-time auto-migrate and the integration-test harness share — a
+/// new module means one new entry here.
 /// </summary>
 public static class MigrationTargets
 {
@@ -92,6 +93,12 @@ public static class MigrationTargets
             var builder = new DbContextOptionsBuilder<VerifyDbContext>();
             VerifyDbContext.ApplyOptions(builder, connectionString);
             return new VerifyDbContext(builder.Options);
+        }),
+        new("repositories", RepositoriesDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<RepositoriesDbContext>();
+            RepositoriesDbContext.ApplyOptions(builder, connectionString);
+            return new RepositoriesDbContext(builder.Options);
         }),
     ];
 }

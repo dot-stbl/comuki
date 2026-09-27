@@ -44,6 +44,11 @@ public sealed class AgentLoopHarness(AgentLoopHost host) : IAgentLoopHarness
         var workerId = WorkerId.New();
         var token = host.ResolveTokenIssuer().Issue(workerId);
         var containerReachableBase = host.ContainerReachableBaseUri();
+        // The dedicated HTTP/2-only listener for the worker gRPC bidi
+        // stream (issue #152) — sharing the REST address with the gRPC
+        // stream caused Kestrel to silently fall back to HTTP/1.1, so
+        // every worker.reported journal entry was lost.
+        var containerReachableGrpc = host.ContainerReachableGrpcUri();
 
         var request = new ComputeStartRequest
         {
@@ -56,7 +61,7 @@ public sealed class AgentLoopHarness(AgentLoopHost host) : IAgentLoopHarness
             ProfilesGitRef = scenario.Worker.ProfilesRef,
             Image = scenario.Worker.Image,
             WorkerToken = token,
-            OrchestratorGrpcUrl = containerReachableBase,
+            OrchestratorGrpcUrl = containerReachableGrpc,
             // DockerComputeMapping.BuildEnvironment never sets
             // COMUKI_ORCH_HTTP itself (only COMUKI_ORCH_GRPC) — the REST
             // claim/heartbeat/complete/fail surface needs it too, so it

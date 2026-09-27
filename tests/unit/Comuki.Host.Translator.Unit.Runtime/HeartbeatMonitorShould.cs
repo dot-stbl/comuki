@@ -1,4 +1,5 @@
 using Comuki.Host.Translator.Api.Contracts;
+using Comuki.Host.Translator.Api.Models.Requests;
 using Comuki.Host.Translator.Execution.Loop;
 using NSubstitute;
 using Refit;
@@ -30,18 +31,19 @@ public sealed class HeartbeatMonitorShould
         sequence.Enqueue(success);
         sequence.Enqueue(success);
         sequence.Enqueue(rejection);
-        api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
+        api.HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>())
             .Returns(_ => sequence.Dequeue());
         var monitor = new HeartbeatMonitor(api);
 
         var held = await monitor.RunAsync(
             workItemId,
+            1,
             TimeSpan.FromMilliseconds(1),
             new CancellationTokenSource().Token,
             TestContext.Current.CancellationToken);
 
         held.ShouldBeFalse();
-        await api.Received().HeartbeatAsync(workItemId, Arg.Any<CancellationToken>());
+        await api.Received().HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Fact(DisplayName = "Given the run token trips during the heartbeat delay, when RunAsync runs, then it returns true without further heartbeats")]
@@ -49,7 +51,7 @@ public sealed class HeartbeatMonitorShould
     {
         var api = Substitute.For<IOrchestratorApi>();
         var success = SuccessResponse();
-        api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
+        api.HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>())
             .Returns(success);
         var monitor = new HeartbeatMonitor(api);
         using var runSource = new CancellationTokenSource();
@@ -58,25 +60,27 @@ public sealed class HeartbeatMonitorShould
 
         var held = await monitor.RunAsync(
             workItemId,
+            1,
             TimeSpan.FromMinutes(1),
             runSource.Token,
             stoppingSource.Token);
 
         held.ShouldBeTrue();
-        await api.DidNotReceive().HeartbeatAsync(workItemId, Arg.Any<CancellationToken>());
+        await api.DidNotReceive().HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Fact(DisplayName = "Given an upstream heartbeat call that throws, when RunAsync runs, then the exception propagates")]
     public async Task HeartbeatExceptionPropagatesAsync()
     {
         var api = Substitute.For<IOrchestratorApi>();
-        api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
+        api.HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>())
             .Returns<IApiResponse>(_ => throw new HttpRequestException("upstream dropped"));
         var monitor = new HeartbeatMonitor(api);
 
         await Should.ThrowAsync<HttpRequestException>(
             async () => await monitor.RunAsync(
                 workItemId,
+                1,
                 TimeSpan.FromMilliseconds(1),
                 new CancellationTokenSource().Token,
                 TestContext.Current.CancellationToken));
@@ -87,7 +91,7 @@ public sealed class HeartbeatMonitorShould
     {
         var api = Substitute.For<IOrchestratorApi>();
         var success = SuccessResponse();
-        api.HeartbeatAsync(workItemId, Arg.Any<CancellationToken>())
+        api.HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>())
             .Returns(success);
         var monitor = new HeartbeatMonitor(api);
         using var runSource = new CancellationTokenSource();
@@ -95,12 +99,13 @@ public sealed class HeartbeatMonitorShould
 
         var held = await monitor.RunAsync(
             workItemId,
+            1,
             TimeSpan.FromSeconds(10),
             runSource.Token,
             TestContext.Current.CancellationToken);
 
         held.ShouldBeTrue();
-        await api.DidNotReceive().HeartbeatAsync(workItemId, Arg.Any<CancellationToken>());
+        await api.DidNotReceive().HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>());
     }
 
     private static IApiResponse SuccessResponse()

@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Journal;
+using Comuki.Engine.Orchestration.Infrastructure.Outbox;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Engine.Orchestration.Infrastructure.Queue;
 using Comuki.Engine.Orchestration.Options;
@@ -17,16 +18,13 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Leases;
 /// that same transaction. Guarded updates make the heartbeat/reaper race
 /// safe: whoever's guard matches first wins in the store.
 /// </summary>
-/// <param name="db"></param>
-/// <param name="clock"></param>
-/// <param name="leaseOptions"></param>
 public sealed class LeaseReaper(
     OrchestrationDbContext db,
+    IOutbox outbox,
     TimeProvider clock,
     IOptions<LeaseOptions> leaseOptions)
 {
     /// <summary>Runs one reap sweep; safe to call concurrently and repeatedly.</summary>
-    /// <param name="cancellationToken"></param>
     public async Task<IReadOnlyList<ReapedLease>> ReapAsync(CancellationToken cancellationToken = default)
     {
         var now = clock.GetUtcNow();
@@ -61,6 +59,16 @@ public sealed class LeaseReaper(
                 RunEventTypes.WorkItemLeaseExpired,
                 WorkItemEventPayloads.LeaseExpired(lease.WorkItemId, nameof(WorkItemStatus.Failed), lease.Attempt),
                 now));
+        }
+
+        // A reap-fail may have been the run's last open item — finalize the
+        // run exactly like a worker-driven complete/fail does (see
+        // RunProgression.FinalizeAsync in WorkItemQueueEf.cs). Only Failed
+        // reaps can produce a new terminal item; a requeued item goes back
+        // to Queued, which is never terminal, so it cannot finalize a run.
+        foreach (var runId in failed.Select(static lease => lease.RunId).Distinct())
+        {
+            await RunProgression.FinalizeAsync(db, outbox, transaction, runId, now, cancellationToken);
         }
 
         if (requeued.Count + failed.Count > 0)

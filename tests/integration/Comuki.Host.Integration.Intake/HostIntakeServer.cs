@@ -41,6 +41,13 @@ public sealed class HostIntakeServer : IAsyncLifetime
     /// <summary>The database connection string (direct context access for asserts).</summary>
     public string ConnectionString { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// The composed host's root service provider — for tests that need
+    /// to resolve a scoped service directly (e.g. <c>IRunLauncher</c>)
+    /// rather than going through HTTP.
+    /// </summary>
+    public IServiceProvider Services => application.Services;
+
     /// <inheritdoc />
     public async ValueTask InitializeAsync()
     {

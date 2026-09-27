@@ -30,12 +30,48 @@ public interface IProjectStore
     /// <returns></returns>
     public Task<IReadOnlyList<Project>> ListAsync(bool includeArchived, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Returns the current count of projects matching <paramref name="includeArchived"/>,
+    /// materialised as a single scalar — never the full row set. Used by
+    /// the gate and the transactional handler enforcement so neither
+    /// path has to allocate an <c>IReadOnlyList&lt;Project&gt;</c> only
+    /// to take its <c>.Count</c> afterwards. The implementation runs the
+    /// predicate that <see cref="ListAsync"/> would have applied
+    /// (<c>WHERE NOT archived</c> when <paramref name="includeArchived"/>
+    /// is false) directly against the table.
+    /// </summary>
+    /// <param name="includeArchived">When <c>true</c>, archived projects are counted too.</param>
+    /// <param name="cancellationToken"></param>
+    public Task<int> CountAsync(bool includeArchived, CancellationToken cancellationToken = default);
+
     /// <summary>Persists a new project and its default settings row atomically.</summary>
     /// <param name="project"></param>
     /// <param name="settings"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public Task AddAsync(Project project, ProjectSettings settings, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Inserts a new project + settings row under the authoritative
+    /// count-quota enforcement: takes a transaction-scoped advisory lock
+    /// (<c>pg_advisory_xact_lock(hashtext('limit:projects'))</c>) on the
+    /// connection, counts the current non-archived projects in the same
+    /// transaction, and either inserts (returning <c>true</c>) or refuses
+    /// (returning <c>false</c>). Two concurrent calls at the cap
+    /// therefore serialise: the first commits, the second sees the
+    /// first's insert and refuses. The request-time filter fast-fail is
+    /// advisory only — this is the source of truth.
+    /// </summary>
+    /// <param name="project">The new project aggregate to persist.</param>
+    /// <param name="settings">The default settings row created with the project.</param>
+    /// <param name="cap">The effective cap from <see cref="Shared.Editions.Edition.IEdition.Limit"/>. A cap &lt;= 0 fails closed without touching the database.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns><c>true</c> when the insert succeeded; <c>false</c> when the count met or exceeded <paramref name="cap"/>.</returns>
+    public Task<bool> TryInsertWithProjectLimitAsync(
+        Project project,
+        ProjectSettings settings,
+        int cap,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Persists a new or changed project.</summary>
     /// <param name="project"></param>

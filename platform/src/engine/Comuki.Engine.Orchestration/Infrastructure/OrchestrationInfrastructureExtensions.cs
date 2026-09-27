@@ -1,7 +1,10 @@
 using Comuki.Engine.Orchestration.Infrastructure.EscalationTimeout;
 using Comuki.Engine.Orchestration.Infrastructure.Hosting;
+using Comuki.Engine.Orchestration.Infrastructure.Inbox;
 using Comuki.Engine.Orchestration.Infrastructure.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Leases;
+using Comuki.Engine.Orchestration.Infrastructure.Outbox;
+using Comuki.Engine.Orchestration.Infrastructure.OutboxDispatch;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Stores;
@@ -36,14 +39,17 @@ public static class OrchestrationInfrastructureExtensions
     }
 
     /// <summary>
-    /// Wires the work item queue, run journal, lease reaper and the
-    /// escalation-timeout sweeper on top of
+    /// Wires the work item queue, run journal, lease reaper, the
+    /// escalation-timeout sweeper, the durable outbox writer, the inbox
+    /// dedupe check and the outbox dispatcher on top of
     /// <see cref="AddOrchestrationPersistence"/>. Bind the
-    /// <c>Orchestration:Lease</c> section to tune the lease policy and
-    /// the <c>Orchestration:EscalationTimeout</c> section to tune the
-    /// passive autonomy ratchet on the Escalated run state. The reaper and
-    /// the sweeper register as <see cref="IComukiWorker"/>s — a host that
-    /// runs them must also call <c>AddComukiWorkers()</c>.
+    /// <c>Orchestration:Lease</c> section to tune the lease policy, the
+    /// <c>Orchestration:EscalationTimeout</c> section to tune the passive
+    /// autonomy ratchet on the Escalated run state, and
+    /// <c>Orchestration:Outbox</c> to tune the dispatch policy. The
+    /// reaper, sweeper and outbox dispatcher register as
+    /// <see cref="IComukiWorker"/>s — a host that runs them must also
+    /// call <c>AddComukiWorkers()</c>.
     /// </summary>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
@@ -61,14 +67,24 @@ public static class OrchestrationInfrastructureExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<OutboxOptions>()
+            .Bind(configuration.GetSection(OutboxOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddScoped<IWorkItemQueue, WorkItemQueueEf>();
         services.AddScoped<IRunJournal, RunJournalEf>();
         services.AddScoped<IMergeQueueStore, MergeQueueStoreEf>();
         services.AddScoped<IMergeBatchStore, MergeBatchStoreEf>();
+        services.AddScoped<IOutbox, OutboxEf>();
+        services.AddScoped<IInbox, InboxEf>();
+        services.TryAddSingleton<IOutboxPublisher, NoopOutboxPublisher>();
+        services.AddScoped<OutboxDispatcher>();
         services.AddScoped<LeaseReaper>();
         services.AddSingleton<IComukiWorker, LeaseReaperComukiWorker>();
+        services.AddSingleton<IComukiWorker, OutboxDispatcherComukiWorker>();
         services.AddScoped<EscalationTimeoutSweeper>();
 
         // EscalationTimeout:Enabled=false skips the worker registration

@@ -1,0 +1,9 @@
+{
+  "type": "orchestration.run.terminated.v1",
+  "fields": {
+    "runId": "string",
+    "projectId": "string",
+    "status": "string",
+    "occurredAt": "string"
+  }
+}

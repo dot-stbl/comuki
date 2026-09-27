@@ -38,10 +38,29 @@ public sealed class Run
     /// </summary>
     public RunTrustClass TrustClass { get; private set; }
 
+    /// <summary>Execution generation — starts at 1; bumped on cancel/supersede to fence stale live executions (see WS5).</summary>
+    public int Generation { get; private set; }
+
+    /// <summary>
+    /// The WS9 admission idempotency key — the inbox <c>message_id</c> the
+    /// launcher claimed before creating this run, so a losing /
+    /// retried admission call can look up the winner's run. Null for runs
+    /// created any other way (chat / scheduler); set once at
+    /// <see cref="Create"/> and never mutated after.
+    /// </summary>
+    public string? AdmissionMessageId { get; private set; }
+
     /// <summary>Creates a run in <see cref="RunStatus.Queued"/> — the only legal entry status.</summary>
     /// <param name="projectId"></param>
     /// <param name="now"></param>
-    public static Run Create(ProjectId projectId, DateTimeOffset now)
+    /// <param name="admissionMessageId">
+    /// Optional WS9 admission idempotency key (the inbox <c>message_id</c>
+    /// the launcher claimed). Set by <c>IntakeRunLauncher.LaunchAsync</c>
+    /// after a successful <see cref="Infrastructure.Inbox.IInbox.TryClaimAsync"/>
+    /// so a losing / retried caller can find the winner's run. Null for
+    /// every other launcher (chat / scheduler).
+    /// </param>
+    public static Run Create(ProjectId projectId, DateTimeOffset now, string? admissionMessageId = null)
     {
         return new Run
         {
@@ -49,6 +68,8 @@ public sealed class Run
             ProjectId = projectId,
             Status = RunStatus.Queued,
             TrustClass = RunTrustClass.Supervised,
+            Generation = 1,
+            AdmissionMessageId = admissionMessageId,
             CreatedAt = now,
             UpdatedAt = now,
         };

@@ -31,6 +31,7 @@ import type {
 import { AppsPanel } from "@/domains/settings/ui/apps-panel"
 import { AutonomyPanel } from "@/domains/settings/ui/autonomy-panel"
 import { BudgetsPanel } from "@/domains/settings/ui/budgets-panel"
+import { EditionPanel } from "@/domains/settings/ui/edition-panel"
 import { KeysPanel } from "@/domains/settings/ui/keys-panel"
 import { PlatformSettingsPanel } from "@/domains/settings/ui/platform-settings-panel"
 import { RoutingPanel } from "@/domains/settings/ui/routing-panel"
@@ -262,7 +263,10 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
             the host has no PUT, and the panel's first sentence says where
             changes actually go. */}
         {!env.useMock && platform.data ? (
-          <PlatformSettingsPanel settings={platform.data} />
+          <>
+            <PlatformSettingsPanel settings={platform.data} />
+            <EditionPanel />
+          </>
         ) : null}
 
         {data ? (

@@ -1,5 +1,7 @@
 using Comuki.Modules.Projects.Application.Admission;
+using Comuki.Modules.Projects.Application.Attachments;
 using Comuki.Modules.Projects.Application.DomainTypes;
+using Comuki.Modules.Projects.Application.Editions;
 using Comuki.Modules.Projects.Application.Projects.Archive;
 using Comuki.Modules.Projects.Application.Projects.Create;
 using Comuki.Modules.Projects.Application.Projects.Queries;
@@ -8,6 +10,7 @@ using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Application.Settings.DistributedCache;
 using Comuki.Modules.Projects.Application.Settings.Update;
+using Comuki.Shared.Editions.Gating;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,6 +70,11 @@ public static class ProjectsApplicationExtensions
         services.AddScoped<UpdateSettingsHandler>();
         services.AddScoped<GetProjectSettingsHandler>();
 
+        services.AddScoped<AttachRepositoryHandler>();
+        services.AddScoped<DetachRepositoryHandler>();
+        services.AddScoped<ListProjectAttachmentsHandler>();
+        services.AddScoped<ListRepositoryAttachmentsHandler>();
+
         // Scoped: it reads the scoped admission store (one EF context per
         // unit of work) on top of the singleton settings store + resolver.
         services.AddScoped<DomainTypeAdmissionService>();
@@ -74,6 +82,13 @@ public static class ProjectsApplicationExtensions
         services.AddScoped<IValidator<CreateProjectCommand>, CreateProjectValidator>();
         services.AddScoped<IValidator<UpdateProjectCommand>, UpdateProjectValidator>();
         services.AddScoped<IValidator<UpdateSettingsCommand>, UpdateSettingsValidator>();
+        services.AddScoped<IValidator<AttachRepositoryCommand>, AttachRepositoryValidator>();
+
+        // Issue #164 worked example: the project-count quota provider that
+        // backs the [EnforceLimit("projects")] gate on the projects-create
+        // minimal-API endpoint. Scoped because it reads through IProjectStore
+        // (which itself is scoped over the module's DbContext).
+        services.AddScoped<ILimitUsageProvider, ProjectCountLimitUsageProvider>();
 
         return services;
     }

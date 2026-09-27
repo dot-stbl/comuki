@@ -20,11 +20,12 @@ public interface IOrchestratorApi
         [Body] ClaimWorkItemRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Extends the lease; false-status when ownership is gone (409).</summary>
+    /// <summary>Extends the lease; false-status when ownership or the claimed generation is gone (409).</summary>
     /// <param name="workItemId"></param>
+    /// <param name="request"></param>
     /// <param name="cancellationToken"></param>
     [Post("/workers/{workItemId}/heartbeat")]
-    public Task<IApiResponse> HeartbeatAsync(Guid workItemId, CancellationToken cancellationToken = default);
+    public Task<IApiResponse> HeartbeatAsync(Guid workItemId, [Body] HeartbeatWorkItemRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Completes the item with the result JSON; false-status when ownership is gone.</summary>
     /// <param name="workItemId"></param>

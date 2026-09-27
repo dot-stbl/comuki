@@ -1,0 +1,42 @@
+/* The locked affordance the gate falls back to. Three lines of material
+   in the screen's own surface: a hairline rule, a lock glyph and one
+   lowercase sentence. Tone is "the platform is honest with you", not
+   "an error happened" — this is not a screen-state; it is the steady
+   state of Community readers asking for paid capability.
+
+   Closed vocabulary: `--text` for the title (the same ink as a chip
+   label), `--text-muted` for the prose so the sentence sits a step back
+   without going grey. The shape mirrors a settings-panel row so the
+   affordance reads as the same system; the rule is `--rule-strong`
+   at one hairline — same recipe as the kit's `--r-md` corner and
+   `--s3/s4` paddings the rest of the kit uses. */
+
+.locked {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  border: var(--hairline) solid var(--rule-strong);
+  background: var(--surface);
+  color: var(--text);
+  line-height: var(--lh-tight);
+}
+
+.icon {
+  inline-size: 1em;
+  block-size: 1em;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.message {
+  margin: 0;
+  font-size: inherit;
+  line-height: var(--lh-tight);
+}
+
+.key {
+  font-family: var(--font-mono);
+  font-weight: var(--fw-medium);
+}

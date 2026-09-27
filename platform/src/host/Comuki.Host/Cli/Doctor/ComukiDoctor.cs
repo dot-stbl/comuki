@@ -6,6 +6,7 @@ using Comuki.Modules.Identity.Application.Options;
 using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Bootstrap.Config;
 using Comuki.Shared.Bootstrap.Config.Toml;
+using Comuki.Shared.Editions.Composition;
 using Comuki.Shared.Kernel.Secrets;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
@@ -139,6 +140,12 @@ file static class ComukiDoctorChecks
             .AddSingleton(Options.Create(configuration.GetSection(WorkerTokenOptions.SectionName).Get<WorkerTokenOptions>() ?? new WorkerTokenOptions()))
             .AddSingleton(Options.Create(configuration.GetSection(SecretsOptions.SectionName).Get<SecretsOptions>() ?? new SecretsOptions()))
             .AddSingleton(Options.Create(configuration.GetSection(VaultSecretOptions.SectionName).Get<VaultSecretOptions>() ?? new VaultSecretOptions()))
+            // The doctor runs before any host composition, so the license
+            // posture comes from CompositionEdition.Load — the composition-
+            // time reader — rather than the full AddComukiEditions graph
+            // (whose LicenseEdition resolves lazily against providers this
+            // minimal checklist build does not carry).
+            .AddSingleton(CompositionEdition.Load(configuration))
             .BuildServiceProvider();
 
         return [.. ProductionSecretAudit.Collect(services)

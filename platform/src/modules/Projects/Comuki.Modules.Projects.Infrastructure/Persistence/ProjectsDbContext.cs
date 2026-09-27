@@ -1,3 +1,4 @@
+using Comuki.Modules.Projects.Domain.Attachments;
 using Comuki.Modules.Projects.Domain.DomainTypes;
 using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Modules.Projects.Domain.Settings;
@@ -43,6 +44,9 @@ public sealed class ProjectsDbContext(
     /// <summary>Per-project domain-type admission policies (many per project).</summary>
     public DbSet<DomainTypeAdmission> DomainTypeAdmissions => Set<DomainTypeAdmission>();
 
+    /// <summary>Per-project repository attachments (many per project).</summary>
+    public DbSet<ProjectRepositoryAttachment> ProjectRepositoryAttachments => Set<ProjectRepositoryAttachment>();
+
     /// <summary>
     /// Left disjunct of the scope filter: true when the current subject
     /// sees every project (a platform-scope role, a system consumer, or a
@@ -79,18 +83,21 @@ public sealed class ProjectsDbContext(
         modelBuilder
             .ApplyConfiguration(new ProjectConfiguration())
             .ApplyConfiguration(new ProjectSettingsConfiguration())
-            .ApplyConfiguration(new DomainTypeAdmissionConfiguration());
+            .ApplyConfiguration(new DomainTypeAdmissionConfiguration())
+            .ApplyConfiguration(new ProjectRepositoryAttachmentConfiguration());
 
         // The object axis, as row-level filters: a project's own identity is
-        // the axis value; a settings row and an admission policy follow their
-        // project. Out-of-scope reads surface as not-found downstream, never
-        // as a deny.
+        // the axis value; a settings row, an admission policy and a repository
+        // attachment follow their project. Out-of-scope reads surface as
+        // not-found downstream, never as a deny.
         modelBuilder.Entity<Project>()
             .HasQueryFilter(project => ScopeUnrestricted || ScopeProjectIds.Contains(project.Id));
         modelBuilder.Entity<ProjectSettings>()
             .HasQueryFilter(settings => ScopeUnrestricted || ScopeProjectIds.Contains(settings.ProjectId));
         modelBuilder.Entity<DomainTypeAdmission>()
             .HasQueryFilter(admission => ScopeUnrestricted || ScopeProjectIds.Contains(admission.ProjectId));
+        modelBuilder.Entity<ProjectRepositoryAttachment>()
+            .HasQueryFilter(attachment => ScopeUnrestricted || ScopeProjectIds.Contains(attachment.ProjectId));
 
         base.OnModelCreating(modelBuilder);
     }

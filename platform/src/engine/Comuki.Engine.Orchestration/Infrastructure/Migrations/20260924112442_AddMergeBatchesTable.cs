@@ -1,4 +1,3 @@
-using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -14,7 +13,7 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
             migrationBuilder.CreateTable(
                 name: "merge_batches",
                 schema: "orchestration",
-                columns: table => new
+                columns: static table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
@@ -25,16 +24,16 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                     abandoned_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     abandoned_reason = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_merge_batches", x => x.id);
+                    table.PrimaryKey("pk_merge_batches", static x => x.id);
                 });
 
             migrationBuilder.CreateIndex(
                 name: "ix_merge_batches_status_created_at",
                 schema: "orchestration",
                 table: "merge_batches",
-                columns: new[] { "status", "created_at" });
+                columns: ["status", "created_at"]);
         }
 
         /// <inheritdoc />

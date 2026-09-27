@@ -56,6 +56,7 @@ public sealed class AgentLoopHost : IAsyncLifetime
     private DockerClient dockerClient = null!;
     private string webhookPath = string.Empty;
     private int hostPort;
+    private int workerGrpcPort;
     private string containerReachableHost = string.Empty;
 
     /// <summary>The real, unmodified Docker compute provider this suite exercises — see <see cref="AgentLoopHarness"/>.</summary>
@@ -74,17 +75,27 @@ public sealed class AgentLoopHost : IAsyncLifetime
         ComputeProvider = DockerComputeProviderFactory.Create(dockerClient, runAsUser: "1000");
 
         hostPort = FreeTcpPort.Next();
+        workerGrpcPort = FreeTcpPort.Next();
 
         var builder = TestHostBuilder.Create(postgres.ConnectionString);
-        // Production topology on one loopback (Program.cs): REST HTTP/1.1
-        // and the worker gRPC bidi stream (h2c) share one Kestrel listener.
-        // Bound to 0.0.0.0 (not TestHostBuilder's default loopback-only) so
-        // a real container reaches this process — see
+        // Production topology on one 0.0.0.0 (Program.cs, post issue #152):
+        // the REST/SPA Http1AndHttp2 listener and the dedicated worker-gRPC
+        // HTTP/2-only listener are TWO explicit Kestrel endpoints. A shared,
+        // cleartext Http1AndHttp2 listener never negotiates HTTP/2 without
+        // TLS's ALPN (Kestrel silently serves HTTP/1.1 only there), so a
+        // gRPC bidi stream that used to share the REST listener never
+        // actually negotiated — every worker.reported journal entry it
+        // carried was lost. Bound to 0.0.0.0 (not TestHostBuilder's default
+        // loopback-only) so a real container reaches this process — see
         // Comuki.AgentTest.Runner.Compute.ContainerHostAddressResolver's
-        // remarks for why loopback alone does not work here.
-        builder.WebHost.ConfigureKestrel(static server =>
-            server.ConfigureEndpointDefaults(static listen => listen.Protocols = HttpProtocols.Http1AndHttp2));
-        builder.WebHost.UseUrls($"http://0.0.0.0:{hostPort}");
+        // remarks for why loopback alone does not work here. Explicit
+        // ListenAnyIP calls supersede TestHostBuilder's UseUrls for every
+        // endpoint (Kestrel rule documented in HostTlsInstaller remarks).
+        builder.WebHost.ConfigureKestrel(server =>
+        {
+            server.ListenAnyIP(hostPort, static listen => listen.Protocols = HttpProtocols.Http1AndHttp2);
+            server.ListenAnyIP(workerGrpcPort, static listen => listen.Protocols = HttpProtocols.Http2);
+        });
         builder.Configuration["auth:publicHost:publicUrl"] = $"http://127.0.0.1:{hostPort}";
         TestBootstrapAdmin.Configure(builder.Configuration);
         TestArtifactsSecrets.ApplyPlaceholder(builder.Configuration);
@@ -108,7 +119,11 @@ public sealed class AgentLoopHost : IAsyncLifetime
             .AddWorkerRuntime(builder.Configuration);
 
         application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(postgres.ConnectionString));
-        application.MapWorkerRuntime();
+        // Scopes the gRPC endpoint to the dedicated HTTP/2-only listener
+        // via WorkerRuntimeExtensions.MapWorkerGrpc's RequireHost — the
+        // REST endpoints below stay reachable on hostPort. Production uses
+        // the same argument (Program.cs post issue #152).
+        application.MapWorkerRuntime(workerGrpcPort);
         // Kestrel is bound to 0.0.0.0 (see above) so a real container can
         // reach it — TestHostBuilder.StartAsync echoes that literal bind
         // address back (IServerAddressesFeature reports "http://0.0.0.0:{port}"
@@ -156,10 +171,23 @@ public sealed class AgentLoopHost : IAsyncLifetime
         return application.Services.GetRequiredService<WorkerTokenIssuer>();
     }
 
-    /// <summary>The gRPC/REST base URL the container's Translator reaches this host on — a real address (see <see cref="containerReachableHost"/>), not loopback.</summary>
+    /// <summary>The REST base URL the container's Translator reaches this host on — a real address (see <see cref="containerReachableHost"/>), not loopback.</summary>
     public Uri ContainerReachableBaseUri()
     {
         return new Uri($"http://{containerReachableHost}:{hostPort}/");
+    }
+
+    /// <summary>
+    /// The gRPC address the container's Translator streams worker.reported
+    /// events to — a real address on the dedicated HTTP/2-only listener
+    /// (issue #152). Reuses <see cref="containerReachableHost"/> already
+    /// resolved against the REST listener: a separate probe against the
+    /// HTTP/2-only port would fail because the resolver's HTTP/1.1
+    /// <c>/api/v1/health</c> probe cannot be answered there.
+    /// </summary>
+    public Uri ContainerReachableGrpcUri()
+    {
+        return new Uri($"http://{containerReachableHost}:{workerGrpcPort}/");
     }
 
     /// <summary>Posts a GitHub issue webhook through the real webhook endpoint and returns the run/work-item <c>IntakeRunLauncher</c> created.</summary>

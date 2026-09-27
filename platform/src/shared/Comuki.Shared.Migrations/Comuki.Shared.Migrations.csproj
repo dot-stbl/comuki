@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\modules\Knowledge\Comuki.Modules.Knowledge.Infrastructure\Comuki.Modules.Knowledge.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Infrastructure\Comuki.Modules.Projects.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Repositories\Comuki.Modules.Repositories.Infrastructure\Comuki.Modules.Repositories.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Scheduler\Comuki.Modules.Scheduler.Infrastructure\Comuki.Modules.Scheduler.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Verify\Comuki.Modules.Verify.Infrastructure\Comuki.Modules.Verify.Infrastructure.csproj" />
   </ItemGroup>

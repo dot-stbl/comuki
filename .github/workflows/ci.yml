@@ -274,3 +274,65 @@ jobs:
       # `bun run generate:contracts` from cli/ and commit the result.
       - name: Contract drift gate
         run: bun run test:contracts
+
+  # Server-side no-AI-attribution gate — .agents/rules/process/no-ai-attribution.md
+  # "Enforcement layers". The commit-msg hook (scripts/hooks/commit-msg,
+  # scripts/commit-lint.mjs --file) strips bylines locally but is
+  # bypassable with `git commit --no-verify`; this job is the layer that
+  # isn't. scripts/ci/no-ai-attribution.mjs reuses commit-lint.mjs's
+  # exported vendor patterns (AI_VENDORS, AI_EMAIL_DOMAINS) rather than
+  # duplicating them — one source of truth for what counts as an AI byline.
+  no-ai-attribution:
+    name: no AI attribution gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the gate diffs a *range* of already-made commits
+          # (base.sha..head.sha on a PR, before..after on a push) — the
+          # default shallow (depth-1) checkout would not have base.sha's
+          # history available to `git log`.
+          fetch-depth: 0
+
+      - name: Compute range
+        id: range
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "value=${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            BEFORE="${{ github.event.before }}"
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              # New branch / first push on this ref: nothing to diff
+              # against — fall back to the repo's root commit so the whole
+              # branch history up to `after` still gets scanned once.
+              BEFORE=$(git rev-list --max-parents=0 "${{ github.event.after }}" | tail -n1)
+            fi
+            echo "value=${BEFORE}..${{ github.event.after }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write PR description
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: printf '%s' "$PR_BODY" > "${RUNNER_TEMP}/pr-description.txt"
+
+      - name: Run no-AI-attribution gate
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            node scripts/ci/no-ai-attribution.mjs \
+              --range "${{ steps.range.outputs.value }}" \
+              --text-file "${RUNNER_TEMP}/pr-description.txt" \
+              --report-dir artifacts/test-reports/no-ai-attribution
+          else
+            node scripts/ci/no-ai-attribution.mjs \
+              --range "${{ steps.range.outputs.value }}" \
+              --report-dir artifacts/test-reports/no-ai-attribution
+          fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: no-ai-attribution-report
+          path: artifacts/test-reports/no-ai-attribution

@@ -19,4 +19,10 @@
     <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="EventContracts\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -31,10 +31,17 @@ public sealed class ChatRunStarter(
 {
     /// <summary>Applies the plan; returns the created run id.</summary>
     /// <param name="projectId">Project scope of the run.</param>
-    /// <param name="plan">Validated plan.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="plan">Plan to apply — validated internally via <see cref="PlanValidator"/>.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    /// <exception cref="ChatPlanInvalidException">The plan fails <see cref="PlanValidator.Validate"/>.</exception>
     public async Task<RunId> StartAsync(ProjectId projectId, Plan plan, CancellationToken cancellationToken = default)
     {
+        var validation = PlanValidator.Validate(plan);
+        if (!validation.IsValid)
+        {
+            throw new ChatPlanInvalidException(validation.Errors);
+        }
+
         var now = clock.GetUtcNow();
         var run = Run.Create(projectId, now);
         var itemsById = new Dictionary<string, WorkItem>(StringComparer.Ordinal);
@@ -46,6 +53,16 @@ public sealed class ChatRunStarter(
         // see WorkerImagePinning).
         var image = WorkerImagePinning.Resolve(defaults.Value.Image, buildInformation);
 
+        // Nodes that appear as a `To` in the DAG have >=1 prerequisite and
+        // must start Blocked; nodes that never appear as a `To` have zero
+        // prerequisites and start Queued. Matching the id comparer used by
+        // `itemsById` keeps the lookup and the membership check coherent.
+        var blockedNodeIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var edge in plan.Edges)
+        {
+            blockedNodeIds.Add(edge.To);
+        }
+
         foreach (var node in plan.Nodes)
         {
             var workItem = WorkItem.Create(
@@ -54,7 +71,7 @@ public sealed class ChatRunStarter(
                 image,
                 defaults.Value.ProfilesRef,
                 ChatItemBrief.ToJson(node.Brief),
-                WorkItemStatus.Queued,
+                blockedNodeIds.Contains(node.Id) ? WorkItemStatus.Blocked : WorkItemStatus.Queued,
                 now);
             itemsById[node.Id] = workItem;
             db.WorkItems.Add(workItem);

@@ -96,3 +96,75 @@ and issue #153 (the `ComputeInstaller.cs` `DockerClientBuilder()` gap
 that makes `DOCKER_HOST` an env-var trap).
 
 Unit tests: `node --test scripts/ci/e2e-up.test.mjs scripts/ci/e2e-down.test.mjs scripts/ci/e2e-smoke.test.mjs`.
+
+## `no-ai-attribution.mjs` — server-side no-AI-attribution gate
+
+```bash
+node scripts/ci/no-ai-attribution.mjs --range origin/master..HEAD
+node scripts/ci/no-ai-attribution.mjs --range origin/master..HEAD --text-file pr-body.md
+node scripts/ci/no-ai-attribution.mjs --report-dir artifacts/my-report
+```
+
+Scans a revision range — and optionally a free-form text body (PR/MR
+description) — for AI authorship bylines and fails the build on any
+hit. This is the non-bypassable server-side layer that backs
+[`.agents/rules/process/no-ai-attribution.md`](../../.agents/rules/process/no-ai-attribution.md):
+the local `commit-msg` hook covers only the message of one commit and
+can be skipped with `git commit --no-verify`, but pushed history is
+past it, so this gate runs over a diff range after the fact and fails
+the build. The script imports `AI_VENDORS`, `AI_EMAIL_DOMAINS`,
+`alternation`, and `stripAttribution` straight from
+`scripts/commit-lint.mjs` — one source of truth, no second list of
+vendor patterns to drift.
+
+Unit tests: `node --test scripts/ci/no-ai-attribution.test.mjs`.
+
+### GitLab (`deploy/hybrid/**`)
+
+GitLab's `deploy/hybrid/**` overlay lives outside this repo — a human
+coordinator applies the snippet below there by hand; do **not** edit
+that path from here. The CI job mirrors the GitHub one above: an MR
+job scans `base..head` plus the MR description; a push job scans
+`before..after` without a description.
+
+```yaml
+no-ai-attribution:
+  stage: test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - printf '%s' "$CI_MERGE_REQUEST_DESCRIPTION" > /tmp/mr-description.txt
+    - >
+      node scripts/ci/no-ai-attribution.mjs
+      --range "$CI_MERGE_REQUEST_DIFF_BASE_SHA..$CI_COMMIT_SHA"
+      --text-file /tmp/mr-description.txt
+      --report-dir artifacts/test-reports/no-ai-attribution
+  artifacts:
+    when: always
+    paths:
+      - artifacts/test-reports/no-ai-attribution
+    expire_in: 1 week
+
+no-ai-attribution:push:
+  stage: test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
+  script:
+    - >
+      node scripts/ci/no-ai-attribution.mjs
+      --range "$CI_COMMIT_BEFORE_SHA..$CI_COMMIT_SHA"
+      --report-dir artifacts/test-reports/no-ai-attribution
+  artifacts:
+    when: always
+    paths:
+      - artifacts/test-reports/no-ai-attribution
+    expire_in: 1 week
+```
+
+The coordinator should set `image:` / `stage:` / `GIT_DEPTH` (needs
+full history so the diff base resolves — same `fetch-depth: 0`
+reasoning as the GitHub job) to whatever the existing
+`deploy/hybrid/ci.yml` conventions are. `$CI_COMMIT_BEFORE_SHA` is
+all-zeros on a branch's first push — same edge case the GitHub job's
+root-commit fallback handles; decide whether to mirror that fallback
+or accept GitLab's own handling.

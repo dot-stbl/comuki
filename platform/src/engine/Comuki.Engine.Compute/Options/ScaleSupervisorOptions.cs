@@ -28,7 +28,7 @@ public sealed class ScaleSupervisorOptions
 
     /// <summary>Orchestrator gRPC endpoint the worker containers connect back to.</summary>
     [Required]
-    public Uri OrchestratorGrpcUrl { get; init; } = new("http://localhost:5051");
+    public Uri OrchestratorGrpcUrl { get; init; } = new("http://localhost:17185");
 
     /// <summary>Delay between supervisor passes.</summary>
     [Range(typeof(TimeSpan), "00:00:01", "01:00:00")]

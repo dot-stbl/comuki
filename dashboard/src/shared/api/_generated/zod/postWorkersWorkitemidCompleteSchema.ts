@@ -18,7 +18,7 @@ export const postWorkersWorkitemidComplete200Schema = z.any()
 export const postWorkersWorkitemidCompleteMutationRequestSchema = z
   .lazy(() => completeWorkItemRequestSchema)
   .describe(
-    "Completion body: the worker-produced result JSON (must be valid, non-empty JSON)."
+    "Completion body: the worker-produced result JSON (must be valid, non-empty JSON) plus the claimed generation."
   )
 
 export const postWorkersWorkitemidCompleteMutationResponseSchema = z.lazy(

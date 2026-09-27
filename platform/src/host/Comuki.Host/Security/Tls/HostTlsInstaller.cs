@@ -12,13 +12,18 @@ namespace Comuki.Host.Security.Tls;
 /// and by <see cref="HostComposer"/> through <see cref="UseComukiTls"/>
 /// — both no-ops while <c>Host:Tls:Enabled</c> is false (the default).
 /// <para>
-/// The HTTPS listener is registered through <c>UseUrls</c> rather than
-/// an explicit <c>ListenAnyIP</c>: the moment code (or the
-/// <c>Kestrel:Endpoints</c> config) registers explicit endpoints,
-/// Kestrel drops the URL-derived bindings (<c>UseUrls</c> /
-/// <c>ASPNETCORE_HTTP_PORTS</c>) and the HTTP listener would silently
-/// disappear. Re-registering both addresses keeps the existing
-/// resolution chain (<c>[server]</c> host/port → env defaults) intact.
+/// The HTTPS listener is registered explicitly through
+/// <c>ConfigureKestrel</c> at the same <c>[server]</c> host
+/// <see cref="Program"/>'s REST listener already binds (see
+/// <see cref="ResolveListenHost"/>) — the prior
+/// <c>UseUrls(ResolveListenerUrls(...))</c> approach became a silent
+/// no-op once <see cref="Program"/>'s dedicated worker-gRPC listener
+/// (issue #152) registered its own explicit Kestrel endpoint: the moment
+/// any code or <c>Kestrel:Endpoints</c> config registers explicit
+/// endpoints, Kestrel drops the URL-derived bindings
+/// (<c>UseUrls</c> / <c>ASPNETCORE_HTTP_PORTS</c>) for every endpoint.
+/// Registering both addresses explicitly keeps the existing resolution
+/// chain (<c>[server]</c> host/port → env defaults) intact.
 /// </para>
 /// </summary>
 public static class HostTlsInstaller
@@ -43,7 +48,28 @@ public static class HostTlsInstaller
             return builder;
         }
 
-        builder.WebHost.UseUrls(ResolveListenerUrls(builder.Configuration, tls));
+        // Explicit listener (issue #152): Program.cs's worker-gRPC
+        // listener now registers an explicit Kestrel endpoint
+        // unconditionally, which makes Kestrel ignore UseUrls /
+        // ASPNETCORE_HTTP_PORTS entirely for every endpoint (the exact
+        // rule this class's own original remarks already documented for
+        // the HTTP/HTTPS pair) — so the UseUrls call this replaced would
+        // now silently do nothing. Register the HTTPS listener explicitly
+        // instead, at the same resolved [server] host Program.cs's REST
+        // listener already binds (ResolveListenHost — same precedence,
+        // reused, not reimplemented).
+        var listenHost = ResolveListenHost(builder.Configuration);
+        builder.WebHost.ConfigureKestrel(server =>
+        {
+            if (listenHost == "*")
+            {
+                server.ListenAnyIP(tls.HttpsPort, listen => listen.UseHttps());
+            }
+            else
+            {
+                server.Listen(System.Net.IPAddress.Parse(listenHost), tls.HttpsPort, listen => listen.UseHttps());
+            }
+        });
 
         if (tls.CertificatePath is { Length: > 0 } certificatePath && tls.CertificateKeyPath is { Length: > 0 } keyPath)
         {

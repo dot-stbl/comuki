@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Comuki.Codegen.Editions</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\platform\src\shared\Comuki.Shared.Editions\Comuki.Shared.Editions.csproj" />
+  </ItemGroup>
+
+  <!--
+       The EmitEditionsRegistryArtifacts target lives on this tool project
+       rather than in Comuki.Build.Tools.targets (where the realtime
+       codegen target lives by precedent) on purpose. Build.Tools is at
+       the very top of the solution's topo order — it builds before the
+       Editions library, before this tool, before every consuming test.
+       Hosting the re-emit there would mean running `dotnet run` of an
+       EXE whose own build has not happened yet (Build.Tools would need
+       a nested `dotnet run` of projects the parallel solution build is
+       compiling concurrently; on Windows the resulting obj/ races
+       corrupt the emit). Anchoring the target to the tool itself means
+       the tool is built first, then emits, then copies into the FE and
+       the OpenAPI specs tree — the same re-emit-on-registry-change
+       semantics, race-free.
+  -->
+  <Target
+    Name="EmitEditionsRegistryArtifacts"
+    AfterTargets="Build"
+    Condition="'$(Configuration)' == 'Debug' AND '$(DisableEditionsCodegen)' != 'true' AND '$(DesignTimeBuild)' != 'true'"
+    Inputs="../../platform/src/shared/Comuki.Shared.Editions/Catalog/*.cs;../../platform/src/shared/Comuki.Shared.Editions/Features.cs;../../platform/src/shared/Comuki.Shared.Editions/Limits.cs"
+    Outputs="$(MSBuildProjectDirectory)/obj/codegen-staging/registry.ts;$(MSBuildProjectDirectory)/obj/codegen-staging/capability-matrix.md;$(MSBuildThisFileDirectory)../../dashboard/src/shared/editions/_generated/registry.ts;$(MSBuildThisFileDirectory)../../openspec/specs/editions/capability-matrix.md">
+    <MakeDir Directories="$(MSBuildProjectDirectory)/obj/codegen-staging" />
+    <Exec Command="dotnet &quot;$(TargetPath)&quot; --out &quot;$(MSBuildProjectDirectory)/obj/codegen-staging&quot;" />
+    <Copy
+      SourceFiles="$(MSBuildProjectDirectory)/obj/codegen-staging/registry.ts"
+      DestinationFiles="$(MSBuildThisFileDirectory)../../dashboard/src/shared/editions/_generated/registry.ts"
+      SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="$(MSBuildProjectDirectory)/obj/codegen-staging/capability-matrix.md"
+      DestinationFiles="$(MSBuildThisFileDirectory)../../openspec/specs/editions/capability-matrix.md"
+      SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

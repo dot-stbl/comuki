@@ -117,7 +117,7 @@ public static class EvalRunner
                         return;
                     }
 
-                    item.AssignLease(WorkerId.New(), now.AddMinutes(5), now);
+                    item.AssignLease(WorkerId.New(), 1, now.AddMinutes(5), now);
                     log.Add(item.Status.ToString());
                     break;
                 case EvalAction.Heartbeat:

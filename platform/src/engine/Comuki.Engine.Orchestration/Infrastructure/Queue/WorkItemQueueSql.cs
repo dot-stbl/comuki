@@ -46,37 +46,54 @@ internal static class WorkItemQueueSql
     /// <summary>Compiler-checked run status literal.</summary>
     private const string RunFailed = nameof(RunStatus.Failed);
 
-    /// <summary>Claim: oldest queued item matching the labels, row-locked for the update.</summary>
+    /// <summary>Compiler-checked run status literal — defense-in-depth guard on <see cref="ClaimSql"/>
+    /// (a cancelled run's items are transitioned to Cancelled by the host's cancel path in the same
+    /// transaction as the run itself, so this predicate is normally never the reason a claim misses —
+    /// see <c>HostCancelRunAdapter</c>'s <c>RunCancelSql</c>).</summary>
+    private const string RunCancelled = nameof(RunStatus.Cancelled);
+
+    /// <summary>Claim: oldest queued item matching the labels, row-locked for the update. Excludes
+    /// items whose run has already gone terminal — defense-in-depth alongside the host cancel path's
+    /// own item transitions (see <see cref="RunCancelled"/> remarks): a claim racing a not-yet-committed
+    /// cancel must never hand out an item whose run it will never belong to again.</summary>
     public const string ClaimSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET status = '" + Running + "', leased_by = @workerId, lease_until = @leaseUntil, "
-        + "    heartbeat_at = @now, attempt = attempt + 1, updated_at = @now "
+        + "    heartbeat_at = @now, attempt = attempt + 1, updated_at = @now, "
+        + "    generation = (SELECT r.generation FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " r WHERE r.id = work_items.run_id) "
         + "WHERE id IN ( "
         + "    SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "    WHERE status = '" + Queued + "' "
         + "      AND profile_key = @profileKey "
         + "      AND image = @image "
         + "      AND profiles_ref = @profilesRef "
+        + "      AND EXISTS ( "
+        + "          SELECT 1 FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " r "
+        + "          WHERE r.id = " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + ".run_id "
+        + "            AND r.status NOT IN ('" + RunCancelled + "', '" + RunFailed + "', '" + RunSucceeded + "') "
+        + "      ) "
         + "    ORDER BY created_at "
         + "    LIMIT 1 "
         + "    FOR UPDATE SKIP LOCKED "
         + ") "
         + "RETURNING id, run_id, "
         + "(SELECT r.project_id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " r WHERE r.id = work_items.run_id), "
-        + "profile_key, brief, lease_until, attempt";
+        + "profile_key, brief, lease_until, attempt, generation";
 
-    /// <summary>Heartbeat: extend the lease, guarded by owner, running status and an unexpired lease.</summary>
+    /// <summary>Heartbeat: extend the lease, guarded by owner, running status, an unexpired lease, and a matching generation.</summary>
     public const string HeartbeatSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET lease_until = @leaseUntil, heartbeat_at = @now, updated_at = @now "
         + "WHERE id = @workItemId AND leased_by = @workerId "
-        + "  AND status = '" + Running + "' AND lease_until > @now";
+        + "  AND status = '" + Running + "' AND lease_until > @now "
+        + "  AND generation = @generation";
 
     /// <summary>Complete: running item owned by the worker -> succeeded, lease cleared.</summary>
     public const string CompleteSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET status = '" + Succeeded + "', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
         + "WHERE id = @workItemId AND leased_by = @workerId AND status = '" + Running + "' "
+        + "  AND generation = @generation "
         + "RETURNING run_id";
 
     /// <summary>Fail: running item owned by the worker -> failed, lease cleared.</summary>
@@ -84,7 +101,35 @@ internal static class WorkItemQueueSql
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET status = '" + Failed + "', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
         + "WHERE id = @workItemId AND leased_by = @workerId AND status = '" + Running + "' "
+        + "  AND generation = @generation "
         + "RETURNING run_id";
+
+    /// <summary>Unblock: every Blocked dependent of a just-succeeded item whose
+    /// full prerequisite set has now reached Succeeded moves to Queued, in the
+    /// same transaction that completed the prerequisite. Only ever selects
+    /// dependents of <c>@workItemId</c>, so the caller runs it once per
+    /// completion instead of a polling sweep over the whole table. Callers
+    /// only invoke this after a successful completion — a Failed/Cancelled
+    /// prerequisite must not auto-unblock its dependents (see
+    /// WorkItemOwnedTransition.ApplyAsync in WorkItemQueueEf.cs).</summary>
+    public const string UnblockDependentsSql =
+        "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "SET status = '" + Queued + "', updated_at = @now "
+        + "WHERE status = '" + Blocked + "' "
+        + "  AND id IN ( "
+        + "      SELECT dependency.work_item_id "
+        + "      FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItemDependencies + " dependency "
+        + "      WHERE dependency.depends_on_work_item_id = @workItemId "
+        + "  ) "
+        + "  AND NOT EXISTS ( "
+        + "      SELECT 1 "
+        + "      FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItemDependencies + " remaining "
+        + "      JOIN " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " prerequisite "
+        + "        ON prerequisite.id = remaining.depends_on_work_item_id "
+        + "      WHERE remaining.work_item_id = " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + ".id "
+        + "        AND prerequisite.status <> '" + Succeeded + "' "
+        + "  ) "
+        + "RETURNING id";
 
     /// <summary>Reap requeue: expired running lease with retries left -> back to queued.</summary>
     public const string ReapRequeueSql =
@@ -125,7 +170,44 @@ internal static class WorkItemQueueSql
         + "WHERE id = @runId AND status = '" + RunActivated + "' "
         + "  AND NOT EXISTS (SELECT 1 FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " wi "
         + "        WHERE wi.run_id = @runId AND wi.status IN ('" + Blocked + "', '" + Queued + "', '" + Running + "')) "
-        + "RETURNING status";
+        + "RETURNING status, project_id";
+
+    /// <summary>Locks the run row before the finalization guard evaluates
+    /// <c>work_items</c> state via NOT EXISTS. Postgres only auto-serializes
+    /// concurrent UPDATEs that examine the TARGET row's own column (see
+    /// RunActivationSql's simple status guard) — a NOT EXISTS subquery
+    /// against a different table is not a conflict target for the runs row,
+    /// so without this explicit lock two transactions finalizing a run's
+    /// last two work items concurrently can each see the other's
+    /// not-yet-committed terminal write as still open and BOTH skip
+    /// finalization. Locking first forces the second transaction to wait
+    /// for the first to commit, so its next statement (a fresh snapshot)
+    /// sees the up-to-date work_items state.</summary>
+    public const string LockRunForFinalizationSql =
+        "SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " "
+        + "WHERE id = @runId FOR UPDATE";
+
+    /// <summary>Locks this completing item's Blocked dependent candidates, in
+    /// deterministic ascending-id order, before the guarded unblock UPDATE
+    /// below. Two prerequisites of a shared (diamond) dependent completing
+    /// concurrently each run a multi-row UPDATE whose candidate sets can
+    /// overlap on the same dependent rows; without a canonical lock order
+    /// first, Postgres may lock those overlapping rows in planner-dependent
+    /// (not necessarily matching) order across the two transactions — a
+    /// classic multi-row-update deadlock (40P01). Locking the same
+    /// candidate ids in the same ascending-id order up front makes every
+    /// transaction acquire overlapping row locks in the same sequence, so
+    /// at most one waits — it never cycles.</summary>
+    public const string LockBlockedDependentsSql =
+        "SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
+        + "WHERE status = '" + Blocked + "' "
+        + "  AND id IN ( "
+        + "      SELECT dependency.work_item_id "
+        + "      FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItemDependencies + " dependency "
+        + "      WHERE dependency.depends_on_work_item_id = @workItemId "
+        + "  ) "
+        + "ORDER BY id "
+        + "FOR UPDATE";
 
     /// <summary>Creates a prepared claim command on the transaction's connection.</summary>
     /// <param name="transaction"></param>
@@ -156,12 +238,14 @@ internal static class WorkItemQueueSql
     /// <param name="transaction"></param>
     /// <param name="workItemId"></param>
     /// <param name="workerId"></param>
+    /// <param name="generation"></param>
     /// <param name="leaseUntil"></param>
     /// <param name="now"></param>
     public static DbCommand CreateHeartbeatCommand(
         DbTransaction transaction,
         Guid workItemId,
         WorkerId workerId,
+        int generation,
         DateTimeOffset leaseUntil,
         DateTimeOffset now)
     {
@@ -170,6 +254,7 @@ internal static class WorkItemQueueSql
         command.CommandText = HeartbeatSql;
         AddParameter(command, "@workItemId", workItemId);
         AddParameter(command, "@workerId", workerId.Value);
+        AddParameter(command, "@generation", generation);
         AddParameter(command, "@leaseUntil", leaseUntil);
         AddParameter(command, "@now", now);
         return command;
@@ -179,14 +264,16 @@ internal static class WorkItemQueueSql
     /// <param name="transaction"></param>
     /// <param name="workItemId"></param>
     /// <param name="workerId"></param>
+    /// <param name="generation"></param>
     /// <param name="now"></param>
-    public static DbCommand CreateCompleteCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, DateTimeOffset now)
+    public static DbCommand CreateCompleteCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, int generation, DateTimeOffset now)
     {
         // boundary: ADO contract — Connection is always set on a live transaction
         var command = transaction.Connection!.CreateCommand();
         command.CommandText = CompleteSql;
         AddParameter(command, "@workItemId", workItemId);
         AddParameter(command, "@workerId", workerId.Value);
+        AddParameter(command, "@generation", generation);
         AddParameter(command, "@now", now);
         return command;
     }
@@ -195,14 +282,30 @@ internal static class WorkItemQueueSql
     /// <param name="transaction"></param>
     /// <param name="workItemId"></param>
     /// <param name="workerId"></param>
+    /// <param name="generation"></param>
     /// <param name="now"></param>
-    public static DbCommand CreateFailCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, DateTimeOffset now)
+    public static DbCommand CreateFailCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, int generation, DateTimeOffset now)
     {
         // boundary: ADO contract — Connection is always set on a live transaction
         var command = transaction.Connection!.CreateCommand();
         command.CommandText = FailSql;
         AddParameter(command, "@workItemId", workItemId);
         AddParameter(command, "@workerId", workerId.Value);
+        AddParameter(command, "@generation", generation);
+        AddParameter(command, "@now", now);
+        return command;
+    }
+
+    /// <summary>Creates a prepared unblock-dependents command on the transaction's connection.</summary>
+    /// <param name="transaction"></param>
+    /// <param name="workItemId"></param>
+    /// <param name="now"></param>
+    public static DbCommand CreateUnblockDependentsCommand(DbTransaction transaction, Guid workItemId, DateTimeOffset now)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = UnblockDependentsSql;
+        AddParameter(command, "@workItemId", workItemId);
         AddParameter(command, "@now", now);
         return command;
     }
@@ -267,6 +370,31 @@ internal static class WorkItemQueueSql
         return command;
     }
 
+    /// <summary>Creates a prepared run-lock command (run before
+    /// <see cref="CreateRunFinalizationCommand"/> in the same transaction —
+    /// see <see cref="LockRunForFinalizationSql"/> remarks).</summary>
+    public static DbCommand CreateLockRunForFinalizationCommand(DbTransaction transaction, RunId runId)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = LockRunForFinalizationSql;
+        AddParameter(command, "@runId", runId.Value);
+        return command;
+    }
+
+    /// <summary>Creates a prepared lock command for this completing item's
+    /// Blocked dependent candidates — run before
+    /// <see cref="CreateUnblockDependentsCommand"/> in the same transaction;
+    /// see <see cref="LockBlockedDependentsSql"/> remarks.</summary>
+    public static DbCommand CreateLockBlockedDependentsCommand(DbTransaction transaction, Guid workItemId)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = LockBlockedDependentsSql;
+        AddParameter(command, "@workItemId", workItemId);
+        return command;
+    }
+
     /// <summary>Materialises the single <c>RETURNING</c> row of a claim into the contract DTO.</summary>
     /// <param name="reader"></param>
     public static ClaimedWorkItem ReadClaimed(DbDataReader reader)
@@ -278,7 +406,8 @@ internal static class WorkItemQueueSql
             reader.GetString(3),
             reader.GetString(4),
             reader.GetFieldValue<DateTimeOffset>(5),
-            reader.GetInt32(6));
+            reader.GetInt32(6),
+            reader.GetInt32(7));
     }
 
     /// <summary>Adds one typed parameter (Npgsql infers uuid/timestamptz/text from the CLR value).</summary>

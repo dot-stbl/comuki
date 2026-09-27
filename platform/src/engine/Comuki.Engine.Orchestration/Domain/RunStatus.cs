@@ -41,7 +41,7 @@ public readonly record struct RunStatus
     /// <summary>Terminal — the run completed and produced a result.</summary>
     public static RunStatus Succeeded { get; } = new("Succeeded");
 
-    /// <summary>Terminal — the run failed; retries go back to <see cref="Queued"/>.</summary>
+    /// <summary>Terminal — the run failed; a retry surfaces as a fresh Run attempt rather than transitioning this Run.</summary>
     public static RunStatus Failed { get; } = new("Failed");
 
     /// <summary>Terminal — an operator cancelled the run.</summary>

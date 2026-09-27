@@ -6,12 +6,17 @@
 import { z } from "zod/v4"
 
 /**
- * @description Completion body: the worker-produced result JSON (must be valid, non-empty JSON).
+ * @description Completion body: the worker-produced result JSON (must be valid, non-empty JSON) plus the claimed generation.
  */
 export const completeWorkItemRequestSchema = z
   .object({
     resultJson: z.string(),
+    generation: z
+      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
+      .describe(
+        "The generation the caller claimed this item under — a mismatch (the owning Run has since been cancelled/superseded) is treated as an ownership miss."
+      ),
   })
   .describe(
-    "Completion body: the worker-produced result JSON (must be valid, non-empty JSON)."
+    "Completion body: the worker-produced result JSON (must be valid, non-empty JSON) plus the claimed generation."
   )

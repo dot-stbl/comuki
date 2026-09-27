@@ -9,9 +9,13 @@ namespace Comuki.Host.Translator.Integration.PiCli;
 
 /// <summary>
 /// Boots the real worker runtime (REST + code-first gRPC) on an in-process
-/// Kestrel with two loopback listeners: HTTP/1.1 for the REST surface and
-/// cleartext HTTP/2-only for gRPC. Tests connect real gRPC channels / Refit
-/// clients to the returned addresses.
+/// Kestrel with two loopback listeners: HTTP/1.1 (+ HTTP/2 once TLS is on)
+/// for the REST surface and cleartext HTTP/2-only for gRPC. Tests connect
+/// real gRPC channels / Refit clients to the returned addresses. Matches
+/// Comuki.Host/Program.cs's production topology (issue #152) — a dedicated
+/// HTTP/2-only listener for the worker gRPC stream, since Kestrel does
+/// not negotiate HTTP/2 over a shared, cleartext Http1AndHttp2 listener
+/// without TLS's ALPN.
 /// </summary>
 public sealed class TestWorkerHost : IAsyncDisposable
 {
@@ -24,7 +28,7 @@ public sealed class TestWorkerHost : IAsyncDisposable
         GrpcAddress = grpcAddress;
     }
 
-    /// <summary>The loopback REST base address (HTTP/1.1 listener).</summary>
+    /// <summary>The loopback REST base address (Http1AndHttp2 listener).</summary>
     public Uri BaseAddress { get; }
 
     /// <summary>The loopback gRPC address (cleartext HTTP/2 listener).</summary>
@@ -50,16 +54,54 @@ public sealed class TestWorkerHost : IAsyncDisposable
     public static async Task<TestWorkerHost> StartAsync(Action<IServiceCollection> ConfigureServices, bool mapRest = true)
     {
         var builder = WebApplication.CreateBuilder();
-        // Production topology on one loopback: REST on HTTP/1.1, the worker
-        // bidi stream on cleartext HTTP/2. Separate listeners because Kestrel
-        // answers the h2 preface with HTTP_1_1_REQUIRED on an HTTP/1-only
-        // endpoint, and mixed Http1AndHttp2 still tripped the gRPC client.
+        // Production topology on one loopback: REST on HTTP/1+HTTP/2
+        // (Http1AndHttp2 — matches Comuki.Host/Program.cs post-fix), the
+        // worker bidi stream on its own cleartext HTTP/2 listener. The
+        // pre-fix production shape (mixed Http1AndHttp2, single shared
+        // listener) is reproduced by StartWithSharedListenerAsync below —
+        // a regression guard, not a topology any test should depend on.
         var restPort = FreeTcpPort();
         var grpcPort = FreeTcpPort();
         builder.WebHost.ConfigureKestrel(kestrelOptions =>
         {
-            kestrelOptions.Listen(System.Net.IPAddress.Loopback, restPort, static listenOptions => listenOptions.Protocols = HttpProtocols.Http1);
+            kestrelOptions.Listen(System.Net.IPAddress.Loopback, restPort, static listenOptions => listenOptions.Protocols = HttpProtocols.Http1AndHttp2);
             kestrelOptions.Listen(System.Net.IPAddress.Loopback, grpcPort, static listenOptions => listenOptions.Protocols = HttpProtocols.Http2);
+        });
+        ConfigureServices(builder.Services);
+
+        var app = builder.Build();
+        app.MapWorkerGrpc(grpcPort);
+        if (mapRest)
+        {
+            app.MapWorkerRest();
+        }
+
+        await app.StartAsync(TestContext.Current.CancellationToken);
+
+        return new TestWorkerHost(
+            app,
+            new Uri($"http://127.0.0.1:{restPort}/"),
+            new Uri($"http://127.0.0.1:{grpcPort}/"));
+    }
+
+    /// <summary>
+    /// Characterization fixture for issue #152: ONE shared, cleartext
+    /// Http1AndHttp2 listener for both REST and gRPC — production's
+    /// listener config BEFORE this fix (Comuki.Host/Program.cs no longer
+    /// does this). Kestrel does not support HTTP/2 negotiation on a mixed
+    /// Http1AndHttp2 endpoint without TLS — it silently falls back to
+    /// HTTP/1.1 only (logs a one-time warning), so the worker gRPC bidi
+    /// stream never actually negotiates here and every event it would
+    /// carry is lost. Exists to prove the bug's exact mechanism and guard
+    /// against ever silently reintroducing a shared listener.
+    /// </summary>
+    public static async Task<TestWorkerHost> StartWithSharedListenerAsync(Action<IServiceCollection> ConfigureServices, bool mapRest = true)
+    {
+        var builder = WebApplication.CreateBuilder();
+        var port = FreeTcpPort();
+        builder.WebHost.ConfigureKestrel(kestrelOptions =>
+        {
+            kestrelOptions.Listen(System.Net.IPAddress.Loopback, port, static listenOptions => listenOptions.Protocols = HttpProtocols.Http1AndHttp2);
         });
         ConfigureServices(builder.Services);
 
@@ -72,10 +114,8 @@ public sealed class TestWorkerHost : IAsyncDisposable
 
         await app.StartAsync(TestContext.Current.CancellationToken);
 
-        return new TestWorkerHost(
-            app,
-            new Uri($"http://127.0.0.1:{restPort}/"),
-            new Uri($"http://127.0.0.1:{grpcPort}/"));
+        var address = new Uri($"http://127.0.0.1:{port}/");
+        return new TestWorkerHost(app, address, address);
     }
 
     /// <inheritdoc />

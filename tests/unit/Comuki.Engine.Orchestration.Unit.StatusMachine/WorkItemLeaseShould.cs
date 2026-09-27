@@ -25,7 +25,7 @@ public sealed class WorkItemLeaseShould
         var leaseUntil = now.AddMinutes(2);
         var item = CreateQueuedItem();
 
-        item.AssignLease(workerId, leaseUntil, now);
+        item.AssignLease(workerId, 1, leaseUntil, now);
 
         item.Status.ShouldBe(WorkItemStatus.Running);
         item.LeasedBy.ShouldBe(workerId);
@@ -34,13 +34,41 @@ public sealed class WorkItemLeaseShould
         item.Attempt.ShouldBe(1);
     }
 
+    [Fact(DisplayName = "Given a queued item, when AssignLease stamps a generation, then Generation reflects it")]
+    public void AssignLeaseStampsGeneration()
+    {
+        var item = CreateQueuedItem();
+
+        item.AssignLease(WorkerId.New(), 3, now.AddMinutes(2), now);
+
+        item.Generation.ShouldBe(3);
+    }
+
+    [Fact(DisplayName = "Given an item leased at a generation, when MatchesGeneration is called with the same value, then it returns true")]
+    public void MatchesGenerationTrueForStampedValue()
+    {
+        var item = CreateQueuedItem();
+        item.AssignLease(WorkerId.New(), 2, now.AddMinutes(2), now);
+
+        item.MatchesGeneration(2).ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Given an item leased at a generation, when MatchesGeneration is called with a different value, then it returns false")]
+    public void MatchesGenerationFalseForDifferentValue()
+    {
+        var item = CreateQueuedItem();
+        item.AssignLease(WorkerId.New(), 2, now.AddMinutes(2), now);
+
+        item.MatchesGeneration(3).ShouldBeFalse();
+    }
+
     [Theory(DisplayName = "Given a non-queued item, when AssignLease is called, then it throws")]
     [MemberData(nameof(NonQueuedStatuses))]
     public void RejectAssignLeaseFromNonQueued(WorkItemStatus status)
     {
         var item = CreateItemIn(status);
 
-        var exception = Should.Throw<InvalidOperationException>(() => item.AssignLease(WorkerId.New(), now.AddMinutes(2), now));
+        var exception = Should.Throw<InvalidOperationException>(() => item.AssignLease(WorkerId.New(), 1, now.AddMinutes(2), now));
         exception.Message.ShouldContain("queued");
     }
 
@@ -104,7 +132,7 @@ public sealed class WorkItemLeaseShould
     {
         var item = ClaimedItem();
         item.ReleaseLease(now.AddMinutes(3));
-        item.AssignLease(WorkerId.New(), now.AddMinutes(5), now.AddMinutes(3));
+        item.AssignLease(WorkerId.New(), 1, now.AddMinutes(5), now.AddMinutes(3));
 
         item.Attempt.ShouldBe(2);
         item.Status.ShouldBe(WorkItemStatus.Running);
@@ -117,7 +145,7 @@ public sealed class WorkItemLeaseShould
         item.TransitionTo(WorkItemStatus.Running, now);
         item.TransitionTo(WorkItemStatus.Succeeded, now.AddMinutes(1));
 
-        Should.Throw<InvalidOperationException>(() => item.AssignLease(WorkerId.New(), now.AddMinutes(2), now));
+        Should.Throw<InvalidOperationException>(() => item.AssignLease(WorkerId.New(), 1, now.AddMinutes(2), now));
         Should.Throw<InvalidOperationException>(() => item.Heartbeat(now.AddMinutes(2), now));
         Should.Throw<InvalidOperationException>(() => item.ReleaseLease(now));
     }
@@ -130,7 +158,7 @@ public sealed class WorkItemLeaseShould
     private static WorkItem ClaimedItem()
     {
         var item = CreateQueuedItem();
-        item.AssignLease(WorkerId.New(), now.AddMinutes(2), now);
+        item.AssignLease(WorkerId.New(), 1, now.AddMinutes(2), now);
         return item;
     }
 

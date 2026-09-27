@@ -20,6 +20,7 @@ namespace Comuki.Host.Workers.Api;
 /// <param name="Brief"></param>
 /// <param name="LeaseUntilUnixMs"></param>
 /// <param name="Attempt"></param>
+/// <param name="Generation">Execution generation this item was claimed under — the worker echoes this back on every later heartbeat/complete/fail call.</param>
 /// <param name="ProxyBaseUrl">Worker-facing proxy base URL; <c>null</c> when minting is off.</param>
 /// <param name="VirtualKey">Minted proxy bearer token expiring with the lease; <c>null</c> when minting is off.</param>
 public sealed record ClaimedWorkItemResponse(
@@ -30,5 +31,6 @@ public sealed record ClaimedWorkItemResponse(
     string Brief,
     long LeaseUntilUnixMs,
     int Attempt,
+    int Generation,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ProxyBaseUrl = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? VirtualKey = null);

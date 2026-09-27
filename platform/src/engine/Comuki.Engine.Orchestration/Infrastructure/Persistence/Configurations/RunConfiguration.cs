@@ -35,11 +35,20 @@ public sealed class RunConfiguration : IEntityTypeConfiguration<Run>
             .IsRequired()
             .HasDefaultValue(RunTrustClass.Supervised);
 
+        builder.Property(static run => run.Generation)
+            .HasColumnName("generation")
+            .IsRequired()
+            .HasDefaultValue(1);
+
         builder.Property(static run => run.CreatedAt)
             .HasColumnName("created_at");
 
         builder.Property(static run => run.UpdatedAt)
             .HasColumnName("updated_at");
+
+        builder.Property(static run => run.AdmissionMessageId)
+            .HasColumnName("admission_message_id")
+            .HasMaxLength(256);
 
         // Performance audit (2026-09-09) §1.1: every escalation sweep,
         // runs-list page, and project-scope filter was a heap scan.
@@ -56,5 +65,14 @@ public sealed class RunConfiguration : IEntityTypeConfiguration<Run>
 
         builder.HasIndex(static run => run.UpdatedAt)
             .HasDatabaseName("ix_runs_updated_at");
+
+        // WS9 idempotency lookup — a losing admission caller resolves the
+        // winner's run id by this unique key. Filtered to non-null so the
+        // index stays small: chat / scheduler runs (the majority) carry
+        // null and don't take part.
+        builder.HasIndex(static run => run.AdmissionMessageId)
+            .HasDatabaseName("ux_runs_admission_message_id")
+            .IsUnique()
+            .HasFilter("admission_message_id IS NOT NULL");
     }
 }

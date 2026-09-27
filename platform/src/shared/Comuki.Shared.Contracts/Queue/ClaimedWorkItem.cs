@@ -16,6 +16,7 @@ namespace Comuki.Shared.Contracts.Queue;
 /// <param name="Brief"></param>
 /// <param name="LeaseUntil"></param>
 /// <param name="Attempt"></param>
+/// <param name="Generation">Execution generation this item was claimed under — echoed back by the worker on every later heartbeat/complete/fail call.</param>
 public sealed record ClaimedWorkItem(
     Guid WorkItemId,
     RunId RunId,
@@ -23,4 +24,5 @@ public sealed record ClaimedWorkItem(
     string ProfileKey,
     string Brief,
     DateTimeOffset LeaseUntil,
-    int Attempt);
+    int Attempt,
+    int Generation);

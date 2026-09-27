@@ -67,6 +67,20 @@
     <PackageVersion Include="Tomlyn" Version="2.10.1" />
   </ItemGroup>
 
+  <!-- Ed25519 offline license verification (issue #164): no first-class
+       Ed25519 API ships in System.Security.Cryptography on net10.0
+       (verified directly: reflecting the assembly only turns up an
+       internal CompositeMLDsaManaged+EdDsaAlgorithm type, no public
+       surface). BouncyCastle.Cryptography is the vetted, pure-managed
+       alternative (MIT-licensed) — no native binaries to ship across
+       win-x64/linux-x64/arm64 Docker/k8s images, unlike the
+       NSec.Cryptography/libsodium alternative design.md's OQ2 also
+       names; license verification is not a hot path, so the native
+       dependency isn't worth it here. -->
+  <ItemGroup>
+    <PackageVersion Include="BouncyCastle.Cryptography" Version="2.7.0" />
+  </ItemGroup>
+
   <!-- EF Core / persistence (Engine.Orchestration + Migrator) -->
   <ItemGroup>
     <!-- Pinned to exactly what Npgsql.EntityFrameworkCore.PostgreSQL 10.0.3

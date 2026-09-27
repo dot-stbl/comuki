@@ -79,10 +79,14 @@ public static class TestHostBuilder
     {
         await application.StartAsync(cancellationToken);
 
+        // First, not single: a host may bind extra listeners beside the
+        // REST one (AgentLoopHost's dedicated worker-gRPC HTTP/2 listener,
+        // issue #152) — Kestrel lists explicit endpoints in registration
+        // order and every composer registers the REST listener first.
         return new Uri(
             application.Services
                 .GetRequiredService<IServer>()
                 .Features.Get<IServerAddressesFeature>()!
-                .Addresses.Single());
+                .Addresses.First());
     }
 }

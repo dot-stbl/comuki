@@ -31,4 +31,10 @@ public static class OrchestrationDatabase
 
     /// <summary>Merge-batch aggregate (issue #11) — coordinated group of merge-queue entries that share a release window.</summary>
     public const string MergeBatches = "merge_batches";
+
+    /// <summary>Durable terminal-event outbox (issue #87 WS6) — staged in the same transaction as the aggregate change it reports.</summary>
+    public const string OutboxMessages = "outbox_messages";
+
+    /// <summary>Inbox dedupe receipts (issue #87 WS6) — one row per already-seen wire message id.</summary>
+    public const string InboxReceipts = "inbox_receipts";
 }

@@ -2,6 +2,7 @@ using Comuki.Engine.Compute.Options;
 using Comuki.Host.Auth;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
 using Comuki.Modules.Identity.Application.Options;
+using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Kernel.Secrets;
 using Microsoft.Extensions.Options;
 
@@ -31,6 +32,14 @@ public static class ProductionSecretAudit
         ProductionSecretAuditChecks.CollectApiKeyPepper(services, isProduction, findings);
         ProductionSecretAuditChecks.CollectWorkerTokenPepper(services, isProduction, findings);
         ProductionSecretAuditChecks.CollectSecretsProviders(services, isProduction, findings);
+
+        // IEdition is an opt-in port — minimum providers historically do not
+        // compose editions; a null resolution means Community, which the
+        // audit reports as Ok ("editions not composed"). GetService (not
+        // GetRequiredService) makes the missing composition a quiet
+        // Community path rather than a CompositionException.
+        var edition = services.GetService<IEdition>();
+        findings.Add(LicenseAuditFinding.Collect(edition));
 
         return findings;
     }

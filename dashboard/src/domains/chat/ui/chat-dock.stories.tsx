@@ -152,10 +152,13 @@ const meta = {
   component: SheetStory,
   parameters: { layout: "fullscreen" },
   // "ws16-batch1": test:storybook's first interaction/visual/a11y batch —
-  // see storybook-tests/README.md. "ws16-portal": this story's content
-  // portals into `document.body` (BottomSheet/Modal) — see the docblock
-  // above and .storybook/test-runner.ts's `PORTAL_TAG`.
-  tags: ["ws16-batch1", "ws16-portal"],
+  // see storybook-tests/README.md. The old `ws16-portal` tag was tied to
+  // `@storybook/test-runner@0.23.0`'s per-story transition hang on portal
+  // content — the SB10 vitest harness composes + renders stories in this
+  // same iframe directly, so the portal-content reader is `document.body`
+  // by default. The tag is no longer load-bearing; the docblock above is
+  // the only place its history lives now.
+  tags: ["ws16-batch1"],
 } satisfies Meta<typeof SheetStory>
 
 export default meta

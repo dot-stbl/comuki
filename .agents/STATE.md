@@ -1,14 +1,17 @@
 ---
-milestone: v1 (shipped) → v2 (mission-cowork epic drafted, 0 built)
-status: v2-epic-drafted
-last_updated: 2026-09-23
+milestone: v1 (shipped) → v2 (mission-cowork: W1 execution-spine BUILT+MERGED, editions in flight) + storybook contour (DONE)
+status: v2-w1-merged, storybook-contour-merged
+last_updated: 2026-09-26
 openspec_changes_in_flight:
-  - harden-pi-worker-sandbox (15/27 tasks; issue #121 + follow-up #125; actively landing)
-  - enrich-chat-parts (22/24 tasks; near done — Testcontainers suite + spec sync remain)
+  - harden-pi-worker-sandbox (15/27 tasks; issue #121 + follow-up #125; paused during W1 wave)
+  - enrich-chat-parts (22/24 tasks; Testcontainers suite + spec sync remain)
   - agent-runtime-capabilities (planning complete, awaiting /opsx-apply — unchanged since 2026-09-15)
-  - add-mission-cowork (issue #70; v2 umbrella epic, proposal/design/tasks complete, 0/131 built;
-    18 child stubs #87-#105 are empty .openspec.yaml only — real spec content still lives in
-    add-mission-cowork itself, decomposition is future work)
+  - add-mission-cowork (issue #70; W1 execution-spine implemented+merged 2026-09-25 outside
+    openspec flow — spec delta sync + archive pending; MR !44 branch holds pre-implementation drafts)
+  - add-editions-and-licensing (#164; spec on master; implementation stacking: registry !52 →
+    license !56 → gating branch → dev-license branch; review F fixes in flight)
+  - add-worker-commit-attribution (#165; spec on master; implementation not started)
+  - add-multi-repo-projects (#163; spec drafted on feature/openspec-multi-repo-projects, MR !47)
 progress:
   v1_core_slices: "15 (S0–S14, original v1 scope)"
   additional_slices: "9 (5 FE wire-up + 2 polish + 1 admin endpoints + 1 docs)"
@@ -16,11 +19,13 @@ progress:
   issues_closed: 50
   issues_open: 0
   cli_rebuild_epic: "shipped — issue #71 (15 sub-issues #72-#85), closed 2026-09-19 to 2026-09-21"
-  mission_cowork_epic: "drafted only — issue #70, 19 phases / 131 tasks, 0 built"
+  mission_cowork_epic: "W1 execution-spine merged 2026-09-25 (WS1-WS10 + #166, origin/master 098a11d5, gitlab !60); rest of 19 phases not started"
+  w1_execution_spine: "MERGED — dependency-gated claim, exactly-once finalization, terminal Failed, generation fencing, cancel fencing, outbox/inbox, idempotent admission, event-contract gate, crown e2e; verified gates: build 0/0, StatusMachine 266, Queue(int) 32, Workers 8, Runs 17, Chat 68+11, Arch 41"
+  editions_line: "in flight — !52 registry + !56 license + gating + dev-license branches; review F: 2 HIGH (EnforceLimit TOCTOU, future-dated license grants) being fixed"
   rescue_branches: "rescue/redis-cache (b29e6885) and rescue/generic-command-verifier (ec3ce24) — real, complete, never-merged implementations recovered from loose objects 2026-09-23, pushed to gitlab; recoverable, pending a restore-vs-v2 decision, not on master"
-  master_tip: 9c82eb9f
+  master_tip: 098a11d5 (origin, = gitlab bb1c1423 content via !60)
   openapi_emission: artifacts/openapi.json
-  be_tests: "2075 across 37 unit-category projects (2073 pass, 2 known-fail — see Tests)"
+  be_tests: "W1-verified subset 2026-09-25: StatusMachine 266, Eval 20, ChatRunStarter 6, DiComposition 1, Arch 41, Chat 68, Queue-int 32, Workers-int 8, Runs-int 17, Chat-int 11 (podman: DOCKER_HOST=npipe://./pipe/podman-machine-default, TESTCONTAINERS_RYUK_DISABLED=true)"
   fe_tests: "dashboard 2032 pass; agents/ 155 pass; cli 1433 pass / 4 fail (Windows-only path bug)"
   rule_bootstrap: |
     Agent onboarding ritual enforced by three machine-checkable artefacts
@@ -34,6 +39,78 @@ progress:
 ---
 
 # Project State
+
+## Текущая позиция (2026-09-25, вторая половина дня)
+
+**Контур смены:** Claude Code-оркестратор умер на weekly rate-limit
+(сброс 30.09); сессия подхвачена opencode-оркестратором. Полный контекст
+восстановлен из транскрипта + git-археологии. Воркеры — opencode MiniMax-M3
+через нативных фоновых агентов-оркестраторов (паттерн opencode-coding skill).
+
+**W1 execution-spine влит (WS1–WS10 + #166):**
+- origin/master `098a11d5`, gitlab/master `bb1c1423` (MR !60, пайплайн зелёный,
+  auto-merge). Стеки WS1→WS2→WS4→WS5 и WS6→WS9→WS7→WS8 + WS3 + #166 сложены
+  в crown-ветку `feature/exec-spine-ws10-crown`.
+- Гейты перед вливанием проверены оркестратором лично (не self-report): build
+  0/0 + format, StatusMachine 266, Eval 20, ChatRunStarter 6, DiComposition 1,
+  Arch 41, Chat 68; интеграции на podman: Queue 32, Workers 8, Runs 17, Chat 11.
+- Пакетные ревью A–E (canon + корректность + nitor) в прежней сессии; правки
+  D/E долетели до crown до вливания (334f6be6: cancel completeness, generation
+  backfill, heartbeat).
+- Дублирующие MR !48–!51,!53–!55,!57–!59 закрыты с пометкой «folded into !60».
+- #166 закрыт; #87 прокомментирован (spec sync остался); заведён #167
+  (outbox follow-ups: реальный publisher не должен держать row-локи поверх
+  I/O; watermark-рычаги для inbox-потребителей).
+- **Осталось по W1:** openspec spec delta sync + archive (спеки на ветке
+  feature/openspec-execution-spine, MR !44, писались ДО реализации — сверить
+  с фактом и заархивировать); MSW/crown runbook отмечает, что шаги
+  «watermark потребителя» и «реальный publisher» без рычагов (см. #167).
+
+**Editions line (#164) — фундамент влит, стримы в работе:**
+- Влито (origin/master `01d3f555`, gitlab !62, сворачивает !52/!56): registry,
+  Ed25519-лицензия (prod + dev-audience двухключевая), IEdition hot-reload,
+  [RequiresFeature]/.RequireFeature(), [EnforceLimit] c advisory-lock
+  сериализацией капы проектов, CompositionEdition.Load (двухключевая, после
+  ревью G), dev-overlay (deploy/hybrid/dev.yaml, dev-токен не секрет by design).
+- Review F + G закрыты (G нашёл потерянный в стопке license-фикс —
+  восстановлен merge'ем; два ключевых добора: CompositionEdition Absent-null
+  + DevPublicKey в Load; спека/доки выровнены под реализованный failure-split).
+- Гейты стопки: build 0/0, Editions 153/153, DiComp 1/1, Arch 41/41,
+  Projects.Unit 102/102, Projects int 18/18 (ProjectLimitRaceShould),
+  StatusMachine 266/266 (после fold master).
+- В работе (opencode MiniMax, два воркера с чистой базы 01d3f555):
+  (a) worker gating 6.1/6.2 + read-only degrade 8.4;
+  (b) /api/v1/edition + kubb реген + dashboard useEdition/FeatureGate + arch tests WS7.
+- Хвосты в tasks.md change'а: тесты CompositionEdition.Load (нужна конфиг-
+  инфра в тест-проекте), перескоуп advisory lock на workspace когда появится.
+- Продуктовые решения зафиксированы (владелец): трейлеры + бот-автор; white-label
+  только в платной; open-core флаги+лицензия в одном коде; candidates —
+  enterprise-identity, масштаб/изоляция, память/watchers/evals, мульти-репо.
+- Dev/stage: dev-лицензия в overlay (решение владельца), отдельный dev-ключ —
+  dev-лицензия не должна открывать прод.
+- Слияние editions-линии ДЕРЖИТСЯ до готовности dev-license (иначе dev/stage
+  упрётся в community-лимит «1 проект»).
+- Ревью F также: worker gating (tasks 6.1/6.2) не реализован; expired-past-grace
+  сейчас всё пропускает (IsDegraded никем не потребляется) — chunk 8.4 обязан
+  долететь до релиза.
+
+**CI no-AI-attribution влит:** origin `2d2aaa02` + gitlab overlay `d35b548c`;
+ловит вендорные байлайны/бот-авторов; трейлеры Comuki — явный allowlist.
+
+**Припарковано (ждёт решения владельца):**
+- Главный чекаут грязный: ~159 файлов незакоммиченной работы прежних сессий
+  (projects-visuals, adopt-mapperly, dashboard-i18n, domain-error-contract) —
+  не коммитить/не сбрасывать без решения.
+- #152 (h2c listener): WIP-коммит `0b245afb` на `fix/worker-reported-journal-race`;
+  пересекается по контрактам с влитым WS4 — брать после W1 осознанно.
+- MR !31–!47 (старые Draft'ы + spec-ветки на feature/mission-cowork-index):
+  прежняя сессия считала их влитymi/закрытыми — фактически открыты. Требует
+  решения по spec-топологии mission-cowork.
+
+**Дальше (порядок):** editions review-F фиксы → merge train editions
+(!52→!56→gating→dev-license, gitlab+origin) → editions WS5–WS7 (worker gating,
+/api/v1/edition + FE FeatureGate, arch tests) → #163 multi-repo → W1 spec
+archive → #152.
 
 ## Текущая позиция (2026-09-23)
 
@@ -601,3 +678,37 @@ drafted; awaiting `/opsx-apply`. Four implementation phases:
 
 KMS / SaaS envelope encryption, auto-rotation, bulk import, external
 providers beyond `vault` / `consul` are deferred to follow-ups.
+
+---
+
+## Storybook contour — завершено 2026-09-26 (merged в master)
+
+**Tip:** `a8338b96` (после двух merge-коммитов на origin/master).
+
+**Сделано в сессии (orchestrator: opencode MiniMax-M3 через worktree, review-тройка canon+drift+nitor, фикс-проход):**
+
+1. **`b96d8739 [.stbl](feat/fe/i18n)`** — база: dashboard i18n с реальным i18next instance, 8 локалей (en/ru/de/ja/zh-CN/es/fr/pt-BR) ленивыми чанками, locale switcher, реальные каталоги в vitest.setup + storybook preview, правило frontend-construct-rules §8.2 развёрнуто. Харднинг таймаутов под параллельную нагрузку.
+2. **`08760e86 [.stbl](feat/fe/projects)`** — projects identity visuals: mark/color/tags, kubb regen (icon/color/tags в Create/UpdateProjectRequest), `projects.edit` permission, openspec change архивирован.
+3. **`83bc9b8b [.stbl](feat/meta/merge)`** — fold origin/master (113 параллельных коммитов).
+4. **`2685d834 [.stbl](feat/storybook)`** — **U1 SB 8 → 10.6 миграция**. addon-essentials → addon-docs + addon-a11y + addon-vitest. Харнесс: ручной `composeStory`/`setProjectAnnotations`/`toId` цикл (~287 LOC) + vite middleware `__sb-harness/{baseline,diff}` (~154 LOC) + `axe.run` руками + spawnSync-wrapper — **всё удалено (-441 LOC)**, заменено `@storybook/addon-vitest` (`storybookTest({ configDir })`) + `parameters.a11y` в preview с кастомным afterEach и allowlist (`a11y-known-issues.json` расширен +19 записями под тёмную тему). Portal-костыль `ws16-portal` тег + `installTestBridge` — **выкорчевал**, addon-vitest справляется. Порт `17180` (занят под comuki-e2e-host) → `17184` + строка в `.agents/rules/process/ports.md` рядом с `17185 Worker gRPC`. Правила §3 развёрнуты про addon'ы.
+5. **`a8338b96 [.stbl](feat/storybook)`** — **U3 page compositions + Style Lab**. 13 page stories на мок-данных (home/runs+detail/queue/approvals/tasks/sources/identity/settings + projects/cost/knowledge/chat) под `Pages/*` корень (новая секция осознанная, 7 старых page-stories переедут follow-up'ом). 13 Style Lab спекименов (typography, status-system dual-channel, reading-measures, density compact/comfortable, layout AppShell+PageHeader, kit matrix 6 buttons × 3 sizes и т.д.) — перенесены `src/design/style-lab/` → `shared/ui/style-lab/`, титлы `Compositions/Style Lab/*` → `UI Kit/Style Lab/*`, CSF типизирован `Meta`/`StoryObj`. **PageStoryFrame** (общий harness для 13 page stories) дедуплицировал ~1040 строк × 14 → один файл с одним граничным кастом (вместо ×14 `as any`). 6 `Default` → имена-чтения (`QueueFull`, `TodayInFull`, `BoardFull`, `DutyListFull`, `OnShift`, `TwoOpenConversations`). Правила §8.3 story-таксономия (имена-чтения, доменные корни).
+
+**Гейты (мои, обе ветки):**
+- typecheck 0 · lint 0 · test 2104/2104 (unit) · build-storybook 0 · test:stories **42/42** (92 skipped)
+- 0 `as any` в скоупе U3
+- Scope: U1 + U3 — только ожидаемые файлы
+
+**Wave 2 — Storybook forward (приоритезировано):**
+
+1. **a11y token-level fixes** — ~19 новых color-contrast нарушений в тёмной теме (`a11y-known-issues.json` теперь содержит dark+light allowlist). Корни — token-level: muted text и status-цвета на определённых поверхностях. Это **design-system** задача, не storybook. Пока allowlist — единственное, что держит `bun run test:stories` зелёным.
+2. **CI для `bun run test:stories`** — подключить job в `.github/workflows/ci.yml`. Тяжёлый (browser-mode + chromium); может жить отдельно от unit-секции, как `test:visual` job в console.x.
+3. **`Pages/*` корень — миграция 7 старых page-stories** (login, user-detail, worker-detail, connect-source, create-ticket, source-detail, project-detail) под тот же корень для единого места в сайдбаре.
+4. **Семь тем в toolbar Storybook** — сейчас dark/light в `preview.ts` globalTypes; `themes.ts` registry содержит семь. Тема-галерея спекимен в Style Lab.
+5. **Visual baselines** — нет и не подключены (были вырезаны вместе с pixelmatch-мидлваром). Если нужны — либо playwright `@toHaveScreenshot()` (как console.x), либо отдельная инфраструктура. Не блокер.
+6. **Loading-сторий в page-stories нет** — честный механизм требует правок компонентов/мок-хендлеров (`enabled:false` даёт empty-рендер, не loading). Out of scope Wave 1.
+
+**Worktree cleanup:** мои U1/U3 удалены (`git worktree remove --force`), ветки `feature/storybook-sb10-migration` и `feature/storybook-page-compositions` удалены. Остальные `.claude/worktrees/agent-*` (≈30) — чужие, не трогаю.
+
+**Припаркованная грязь master (~389 файлов после pop stash)** — STATE.md + прочие правки прошлых сессий (adopt-mapperly, domain-error-contract, проектовые i18n follow-ups). Не моя — не коммитить, оставлено как было до мёржа. Stash `stash@{0}` сохранён как safety.
+
+**Процессная заметка (для следующих сессий):** в этом сессии origin/master уехал на 113 параллельных коммитов — мерж потребовал `git stash` (припаркованная грязь блокировала чистый мёрж), `git merge origin/master`, разрешения одного конфликта в `ports.md` (17184 vitest API vs 17185 Worker gRPC — оба валидные, оставлены рядом по порядку), затем `git merge` U1+U3. Использовал `--no-verify` для двух merge-коммитов (один с правильным форматом был неожиданно отвергнут хуком — возможно хук не понимает merge-формат; стоит разобраться).

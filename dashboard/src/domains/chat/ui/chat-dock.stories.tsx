@@ -26,28 +26,17 @@ import { ChatConsole } from "./chat-console"
  * need `VITE_USE_MOCK=true`, which `.env.example` documents and this
  * worktree's `.env.local` provides.
  *
- * ## Portal content — tagged "ws16-portal", included in "ws16-batch1"
+ * ## Portal content
  *
  * `BottomSheet` renders through react-aria-components' `ModalOverlay`/
- * `Modal`, which portals its children into `document.body` rather than
- * Storybook's own `#storybook-root`. That used to keep these stories out of
- * `test:storybook`'s "ws16-batch1" entirely: `@storybook/test-runner@0.23.0`'s
- * own per-story transition (`channel.emit("setCurrentStory", ...)` on an
- * already-loaded preview) never signalled ready for them — even the plain
- * `FillingTheWindow` story, which has no play function at all, timed out at
- * Jest's default 15s.
- *
- * WS16.4 (`.storybook/test-runner.ts`'s `PORTAL_TAG`/`preVisit`) works around
- * it: a story tagged `"ws16-portal"` gets pre-rendered via a direct
- * navigation to its own `iframe.html?id=...` URL instead — the same
- * technique WS17's `ui:probe` already used successfully against this exact
- * component (`bun run ui:probe -- --story domains-chat-chatdock--panel-depth`).
- * `postVisit`'s a11y/visual capture also scopes to `document.body` instead
- * of `#storybook-root` for a tagged story, so it actually sees the portaled
- * composer/seed chip. See `storybook-tests/README.md` "Portal-based
- * stories" for the full account; every other kit primitive built on
- * `Modal`/`Dialog` (`ConfirmDialog`, `FormDialog`, `Dialog` itself) can use
- * the same tag once it needs this harness.
+ * `Modal`, which portals its children into `document.body`. Under
+ * `@storybook/addon-vitest` every story is composed and rendered in the
+ * same test iframe directly, so the addon-a11y afterEach and any
+ * `data-test` lookup see `document.body` by definition — the
+ * `ws16-portal` workaround from the SB8 test-runner era is gone, and the
+ * `ws16-portal` tag carries no load-bearing meaning in this repo anymore.
+ * History is preserved in `storybook-tests/README.md` for anyone
+ * tracing the old `setCurrentStory` channel hang.
  */
 
 /** This repo's components key on `data-test`, not testing-library's default
@@ -151,13 +140,8 @@ const meta = {
   title: "Domains/Chat/ChatDock",
   component: SheetStory,
   parameters: { layout: "fullscreen" },
-  // "ws16-batch1": test:storybook's first interaction/visual/a11y batch —
-  // see storybook-tests/README.md. The old `ws16-portal` tag was tied to
-  // `@storybook/test-runner@0.23.0`'s per-story transition hang on portal
-  // content — the SB10 vitest harness composes + renders stories in this
-  // same iframe directly, so the portal-content reader is `document.body`
-  // by default. The tag is no longer load-bearing; the docblock above is
-  // the only place its history lives now.
+  // Portal-based content renders correctly under the addon-vitest harness —
+  // see storybook-tests/README.md for the prior workaround history.
   tags: ["ws16-batch1"],
 } satisfies Meta<typeof SheetStory>
 

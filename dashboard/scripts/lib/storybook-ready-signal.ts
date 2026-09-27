@@ -6,11 +6,11 @@
 // (react-aria-components' `Modal`/`Dialog`, and everything built on it:
 // `BottomSheet`, `ConfirmDialog`, `FormDialog`, `Dialog` itself).
 //
-// Extracted from WS17's `ui-probe.ts` (`installStoryReadySignal` /
-// `waitForStoryReady`), which remains its only consumer: the vitest
-// stories harness (storybook-tests/harness.spec.ts) composes and renders
-// stories directly and does not navigate, so it needs no ready-signal of
-// its own.
+// Used by `scripts/ui-probe.ts` only. The vitest stories harness
+// (`@storybook/addon-vitest`'s `storybookTest()` plugin,
+// `vitest.config.ts` `stories` project) composes and renders stories
+// directly in the test iframe and never navigates, so it needs no
+// ready-signal of its own.
 //
 // Storybook's own channel emits `storyFinished` (or, on older builds,
 // `storyRendered`) once loading, rendering *and* any play function have

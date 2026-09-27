@@ -155,15 +155,20 @@ bun run test        # vitest run, environment: jsdom
 
 Покрытие — `bun run test:coverage`, пол **70% по строкам** (не 80+).
 
-**Storybook 10 зафиксирован (резолюция владельца 2026-09-26).** Storybook-харнесс живёт
-на отдельных командах, каждая — single-run процесс с собственным временем:
+**Storybook 10.6 зафиксирован (резолюция владельца 2026-09-26,
+`@storybook/addon-vitest` подключён).** Storybook-харнесс живёт на отдельных
+командах, каждая — single-run процесс с собственным временем:
 
 - `bun run build-storybook` — собирает `storybook-static/` (выходная папка гитигнорена)
-- `bun run test:stories` — `vitest --project stories`, browser-mode прогон
-  `stories.tsx` через `@storybook/addon-vitest` (chromium playwright), axe-a11y +
-  pixelmatch visual diff, allowlist в `storybook-tests/a11y-known-issues.json`,
-  baselines в `storybook-tests/visual-baselines/` (тоже гитигнорены —
-  живут только в CI, см. README в `storybook-tests/`)
+- `bun run test:stories` — `vitest run --project stories` (browser-mode,
+  chromium playwright, порт 17184 из `process/ports.md`). Каждая стори —
+  vitest-тест, который `@storybook/addon-vitest` генерирует из
+  `meta.tags` через `storybookTest()` в `dashboard/vitest.config.ts`;
+  `play`-функция запускается в реальном chromium, `addon-a11y`
+  (`parameters.a11y.test = 'error'` в `.storybook/preview.ts`) превращает
+  axe-нарушения в test failures. A11y-долг по старому батчу
+  задокументирован в `storybook-tests/a11y-known-issues.json` — это
+  инвентарь «что чинить», не живой allowlist.
 - `bun run ui:probe` — выборочный снапшот одной стори или страницы (WS17),
   single-shot playwright + static server, тоже single-run
 
@@ -173,15 +178,13 @@ Storybook dev server (`bun run storybook`, порт 17010) — **контур ч
 
 В гейт CI это **не входит**: `build-storybook` запускается отдельным job'ом
 (тяжёлый, не блокирует PR), `test:stories` — отдельным (зелёный на существующем
-покрытии обязателен, baseline-write — отдельным manual-trigger job'ом,
-см. `storybook-tests/README.md`). `ui:probe` — всегда on-demand человеком/агентом,
-не гейт.
+покрытии обязателен). `ui:probe` — всегда on-demand человеком/агентом, не гейт.
 
 **Чего в гейте НЕТ и почему — не «чинить» самовольно:**
 
 | Хотелось | Состояние |
 |---|---|
-| Визуальная регрессия (Chromatic / `storybook-addon-vis`) | Не подключена — пиксель-diff живёт в `test:stories` самописный |
+| Визуальная регрессия (Chromatic / `storybook-addon-vis`) | Не подключена — SB8 test-runner-эра самописный pixel-diff тоже снят, замены пока нет; baseline-write job, как раньше, не восстанавливали, потому что addon-аналога без CI-инфраструктуры не подключён |
 | eslint-запрет arbitrary-значений | Не настроен; раздел 1 держится ревью, а не линтом |
 
 Это записанные решения с причинами. Агент, который «поможет» и поставит
@@ -299,8 +302,9 @@ Storybook dev server (`bun run storybook`, порт 17010) — **контур ч
 - «Всё одного размера», отсутствие иерархии.
 - Цвет, определённый только внутри одного прочтения темы.
 - Запуск Storybook / playwright / dev-сервера **из агентской сессии**.
-- Установка addon-a11y или addon-vitest «заодно» — они отключены осознанно
-  (раздел 3).
+- Подмена `@storybook/addon-vitest` / `@storybook/addon-a11y` самописным
+  харнессом «для скорости» — оба аддона подключены осознанно (раздел 3),
+  ручной повтор ломает wire-model и плодит дубль.
 - Ответ «выглядит хорошо» без скриншота и без прохода по рубрике.
 
 ---

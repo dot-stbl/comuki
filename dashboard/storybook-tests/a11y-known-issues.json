@@ -523,5 +523,100 @@
     "storyId": "runs-work-item-inspector--not-started",
     "theme": "light",
     "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--diagram",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--empty-turn",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--errored",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--long-thread",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--markdown",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--memory-digest",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--plan",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--references-and-handoff",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--thinking",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "chat-chatmessage--typing-pause",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "domains-chat-chatdock--filling-the-window",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "domains-chat-chatdock--panel-depth",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "domains-chat-chatdock--seeded-from-a-run",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-profile-river--profile-selected",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-profile-river--small-swarm",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-profile-river--with-cancelled",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--no-plan",
+    "theme": "dark",
+    "ruleId": "color-contrast"
+  },
+  {
+    "storyId": "runs-run-graph--static-preview",
+    "theme": "dark",
+    "ruleId": "scrollable-region-focusable"
+  },
+  {
+    "storyId": "runs-run-graph--static-preview",
+    "theme": "light",
+    "ruleId": "scrollable-region-focusable"
   }
 ]

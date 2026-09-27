@@ -155,18 +155,39 @@ bun run test        # vitest run, environment: jsdom
 
 Покрытие — `bun run test:coverage`, пол **70% по строкам** (не 80+).
 
-**Чего в гейте нет и почему — не «чинить» самовольно:**
+**Storybook 10 зафиксирован (резолюция владельца 2026-09-26).** Storybook-харнесс живёт
+на отдельных командах, каждая — single-run процесс с собственным временем:
+
+- `bun run build-storybook` — собирает `storybook-static/` (выходная папка гитигнорена)
+- `bun run test:stories` — `vitest --project stories`, browser-mode прогон
+  `stories.tsx` через `@storybook/addon-vitest` (chromium playwright), axe-a11y +
+  pixelmatch visual diff, allowlist в `storybook-tests/a11y-known-issues.json`,
+  baselines в `storybook-tests/visual-baselines/` (тоже гитигнорены —
+  живут только в CI, см. README в `storybook-tests/`)
+- `bun run ui:probe` — выборочный снапшот одной стори или страницы (WS17),
+  single-shot playwright + static server, тоже single-run
+
+Storybook dev server (`bun run storybook`, порт 17010) — **контур человека**,
+агент его НЕ запускает (`AGENTS.md` §6). Это же правило запрещает
+`bun run vite` / `bun run storybook --watch`.
+
+В гейт CI это **не входит**: `build-storybook` запускается отдельным job'ом
+(тяжёлый, не блокирует PR), `test:stories` — отдельным (зелёный на существующем
+покрытии обязателен, baseline-write — отдельным manual-trigger job'ом,
+см. `storybook-tests/README.md`). `ui:probe` — всегда on-demand человеком/агентом,
+не гейт.
+
+**Чего в гейте НЕТ и почему — не «чинить» самовольно:**
 
 | Хотелось | Состояние |
 |---|---|
-| `@storybook/addon-a11y` (axe) | Отключён намеренно. `TODO(phase-7)` в `.storybook/main.ts`: ждёт Storybook 10, проект на SB 8 |
-| `@storybook/addon-vitest` (browser-mode component-тесты) | Отключён намеренно. `TODO(phase-7)`: ждёт совместимости с Node.js 24 ESM |
-| Визуальная регрессия (Chromatic / `storybook-addon-vis`) | Не подключена |
+| Визуальная регрессия (Chromatic / `storybook-addon-vis`) | Не подключена — пиксель-diff живёт в `test:stories` самописный |
 | eslint-запрет arbitrary-значений | Не настроен; раздел 1 держится ревью, а не линтом |
 
 Это записанные решения с причинами. Агент, который «поможет» и поставит
-addon-a11y, откатывает чужое решение и ломает сборку Storybook. Хочешь
-поменять — это отдельное изменение с обоснованием, а не побочный эффект.
+`@storybook/addon-vis` (или другой пакет, не указанный выше), ломает текущий
+баланс и пишет двойник существующего. Хочешь поменять — это отдельное
+изменение с обоснованием, а не побочный эффект.
 
 > Этот слой ловит регрессии и объективные дефекты, но **не отвечает**, хорош ли
 > сам дизайн. За это отвечает раздел 5.

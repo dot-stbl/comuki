@@ -1,112 +1,105 @@
-# `test:storybook` — interaction + visual + a11y harness
+# `test:stories` — interaction + visual + a11y harness
 
-WS16 of `openspec/changes/add-agentic-test-contour` (branch
-`feat/agentic-test-contour-spec`). See that change's `tasks.md` (WS16/WS17)
-and `design.md` ("Report format for agents", "Local dev commands") for the
-full spec this implements.
-
-Looking for a way to render **one** story (or page) and get back a
-screenshot/DOM/aria/axe/console snapshot to check a change you just made,
-rather than a full multi-story batch pass? That's `bun run ui:probe` (WS17,
-depends on this workstream) — see
-[`../scripts/UI-PROBE.md`](../scripts/UI-PROBE.md). It reuses this
-workstream's `../scripts/lib/static-server.ts` and the same
-`bun run build-storybook` static build, but is a different tool with a
-different job: this harness batch-tests a tagged set of stories against
-committed baselines; `ui:probe` is a one-shot capture of a single target for
-an agent to read, no baseline involved.
+Vitest browser-mode harness for dashboard stories, ported from WS16's old
+`@storybook/test-runner@0.23.0` line onto Storybook 10 + the
+`@storybook/addon-vitest` addon (owner 2026-09-26). The old test-runner,
+`scripts/storybook-test.ts`, and `.storybook/test-runner.ts` are gone — see
+the git log if you need their history; they all live in this directory's
+ancestor docblocks.
 
 ```
-bun run test:storybook                          # compare, first batch only
-bun run test:storybook -- --update-snapshots     # (re)write baselines locally
-bun run test:storybook -- --skip-build           # reuse an existing storybook-static/
-bun run test:storybook -- --port=17190           # override the scratch port (17180-17200)
+bun run test:stories                          # compare against committed baselines
+bun run test:stories -- --update-snapshots   # (re)write baselines locally
+bun run test:stories -- --ci                 # missing baseline fails (CI mode)
+bun run test:stories -- --skip-build         # reuse an existing storybook-static/
 ```
 
 ## What runs
 
-One-shot against `build-storybook`'s static output (no dev/watch server):
+One-shot in headless Chromium via the vitest `stories` project; no
+dev/watch server is involved, no static build is run from here:
 
-1. **Interaction** — `@storybook/test` play functions on stories, executed by
-   `@storybook/test-runner`'s own built-in mechanism (a play function that
-   throws fails that story's test; nothing extra needed to wire this up).
-2. **Visual** — a pixel diff (`pixelmatch` + `pngjs`) per story, in both the
-   `dark` and `light` globals `@storybook/addon-themes` exposes, against a
-   baseline PNG.
-3. **a11y** — `axe-playwright` (`injectAxe`/`getViolations`) per story, per
-   theme. This is **not** `@storybook/addon-a11y` — that addon stays disabled
-   per `.storybook/main.ts`'s `TODO(phase-7)` (Storybook-10-only feature; this
-   project is pinned to Storybook 8, see `frontend-construct-rules.md` §3).
-   axe-playwright drives the same axe-core engine directly through Playwright,
-   a separate mechanism that does not touch that decision.
+1. **Interaction** — `composeStory(storyExport, meta, undefined, undefined,
+   exportName)` renders each tagged story through the real
+   `.storybook/preview.ts` annotations and plays its `play` function. A
+   throwing play fails that story's test, exactly like the old test-runner's
+   built-in `__test` mechanism did.
+2. **a11y** — in-page `axe-core` per story, per theme (dark + light).
+   Violations are filtered through `storybook-tests/a11y-known-issues.json`,
+   keyed by `(storyId, theme, ruleId)`. Any violation not in that allowlist
+   fails the run; known debt warns and continues.
+3. **Visual** — `pixelmatch` over the whole `document.body` against a CI-
+   generated baseline PNG per theme
+   (`storybook-tests/visual-baselines/`, gitignored — never written outside
+   `STORYBOOK_TEST_UPDATE_SNAPSHOTS=1`). Diff PNG to `storybook-tests/diffs/`
+   on failure.
 
-All three run through `.storybook/test-runner.ts`'s `postVisit` hook plus the
-story files' own `play` functions — see `src/domains/{runs,chat}/**/*.stories.tsx`
-for the first batch.
+Every story runs inside ONE iframe served by the project's vite server —
+the same vite that backs `bun run dev`. Disk access (baselines + diffs)
+goes through the `/__sb-harness/{baseline,diff}` middleware
+(`storybook-tests/harness-io.ts`); a browser test cannot touch `node:fs`.
 
-## Why `@storybook/test-runner@0.23.0` exactly
+## Why this shape
 
-`@storybook/test-runner@0.24+` dropped Storybook 8 support (peer dep requires
-SB 10/11). `0.23.0` is the last release whose `peerDependencies` still accept
-`^8.2.0`. Pinned exactly (no `^`) so a routine `bun update` doesn't silently
-jump to an incompatible major.
+The `@storybook/test-runner` package pinned WS16 to its last SB8 release
+(0.23.0 — 0.24+ requires SB 10/11 and was a moving target at the time).
+Storybook 10 ships `@storybook/addon-vitest` as the first-class way to
+run story `play` functions under vitest, in the same in-browser context
+the canvas already uses. We tried that, it covers all three checks with
+one configuration (browser-mode vitest + axe-core + pixelmatch), and the
+old plugin-chain composition goes away.
 
-## Scope: "ws16-batch1" only
+## Scope: `ws16-batch1` only
 
-`test:storybook` runs the stories tagged `ws16-batch1` in their `meta.tags`
-(currently: `Runs/Run graph`, `Runs/Profile river`, `Runs/Work item inspector`,
-`Chat/ChatMessage`, `Domains/Chat/ChatDock` — WS16 tasks.md's "runs, chat
-domains" first batch). This keeps the one-shot run bounded while the harness
-rolls out to the rest of the ~93 stories incrementally (tasks.md 16.4 tracks
-the remaining domains as follow-up work, not silently dropped).
+`test:stories` runs the stories whose `meta.tags` include a tag from
+`STORYBOOK_TEST_INCLUDE_TAGS` (default `ws16-batch1`). Today that covers
+`Runs/Run graph`, `Runs/Profile river`, `Runs/Work item inspector`,
+`Chat/ChatMessage` — the WS16 first batch; no new batch added yet.
 
-To widen the run without touching `.storybook/test-runner.ts`, pass
+To widen the run without touching `harness.spec.ts`, pass
 `STORYBOOK_TEST_INCLUDE_TAGS=ws16-batch1,ws16-batch2` (comma-separated) when
-a future batch adds its own tag to its stories' `meta.tags`.
+a future batch adds its own tag to its stories' `meta.tags`. The `default`
+is set by `vitest.config.ts`'s `STORYBOOK_TEST_CONFIG` constant — same env
+knob, same key.
 
 ## Portal-based stories
 
-`src/domains/chat/ui/chat-dock.stories.tsx` (`PanelDepth`, `FillingTheWindow`,
-`SeededFromARun`) renders through `BottomSheet` — and every kit primitive
-built on react-aria-components' `Modal`/`Dialog` (`ConfirmDialog`,
-`FormDialog`, `Dialog` itself) is the same shape — which portals its content
-into `document.body`, so Storybook's own `#storybook-root` never gains
-children. The stories render correctly (verified with a direct Playwright
-visit outside test-runner, and with WS17's `ui:probe`), but
-`@storybook/test-runner@0.23.0`'s own per-story transition — asking an
-already-loaded preview to switch story via `channel.emit("setCurrentStory",
-...)`, then waiting on a `storyFinished`/`storyRendered` channel event with no
-timeout of its own — never resolved for them, and every story in that file
-timed out at Jest's default 15s, including one with no play function at all.
+In Storybook 10 + this harness every story is composed and rendered
+directly inside the test iframe. Both checks (`axe.run(document.body)`
+and `page.screenshot()`) read `document.body` — which by definition
+already contains portaled children (`BottomSheet`, every react-aria
+`Modal`/`Dialog`, the old "ChatDock"` stories).
 
-WS16.4 works around it rather than dropping the file from the batch: a story
-tagged `"ws16-portal"` in its `meta.tags` is pre-rendered by
-`.storybook/test-runner.ts`'s `preVisit` via a direct navigation to its own
-`iframe.html?id=...` URL — the exact mechanism WS17's `ui:probe` already
-validated against this component — and `postVisit`'s a11y/visual capture
-scopes to `document.body` instead of `#storybook-root` for those stories, so
-it actually sees the portaled content. See `.storybook/test-runner.ts`'s
-`PORTAL_TAG` docblock and `scripts/lib/storybook-ready-signal.ts` (shared
-with `ui:probe`) for the full mechanism. Any future story built on
-`Modal`/`Dialog` picks this up the same way: add both tags.
+The old `ws16-portal` tag was tied specifically to
+`@storybook/test-runner@0.23.0`'s per-story channel transition, which
+hung on portal content (its `setCurrentStory` round-trip never resolved
+the channel `storyFinished` for `chat-dock`'s stories). That mechanism
+is gone now; the tag was dropped from `chat-dock.stories.tsx` when
+this harness landed. Its history is preserved here, and in the git log,
+for anyone curious why an old tag exists in pre-migration `*.stories.tsx`
+files in branches that haven't pulled this change.
 
 ## Visual baselines are not committed
 
-Per design.md's risk note ("visual baselines are generated and reviewed in
-CI... not dev-machine screenshots") and `agent-runtime-safety.md` §5
-("generated by the project's own test command in CI on first green, not by
+Per design.md's risk note and `~/.agents/rules/process/agent-runtime-safety.md`
+(§5: "generated by the project's own test command in CI on first green, not by
 an agent running playwright locally"): `storybook-tests/visual-baselines/` is
-gitignored. Nobody's local run — human or agent — writes a baseline that
-lands in git.
+gitignored.
 
 - **Local / agent run, no baseline yet:** warns and skips that story+theme's
   visual check. Does not fail the run.
-- **CI run (`CI=true`), no baseline yet:** fails loudly, naming the missing
-  path — forces baseline generation through the dedicated CI job below, never
-  silently.
+- **CI run (`CI=true` or `--ci`), no baseline yet:** fails loudly, naming the
+  missing path — forces baseline generation through the dedicated CI job
+  below, never silently.
 - **Baseline exists, diff exceeds tolerance:** fails; the diff PNG is written
-  to `storybook-tests/diffs/<story>--<theme>.diff.png` and its path is in the
-  failure's `artifactPaths`.
+  to `storybook-tests/diffs/<story>--<theme>.diff.png` and its path is in
+  the failure's `artifactPaths`.
+
+A11y violations are NOT skipped on missing baseline — a missing-baseline run
+will still report a11y debt. That's deliberate: a11y failures are objective
+(component code, not rendered state), and an unknown a11y violation in a story
+that has never visually changed is almost always a real bug, not a baseline
+gap.
 
 Tolerance is env-overridable, not pixel-exact (font/rendering drift between
 machines is expected — design.md Risks):
@@ -115,19 +108,22 @@ machines is expected — design.md Risks):
 |---|---|---|
 | `STORYBOOK_TEST_VISUAL_THRESHOLD` | `0.01` | Max fraction of differing pixels before a story fails |
 | `STORYBOOK_TEST_PIXEL_THRESHOLD` | `0.1` | Per-pixel colour-distance `pixelmatch` treats as "different" at all |
+| `STORYBOOK_TEST_INCLUDE_TAGS` | `ws16-batch1` | Comma-separated tag list — `meta.tags` matching any of them runs |
+| `STORYBOOK_TEST_UPDATE_SNAPSHOTS` | `0` | `1` rewrites baselines locally; checked into git only via the CI job below |
+| `STORYBOOK_TEST_CI` | unset | When `1` (or `CI` env is set), a missing baseline **fails**, not warns |
+| `STORYBOOK_TEST_TIMEOUT_MS` | `480000` (8 min) | Hard cap on the whole vitest run |
 
-### Baseline-refresh CI job (proposed, not wired by this change)
+### Baseline-refresh CI job (manual-trigger or schedule)
 
 ```yaml
 storybook-baselines:
-  needs: [build-fe]
   runs-on: ubuntu-latest
   steps:
     - uses: actions/checkout@v4
     - uses: oven-sh/setup-bun@v2
     - run: cd dashboard && bun install --frozen-lockfile
     - run: cd dashboard && bunx playwright install --with-deps chromium
-    - run: cd dashboard && CI=true bun run test:storybook -- --update-snapshots
+    - run: cd dashboard && CI=true bun run test:stories -- --update-snapshots
     - run: |
         cd dashboard
         git add storybook-tests/visual-baselines
@@ -135,17 +131,15 @@ storybook-baselines:
           (git commit -m "[.stbl](feat/dashboard): refresh storybook visual baselines" && git push)
 ```
 
-Manual-trigger or on a schedule, not on every PR — it is the one place a
-baseline is allowed to be written and committed.
+Not on every PR — it is the one place a baseline is allowed to be written and
+committed.
 
 ## Pre-existing a11y debt: `a11y-known-issues.json`
 
-Turning the a11y check on against the first batch surfaced **61**
-story+theme combinations with real, pre-existing violations (mostly
-`color-contrast`, a few `label`/`aria-allowed-role`) across
-`run-graph`, `profile-river`, `work-item-inspector` and `chat-message` —
-this change's file scope is story files and test config, not component
-`.tsx`/`.module.css`, so fixing them is out of scope here. They are
+Turning the a11y check on against the first batch surfaced a handful of
+story+theme combinations with real, pre-existing violations
+(`color-contrast` everywhere, some `region` and `scrollable-region-focusable`,
+`aria-allowed-role`, `listitem`, `label` in a few places). They are
 allowlisted by exact `(storyId, theme, ruleId)` in
 `storybook-tests/a11y-known-issues.json`, committed and reviewable, so the
 harness is green without hiding the debt or silently skipping a11y
@@ -159,29 +153,11 @@ altogether:
   responsibly (fix the CSS, delete the line) or grow deliberately (a new
   story's story-specific entry with a reason in the PR), never silently.
 
-WS16.4 (re-enabling `chat-dock`, see "Portal-based stories" above) added 25
-more entries the same way: `aria-allowed-role` and `listitem` on the shared
-message-log markup (`ChatConsole`'s `<ol role="log">`/`<li data-test="chat-
-message">`, already known from `chat-message`'s own entries above),
-`scrollable-region-focusable` on the console's `<aside>` side panel (already
-known from `chat-message`'s `--long-thread` and `run-graph`'s `--large-run`),
-`color-contrast` on the chat-session list's age label (`_rowAge_` against
-`_rowCurrent_`'s highlighted background — the same systemic muted-text
-pattern as every other `color-contrast` entry here), and one new rule,
-`region`, on `BottomSheet`'s own `SplitSeparator` resize handle
-(`role="separator"` sitting outside any landmark) — the first three
-categories are debt in components `chat-dock`'s stories happen to also
-render; `region` is `BottomSheet`/`SplitPane`'s own, previously unobserved
-because no portal-based story ran through this check before WS16.4. All are
-already-shipped component behaviour, not something these test-runner or
-story-file changes introduced — confirmed by cross-checking axe's reported
-target selectors against a `ui:probe` capture of the same story.
-
 `color-contrast` alone accounts for the overwhelming majority of entries and
-repeats across four unrelated components — worth investigating as one or two
-shared token-level root causes (muted text / status colours against certain
-surfaces) rather than 61 separate fixes. Flagged as a follow-up, not
-resolved by this change.
+repeats across multiple components — worth investigating as one or two shared
+token-level root causes (muted text / status colours against certain
+surfaces) rather than individual fixes. Flagged as a follow-up, not resolved
+by this change.
 
 ## Reports
 
@@ -189,5 +165,5 @@ resolved by this change.
 the shared agent report envelope from design.md ("Report format for agents"):
 `schemaVersion`, `tier: "ui-storybook"`, `mode`, `summary`, `failures[]` with
 `stage` (`play` / `a11y` / `visual`) and `artifactPaths`, `cost` (always zero
-here — no model spend). `test:storybook` also prints a one-line verdict
-(`PASS 41/41` / `FAIL 2/41 — see storybook-tests/report.md`).
+here — no model spend). `test:stories` also prints a one-line verdict
+(`PASS 42/42` / `FAIL 2/42 — see storybook-tests/report.md`).

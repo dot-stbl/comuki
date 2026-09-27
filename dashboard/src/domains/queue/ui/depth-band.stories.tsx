@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { listQueueDepth, resetPool } from "@/domains/queue/api/pool.store"
 

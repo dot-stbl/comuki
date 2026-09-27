@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { CommandPalette } from "./command-palette"
 import type { SearchItem } from "./resolve"

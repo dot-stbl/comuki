@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { toRunSummary } from "@/domains/runs/api/mappers"
 import { readAttention } from "@/domains/home/model/attention"

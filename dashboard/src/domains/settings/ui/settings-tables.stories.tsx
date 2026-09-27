@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import { toSettingsSnapshot } from "@/domains/settings/api/mappers"
 import { SETTINGS_SEED } from "@/shared/api/mock/settings.seed"

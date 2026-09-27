@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 
 import type { ObservabilitySnapshot } from "@/domains/observability/model/types"
 import { BoardsPanel } from "@/domains/observability/ui/boards-panel"

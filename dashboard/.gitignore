@@ -38,9 +38,17 @@ storybook-tests/diffs
 storybook-tests/artifacts
 storybook-tests/report.json
 storybook-tests/report.md
+# vitest browser-mode `--project stories` writes one PNG per failing test
+# (its "Failure screenshot:" line in the harness run output) — runtime
+# attachment, never checked in.
+storybook-tests/__screenshots__
 
 # ui:probe run artifacts (WS17) — screenshots/DOM/aria/axe/console + summary,
 # per-run output, not source. Same reasoning as the storybook-tests entries
 # above.
 artifacts/ui-probe
+
+# vitest browser-mode test attachments (analogous to the storybook-tests
+# __screenshots__ above — runtime artefact, never checked in).
+.vitest-attachments
 

@@ -6,11 +6,11 @@
 // (react-aria-components' `Modal`/`Dialog`, and everything built on it:
 // `BottomSheet`, `ConfirmDialog`, `FormDialog`, `Dialog` itself).
 //
-// Extracted from WS17's `ui-probe.ts` (`installStorybookReadySignal` /
-// `waitForStoryReady`) so WS16's `.storybook/test-runner.ts` can reuse the
-// exact same technique for its own portal-story workaround rather than a
-// second hand-rolled copy — see that file's `preVisit` and
-// `storybook-tests/README.md` "Portal-based stories" section.
+// Used by `scripts/ui-probe.ts` only. The vitest stories harness
+// (`@storybook/addon-vitest`'s `storybookTest()` plugin,
+// `vitest.config.ts` `stories` project) composes and renders stories
+// directly in the test iframe and never navigates, so it needs no
+// ready-signal of its own.
 //
 // Storybook's own channel emits `storyFinished` (or, on older builds,
 // `storyRendered`) once loading, rendering *and* any play function have
@@ -117,100 +117,3 @@ export async function waitForStoryReady(page: Page, timeoutMs: number): Promise<
   return { error: state.error }
 }
 
-/**
- * (Re)installs a minimal, working `window.__test(storyId)` — the same
- * global `@storybook/test-runner@0.23.0`'s own generated per-story Jest test
- * calls via `page.evaluate(() => __test(id))` (see its `setup-page-script.mjs`,
- * and `.storybook/test-runner.ts`'s docblock on `PORTAL_TAG`).
- *
- * A `page.goto()` full navigation wipes whatever `@storybook/test-runner`
- * itself injected there — its own `setup-page-script.mjs` blob, added via
- * `page.addScriptTag` once at the start of the file, does not survive a
- * navigation, and neither does anything else on `window`. `preVisit`
- * navigating the page directly for a portal story (see
- * `installStoryReadySignal` above) therefore leaves the *next*
- * `page.evaluate(() => __test(id))` — the harness's own, for THIS story, and
- * every later story in the same file that does not itself navigate — with
- * no `__test` to call at all (`ReferenceError`). This reinstalls it.
- *
- * Deliberately not a no-op stub: a later story in the same file that did not
- * trigger a navigation of its own still goes through this same
- * `window.__test`, so it must actually drive Storybook's real render
- * (`setCurrentStory` + wait for the finished/error event), not merely
- * report success. For the *same* story `preVisit` just pre-rendered,
- * Storybook's own preview core recognises the repeat `setCurrentStory` as a
- * no-op selection and answers with `storyUnchanged` rather than rendering
- * again (`Preview.renderSelection`'s `currentSelection`/`currentRender`
- * shortcut — verified against `@storybook/core`'s own source in
- * `node_modules`), so this resolves immediately rather than repeating
- * whatever made the first attempt (via the harness's own transition) hang.
- */
-export function installTestBridge(page: Page): Promise<unknown> {
-  return page.evaluate(() => {
-    interface ChannelLike {
-      on(event: string, listener: (...args: never[]) => void): void
-      off(event: string, listener: (...args: never[]) => void): void
-      emit(event: string, payload?: unknown): void
-    }
-
-    ;(window as unknown as { __test: (storyId: string) => Promise<void> }).__test = (storyId: string) =>
-      new Promise<void>((resolve, reject) => {
-        const channel = (window as unknown as { __STORYBOOK_ADDONS_CHANNEL__?: ChannelLike })
-          .__STORYBOOK_ADDONS_CHANNEL__
-        if (!channel) {
-          reject(new Error("no Storybook channel on this page"))
-          return
-        }
-        // Narrowed once into its own binding: the nested `cleanup` closure
-        // below doesn't retain the `if (!channel)` guard's narrowing on the
-        // outer `channel` across a function boundary.
-        const activeChannel = channel
-
-        const listeners: Record<string, (...args: never[]) => void> = {
-          storyFinished: (data: { status?: string }) => {
-            cleanup()
-            if (data?.status === "error") {
-              reject(new Error("story finished with an error"))
-            } else {
-              resolve()
-            }
-          },
-          storyUnchanged: () => {
-            cleanup()
-            resolve()
-          },
-          storyMissing: (id: unknown) => {
-            cleanup()
-            reject(new Error(`story not found: ${String(id)}`))
-          },
-          storyErrored: (payload: { description?: string }) => {
-            cleanup()
-            reject(new Error(payload?.description ?? "storyErrored"))
-          },
-          storyThrewException: (error: { message?: string }) => {
-            cleanup()
-            reject(new Error(error?.message ?? "storyThrewException"))
-          },
-          playFunctionThrewException: (error: { message?: string }) => {
-            cleanup()
-            reject(new Error(error?.message ?? "playFunctionThrewException"))
-          },
-          unhandledErrorsWhilePlaying: (errors: { message?: string }[]) => {
-            cleanup()
-            reject(new Error(errors?.[0]?.message ?? "unhandledErrorsWhilePlaying"))
-          },
-        }
-
-        function cleanup(): void {
-          for (const [event, listener] of Object.entries(listeners)) {
-            activeChannel.off(event, listener)
-          }
-        }
-
-        for (const [event, listener] of Object.entries(listeners)) {
-          activeChannel.on(event, listener)
-        }
-        activeChannel.emit("setCurrentStory", { storyId, viewMode: "story" })
-      })
-  })
-}

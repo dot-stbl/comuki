@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import type { ReactNode } from "react"
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import {
   createMemoryHistory,

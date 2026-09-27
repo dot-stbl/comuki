@@ -34,6 +34,7 @@ always: true
 | 17181 | comuki-e2e postgres (host-mapped) | `deploy/compose.e2e.yml` → `postgres` service (WS13) |
 | 17182 | comuki-e2e MinIO API | `deploy/compose.e2e.yml` → `minio` service S3 API (WS13) |
 | 17183 | comuki-e2e MinIO console | `deploy/compose.e2e.yml` → `minio` service web console (WS13) |
+| 17184 | vitest browser-mode API (stories project) | `dashboard/vitest.config.ts` → `test.browser.api.port` for `@storybook/addon-vitest` (Storybook 10, `bun run test:stories`) |
 | 17185 | Worker gRPC (Kestrel, dedicated) | `platform/src/host/Comuki.Host` → `host.workerGrpcPort` (config.toml) — issue #152 |
 | 17190 | Comuki.TestFakeModel (standalone / container) | `tests/tools/Comuki.TestFakeModel` → `--port` / `COMUKI_TESTFAKEMODEL_PORT`; reused as the WS13 `comuki-e2e-testfakemodel` published port |
 

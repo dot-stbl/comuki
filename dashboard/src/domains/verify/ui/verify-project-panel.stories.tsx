@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react"
 import type { ReactNode } from "react"
-import type { Meta, StoryObj } from "@storybook/react"
+import type { Meta, StoryObj } from "@storybook/react-vite"
 import {
   createMemoryHistory,
   createRootRoute,

@@ -6,12 +6,17 @@ WS17 of `openspec/changes/add-agentic-test-contour` (branch
 dev commands") for the spec this implements. It reuses WS16's
 `scripts/lib/static-server.ts` and its `bun run build-storybook` build step.
 
+The `--story <storyId>` argument takes the **full kebab-case Storybook id**
+(matches `index.json`'s `entries` keys, e.g. `domains-chat-chatdock--panel-depth`,
+`chat-chatmessage--all-parts`); the old SB8 short form (`chat-dock--panel-depth`)
+no longer resolves.
+
 ```bash
 # Render one story, dark theme, screenshot + DOM + aria tree + axe + console
-bun run --cwd dashboard ui:probe -- --story runs-list--default
+bun run --cwd dashboard ui:probe -- --story chat-chatmessage--all-parts
 
 # Both themes, a portal-based story (see "The portal case" below)
-bun run --cwd dashboard ui:probe -- --story chat-dock--panel-depth --theme both
+bun run --cwd dashboard ui:probe -- --story domains-chat-chatdock--panel-depth --theme both
 
 # A full page against a static `vite build` preview (mock data, no dev server)
 # NOTE: from Git Bash / MSYS on Windows, a leading "/" in an argument gets

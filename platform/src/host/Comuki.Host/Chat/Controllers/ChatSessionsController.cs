@@ -40,25 +40,22 @@ public sealed class ChatSessionsController(
     [HttpPost("")]
     [ProducesResponseType<ChatSessionView>(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public Task<ActionResult> CreateAsync(
+    public async Task<ActionResult> CreateAsync(
         [FromBody] CreateChatSessionRequest request,
         [FromServices] IValidator<CreateChatSessionCommand> validator,
         CancellationToken cancellationToken = default)
     {
-        return ChatEndpointRunner.ExecuteAsync(async () =>
-        {
-            var subjectId = ChatSubjects.ResolveSubjectId(User);
-            await validator.ValidateAndThrowAsync(new CreateChatSessionCommand(subjectId, request.ProjectId, request.Title), cancellationToken);
-            var session = await sessions.CreateAsync(
-                subjectId,
-                request.ProjectId is { } projectId ? new ProjectId(projectId) : null,
-                request.Title,
-                cancellationToken);
+        var subjectId = ChatSubjects.ResolveSubjectId(User);
+        await validator.ValidateAndThrowAsync(new CreateChatSessionCommand(subjectId, request.ProjectId, request.Title), cancellationToken);
+        var session = await sessions.CreateAsync(
+            subjectId,
+            request.ProjectId is { } projectId ? new ProjectId(projectId) : null,
+            request.Title,
+            cancellationToken);
 
-            return new CreatedResult(
-                ApiRoutes.ChatSessions + "/" + session.Id.Value,
-                ChatSessionView.Of(session));
-        });
+        return new CreatedResult(
+            ApiRoutes.ChatSessions + "/" + session.Id.Value,
+            ChatSessionView.Of(session));
     }
 
     /// <summary>Lists the acting subject's recent active sessions.</summary>
@@ -94,25 +91,22 @@ public sealed class ChatSessionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
-    public Task<ActionResult> PostMessageAsync(
+    public async Task<ActionResult> PostMessageAsync(
         Guid sessionId,
         [FromBody] PostChatMessageRequest request,
         [FromServices] IValidator<PostChatMessageCommand> validator,
         CancellationToken cancellationToken = default)
     {
-        return ChatEndpointRunner.ExecuteAsync(async () =>
+        var session = await resolver.ResolveAsync(sessionId, User, cancellationToken);
+
+        if (session is null)
         {
-            var session = await resolver.ResolveAsync(sessionId, User, cancellationToken);
+            return ChatProblems.NotFound(sessionId);
+        }
 
-            if (session is null)
-            {
-                return ChatProblems.NotFound(sessionId);
-            }
-
-            await validator.ValidateAndThrowAsync(new PostChatMessageCommand(sessionId, request.Message), cancellationToken);
-            var result = await turns.PostAsync(session, request.Message, cancellationToken);
-            return new OkObjectResult(ChatTurnResultView.Of(result));
-        });
+        await validator.ValidateAndThrowAsync(new PostChatMessageCommand(sessionId, request.Message), cancellationToken);
+        var result = await turns.PostAsync(session, request.Message, cancellationToken);
+        return new OkObjectResult(ChatTurnResultView.Of(result));
     }
 
     /// <summary>Reads a page of the transcript, oldest first.</summary>
@@ -149,22 +143,19 @@ public sealed class ChatSessionsController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
-    public Task<ActionResult> ApproveAsync(
+    public async Task<ActionResult> ApproveAsync(
         Guid sessionId,
         [FromBody] ChatApproveRequest request,
         CancellationToken cancellationToken = default)
     {
-        return ChatEndpointRunner.ExecuteAsync(async () =>
+        var session = await resolver.ResolveAsync(sessionId, User, cancellationToken);
+
+        if (session is null)
         {
-            var session = await resolver.ResolveAsync(sessionId, User, cancellationToken);
+            return ChatProblems.NotFound(sessionId);
+        }
 
-            if (session is null)
-            {
-                return ChatProblems.NotFound(sessionId);
-            }
-
-            var result = await turns.ApproveAsync(session, request.Approved, request.Reason, cancellationToken);
-            return new OkObjectResult(ChatTurnResultView.Of(result));
-        });
+        var result = await turns.ApproveAsync(session, request.Approved, request.Reason, cancellationToken);
+        return new OkObjectResult(ChatTurnResultView.Of(result));
     }
 }

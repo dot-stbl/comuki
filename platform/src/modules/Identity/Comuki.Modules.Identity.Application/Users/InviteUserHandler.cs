@@ -1,6 +1,7 @@
 using Comuki.Modules.Identity.Application.Ports;
 using Comuki.Modules.Identity.Application.Views;
 using Comuki.Modules.Identity.Domain.Users;
+using Comuki.Shared.Kernel.Exceptions;
 using Microsoft.AspNetCore.Identity;
 
 namespace Comuki.Modules.Identity.Application.Users;
@@ -65,15 +66,17 @@ public sealed class InviteUserHandler(
 
 /// <summary>
 /// Raised when an invite email already maps to a user that has any OIDC
-/// link (Q43). The central <c>ProviderExceptionHandler</c> does not own
-/// this mapping — the Identity module turns it into a 409 Conflict at the
-/// controller boundary. Carries the offending email so the controller can
-/// surface a precise message without re-reading the user store.
+/// link (Q43). Carries the offending email so the 409 row can surface a
+/// precise message without re-reading the user store; the central
+/// problem-handler registry owns the wire mapping via
+/// <c>OidcLinkConflictProblemHandler</c>.
 /// </summary>
 /// <param name="Email">Lower-cased email the caller attempted to invite.</param>
 public sealed class OidcLinkConflictException(string Email)
-    : Exception($"user with email '{Email}' is already linked to an OIDC identity; invite refused")
+    : DomainException(ErrorCode, $"user with email '{Email}' is already linked to an OIDC identity; invite refused")
 {
+    private const string ErrorCode = "user.oidc_link_exists";
+
     /// <summary>Lower-cased email the caller attempted to invite.</summary>
     public string Email { get; } = Email;
 }

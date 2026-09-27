@@ -12,6 +12,14 @@ using Comuki.Host.ControlPlane;
 using Comuki.Host.Costs;
 using Comuki.Host.Editions;
 using Comuki.Host.Errors;
+using Comuki.Host.Errors.Core;
+using Comuki.Host.Errors.Handlers.Chat;
+using Comuki.Host.Errors.Handlers.Identity;
+using Comuki.Host.Errors.Handlers.Intake;
+using Comuki.Host.Errors.Handlers.Learning;
+using Comuki.Host.Errors.Handlers.Projects;
+using Comuki.Host.Errors.Handlers.Runs;
+using Comuki.Host.Errors.Handlers.Scheduler;
 using Comuki.Host.HealthChecks;
 using Comuki.Host.Intake;
 using Comuki.Host.Knowledge;
@@ -457,6 +465,14 @@ internal static class HostComposer
         builder.Services.Configure<MvcOptions>(static options => options.Filters.Add<RequiresFeatureFilter>());
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ProviderExceptionHandler>();
+        builder.Services.AddCoreProblemHandlers();
+        builder.Services.AddProjectsProblemHandlers();
+        builder.Services.AddIntakeProblemHandlers();
+        builder.Services.AddSchedulerProblemHandlers();
+        builder.Services.AddChatProblemHandlers();
+        builder.Services.AddRunsProblemHandlers();
+        builder.Services.AddLearningProblemHandlers();
+        builder.Services.AddIdentityProblemHandlers();
 
         // Identity-admin surface (issues #31-#37 + #45 read endpoints):
         // request-level validators sit alongside the module-level ones;

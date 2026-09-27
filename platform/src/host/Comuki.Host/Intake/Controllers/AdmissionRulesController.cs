@@ -40,19 +40,16 @@ public sealed class AdmissionRulesController(AdmissionRuleService rules) : Contr
     [RequiresPermission("source:write")]
     [ProducesResponseType<AdmissionRuleView>(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public Task<ActionResult> CreateAsync(CreateAdmissionRuleRequest request, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> CreateAsync(CreateAdmissionRuleRequest request, CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-        {
-            var view = await rules.CreateAsync(
-                new CreateAdmissionRuleCommand(
-                    new ProjectId(request.ProjectId),
-                    request.Mode,
-                    request.FilterJson),
-                cancellationToken);
+        var view = await rules.CreateAsync(
+            new CreateAdmissionRuleCommand(
+                new ProjectId(request.ProjectId),
+                request.Mode,
+                request.FilterJson),
+            cancellationToken);
 
-            return new CreatedResult(ApiRoutes.AdmissionRules + "/" + view.Id, view);
-        });
+        return new CreatedResult(ApiRoutes.AdmissionRules + "/" + view.Id, view);
     }
 
     /// <summary>Reads one rule.</summary>
@@ -62,10 +59,9 @@ public sealed class AdmissionRulesController(AdmissionRuleService rules) : Contr
     [RequiresPermission("intake:read")]
     [ProducesResponseType<AdmissionRuleView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> GetAsync(Guid ruleId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> GetAsync(Guid ruleId, CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-            Ok(await rules.GetAsync(new AdmissionRuleId(ruleId), cancellationToken)));
+        return Ok(await rules.GetAsync(new AdmissionRuleId(ruleId), cancellationToken));
     }
 
     /// <summary>Partial update (PATCH semantics — null fields stay).</summary>
@@ -76,15 +72,14 @@ public sealed class AdmissionRulesController(AdmissionRuleService rules) : Contr
     [RequiresPermission("source:write")]
     [ProducesResponseType<AdmissionRuleView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> UpdateAsync(Guid ruleId, UpdateAdmissionRuleRequest request, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> UpdateAsync(Guid ruleId, UpdateAdmissionRuleRequest request, CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-            Ok(await rules.UpdateAsync(
-                new AdmissionRuleId(ruleId),
-                request.Mode,
-                request.FilterJson,
-                request.Enabled,
-                cancellationToken)));
+        return Ok(await rules.UpdateAsync(
+            new AdmissionRuleId(ruleId),
+            request.Mode,
+            request.FilterJson,
+            request.Enabled,
+            cancellationToken));
     }
 
     /// <summary>Deletes a rule (idempotent).</summary>

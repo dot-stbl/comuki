@@ -51,13 +51,12 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
     [RequiresPermission("scheduler:read")]
     [ProducesResponseType<ScheduledJobView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> GetAsync(
+    public async Task<ActionResult> GetAsync(
         [FromRoute] Guid projectId,
         [FromRoute] Guid jobId,
         CancellationToken cancellationToken = default)
     {
-        return SchedulerEndpointRunner.ExecuteAsync(async () =>
-            Ok(await jobs.GetAsync(jobId, cancellationToken)));
+        return Ok(await jobs.GetAsync(jobId, cancellationToken));
     }
 
     /// <summary>Creates a scheduled job for a project.</summary>
@@ -68,29 +67,26 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
     [RequiresPermission("scheduler:write")]
     [ProducesResponseType<ScheduledJobView>(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public Task<ActionResult> CreateAsync(
+    public async Task<ActionResult> CreateAsync(
         [FromRoute] Guid projectId,
         [FromBody] CreateScheduledJobRequest request,
         CancellationToken cancellationToken = default)
     {
-        return SchedulerEndpointRunner.ExecuteAsync(async () =>
-        {
-            var view = await jobs.CreateAsync(
-                new CreateScheduledJobCommand(
-                    new ProjectId(projectId),
-                    request.CronExpression,
-                    request.ProfileKey,
-                    request.BriefJson,
-                    request.RunOnOnceAt,
-                    request.Enabled),
-                cancellationToken);
+        var view = await jobs.CreateAsync(
+            new CreateScheduledJobCommand(
+                new ProjectId(projectId),
+                request.CronExpression,
+                request.ProfileKey,
+                request.BriefJson,
+                request.RunOnOnceAt,
+                request.Enabled),
+            cancellationToken);
 
-            // Class-level route is "/api/v1/projects/{projectId:guid}/scheduled-jobs";
-            // the location header is the constant with the placeholder
-            // substituted for the request's projectId — no inline literal.
-            var location = ApiRoutes.SchedulerJobs + "/" + view.Id;
-            return new CreatedResult(location.Replace("{projectId:guid}", projectId.ToString()), view);
-        });
+        // Class-level route is "/api/v1/projects/{projectId:guid}/scheduled-jobs";
+        // the location header is the constant with the placeholder
+        // substituted for the request's projectId — no inline literal.
+        var location = ApiRoutes.SchedulerJobs + "/" + view.Id;
+        return new CreatedResult(location.Replace("{projectId:guid}", projectId.ToString()), view);
     }
 
     /// <summary>Partial update — null fields leave the stored value untouched.</summary>
@@ -103,20 +99,19 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
     [ProducesResponseType<ScheduledJobView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> UpdateAsync(
+    public async Task<ActionResult> UpdateAsync(
         [FromRoute] Guid projectId,
         [FromRoute] Guid jobId,
         [FromBody] UpdateScheduledJobRequest request,
         CancellationToken cancellationToken = default)
     {
-        return SchedulerEndpointRunner.ExecuteAsync(async () =>
-            Ok(await jobs.UpdateAsync(
-                new UpdateScheduledJobCommand(
-                    new ScheduledJobId(jobId),
-                    request.CronExpression,
-                    null,
-                    request.Enabled),
-                cancellationToken)));
+        return Ok(await jobs.UpdateAsync(
+            new UpdateScheduledJobCommand(
+                new ScheduledJobId(jobId),
+                request.CronExpression,
+                null,
+                request.Enabled),
+            cancellationToken));
     }
 
     /// <summary>Deletes a scheduled job (idempotent — missing ids are a no-op).</summary>

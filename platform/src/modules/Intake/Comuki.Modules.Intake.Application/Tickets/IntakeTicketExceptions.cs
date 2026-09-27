@@ -1,4 +1,5 @@
 using Comuki.Modules.Intake.Domain.Ids;
+using Comuki.Shared.Kernel.Exceptions;
 
 namespace Comuki.Modules.Intake.Application.Tickets;
 
@@ -6,9 +7,15 @@ namespace Comuki.Modules.Intake.Application.Tickets;
 /// <param name="TicketId"></param>
 /// <param name="Status"></param>
 public sealed class IntakeTicketConflictException(IncomingTicketId TicketId, string Status)
-    : Exception($"intake ticket '{TicketId}' is not claimable (status {Status})");
+    : DomainException(ErrorCode, $"intake ticket '{TicketId}' is not claimable (status {Status})")
+{
+    private const string ErrorCode = "intake.ticket_conflict";
+}
 
 /// <summary>Thrown when a ticket id is unknown (404).</summary>
 /// <param name="TicketId"></param>
 public sealed class IntakeTicketNotFoundException(IncomingTicketId TicketId)
-    : Exception($"intake ticket '{TicketId}' not found");
+    : DomainException(ErrorCode, $"intake ticket '{TicketId}' not found")
+{
+    private const string ErrorCode = "intake.ticket_not_found";
+}

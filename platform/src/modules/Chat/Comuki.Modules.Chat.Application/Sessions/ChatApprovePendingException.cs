@@ -1,4 +1,5 @@
 using Comuki.Modules.Chat.Domain.Ids;
+using Comuki.Shared.Kernel.Exceptions;
 
 namespace Comuki.Modules.Chat.Application.Sessions;
 
@@ -9,8 +10,10 @@ namespace Comuki.Modules.Chat.Application.Sessions;
 /// </summary>
 /// <param name="sessionId"></param>
 public sealed class ChatApprovePendingException(ChatSessionId sessionId)
-    : Exception($"chat session '{sessionId}' is waiting for a plan approve/reject decision")
+    : DomainException(ErrorCode, $"chat session '{sessionId}' is waiting for a plan approve/reject decision")
 {
+    private const string ErrorCode = "chat.approve_pending";
+
     /// <summary>Session that is interrupted.</summary>
     public ChatSessionId SessionId { get; } = sessionId;
 }

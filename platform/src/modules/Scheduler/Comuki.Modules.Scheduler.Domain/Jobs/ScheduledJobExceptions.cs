@@ -6,9 +6,11 @@ namespace Comuki.Modules.Scheduler.Domain.Jobs;
 /// <summary>Scheduled job lookup miss.</summary>
 /// <param name="id"></param>
 public sealed class ScheduledJobNotFoundException(ScheduledJobId id) : DomainException(
-    "scheduler.job_not_found",
+    ErrorCode,
     $"scheduled job {id} not found")
 {
+    private const string ErrorCode = "scheduler.job_not_found";
+
     /// <summary>The id that was looked up.</summary>
     public ScheduledJobId JobId { get; } = id;
 }
@@ -17,9 +19,11 @@ public sealed class ScheduledJobNotFoundException(ScheduledJobId id) : DomainExc
 /// <param name="expression"></param>
 /// <param name="detail"></param>
 public sealed class InvalidCronExpressionException(string expression, string detail) : DomainException(
-    "scheduler.invalid_cron",
+    ErrorCode,
     detail)
 {
+    private const string ErrorCode = "scheduler.invalid_cron";
+
     /// <summary>The expression that failed to parse.</summary>
     public string Expression { get; } = expression;
 }

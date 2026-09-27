@@ -34,15 +34,12 @@ public sealed class LearningCandidatesController(
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<LearningCandidateView>>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public Task<ActionResult> ListAsync([FromQuery] string? status, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> ListAsync([FromQuery] string? status, CancellationToken cancellationToken = default)
     {
-        return LearningEndpointRunner.ExecuteAsync(async () =>
-        {
-            var parsed = string.IsNullOrWhiteSpace(status) ? null : LearningStatusKeys.Parse(status);
-            return parsed is null && !string.IsNullOrWhiteSpace(status)
-                ? LearningProblems.InvalidStatus(status)
-                : new OkObjectResult(await candidates.ListAsync(parsed, cancellationToken: cancellationToken));
-        });
+        var parsed = string.IsNullOrWhiteSpace(status) ? null : LearningStatusKeys.Parse(status);
+        return parsed is null && !string.IsNullOrWhiteSpace(status)
+            ? LearningProblems.InvalidStatus(status)
+            : new OkObjectResult(await candidates.ListAsync(parsed, cancellationToken: cancellationToken));
     }
 
     /// <summary>
@@ -53,12 +50,11 @@ public sealed class LearningCandidatesController(
     [HttpGet("{candidateId:guid}", Name = "learning-candidates-get-by-id")]
     [ProducesResponseType<LearningCandidateView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> GetAsync(Guid candidateId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> GetAsync(Guid candidateId, CancellationToken cancellationToken = default)
     {
-        return LearningEndpointRunner.ExecuteAsync(async () =>
-            await candidates.GetAsync(new LearningCandidateId(candidateId), cancellationToken) is { } candidate
-                ? new OkObjectResult(candidate)
-                : LearningProblems.CandidateNotFound(candidateId));
+        return await candidates.GetAsync(new LearningCandidateId(candidateId), cancellationToken) is { } candidate
+            ? new OkObjectResult(candidate)
+            : LearningProblems.CandidateNotFound(candidateId);
     }
 
     /// <summary>
@@ -74,12 +70,11 @@ public sealed class LearningCandidatesController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public Task<ActionResult> ApproveAsync(Guid candidateId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> ApproveAsync(Guid candidateId, CancellationToken cancellationToken = default)
     {
-        return LearningEndpointRunner.ExecuteAsync(async () =>
-            await decisions.ApproveAsync(new LearningCandidateId(candidateId), cancellationToken) is null
-                ? LearningProblems.CandidateNotFound(candidateId)
-                : new StatusCodeResult(StatusCodes.Status204NoContent));
+        return await decisions.ApproveAsync(new LearningCandidateId(candidateId), cancellationToken) is null
+            ? LearningProblems.CandidateNotFound(candidateId)
+            : new StatusCodeResult(StatusCodes.Status204NoContent);
     }
 
     /// <summary>
@@ -95,37 +90,24 @@ public sealed class LearningCandidatesController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public Task<ActionResult> RejectAsync(
+    public async Task<ActionResult> RejectAsync(
         Guid candidateId,
         [FromBody] RejectLearningCandidateRequest request,
         CancellationToken cancellationToken = default)
     {
-        return LearningEndpointRunner.ExecuteAsync(async () =>
-            await decisions.RejectAsync(new LearningCandidateId(candidateId), request.Reason, cancellationToken) is null
-                ? LearningProblems.CandidateNotFound(candidateId)
-                : new StatusCodeResult(StatusCodes.Status204NoContent));
+        return await decisions.RejectAsync(new LearningCandidateId(candidateId), request.Reason, cancellationToken) is null
+            ? LearningProblems.CandidateNotFound(candidateId)
+            : new StatusCodeResult(StatusCodes.Status204NoContent);
     }
 }
 
-/// <summary>Typed exceptions → ProblemDetails — one place for the learning surface.</summary>
-public static class LearningEndpointRunner
-{
-    /// <summary>Runs one endpoint body, mapping the learning surface's typed failures.</summary>
-    /// <param name="action">Endpoint body.</param>
-    public static async Task<ActionResult> ExecuteAsync(Func<Task<ActionResult>> action)
-    {
-        try
-        {
-            return await action();
-        }
-        catch (LearningDecisionConflictException exception)
-        {
-            return LearningProblems.StateConflict(exception);
-        }
-    }
-}
-
-/// <summary>Problem results of the learning surface (same shape as the runs surface).</summary>
+/// <summary>
+/// Value-flow problem rows of the learning surface — an unknown status key
+/// and an absent candidate are results, not thrown exceptions, so the rows
+/// stay endpoint-local per the domain-error-contract scope. Same shape the
+/// retired <c>LearningProblems</c> always shipped (the 409 StateConflict arm
+/// moved to <c>Errors/Handlers/Learning</c>).
+/// </summary>
 public static class LearningProblems
 {
     /// <summary>400 for an unknown status wire key.</summary>
@@ -157,28 +139,6 @@ public static class LearningProblems
             {
                 ["code"] = "learning.candidate_not_found",
                 ["candidateId"] = candidateId.ToString(),
-            });
-
-        return new ObjectResult(typed.ProblemDetails)
-        {
-            StatusCode = typed.StatusCode,
-            ContentTypes = { "application/problem+json" },
-        };
-    }
-
-    /// <summary>409 for a decision on a candidate whose current status is the wrong source.</summary>
-    /// <param name="exception">The typed conflict raised by the approval service.</param>
-    public static ActionResult StateConflict(LearningDecisionConflictException exception)
-    {
-        var typed = TypedResults.Problem(
-            title: "Learning candidate already decided",
-            detail: exception.Message,
-            statusCode: StatusCodes.Status409Conflict,
-            extensions: new Dictionary<string, object?>
-            {
-                ["code"] = "learning.already_decided",
-                ["candidateId"] = exception.CandidateId.Value.ToString(),
-                ["currentStatus"] = LearningStatusKeys.Key(exception.Current),
             });
 
         return new ObjectResult(typed.ProblemDetails)

@@ -2,7 +2,6 @@ using Comuki.Host.Runs.Models;
 using Comuki.Host.Security.RateLimit;
 using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Shared.Contracts.Runs;
-using Comuki.Shared.Filtering.Parser;
 using Comuki.Shared.Filtering.Ports;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Mvc;
@@ -41,10 +40,9 @@ public sealed class RunsController(
     [HttpGet]
     [ProducesResponseType<RunsPage>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public Task<ActionResult> ListAsync([FromQuery] FilterQuery query, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> ListAsync([FromQuery] FilterQuery query, CancellationToken cancellationToken = default)
     {
-        return RunsEndpointRunner.ExecuteAsync(
-            async () => new OkObjectResult(await runs.ListAsync(query, cancellationToken)));
+        return new OkObjectResult(await runs.ListAsync(query, cancellationToken));
     }
 
     /// <summary>
@@ -58,15 +56,11 @@ public sealed class RunsController(
     [HttpGet("{runId:guid}", Name = "runs-get-by-id")]
     [ProducesResponseType<RunDetail>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> GetAsync(Guid runId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> GetAsync(Guid runId, CancellationToken cancellationToken = default)
     {
-        return RunsEndpointRunner.ExecuteAsync(async () =>
-        {
-            var detail = await details.GetAsync(new RunId(runId), cancellationToken);
-            return detail is { } found
-                ? new OkObjectResult(found)
-                : RunsProblems.RunNotFound(new RunId(runId));
-        });
+        return await details.GetAsync(new RunId(runId), cancellationToken) is { } found
+            ? new OkObjectResult(found)
+            : RunsProblems.RunNotFound(new RunId(runId));
     }
 
     /// <summary>
@@ -83,13 +77,10 @@ public sealed class RunsController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public Task<ActionResult> ApproveAsync(Guid runId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> ApproveAsync(Guid runId, CancellationToken cancellationToken = default)
     {
-        return RunsEndpointRunner.ExecuteAsync(async () =>
-        {
-            await approve.ApproveAsync(new RunId(runId), cancellationToken);
-            return new StatusCodeResult(StatusCodes.Status204NoContent);
-        });
+        await approve.ApproveAsync(new RunId(runId), cancellationToken);
+        return new StatusCodeResult(StatusCodes.Status204NoContent);
     }
 
     /// <summary>
@@ -107,90 +98,31 @@ public sealed class RunsController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public Task<ActionResult> CancelAsync(
+    public async Task<ActionResult> CancelAsync(
         Guid runId,
         [FromBody] CancelRunRequest request,
         CancellationToken cancellationToken = default)
     {
-        return RunsEndpointRunner.ExecuteAsync(async () =>
-        {
-            await cancel.CancelAsync(new RunId(runId), request.Reason, cancellationToken);
-            return new StatusCodeResult(StatusCodes.Status204NoContent);
-        });
+        await cancel.CancelAsync(new RunId(runId), request.Reason, cancellationToken);
+        return new StatusCodeResult(StatusCodes.Status204NoContent);
     }
 }
 
-/// <summary>Typed exceptions → ProblemDetails — one place for the runs surface.</summary>
-public static class RunsEndpointRunner
-{
-    /// <summary>Runs one endpoint body, mapping the filter DSL's parse failures + run-state conflicts.</summary>
-    /// <param name="action">Endpoint body.</param>
-    public static async Task<ActionResult> ExecuteAsync(Func<Task<ActionResult>> action)
-    {
-        try
-        {
-            return await action();
-        }
-        catch (FilterParseException exception)
-        {
-            return RunsProblems.InvalidFilter(exception.Message);
-        }
-        catch (RunDecisionConflictException exception)
-        {
-            return RunsProblems.StateConflict(exception);
-        }
-    }
-}
-
-/// <summary>Problem results of the runs surface (same shape as the chat/auth surfaces).</summary>
+/// <summary>
+/// The 404 row of the runs value flow — a run the detail handler did not
+/// find is a result, not a thrown exception, so the row stays endpoint-local
+/// per the domain-error-contract scope. Same shape the retired
+/// <c>RunsProblems</c> always shipped.
+/// </summary>
 public static class RunsProblems
 {
-    /// <summary>400 for an unparseable or illegal filter/sort expression.</summary>
-    /// <param name="detail"></param>
-    public static ActionResult InvalidFilter(string detail)
-    {
-        // Build with TypedResults.Problem so the title/type defaults and
-        // extension shape stay canonical (issue #20), then wrap in
-        // ObjectResult for the controller-side ActionResult contract.
-        var typed = TypedResults.Problem(
-            title: "Invalid filter expression",
-            detail: detail,
-            statusCode: StatusCodes.Status400BadRequest,
-            extensions: new Dictionary<string, object?> { ["code"] = "filter.invalid" });
-
-        return new ObjectResult(typed.ProblemDetails)
-        {
-            StatusCode = typed.StatusCode,
-            ContentTypes = { "application/problem+json" },
-        };
-    }
-
-    /// <summary>409 for a decision endpoint called on a run whose current status is the wrong source.</summary>
-    /// <param name="exception">The typed conflict raised by the host adapter.</param>
-    public static ActionResult StateConflict(RunDecisionConflictException exception)
-    {
-        var typed = TypedResults.Problem(
-            title: "Run state conflict",
-            detail: exception.Message,
-            statusCode: StatusCodes.Status409Conflict,
-            extensions: new Dictionary<string, object?>
-            {
-                ["code"] = "run.terminal_state",
-                ["currentStatus"] = exception.Current.ToString(),
-                ["decision"] = exception.Decision,
-            });
-
-        return new ObjectResult(typed.ProblemDetails)
-        {
-            StatusCode = typed.StatusCode,
-            ContentTypes = { "application/problem+json" },
-        };
-    }
-
     /// <summary>404 for the detail endpoint when the run is absent or out of subject scope.</summary>
     /// <param name="runId">Run that was looked up.</param>
     public static ActionResult RunNotFound(RunId runId)
     {
+        // Build with TypedResults.Problem so the title/type defaults and
+        // extension shape stay canonical (issue #20), then wrap in
+        // ObjectResult for the controller-side ActionResult contract.
         var typed = TypedResults.Problem(
             title: "Run not found",
             detail: $"run '{runId.Value}' not found",

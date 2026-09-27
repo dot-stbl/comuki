@@ -1,4 +1,3 @@
-using Comuki.Shared.Kernel.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace Comuki.Host.Errors;
@@ -6,13 +5,22 @@ namespace Comuki.Host.Errors;
 /// <summary>
 /// The single composition-root <see cref="IExceptionHandler"/>: typed
 /// exceptions → <c>application/problem+json</c> per
-/// <c>error-mapping.md</c> §4. Endpoints stay clean of error plumbing;
-/// the one place that decides what a thrown exception means on the wire.
-/// Per-module <c>*Problems</c> helpers continue to carry module-specific
-/// 4xx codes (auth, permission, validation) until PR #20 replaces them.
+/// <c>error-mapping.md</c> §4. It resolves one
+/// <see cref="ProblemAnswer"/> through the <see cref="ProblemHandlerRegistry"/>
+/// (exact type first, then base chain, kernel defaults last) and executes it
+/// — the one place that decides what a thrown exception means on the wire.
+/// Endpoints stay clean of error plumbing; per-error-type rows live in
+/// handler classes, not in catch blocks. The per-module runner era this
+/// class's doc comment once blessed ("until PR #20") is retired: every
+/// module surface (Projects, Intake, Scheduler, Chat, Runs, Learning) now
+/// registers its rows via <c>Add&lt;Module&gt;ProblemHandlers()</c> and
+/// throws straight through.
 /// </summary>
+/// <param name="registry">Typed registry the exception is resolved through.</param>
 /// <param name="logger">Structured log sink for the full exception (Code + type).</param>
-public sealed class ProviderExceptionHandler(ILogger<ProviderExceptionHandler> logger) : IExceptionHandler
+public sealed class ProviderExceptionHandler(
+    ProblemHandlerRegistry registry,
+    ILogger<ProviderExceptionHandler> logger) : IExceptionHandler
 {
     /// <inheritdoc />
     public async ValueTask<bool> TryHandleAsync(
@@ -20,7 +28,21 @@ public sealed class ProviderExceptionHandler(ILogger<ProviderExceptionHandler> l
         Exception exception,
         CancellationToken cancellationToken)
     {
-        var mapped = ExceptionMapping.Map(exception);
+        var answer = registry.Resolve(exception);
+
+        if (answer.ValidationErrors is { } validationErrors)
+        {
+            // A 400 is the caller's mistake, not a server fault — debug, not error.
+            logger.LogDebug(
+                "Request {RequestMethod} {RequestPath} failed validation ({ExceptionType})",
+                httpContext.Request.Method,
+                httpContext.Request.Path,
+                exception.GetType().Name);
+
+            await TypedResults.ValidationProblem(validationErrors).ExecuteAsync(httpContext);
+
+            return true;
+        }
 
         // Full exception with the assigned Code — log-only, never surfaced in the response body.
         logger.LogError(
@@ -28,104 +50,19 @@ public sealed class ProviderExceptionHandler(ILogger<ProviderExceptionHandler> l
             "Request {RequestMethod} {RequestPath} mapped to {StatusCode} {ProblemCode} ({ExceptionType})",
             httpContext.Request.Method,
             httpContext.Request.Path,
-            mapped.StatusCode,
-            mapped.Code,
+            answer.StatusCode,
+            answer.Code,
             exception.GetType().Name);
 
         var problem = TypedResults.Problem(
-            title: mapped.Title,
-            detail: mapped.Detail,
-            statusCode: mapped.StatusCode,
-            type: mapped.Type,
-            extensions: new Dictionary<string, object?> { ["code"] = mapped.Code });
+            title: answer.Title,
+            detail: answer.Detail,
+            statusCode: answer.StatusCode,
+            type: answer.Type,
+            extensions: new Dictionary<string, object?>(answer.Extensions));
 
         await problem.ExecuteAsync(httpContext);
 
         return true;
-    }
-}
-
-/// <summary>
-/// Typed-exception → ProblemDetails mapping table. One pass per request:
-/// the inheritance chain is walked at most once via a single
-/// pattern-match arm; the most-derived matching type wins. Pure function
-/// — no I/O, no DI.
-/// </summary>
-file static class ExceptionMapping
-{
-    /// <summary>One wire row: status + RFC 9457 fields + the machine <c>code</c>.</summary>
-    /// <param name="StatusCode">HTTP status the response carries.</param>
-    /// <param name="Type">Stable URI for the error class (per RFC 9457).</param>
-    /// <param name="Title">Short, stable, human.</param>
-    /// <param name="Detail">Safe human detail — no stack, no secret, no PII.</param>
-    /// <param name="Code">Stable dot.case identifier — clients branch on this.</param>
-    public sealed record ProblemRow(int StatusCode, string Type, string Title, string Detail, string Code);
-
-    /// <summary>
-    /// Map any <see cref="Exception"/> to its ProblemDetails row. Pattern
-    /// matching evaluates the most-derived type first, so subclasses of
-    /// <see cref="ProviderException"/> (Timeout, NotFound) win over the
-    /// base, and any subclass of <see cref="DomainException"/> falls into
-    /// the 422 arm without listing each one.
-    /// </summary>
-    /// <param name="exception">The thrown exception.</param>
-    public static ProblemRow Map(Exception exception)
-    {
-        return exception switch
-        {
-            BudgetExceededException budget => new ProblemRow(
-                StatusCodes.Status402PaymentRequired,
-                TypeUri(budget.Code),
-                "Budget exceeded",
-                budget.Message,
-                budget.Code),
-            ProviderTimeoutException provider => new ProblemRow(
-                StatusCodes.Status504GatewayTimeout,
-                TypeUri("provider.timeout"),
-                "Upstream timeout",
-                "the upstream service timed out",
-                provider.Code),
-            ProviderNotFoundException provider => new ProblemRow(
-                StatusCodes.Status404NotFound,
-                TypeUri(provider.Code),
-                "Resource not found",
-                provider.Message,
-                provider.Code),
-            ProviderForbiddenException provider => new ProblemRow(
-                StatusCodes.Status403Forbidden,
-                TypeUri(provider.Code),
-                "Forbidden",
-                provider.Message,
-                provider.Code),
-            ProviderException provider => new ProblemRow(
-                StatusCodes.Status502BadGateway,
-                TypeUri(provider.Code),
-                "Upstream unavailable",
-                "the upstream service is unavailable",
-                provider.Code),
-            DomainException domain => new ProblemRow(
-                StatusCodes.Status422UnprocessableEntity,
-                TypeUri(domain.Code),
-                "Domain rule violated",
-                domain.Message,
-                domain.Code),
-            _ => new ProblemRow(
-                StatusCodes.Status500InternalServerError,
-                "about:blank",
-                "Internal server error",
-                "an unexpected error occurred",
-                "internal.error"),
-        };
-    }
-
-    /// <summary>
-    /// Builds a stable RFC 9457 <c>type</c> URI from the dot.case code.
-    /// Stable across releases so clients can pin to a known identifier
-    /// without parsing the human-readable title.
-    /// </summary>
-    /// <param name="code">Stable dot.case identifier.</param>
-    private static string TypeUri(string code)
-    {
-        return $"urn:comuki:error:{code}";
     }
 }

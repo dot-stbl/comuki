@@ -40,7 +40,7 @@ public sealed class WebhooksController(
                 provider,
                 receipt.StatusCode,
                 receipt.Code ?? receipt.Outcome);
-            return IntakeProblems.Problem(
+            return WebhookProblemRows.Problem(
                 receipt.StatusCode,
                 receipt.Code ?? "intake.webhook_rejected",
                 receipt.StatusCode == StatusCodes.Status401Unauthorized ? "Webhook rejected" : "Not found",
@@ -55,6 +55,33 @@ public sealed class WebhooksController(
 /// <param name="Outcome">Delivery outcome label (admitted | pending | filtered | skipped | duplicate | replay).</param>
 /// <param name="Detail"></param>
 public sealed record WebhookAcceptedResponse(string Outcome, string? Detail);
+
+/// <summary>
+/// Problem rows of the webhook value flow — the receipt is a result object,
+/// not a thrown exception, so its 4xx rows stay endpoint-local (per the
+/// domain-error-contract scope: only exception→ProblemDetails mapping
+/// consolidates). Same shape the retired <c>IntakeProblems.Problem</c> built.
+/// </summary>
+file static class WebhookProblemRows
+{
+    public static ActionResult Problem(int statusCode, string code, string title, string detail)
+    {
+        // Build with TypedResults.Problem so the title/type defaults and
+        // extension shape stay canonical (issue #20), then wrap in
+        // ObjectResult for the controller-side ActionResult contract.
+        var typed = TypedResults.Problem(
+            title: title,
+            detail: detail,
+            statusCode: statusCode,
+            extensions: new Dictionary<string, object?> { ["code"] = code });
+
+        return new ObjectResult(typed.ProblemDetails)
+        {
+            StatusCode = typed.StatusCode,
+            ContentTypes = { "application/problem+json" },
+        };
+    }
+}
 
 /// <summary>Request → <see cref="WebhookDelivery"/> (raw body, headers, query).</summary>
 file static class WebhookDeliveryReader

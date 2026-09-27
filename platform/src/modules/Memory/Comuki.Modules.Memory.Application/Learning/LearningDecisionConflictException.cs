@@ -1,5 +1,6 @@
 using Comuki.Modules.Memory.Domain.Ids;
 using Comuki.Modules.Memory.Domain.Learning;
+using Comuki.Shared.Kernel.Exceptions;
 
 namespace Comuki.Modules.Memory.Application.Learning;
 
@@ -12,9 +13,12 @@ namespace Comuki.Modules.Memory.Application.Learning;
 /// <param name="current">The candidate's current review state.</param>
 public sealed class LearningDecisionConflictException(
     LearningCandidateId candidateId,
-    LearningStatus current) : InvalidOperationException(
+    LearningStatus current) : DomainException(
+        ErrorCode,
         $"learning candidate {candidateId.Value} is already {LearningStatusKeys.Key(current)}")
 {
+    private const string ErrorCode = "learning.already_decided";
+
     /// <summary>The candidate the decision named.</summary>
     public LearningCandidateId CandidateId { get; } = candidateId;
 

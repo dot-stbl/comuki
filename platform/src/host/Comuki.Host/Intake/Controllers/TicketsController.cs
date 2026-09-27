@@ -25,20 +25,17 @@ public sealed class TicketsController(CreateNativeTicketHandler nativeTickets) :
     [ProducesResponseType<IntakeTicketView>(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public Task<ActionResult> CreateAsync(CreateNativeTicketRequest request, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> CreateAsync(CreateNativeTicketRequest request, CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-        {
-            var view = await nativeTickets.HandleAsync(
-                new CreateNativeTicketCommand(
-                    new ProjectId(request.ProjectId),
-                    request.Title,
-                    request.Body,
-                    request.ExternalId,
-                    request.Author),
-                cancellationToken);
+        var view = await nativeTickets.HandleAsync(
+            new CreateNativeTicketCommand(
+                new ProjectId(request.ProjectId),
+                request.Title,
+                request.Body,
+                request.ExternalId,
+                request.Author),
+            cancellationToken);
 
-            return new CreatedResult(ApiRoutes.Tickets + "/" + view.Id, view);
-        });
+        return new CreatedResult(ApiRoutes.Tickets + "/" + view.Id, view);
     }
 }

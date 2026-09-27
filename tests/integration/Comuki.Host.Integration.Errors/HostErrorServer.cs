@@ -1,4 +1,5 @@
 using Comuki.Host.Errors;
+using Comuki.Host.Errors.Core;
 using Comuki.Shared.Kernel.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -34,8 +35,9 @@ public sealed class HostErrorServer : IAsyncLifetime
         builder.WebHost.UseTestServer();
         builder.Logging.ClearProviders();
 
-        // Wire the same three calls HostComposer makes for the central handler.
+        // Wire the same calls HostComposer makes for the central handler.
         builder.Services.AddProblemDetails();
+        builder.Services.AddCoreProblemHandlers();
         builder.Services.AddExceptionHandler<ProviderExceptionHandler>();
 
         application = builder.Build();

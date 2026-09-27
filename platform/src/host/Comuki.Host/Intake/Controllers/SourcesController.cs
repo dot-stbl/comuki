@@ -47,21 +47,18 @@ public sealed class SourcesController(
     [RequiresPermission("source:write")]
     [ProducesResponseType<SourceConnectionView>(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public Task<ActionResult> CreateAsync(CreateSourceConnectionRequest request, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> CreateAsync(CreateSourceConnectionRequest request, CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-        {
-            var view = await connections.CreateAsync(
-                new CreateSourceConnectionCommand(
-                    new ProjectId(request.ProjectId),
-                    request.Provider,
-                    request.Name,
-                    request.SettingsJson,
-                    request.SecretEnvRef),
-                cancellationToken);
+        var view = await connections.CreateAsync(
+            new CreateSourceConnectionCommand(
+                new ProjectId(request.ProjectId),
+                request.Provider,
+                request.Name,
+                request.SettingsJson,
+                request.SecretEnvRef),
+            cancellationToken);
 
-            return new CreatedResult(ApiRoutes.Sources + "/" + view.Id, view);
-        });
+        return new CreatedResult(ApiRoutes.Sources + "/" + view.Id, view);
     }
 
     /// <summary>Reads one connection.</summary>
@@ -71,10 +68,9 @@ public sealed class SourcesController(
     [RequiresPermission("intake:read")]
     [ProducesResponseType<SourceConnectionView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> GetAsync(Guid sourceId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> GetAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-            Ok(await connections.GetAsync(new SourceConnectionId(sourceId), cancellationToken)));
+        return Ok(await connections.GetAsync(new SourceConnectionId(sourceId), cancellationToken));
     }
 
     /// <summary>Partial update (PATCH semantics — null fields stay).</summary>
@@ -85,16 +81,15 @@ public sealed class SourcesController(
     [RequiresPermission("source:write")]
     [ProducesResponseType<SourceConnectionView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> UpdateAsync(Guid sourceId, UpdateSourceConnectionRequest request, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> UpdateAsync(Guid sourceId, UpdateSourceConnectionRequest request, CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-            Ok(await connections.UpdateAsync(
-                new SourceConnectionId(sourceId),
-                request.Name,
-                request.SettingsJson,
-                request.SecretEnvRef,
-                request.Enabled,
-                cancellationToken)));
+        return Ok(await connections.UpdateAsync(
+            new SourceConnectionId(sourceId),
+            request.Name,
+            request.SettingsJson,
+            request.SecretEnvRef,
+            request.Enabled,
+            cancellationToken));
     }
 
     /// <summary>Deletes a connection (idempotent).</summary>
@@ -167,10 +162,9 @@ public sealed class SourcesController(
     [RequiresPermission("source:write")]
     [ProducesResponseType<SecretRotationResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> RotateSecretAsync(Guid sourceId, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> RotateSecretAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-            Ok(await connections.RotateSecretAsync(new SourceConnectionId(sourceId), cancellationToken)));
+        return Ok(await connections.RotateSecretAsync(new SourceConnectionId(sourceId), cancellationToken));
     }
 
     /// <summary>
@@ -188,7 +182,7 @@ public sealed class SourcesController(
     [RequiresPermission("source:write")]
     [ProducesResponseType<AdmissionRuleView>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> UpdateRuleUnderSourceAsync(
+    public async Task<ActionResult> UpdateRuleUnderSourceAsync(
         Guid sourceId,
         Guid ruleId,
         UpdateAdmissionRuleRequest request,
@@ -200,12 +194,11 @@ public sealed class SourcesController(
         // admission-rule update keys off ruleId alone. Reserved if a future
         // cross-source consistency check (e.g. "the rule's filter must mention
         // the source's namespace") ever needs the source row.
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-            Ok(await rules.UpdateAsync(
-                new AdmissionRuleId(ruleId),
-                request.Mode,
-                request.FilterJson,
-                request.Enabled,
-                cancellationToken)));
+        return Ok(await rules.UpdateAsync(
+            new AdmissionRuleId(ruleId),
+            request.Mode,
+            request.FilterJson,
+            request.Enabled,
+            cancellationToken));
     }
 }

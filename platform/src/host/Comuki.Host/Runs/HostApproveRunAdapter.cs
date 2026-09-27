@@ -40,7 +40,8 @@ public sealed class HostApproveRunAdapter(
         {
             // "approve" reads as "release the gate". The transition is legal
             // only from Escalated — every other source, including terminal
-            // states, is a state conflict (see RunsEndpointRunner / chat parity).
+            // states, is a state conflict (see the Runs problem-handler
+            // rows / chat parity).
             throw new RunDecisionConflictException(
                 run.Status,
                 RunStatus.Running,

@@ -45,13 +45,12 @@ public sealed class InboxController(
     [RequiresPermission("intake:read")]
     [ProducesResponseType<IReadOnlyList<IntakeTicketView>>(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public Task<ActionResult> FetchCatalogAsync(
+    public async Task<ActionResult> FetchCatalogAsync(
         [FromQuery] Guid connectionId,
         [FromQuery] int page = 1,
         CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-            Ok(await inbox.FetchCatalogAsync(new SourceConnectionId(connectionId), page, cancellationToken)));
+        return Ok(await inbox.FetchCatalogAsync(new SourceConnectionId(connectionId), page, cancellationToken));
     }
 
     /// <summary>Claims one pending ticket into a run (exactly once — a repeat answers 409).</summary>
@@ -63,9 +62,8 @@ public sealed class InboxController(
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public Task<ActionResult> ClaimAsync(ClaimTicketRequest request, CancellationToken cancellationToken = default)
+    public async Task<ActionResult> ClaimAsync(ClaimTicketRequest request, CancellationToken cancellationToken = default)
     {
-        return IntakeEndpointRunner.ExecuteAsync(async () =>
-            Ok(await claims.HandleAsync(new ClaimTicketCommand(new IncomingTicketId(request.TicketId)), cancellationToken)));
+        return Ok(await claims.HandleAsync(new ClaimTicketCommand(new IncomingTicketId(request.TicketId)), cancellationToken));
     }
 }

@@ -169,6 +169,15 @@ src/database/<Project>/
 
 ## 2. Entity models
 
+> **comuki scope.** В модулях comuki паттерны этого раздела (`[Table]`/
+> `[Index]` атрибуты на entity, `OnModelEntity` внутри entity, EF-конфиг в
+> домене) **не применяются**: EF-конфигурация живёт снаружи домена, в
+> `Infrastructure/Persistence/Configurations/<Entity>Configuration.cs`
+> (`IEntityTypeConfiguration<T>`, см. `~/.agents/rules/csharp/ef-core.md` §1),
+> потому что architecture Law 2 запрещает домену framework-зависимости.
+> Раздел остаётся как справочник legacy-паттерна; аудиты по comuki-модулям
+> его не поднимают, а код не должен к нему подтягиваться.
+
 ### Multi-interface inheritance
 
 Свойства сущности **наследуются** через интерфейсы, а не объявляются

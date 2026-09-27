@@ -52,3 +52,6 @@ artifacts/ui-probe
 # __screenshots__ above — runtime artefact, never checked in).
 .vitest-attachments
 
+# ui:probe scratch outputs beyond the canonical dir (artifacts/ui-probe-*)
+# — per-run diagnostic output, rebuild cost only.
+artifacts/ui-probe*

@@ -1,0 +1,1062 @@
+/* Playbook Workbench — the dispatcher board's view of a playbook.
+ *
+ * Three regions, one chrome, three modes. The header is the studio's even
+ * when the live run is showing, because the run is executing *this*
+ * playbook on *this* source. The mode strip rides below the header — three
+ * semantic tab buttons, the active one wearing the brand rule under it.
+ *
+ * The body is a grid: graph on the left, inspector on the right. The
+ * inspector is below the graph on a narrow window rather than squashing
+ * either column. The graph falls back to a vertical stack under the same
+ * break, so the connectors read the same way at any width.
+ *
+ * Every declaration reads off `var(--token)` — no raw hex / px / font
+ * families. The dispatcher board's "colourless chrome, saturation reserved
+ * for status" rule carries into this surface: the only saturated thing is
+ * the path's status hue and the attention panel's danger / warning edges. */
+
+/* ---- shell ---- */
+
+.workbench {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-width: 0;
+  min-height: 0;
+  padding: var(--s5) var(--s6) var(--s6);
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-ui);
+}
+
+/* ---- header ---- */
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s4);
+  padding-bottom: var(--s4);
+  border-bottom: var(--hairline) solid var(--rule);
+}
+
+.headerTitle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.headerEyebrow {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.headerName {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h1);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-display);
+  letter-spacing: var(--tracking-display);
+  color: var(--foreground);
+}
+
+.headerFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5);
+  margin: 0;
+  padding: 0;
+}
+
+.headerFact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.factLabel {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.headerFactValue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+.headerFactValue svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+/* ---- mode tabs ---- */
+
+.modeTabs {
+  display: flex;
+  gap: var(--s5);
+  flex: 0 0 auto;
+  border-bottom: var(--hairline) solid var(--rule);
+  overflow-x: auto;
+}
+
+.modeTab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  flex: 0 0 auto;
+  padding: var(--s3) 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: calc(var(--hairline) * -1);
+  border-bottom: calc(var(--hairline) * 2) solid transparent;
+  /* No `color` here on purpose: the a11y harness reads computed colors
+     right after a theme-class swap, and a transitioning text color hands
+     axe an interpolated value that passes and fails contrast at random. */
+  transition: border-color var(--dur) var(--ease);
+}
+
+.modeTab svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex: 0 0 auto;
+}
+
+.modeTab:hover {
+  color: var(--text);
+}
+
+.modeTabSelected {
+  color: var(--text);
+  border-bottom-color: var(--brand);
+}
+
+.modeTab:focus-visible {
+  outline: none;
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-focus-ring);
+}
+
+/* ---- body grid ---- */
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--w-rail);
+  gap: var(--s5);
+  align-items: stretch;
+  min-height: 0;
+}
+
+/* Wide window: graph on the left, inspector on the right. Narrow window:
+   inspector falls below the graph — neither column is squashed. */
+@media (max-width: 1000px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modeTab {
+    transition: none;
+  }
+}
+
+/* ---- semantic graph ---- */
+
+.graphFrame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  min-width: 0;
+  padding: var(--s5);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.flowFrame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-width: 0;
+  padding: var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.flowCanvas {
+  /* React Flow's pane is `height: 100%` of this box — a `min-height`
+     here collapses it to zero (percentage against an indefinite height),
+     which rendered the whole canvas invisible. The canvas owns a definite
+     height; the fallback list below it grows with content. */
+  height: 26rem;
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--background);
+}
+
+/* React Flow's own chrome — edges, their labels, the zoom controls —
+   ships in its hard-coded light palette. Restated here in tokens so the
+   canvas reads as part of the board in both modes; :global because these
+   are library-owned class names, not ours. */
+.flowCanvas :global(.react-flow__edge-path) {
+  stroke: var(--rule-strong);
+  stroke-width: var(--hairline);
+}
+
+.flowCanvas :global(.react-flow__edge-textbg) {
+  fill: var(--surface);
+}
+
+.flowCanvas :global(.react-flow__edge-text) {
+  fill: var(--text-muted);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+}
+
+.flowCanvas :global(.react-flow__controls) {
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-lift);
+}
+
+.flowCanvas :global(.react-flow__controls-button) {
+  background: var(--surface-raised);
+  border-bottom: var(--hairline) solid var(--rule);
+  color: var(--text);
+}
+
+.flowCanvas :global(.react-flow__controls-button):hover {
+  background: var(--surface);
+}
+
+.flowCanvas :global(.react-flow__controls-button svg) {
+  fill: currentColor;
+}
+
+.flowNode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 9rem;
+  padding: var(--s3);
+  border: var(--hairline) solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--foreground);
+  box-shadow: var(--shadow-lift);
+}
+
+.flowNodeLoop {
+  border-style: dashed;
+  border-color: var(--st-waiting);
+  background: var(--st-waiting-tint);
+}
+
+.flowNodeGate {
+  border-color: var(--st-escalated);
+}
+
+.flowNodeSelected {
+  outline: var(--hairline) solid var(--ring);
+  box-shadow: var(--shadow-focus-ring);
+}
+
+.flowNodeLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+}
+
+.flowNodeMeta,
+.flowFallbackMeta,
+.flowFallbackIndex {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  color: var(--text-muted);
+}
+
+.flowHandle {
+  width: var(--h-meter);
+  height: var(--h-meter);
+  border: var(--hairline) solid var(--rule-strong);
+  background: var(--brand);
+}
+
+.flowFallback {
+  display: none;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flowFallbackRow {
+  display: grid;
+  grid-template-columns: var(--w-rail) minmax(0, 1fr) auto;
+  gap: var(--s2);
+  align-items: center;
+  padding: var(--s2) var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--surface-raised);
+}
+
+@media (max-width: 1000px) {
+  .flowCanvas {
+    display: none;
+  }
+
+  .flowFallback {
+    display: flex;
+  }
+}
+
+.graphGrid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--s3);
+  align-items: stretch;
+  min-width: 0;
+}
+
+@media (max-width: 1000px) {
+  .graphGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.graphConnectors {
+  position: absolute;
+  inset: var(--s5);
+  width: calc(100% - var(--s5) * 2);
+  height: calc(100% - var(--s5) * 2);
+  pointer-events: none;
+}
+
+.graphEdge {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: var(--hairline);
+}
+
+.graphCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  align-items: flex-start;
+  padding: var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-md);
+  background: var(--background);
+  min-width: 0;
+}
+
+/* The loop node wraps itself in a hairline boundary. The boundary is
+ * visible at a glance, not inferred from the cell's name. */
+.graphCellLoop {
+  border-style: dashed;
+  border-color: var(--st-waiting);
+  background: var(--st-waiting-tint);
+}
+
+.graphCellName {
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-tight);
+  color: var(--foreground);
+}
+
+.graphCellKind {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-muted);
+}
+
+/* ---- inspector ---- */
+
+.inspector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-width: 0;
+  padding: var(--s5);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.inspectorHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.inspectorEyebrow {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.inspectorTitle {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  color: var(--foreground);
+}
+
+.inspectorSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  min-width: 0;
+}
+
+.inspectorSectionTitle {
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.inspectorNote {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.factList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.factRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-width: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+}
+
+.factKey {
+  color: var(--text-muted);
+  letter-spacing: var(--tracking-data);
+}
+
+.factStatusValue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  color: var(--text);
+}
+
+.factStatusValue svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  flex: 0 0 auto;
+  color: var(--brand);
+}
+
+/* ---- validation strip ---- */
+
+.validation {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin-top: auto;
+  padding-top: var(--s3);
+  border-top: var(--hairline) solid var(--rule);
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-muted);
+}
+
+.validationDot {
+  width: var(--h-meter);
+  height: var(--h-meter);
+  border-radius: var(--r-pill);
+  background: var(--st-success);
+}
+
+.validationLabel {
+  color: var(--text-muted);
+}
+
+/* ---- path list (studio path / live inspector path) ---- */
+
+.pathList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pathRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  background: var(--background);
+}
+
+.pathDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  flex: 0 0 auto;
+}
+
+.pathDot svg {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+.pathRow[data-status="success"] .pathDot {
+  color: var(--st-success);
+}
+
+.pathRow[data-status="success"] {
+  background: var(--st-success-tint);
+}
+
+.pathRow[data-status="running"] .pathDot {
+  color: var(--st-running);
+}
+
+.pathRow[data-status="running"] {
+  background: var(--st-running-tint);
+}
+
+.pathRow[data-status="failed"] .pathDot {
+  color: var(--st-failed);
+}
+
+.pathRow[data-status="failed"] {
+  background: var(--st-failed-tint);
+}
+
+.pathRow[data-status="waiting"] .pathDot {
+  color: var(--st-waiting);
+}
+
+.pathRow[data-status="waiting"] {
+  background: var(--st-waiting-tint);
+}
+
+.pathRow[data-status="queued"] .pathDot {
+  color: var(--st-queued);
+}
+
+.pathLabel {
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  color: var(--text);
+  min-width: 0;
+}
+
+.pathStatus {
+  flex: 0 0 auto;
+}
+
+/* ---- attention panel (live run) ---- */
+
+.attentionPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+  border-left: calc(var(--hairline) * 2) solid var(--st-waiting);
+  border-radius: var(--r-md);
+  background: var(--st-waiting-tint);
+}
+
+.attentionLead {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.attentionNote {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.attentionFacts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+}
+
+.attentionFact {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s2);
+}
+
+.attentionKey {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.attentionValue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-sm);
+  color: var(--text);
+}
+
+.attentionPass {
+  color: var(--st-success);
+}
+
+.attentionFail {
+  color: var(--st-failed);
+}
+
+.attentionDivider {
+  color: var(--text-muted);
+}
+
+.attentionControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-top: var(--s1);
+}
+
+/* ---- live run centre ---- */
+
+.liveCenter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-width: 0;
+  padding: var(--s5);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.liveHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.liveEyebrow {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.liveTitle {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  color: var(--foreground);
+}
+
+.livePinned {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: 0;
+  font-family: var(--font-data);
+  font-size: var(--t-xs);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-muted);
+}
+
+.livePinnedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r-sm);
+  background: var(--st-cancelled-tint);
+  color: var(--text);
+}
+
+.livePinnedBadge svg {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+}
+
+.livePath {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.livePathRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  background: var(--background);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+}
+
+.livePathDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  flex: 0 0 auto;
+}
+
+.livePathDot svg {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+.livePathRow[data-status="success"] {
+  background: var(--st-success-tint);
+}
+
+.livePathRow[data-status="success"] .livePathDot {
+  color: var(--st-success);
+}
+
+.livePathRow[data-status="running"] {
+  background: var(--st-running-tint);
+}
+
+.livePathRow[data-status="running"] .livePathDot {
+  color: var(--st-running);
+}
+
+.livePathRow[data-status="failed"] {
+  background: var(--st-failed-tint);
+}
+
+.livePathRow[data-status="failed"] .livePathDot {
+  color: var(--st-failed);
+}
+
+.livePathRow[data-status="waiting"] {
+  background: var(--st-waiting-tint);
+}
+
+.livePathRow[data-status="waiting"] .livePathDot {
+  color: var(--st-waiting);
+}
+
+.livePathLabel {
+  color: var(--text);
+}
+
+/* ---- replay ---- */
+
+.replayCenter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  min-width: 0;
+  padding: var(--s5);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+.replayHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.replayEyebrow {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.replayTitle {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-h2);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  color: var(--foreground);
+}
+
+.replayNote {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timelineRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  padding: var(--s2) var(--s3);
+  border: var(--hairline) solid var(--rule);
+  border-radius: var(--r-sm);
+  background: var(--background);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  text-align: left;
+  cursor: pointer;
+  /* Border only — same reason as `.modeTab`: a transitioning text colour
+     is a roulette wheel for the harness's contrast read. */
+  transition: border-color var(--dur) var(--ease);
+}
+
+.timelineRow:hover {
+  border-color: var(--rule-strong);
+}
+
+.timelineRow:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus-ring-inset);
+}
+
+.timelineRowSelected {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 10%, var(--background));
+}
+
+.timelineAt {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.timelineStage {
+  min-width: 0;
+  color: var(--text);
+}
+
+.timelineDrift {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-data);
+  color: var(--text-muted);
+  padding: var(--s1) var(--s2);
+  border-radius: var(--r-xs);
+  background: var(--background);
+}
+
+.timelineDriftWarning {
+  color: var(--st-waiting);
+  background: var(--st-waiting-tint);
+}
+
+.timelineDriftDanger {
+  color: var(--st-failed);
+  background: var(--st-failed-tint);
+}
+
+.eventDetail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s3);
+  border-radius: var(--r-md);
+  background: var(--background);
+}
+
+.eventStage {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.eventPairs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  margin: 0;
+  padding: 0;
+}
+
+.eventPair {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--s2);
+}
+
+.eventKey {
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.eventValue {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}
+
+.eventValueDrifted {
+  color: var(--st-waiting);
+}
+
+.eventNote {
+  margin: 0;
+  padding-top: var(--s2);
+  border-top: var(--hairline) solid var(--rule);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text-muted);
+}
+
+.generated {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timelineRow {
+    transition: none;
+  }
+}
+
+/* ---- invalid studio ---- */
+
+.invalid {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s4);
+  border-left: calc(var(--hairline) * 2) solid var(--st-failed);
+  border-radius: var(--r-md);
+  background: var(--st-failed-tint);
+}
+
+.invalid svg {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  flex: 0 0 auto;
+  color: var(--st-failed);
+}
+
+.invalidBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  min-width: 0;
+}
+
+.invalidTitle {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-body);
+  font-weight: var(--fw-semibold);
+  color: var(--foreground);
+}
+
+.invalidNote {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: var(--lh-body);
+  color: var(--text);
+}

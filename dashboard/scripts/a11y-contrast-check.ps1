@@ -164,6 +164,46 @@ function ProposePaletteFix([hashtable]$p) {
     }
 }
 
+# Compute `--text-faint-on-tinted` value for a palette: the lightest hex (dark)
+# or darkest hex (light) that clears 4.5:1 against every tinted status background
+# (NOT against bare surfaces — that's what `--text-faint` is for). Anchored on
+# the palette's own `text` hue so it reads as part of the text family.
+function ProposeTextOnTinted([hashtable]$p) {
+    $bgList = @()
+    foreach ($st in $statusKeys) {
+        $bgList += @{ key = "tint-$st"; hex = (MixOklabHex $p[$st] $p.lane $TINT_OPACITY) }
+    }
+    $origText = HexToRgb $p.text
+    $textLum = Luminance $origText
+    $floorLum = Luminance (HexToRgb $p.floor)
+    $isDark = $textLum -gt $floorLum
+    $targetRgb = if ($isDark) { @{ r = 255; g = 255; b = 255 } } else { @{ r = 0; g = 0; b = 0 } }
+    $lo = 0.0; $hi = 1.0; $alpha = 1.0
+    for ($i = 0; $i -lt 50; $i++) {
+        $mid = ($lo + $hi) / 2
+        $r = [int][math]::Round($origText.r * (1 - $mid) + $targetRgb.r * $mid)
+        $g = [int][math]::Round($origText.g * (1 - $mid) + $targetRgb.g * $mid)
+        $b = [int][math]::Round($origText.b * (1 - $mid) + $targetRgb.b * $mid)
+        $candidate = RgbToHex $r $g $b
+        $worst = 99
+        foreach ($bg in $bgList) {
+            $c = Contrast $candidate $bg.hex
+            if ($c -lt $worst) { $worst = $c }
+        }
+        if ($worst -ge 4.5) {
+            $alpha = $mid
+            if ($isDark) { $hi = $mid } else { $lo = $mid }
+        } else {
+            if ($isDark) { $lo = $mid } else { $hi = $mid }
+        }
+    }
+    # Apply the alpha to anchor on text hue
+    $r = [int][math]::Round($origText.r * (1 - $alpha) + $targetRgb.r * $alpha)
+    $g = [int][math]::Round($origText.g * (1 - $alpha) + $targetRgb.g * $alpha)
+    $b = [int][math]::Round($origText.b * (1 - $alpha) + $targetRgb.b * $alpha)
+    return RgbToHex $r $g $b
+}
+
 function ReportTheme([string]$tid, [hashtable]$t) {
     foreach ($mode in @("dark","light")) {
         $p = $t[$mode]
@@ -203,7 +243,6 @@ function ReportTheme([string]$tid, [hashtable]$t) {
         if ($ProposeFix) {
             $fix = ProposePaletteFix $p
             Write-Host ("  propose: text={0} muted={1} faint={2}  (alpha={3:F3})" -f $fix.text, $fix.muted, $fix.faint, $fix.alpha) -ForegroundColor Yellow
-            # Verify: build a candidate palette with ONLY text/muted/faint replaced.
             $vp = @{}
             foreach ($k in $p.Keys) { $vp[$k] = $p[$k] }
             $vp.text  = $fix.text
@@ -213,6 +252,9 @@ function ReportTheme([string]$tid, [hashtable]$t) {
                 $w = WorstContrast $vp[$k] $vp
                 Write-Host ("    verify: {0,-5} worst={1:F2} on {2}" -f $k, $w.ratio, $w.bg) -ForegroundColor Green
             }
+            # Also propose --text-on-tinted for the highlighted-state semantic token.
+            $onTinted = ProposeTextOnTinted $p
+            Write-Host ("  on-tinted: {0} (anchored on text={1}; clears every tint >=4.5:1)" -f $onTinted, $p.text) -ForegroundColor Magenta
         }
     }
 }

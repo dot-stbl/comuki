@@ -1,7 +1,7 @@
 ---
-milestone: v1 (shipped) → v2 (mission-cowork: W1 execution-spine BUILT+MERGED, editions in flight) + storybook contour (DONE)
-status: v2-w1-merged, storybook-contour-merged
-last_updated: 2026-09-26
+milestone: v1 (shipped) → v2 (mission-cowork: W1 execution-spine BUILT+MERGED, editions in flight) + storybook contour (DONE) + a11y-tinted-bg deferred
+status: v2-w1-merged, storybook-contour-merged, a11y-debt-acknowledged
+last_updated: 2026-09-27
 openspec_changes_in_flight:
   - harden-pi-worker-sandbox (15/27 tasks; issue #121 + follow-up #125; paused during W1 wave)
   - enrich-chat-parts (22/24 tasks; Testcontainers suite + spec sync remain)
@@ -700,12 +700,32 @@ providers beyond `vault` / `consul` are deferred to follow-ups.
 
 **Wave 2 — Storybook forward (приоритезировано):**
 
-1. **a11y token-level fixes** — ~19 новых color-contrast нарушений в тёмной теме (`a11y-known-issues.json` теперь содержит dark+light allowlist). Корни — token-level: muted text и status-цвета на определённых поверхностях. Это **design-system** задача, не storybook. Пока allowlist — единственное, что держит `bun run test:stories` зелёным.
+1. **a11y tinted-bg fix** (in progress — см. "A11y tinted-bg analysis" ниже). ПО СОСТОЯНИЮ НА 2026-09-27: сделан только audit-utility (`dashboard/scripts/a11y-contrast-check.ps1`, commit `09261a20`), который мерджится отдельным коммитом. Design-фикс не применён — три пути требуют согласования.
 2. **CI для `bun run test:stories`** — подключить job в `.github/workflows/ci.yml`. Тяжёлый (browser-mode + chromium); может жить отдельно от unit-секции, как `test:visual` job в console.x.
 3. **`Pages/*` корень — миграция 7 старых page-stories** (login, user-detail, worker-detail, connect-source, create-ticket, source-detail, project-detail) под тот же корень для единого места в сайдбаре.
 4. **Семь тем в toolbar Storybook** — сейчас dark/light в `preview.ts` globalTypes; `themes.ts` registry содержит семь. Тема-галерея спекимен в Style Lab.
 5. **Visual baselines** — нет и не подключены (были вырезаны вместе с pixelmatch-мидлваром). Если нужны — либо playwright `@toHaveScreenshot()` (как console.x), либо отдельная инфраструктура. Не блокер.
 6. **Loading-сторий в page-stories нет** — честный механизм требует правок компонентов/мок-хендлеров (`enabled:false` даёт empty-рендер, не loading). Out of scope Wave 1.
+
+---
+
+## A11y tinted-bg analysis (2026-09-27)
+
+**Проблема.** `bun run test:stories` проходит только благодаря 78 записям в `storybook-tests/a11y-known-issues.json` (color-contrast). Все они — `text-faint` против tinted-status backgrounds (`--st-*-tint` 18% opacity over `lane`), а не против голых surface'ов.
+
+**Audit:** `dashboard/scripts/a11y-contrast-check.ps1 -ProposeFix`.
+
+**Что НЕ сделано и почему.** Три пути к фиксу:
+- **(a) Поднять контраст muted-цветов** (выбор пользователя 2026-09-27). Реализация сломала **два инварианта** дизайн-системы:
+  1. `faint` — by construction «quietest legible step on the floor» (`expect(contrast(faint, floor)).toBeCloseTo(4.5, 0)`). Лифт сломал это.
+  2. Лестница text/muted/faint — `|gap(text,muted) − gap(muted,faint)| ≤ 4` и `каждый ≥12 L*`. Лифт одной ступени сжимает другие.
+  Оба инварианта — задокументированный design intent (`themes.ts:65-85`, `palette.test.ts:489-527`).
+- **(b) Семантические токены** (`--text-faint-on-tinted` per mode). Сохраняет все инварианты. Требует правки **~132 файлов** компонентов + новый token в `tokens.css`. Размер работы — отдельный worktree-юнит.
+- **(c) Снизить `--st-*-tint` opacity** (18% → 10%). Меняет визуал highlight'ов. Не ломает лестницу, не требует компонент-правок.
+
+**Что нужно решить** на следующей сессии: какой из (a/b/c). Рекомендация — **(b) семантические токены**, как самый честный фикс, но это несколько часов работы. Пока `a11y-known-issues.json` остаётся с 78 записями color-contrast как известный долг.
+
+**Что залито:** audit-utility скрипт на ветке `feature/a11y-muted-contrast-fix` (commit `09261a20`). Никаких design-изменений.
 
 **Worktree cleanup:** мои U1/U3 удалены (`git worktree remove --force`), ветки `feature/storybook-sb10-migration` и `feature/storybook-page-compositions` удалены. Остальные `.claude/worktrees/agent-*` (≈30) — чужие, не трогаю.
 

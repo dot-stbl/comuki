@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 
 import type { SettingsStopKind } from "@/domains/settings/api/queries"
 import type { Budgets } from "@/domains/settings/model/types"
@@ -86,6 +87,7 @@ export function BudgetsPanel({
   onToggleStop,
   save,
 }: BudgetsPanelProps) {
+  const { t } = useTranslation("settings")
   const [askingKill, setAskingKill] = useState(false)
 
   const form = useForm<BudgetFormInput, unknown, BudgetFormValues>({
@@ -110,8 +112,8 @@ export function BudgetsPanel({
       <Section
         variant="screen"
         data-test="settings-budget-reading"
-        title="Proxy budget"
-        note="what the swarm has spent today against the global cap"
+        title={t("budgets.readingSection")}
+        note={t("budgets.readingNote")}
       >
         <div className={styles.reading}>
           <BudgetMeter budgets={budgets} />
@@ -122,7 +124,7 @@ export function BudgetsPanel({
           <div className={styles.stops} data-test="budget-stops">
             <SwitchField
               id="killSwitch"
-              label="Kill-switch"
+              label={t("budgets.killSwitch")}
               data-test="budgets-kill-switch"
               checked={budgets.killSwitch}
               onCheckedChange={(next) => {
@@ -136,17 +138,17 @@ export function BudgetsPanel({
               }}
               denied={save.denial}
               disabled={stopping}
-              hint="Hard-stop all new claims — every app, every task."
+              hint={t("budgets.killHint")}
             />
             <SwitchField
               id="pauseSwarm"
-              label="Pause swarm"
+              label={t("budgets.pause")}
               data-test="budgets-pause-swarm"
               checked={budgets.pauseSwarm}
               onCheckedChange={(next) => onToggleStop("pauseSwarm", next)}
               denied={save.denial}
               disabled={stopping}
-              hint="Soft pause — running workers finish; no new containers start."
+              hint={t("budgets.pauseHint")}
             />
 
             {/* The stop did not land. Said here, next to the switch that is
@@ -154,7 +156,7 @@ export function BudgetsPanel({
                 gone by the time the operator looks up from the meter. */}
             {stopFailure ? (
               <Notice tone="bad" data-test="budgets-stop-failure">
-                {stopFailure} Nothing moved — the stops are as they were.
+                {stopFailure} {t("budgets.stopFailureTail")}
               </Notice>
             ) : null}
           </div>
@@ -163,10 +165,10 @@ export function BudgetsPanel({
         <ConfirmDialog
           open={askingKill}
           danger
-          title="Throw the kill-switch?"
-          body="New claims stop now — every app, every task — and stay stopped until the switch is turned back off. Workers mid-step finish what they are holding; nothing queued is cancelled."
-          confirmLabel="Block new claims"
-          cancelLabel="Leave claims open"
+          title={t("budgets.killTitle")}
+          body={t("budgets.killBody")}
+          confirmLabel={t("budgets.killConfirm")}
+          cancelLabel={t("budgets.killCancel")}
           onConfirm={() => {
             setAskingKill(false)
             onToggleStop("killSwitch", true)
@@ -178,8 +180,8 @@ export function BudgetsPanel({
       <Section
         variant="screen"
         data-test="settings-budgets"
-        title="Budget caps"
-        note="the global cap the meter reads · per-task and per-app refine it"
+        title={t("budgets.capsSection")}
+        note={t("budgets.capsNote")}
       >
         <form
           className={styles.form}
@@ -203,7 +205,7 @@ export function BudgetsPanel({
               render={({ field, fieldState }) => (
                 <NumberField
                   id="globalUsd"
-                  label="global cap"
+                  label={t("budgets.globalCap")}
                   unit="USD"
                   step="1"
                   value={String(field.value ?? "")}
@@ -211,7 +213,7 @@ export function BudgetsPanel({
                   onBlur={field.onBlur}
                   disabled={busy}
                   error={fieldState.error?.message ?? null}
-                  hint="The meter above measures spend against this cap."
+                  hint={t("budgets.globalCapHint")}
                 />
               )}
             />
@@ -226,10 +228,12 @@ export function BudgetsPanel({
               picker and `ChoiceField` lost their legends to). */}
           <fieldset
             className={styles.capRefinements}
-            aria-label="refinements"
+            aria-label={t("budgets.refinements")}
             data-test="budgets-cap-refinements"
           >
-            <span className={styles.capRefinementsLabel}>refinements</span>
+            <span className={styles.capRefinementsLabel}>
+              {t("budgets.refinements")}
+            </span>
             <div className={styles.refineFields}>
               <Controller
                 control={form.control}
@@ -237,7 +241,7 @@ export function BudgetsPanel({
                 render={({ field, fieldState }) => (
                   <NumberField
                     id="perTaskUsd"
-                    label="per task"
+                    label={t("budgets.perTask")}
                     unit="USD"
                     step="0.01"
                     value={String(field.value ?? "")}
@@ -254,7 +258,7 @@ export function BudgetsPanel({
                 render={({ field, fieldState }) => (
                   <NumberField
                     id="perAppUsd"
-                    label="per app"
+                    label={t("budgets.perApp")}
                     unit="USD"
                     step="1"
                     value={String(field.value ?? "")}
@@ -280,7 +284,7 @@ export function BudgetsPanel({
               denied={save.denial}
               loading={busy}
             >
-              Save budgets
+              {t("budgets.save")}
             </Button>
           </div>
         </form>

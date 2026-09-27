@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "Erneut versuchen",
-    "close": "Schließen"
-  },
-  "errors": {
-    "unknown": "Unbekannter Fehler"
-  },
   "page": {
     "title": "Wissen",
     "summary": "Regelsatz, Revisionen, Eval-Harness",

@@ -3,12 +3,32 @@ import type {
   VerifyResult,
   VerifyResultLabel,
   VerifySource,
-} from "@/domains/verify/model/types"
+} from "./types"
+
+import { i18n } from "@/shared/i18n"
 
 /**
  * Readings the gate's own arithmetic produces, kept out of the components so
  * the section, its heading and its tests all read the same numbers.
  */
+
+/**
+ * A `verify`-namespace translator, the shape the word-bearing column factory
+ * resolves its copy through (`dashboard-i18n` D7). The default is the shared
+ * i18n instance, so a caller with no translator of its own still answers in
+ * the active locale.
+ */
+export type VerifyTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
+
+export function sharedVerifyT(
+  key: string,
+  options?: Record<string, unknown>
+): string {
+  return i18n.t(key, { ...options, ns: "verify" })
+}
 
 /** The commands declared for one project, in the order the file declares them. */
 export function commandsFor(

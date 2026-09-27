@@ -1,1 +1,120 @@
-{}
+{
+  "field": {
+    "required": "obrigatório"
+  },
+  "formDialog": {
+    "cancel": "cancelar"
+  },
+  "dialog": {
+    "close": "fechar"
+  },
+  "copyButton": {
+    "copy": "copiar",
+    "copied": "copiado"
+  },
+  "codeBlock": {
+    "wrap": "quebra de linha",
+    "showLess": "mostrar menos",
+    "showAll": {
+      "one": "mostrar as {{count}} linhas",
+      "other": "mostrar as {{count}} linhas"
+    }
+  },
+  "skeleton": {
+    "loading": "carregando"
+  },
+  "forbidden": {
+    "subject": "esta tela",
+    "title": "{{subject}} está fechada para os seus papéis",
+    "description": "{{needs}} — peça o papel ou mude para um projeto em que você já o tenha."
+  },
+  "searchField": {
+    "clear": "limpar busca"
+  },
+  "select": {
+    "any": "qualquer"
+  },
+  "combobox": {
+    "openList": "abrir lista"
+  },
+  "datePicker": {
+    "openCalendar": "abrir calendário"
+  },
+  "splitPane": {
+    "resize": "redimensionar"
+  },
+  "dataTable": {
+    "empty": "sem linhas",
+    "noun": "linha",
+    "selectColumn": "seleção",
+    "selectAll": "selecionar todas as {{noun}}",
+    "selectRow": "selecionar {{noun}} {{id}}",
+    "resizeColumn": "redimensionar a coluna {{label}}",
+    "resizeHint": "arraste para redimensionar, clique duplo para redefinir"
+  },
+  "toolbar": {
+    "filters": "filtros",
+    "filtersLabel": "filtros",
+    "filtersActive": "filtros, {{count}} ativos",
+    "clearFilters": "limpar todos os filtros",
+    "columns": "colunas",
+    "searchPlaceholder": "buscar {{label}}…",
+    "filterBy": "filtrar por {{label}}",
+    "filterAll": "todos os {{label}}",
+    "filterPlaceholder": "filtrar {{label}}…",
+    "clearFilterTitle": "limpar o filtro {{label}}",
+    "clearFilterLabel": "limpar o filtro {{label}}: {{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "voltar ao painel",
+    "fillWindow": "preencher a janela",
+    "shrinkBack": "recolher {{title}} de volta a um painel",
+    "fillWith": "preencher a janela com {{title}}",
+    "resize": "redimensionar {{title}}",
+    "closeHint": "fechar — escape",
+    "close": "fechar {{title}}"
+  },
+  "evidencePane": {
+    "closeHint": "fechar — escape",
+    "close": "fechar evidência",
+    "empty": "sem visualizador para {{type}} — os bytes estão na url acima",
+    "unknownType": "desconhecido",
+    "openNewTab": "abrir em uma nova aba",
+    "openNewTabLabel": "abrir {{filename}} em uma nova aba"
+  },
+  "cron": {
+    "cadence": "cadência",
+    "custom": "personalizado…",
+    "customDescription": "escolha minuto, hora, dia, mês e dia da semana.",
+    "value": "valor",
+    "any": "qualquer",
+    "everyDay": "todo dia",
+    "anyDay": "qualquer dia",
+    "part": {
+      "minute": "minuto",
+      "hour": "hora",
+      "day": "dia",
+      "month": "mês",
+      "weekday": "dia da semana"
+    },
+    "weekday": {
+      "sun": "dom",
+      "mon": "seg",
+      "tue": "ter",
+      "wed": "qua",
+      "thu": "qui",
+      "fri": "sex",
+      "sat": "sáb"
+    },
+    "preset": {
+      "hourly": "de hora em hora",
+      "hourlyDescription": "toda hora, na hora cheia.",
+      "daily": "diário às 03:00",
+      "dailyDescription": "uma vez por dia, na janela tranquila do projeto.",
+      "weekly": "semanal de segunda",
+      "weeklyDescription": "segundas-feiras às 03:00.",
+      "monthly": "dia 1 do mês",
+      "monthlyDescription": "no primeiro dia do mês às 03:00."
+    }
+  }
+}

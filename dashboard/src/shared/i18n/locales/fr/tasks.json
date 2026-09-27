@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Réessayer"
-  },
-  "errors": {
-    "unknown": "Erreur inconnue"
-  },
   "status": {
     "new": "nouvelle",
     "queued": "en file",

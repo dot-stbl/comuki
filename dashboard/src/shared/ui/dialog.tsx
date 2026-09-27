@@ -5,6 +5,7 @@ import {
   Modal,
   ModalOverlay,
 } from "react-aria-components"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "./button"
 import { cn } from "@/shared/lib/utils"
@@ -47,7 +48,7 @@ export interface DialogProps {
    * footer sits to the right.
    */
   footer?: ReactNode
-  /** The dismiss button's label. "Close" by default. */
+  /** The dismiss button's label. Localised default from the kit catalogue. */
   dismissLabel?: string
   /** Close on a click on the scrim. Defaults to true. */
   dismissable?: boolean
@@ -62,11 +63,13 @@ export function Dialog({
   title,
   children,
   footer,
-  dismissLabel = "Close",
+  dismissLabel,
   dismissable = true,
   width,
   "data-test": dataTest = "dialog",
 }: DialogProps) {
+  const { t } = useTranslation("kit")
+  const dismiss = dismissLabel ?? t("dialog.close")
   return (
     <ModalOverlay
       isOpen={open}
@@ -92,7 +95,7 @@ export function Dialog({
               data-test="dialog-close"
               onClick={() => onOpenChange(false)}
             >
-              {dismissLabel}
+              {dismiss}
             </Button>
           </div>
         </AriaDialog>

@@ -1,0 +1,201 @@
+{
+  "errors": {
+    "saveDidNotLand": "저장이 닿지 않았습니다.",
+    "stopDidNotApply": "중지가 적용되지 않았습니다."
+  },
+  "page": {
+    "title": "설정",
+    "summaryMock": "컨트롤 플레인 구성",
+    "summaryReal": "플랫폼 구성 — 읽기 전용, 부팅 시 설정",
+    "errorTitle": "설정이 로드되지 않았습니다",
+    "retry": "재시도",
+    "tabsAria": "설정 섹션"
+  },
+  "tabs": {
+    "apps": "앱",
+    "rules": "규칙",
+    "autonomy": "자율성",
+    "routing": "라우팅",
+    "budgets": "예산",
+    "keys": "키",
+    "tracker": "트래커"
+  },
+  "toast": {
+    "routingSaved": "라우팅 저장됨",
+    "routingSavedNote": "역할 → 모델 맵 갱신됨 (mock)",
+    "routingNotSaved": "라우팅이 저장되지 않았습니다",
+    "budgetsSaved": "예산 저장됨",
+    "budgetsSavedNote": "상한 갱신됨 (mock)",
+    "budgetsNotSaved": "예산이 저장되지 않았습니다"
+  },
+  "apps": {
+    "section": "앱",
+    "note": "읽기 전용 · 레지스트리는 클라이언트의 git에 선언됩니다",
+    "emptyFiltered": "현재 필터에 맞는 앱이 없습니다",
+    "empty": "레지스트리가 선언한 앱이 없습니다",
+    "count": "{{count}}개 표시됨",
+    "column": {
+      "app": "앱",
+      "repo": "리포지토리",
+      "stack": "스택",
+      "envs": "환경",
+      "deploy": "배포"
+    },
+    "filterPlaceholder": "앱, 리포지토리, 스택 필터…",
+    "allTargets": "전체 대상",
+    "nowhere": "어디에도 없음"
+  },
+  "rules": {
+    "section": "스웜 규칙",
+    "note": "읽기 전용 · 규칙은 클라이언트의 git에 살고 커밋으로 바뀝니다",
+    "conflicts": "충돌 없음 · 활성 규칙 {{count}}개 · 범위가 겹치지 않습니다.",
+    "emptyFiltered": "현재 필터에 맞는 규칙이 없습니다",
+    "empty": "규칙 세트가 비어 있습니다",
+    "count": "{{count}}개 표시됨",
+    "column": {
+      "rule": "규칙",
+      "scope": "범위",
+      "kind": "종류",
+      "version": "버전",
+      "description": "설명"
+    },
+    "filterPlaceholder": "규칙, 범위, 설명 필터…",
+    "allScopes": "전체 범위",
+    "allKinds": "전체 종류"
+  },
+  "autonomy": {
+    "section": "자율성",
+    "note": "자동인 것 · 사람이 필요한 것",
+    "emptyFiltered": "현재 필터에 맞는 변경 클래스가 없습니다",
+    "empty": "분류된 변경 클래스가 없습니다",
+    "count": "{{count}}개 표시됨",
+    "column": {
+      "changeClass": "변경 클래스",
+      "mode": "모드"
+    },
+    "filterPlaceholder": "변경 클래스 필터…",
+    "allModes": "전체 모드"
+  },
+  "routing": {
+    "section": "모델 라우팅",
+    "note": "역할 → 물리적 모델",
+    "emptyFiltered": "현재 필터에 맞는 역할이 없습니다",
+    "empty": "라우팅된 역할이 없습니다",
+    "count": "{{count}}개 표시됨",
+    "column": {
+      "role": "역할",
+      "model": "모델",
+      "usage": "용도"
+    },
+    "editSection": "역할 → 모델 맵 편집",
+    "editNote": "리드 / 워커 / 저지",
+    "field": {
+      "lead": "리드",
+      "worker": "워커",
+      "judge": "저지"
+    },
+    "save": "라우팅 저장",
+    "escalation": "에스컬레이션 정책 — 워커의 실패 재시도 2회는 리드로 에스컬레이션됩니다. 빨간 타입 게이트는 고정 리비전을 가진 디버그 에이전트로 갑니다."
+  },
+  "budgets": {
+    "readingSection": "프록시 예산",
+    "readingNote": "오늘 스웜이 글로벌 상한 대비 지출한 것",
+    "killSwitch": "킬 스위치",
+    "killHint": "모든 새 클레임을 강제 중지 — 모든 앱, 모든 태스크.",
+    "pause": "스웜 일시정지",
+    "pauseHint": "소프트 정지 — 돌고 있는 워커는 마치고, 새 컨테이너는 시작하지 않습니다.",
+    "stopFailureTail": "아무 것도 움직이지 않았습니다 — 중지들은 이전 상태입니다.",
+    "killTitle": "킬 스위치를 던집니까?",
+    "killBody": "새 클레임이 지금 멈춥니다 — 모든 앱, 모든 태스크 — 스위치가 다시 꺼질 때까지 멈춰 있습니다. 단계 중간의 워커는 잡은 것을 마치고, 대기 중인 어떤 것도 취소되지 않습니다.",
+    "killConfirm": "새 클레임 차단",
+    "killCancel": "클레임 열어둠",
+    "capsSection": "예산 상한",
+    "capsNote": "계량기가 읽는 글로벌 상한 · 태스크별과 앱별이 이것을 다듬습니다",
+    "globalCap": "글로벌 상한",
+    "globalCapHint": "위의 계량기는 이 상한 대비 지출을 잽니다.",
+    "refinements": "세분화",
+    "perTask": "태스크별",
+    "perApp": "앱별",
+    "save": "예산 저장",
+    "meter": {
+      "over": "상한 초과",
+      "left": "{{left}} 남음",
+      "stopped": "킬 스위치 켜짐 · 새 클레임 차단",
+      "atCap": "상한 도달 킬 스위치"
+    }
+  },
+  "keys": {
+    "section": "프로바이더 키",
+    "note": "읽기 전용 · 키는 env에서 오고, 로테이션은 프록시에서 돕니다",
+    "emptyFiltered": "현재 필터에 맞는 키가 없습니다",
+    "empty": "프록시에 프로바이더 키가 없습니다",
+    "count": "{{count}}개 표시됨",
+    "column": {
+      "provider": "프로바이더",
+      "scope": "범위",
+      "rotation": "로테이션",
+      "status": "상태"
+    },
+    "filterPlaceholder": "프로바이더, 범위 필터…",
+    "allStatuses": "전체 상태"
+  },
+  "tracker": {
+    "section": "인테이크 소스",
+    "notice": "연결된 트래커는 티켓을 백로그로 동기화합니다 · 수동 인테이크는 어느 쪽이든 열려 있습니다.",
+    "emptyTitle": "연결된 트래커가 없습니다",
+    "emptyDescription": "백로그로 티켓을 동기화하는 것이 없습니다. 수동 인테이크는 어느 쪽이든 열려 있습니다 — 트래커는 두 번째 문을 추가할 뿐입니다.",
+    "connected": "연결됨",
+    "synced": "{{when}}에 동기화됨",
+    "sync": "동기화",
+    "syncAria": "{{name}} 동기화",
+    "syncedToast": "{{name}} 동기화됨",
+    "syncedToastNote": "새 이슈 가져옴 (mock)",
+    "connect": "연결",
+    "connectAria": "{{name}} 연결",
+    "connectToast": "{{name}} 연결",
+    "connectToastNote": "OAuth 흐름… (mock)"
+  },
+  "platform": {
+    "hint": "읽기 전용 — 여기 모든 값은 부팅 시 구성됩니다. 변경은 구성과 재시작을 거칩니다. 이 페이지의 어느 것도 쓰지 않습니다.",
+    "on": "켜짐",
+    "off": "꺼짐",
+    "escalationOff": "꺼짐 — 래칫이 비활성입니다 ({{would}}이(가) 적용되었을 것)",
+    "orchestration": {
+      "section": "오케스트레이션",
+      "leaseTtl": "lease ttl",
+      "leaseTtlNote": "클레임 시 내주고, 하트비트로 연장",
+      "reapInterval": "리핍 주기",
+      "reapIntervalNote": "lease 리퍼 스윕 주기",
+      "reapGrace": "리핍 유예",
+      "reapGraceNote": "만료 후 리퍼가 움직이기 전 버퍼",
+      "maxAttempts": "최대 시도",
+      "maxAttemptsNote": "멈춘 항목이 실패하기까지의 클레임 수",
+      "escalationTimeout": "에스컬레이션 시간 초과",
+      "escalationTimeoutNote": "런이 에스컬레이션 상태로 있을 수 있는 시간, 그 후 자동 보관",
+      "escalationSweep": "에스컬레이션 스윕",
+      "escalationSweepNote": "래칫 스윕 주기"
+    },
+    "compute": {
+      "section": "컴퓨트",
+      "provider": "프로바이더",
+      "providerNote": "v1이 돌리는 컴퓨트 구현",
+      "workerImage": "워커 이미지",
+      "workerImageNote": "프로덕션에서 다이제스트 고정",
+      "profilesRef": "프로필 ref",
+      "profilesRefNote": "고정된 프로필 git ref",
+      "minIdle": "min idle",
+      "minIdleNote": "프로필별 웜-유휴 하한",
+      "maxConcurrent": "최대 동시",
+      "maxConcurrentNote": "프로젝트별 동시성 상한",
+      "idleTtl": "idle ttl",
+      "idleTtlNote": "워커가 리퍼 후보가 되기까지",
+      "pollInterval": "폴 주기",
+      "pollIntervalNote": "슈퍼바이저 패스 사이"
+    },
+    "proxy": {
+      "section": "프록시",
+      "passthrough": "openai / anthropic 패스스루",
+      "passthroughNote": "프록시가 구성되어 있는지 여부"
+    }
+  }
+}

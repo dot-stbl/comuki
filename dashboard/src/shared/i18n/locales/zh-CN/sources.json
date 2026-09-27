@@ -1,10 +1,5 @@
 {
-  "actions": {
-    "retry": "重试",
-    "cancel": "取消"
-  },
   "errors": {
-    "unknown": "未知错误",
     "changeFailed": "更改失败。"
   },
   "state": {

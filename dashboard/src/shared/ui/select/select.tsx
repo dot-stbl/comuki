@@ -7,6 +7,7 @@ import {
   Popover,
   SelectValue,
 } from "react-aria-components"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -156,7 +157,8 @@ export function Select({
   // Nothing chosen is either a real row (a filter's "all") or no selection at
   // all (a form's placeholder). React Aria spells the second one `null`.
   const selectedKey = empty ? (clearable ? CLEAR_KEY : null) : value
-  const clearLabel = placeholder ?? "any"
+  const { t } = useTranslation("kit")
+  const clearLabel = placeholder ?? t("select.any")
 
   return (
     <AriaSelect

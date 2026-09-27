@@ -1,0 +1,93 @@
+{
+  "header": {
+    "title": "Dyżur",
+    "crumb": "dyżur",
+    "summary": {
+      "one": "<owed/> potrzebuje Cię · <running/> działa · <total/> uruchomień",
+      "few": "<owed/> potrzebują Cię · <running/> działa · <total/> uruchomień",
+      "many": "<owed/> potrzebuje Cię · <running/> działa · <total/> uruchomień",
+      "other": "<owed/> potrzebuje Cię · <running/> działa · <total/> uruchomień"
+    },
+    "errorTitle": "Nie udało się załadować zmiany",
+    "errorTail": "{{detail}} — dopóki się nie załaduje, nic na tym ekranie nie zasługuje na zaufanie, że mówi, czy decyzja jest winna."
+  },
+  "notice": {
+    "fallback": "Decyzja nie udała się.",
+    "tail": "{{detail}} Nic się nie zmieniło — uruchomienie jest z powrotem takie, jakie było."
+  },
+  "verdict": {
+    "clear": "Nic nie potrzebuje Cię",
+    "owed": {
+      "one": "uruchomienie czeka na decyzję",
+      "few": "uruchomienia czekają na decyzję",
+      "many": "uruchomień czeka na decyzję",
+      "other": "uruchomień czeka na decyzję"
+    },
+    "swarmEmpty": "Rój jest pusty — nic w kolejce, nic w locie.",
+    "moving": "<running/> działa · <queued/> w kolejce — rój rusza się sam."
+  },
+  "attention": {
+    "section": "Potrzebuje Cię",
+    "column": {
+      "run": "uruchomienie",
+      "project": "projekt",
+      "task": "zadanie",
+      "step": "krok",
+      "inStep": "w kroku"
+    },
+    "status": {
+      "escalated": "eskalowane",
+      "failed": "nieudane",
+      "waiting": "czeka"
+    },
+    "reason": {
+      "escalated": "podniesione ponad rój do człowieka",
+      "failed": "zatrzymane na bramce weryfikacji",
+      "waiting": "czeka na człowieka"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "Zatwierdź",
+    "stop": "Zatrzymaj",
+    "open": "Otwórz",
+    "approveRun": "Zatwierdź {{title}}",
+    "stopRun": "Zatrzymaj {{title}}",
+    "openRun": "Otwórz {{title}}",
+    "more": "i {{count}} więcej — otwórz uruchomienia na żywo"
+  },
+  "list": {
+    "waitingOnPlan": "czeka na plan",
+    "timeInStep": "czas w kroku"
+  },
+  "running": {
+    "section": "Działa teraz",
+    "note": "{{running}} w locie · {{queued}} w kolejce",
+    "empty": "Nic nie jest w locie.",
+    "more": "{{count}} więcej w locie — otwórz uruchomienia na żywo"
+  },
+  "outcomes": {
+    "loading": "Ładowanie wyników tygodnia",
+    "failed": "Tydzień za tą zmianą się nie załadował, więc nie ma historii do porównania. Nic innego na tym ekranie od niej nie zależy — to, co w locie poniżej, jest odczytem na żywo.",
+    "reading": "<today/> ukończonych dziś dotąd · <week/> w tym tygodniu · <failed/> nieudanych",
+    "chartLabel": "Wyniki uruchomień po dniach. {{today}} ukończonych dziś dotąd, {{week}} w tym tygodniu, z czego {{failed}} nieudanych.",
+    "status": {
+      "success": "udane",
+      "failed": "nieudane",
+      "escalated": "eskalowane"
+    }
+  },
+  "shortcuts": {
+    "section": "Skróty",
+    "newRun": "Nowe uruchomienie",
+    "newRunNote": "weź zgłoszenie z odebranych",
+    "liveRuns": "Uruchomienia na żywo",
+    "liveRunsNote": "cały rój, z planszą przepływu i filtrami",
+    "approvals": "Zatwierdzenia",
+    "approvalsNote": "plany ustawione w kolejce do decyzji"
+  },
+  "stopDialog": {
+    "title": "Zatrzymać to uruchomienie?",
+    "body": "{{title}} — kontener jest zrywany, a lease zwalniany. Praca już scalona zostaje.",
+    "confirm": "Zatrzymaj uruchomienie",
+    "cancel": "Niech działa"
+  }
+}

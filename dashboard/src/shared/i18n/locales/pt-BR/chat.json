@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Tentar novamente"
-  },
-  "errors": {
-    "unknown": "Erro desconhecido"
-  },
   "page": {
     "title": "Console",
     "summary": "o mesmo plano de controle que as telas operam, só que digitado",
@@ -123,14 +117,26 @@
     },
     "words": {
       "run": {
-        "start": { "confirm": "Iniciar", "refuse": "Descartar" },
-        "stop": { "confirm": "Parar", "refuse": "Deixar rodando" }
+        "start": {
+          "confirm": "Iniciar",
+          "refuse": "Descartar"
+        },
+        "stop": {
+          "confirm": "Parar",
+          "refuse": "Deixar rodando"
+        }
       },
       "plan": {
-        "approve": { "confirm": "Aprovar", "refuse": "Rejeitar" }
+        "approve": {
+          "confirm": "Aprovar",
+          "refuse": "Rejeitar"
+        }
       },
       "settings": {
-        "debug": { "confirm": "Ligar", "refuse": "Deixar desligado" }
+        "debug": {
+          "confirm": "Ligar",
+          "refuse": "Deixar desligado"
+        }
       }
     },
     "inProject": "em {{project}}",
@@ -148,12 +154,10 @@
   },
   "wizard": {
     "title": "Integrar um repositório",
-
     "running": "A integração está em execução.",
     "streamHead": "integração",
     "stageWord": {
       "done": "pronto",
-
       "running": "executando",
       "queued": "na fila"
     },

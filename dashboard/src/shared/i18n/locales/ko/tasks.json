@@ -1,0 +1,76 @@
+{
+  "status": {
+    "new": "신규",
+    "queued": "큐 대기",
+    "planning": "플래닝"
+  },
+  "priority": {
+    "low": "낮음",
+    "normal": "보통",
+    "high": "높음"
+  },
+  "registry": {
+    "title": "태스크",
+    "summary": "백로그 <total/>개 · 신규 <fresh/>개",
+    "newTask": "새 태스크",
+    "count": {
+      "other": "{{count}}개 표시됨"
+    },
+    "loading": "백로그 로딩 중",
+    "errorTitle": "백로그가 로드되지 않았습니다",
+    "empty": {
+      "filtered": "현재 필터에 맞는 태스크가 없습니다",
+      "none": "백로그가 비어 있습니다"
+    }
+  },
+  "dispatch": {
+    "toast": "오케스트레이터로 디스패치됨",
+    "fallback": "오케스트레이터가 받아들이지 않았습니다.",
+    "tail": "큐에 들어간 것은 없습니다 — 티켓은 여전히 백로그에 있습니다."
+  },
+  "column": {
+    "source": "소스",
+    "task": "태스크",
+    "evidence": "증거",
+    "project": "프로젝트",
+    "app": "앱",
+    "priority": "우선순위",
+    "status": "상태",
+    "age": "경과",
+    "action": "작업",
+    "filterPlaceholder": "제목, id, 앱 필터…",
+    "allProjects": "전체 프로젝트",
+    "allApps": "전체 앱",
+    "allPriority": "전체 우선순위",
+    "allStatus": "전체 상태",
+    "dispatch": "디스패치",
+    "dispatchTask": "{{title}} 디스패치"
+  },
+  "create": {
+    "title": "새 태스크",
+    "crumb": "신규",
+    "summary": "스웜 앞의 티켓 하나: 어디서 왔는지, 어느 프로젝트의 백로그에 떨어지는지, 얼마나 긴급한지.",
+    "toastCreated": "태스크 생성됨",
+    "failureTail": "큐에 들어간 것은 없습니다 — 입력한 내용은 그대로 남아 있습니다.",
+    "guardTitle": "태스크를 만들지 않고 나갑니까?",
+    "guardBody": "입력한 제목과 브리프는 아직 어디에도 저장되지 않았습니다. 이 페이지를 떠나면 버려지고, 인테이크에 아무 것도 도달하지 않습니다.",
+    "guardConfirm": "버리기",
+    "guardCancel": "계속 편집",
+    "submit": "생성 & 큐잉",
+    "cancel": "취소",
+    "sourceLabel": "소스",
+    "sourceNote": "티켓이 어디서 왔는지. 네이티브를 제외한 모든 카드는 해당 프로바이더를 지켜보는 연결을 필요로 합니다 — 여기 티켓을 쓰는 것은 출처를 기록하는 것이지, 거기 접수하는 것이 아닙니다.",
+    "ticketLabel": "티켓",
+    "ticketNote": "무엇을 할지, 어디에 떨어질지, 얼마나 긴급한지.",
+    "briefLabel": "브리프",
+    "briefNote": "맥락, 완료 기준, 링크 — 폼이 아니라 이것을 집어드는 사람을 위한 것.",
+    "titleLabel": "제목",
+    "titlePlaceholder": "무엇을 할지 한 줄로",
+    "projectLabel": "프로젝트",
+    "appLabel": "앱",
+    "briefPlaceholder": "맥락, 완료 기준, 링크…"
+  },
+  "priorityField": {
+    "label": "우선순위"
+  }
+}

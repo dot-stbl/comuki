@@ -1,0 +1,119 @@
+{
+  "field": {
+    "required": "필수"
+  },
+  "formDialog": {
+    "cancel": "취소"
+  },
+  "dialog": {
+    "close": "닫기"
+  },
+  "copyButton": {
+    "copy": "복사",
+    "copied": "복사됨"
+  },
+  "codeBlock": {
+    "wrap": "줄바꿈",
+    "showLess": "접기",
+    "showAll": {
+      "other": "{{count}}줄 모두 보기"
+    }
+  },
+  "skeleton": {
+    "loading": "로딩 중"
+  },
+  "forbidden": {
+    "subject": "이 화면",
+    "title": "{{subject}}은(는) 내 역할에 닫혀 있습니다",
+    "description": "{{needs}} — 역할을 요청하거나, 이미 그 역할을 가진 프로젝트로 전환하세요."
+  },
+  "searchField": {
+    "clear": "검색 지우기"
+  },
+  "select": {
+    "any": "전체"
+  },
+  "combobox": {
+    "openList": "목록 열기"
+  },
+  "datePicker": {
+    "openCalendar": "달력 열기"
+  },
+  "splitPane": {
+    "resize": "크기 조절"
+  },
+  "dataTable": {
+    "empty": "행이 없습니다",
+    "noun": "행",
+    "selectColumn": "선택",
+    "selectAll": "모든 {{noun}} 선택",
+    "selectRow": "{{noun}} {{id}} 선택",
+    "resizeColumn": "{{label}} 열 크기 조절",
+    "resizeHint": "드래그로 조절, 더블 클릭으로 원복"
+  },
+  "toolbar": {
+    "filters": "필터",
+    "filtersLabel": "필터",
+    "filtersActive": "필터, {{count}}개 활성",
+    "clearFilters": "모든 필터 지우기",
+    "columns": "열",
+    "searchPlaceholder": "{{label}} 검색…",
+    "filterBy": "{{label}}(으)로 필터",
+    "filterAll": "전체 {{label}}",
+    "filterPlaceholder": "{{label}} 필터…",
+    "clearFilterTitle": "{{label}} 필터 지우기",
+    "clearFilterLabel": "{{label}} 필터 지우기: {{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "패널로 돌아가기",
+    "fillWindow": "창 채우기",
+    "shrinkBack": "{{title}}을(를) 패널로 되돌리기",
+    "fillWith": "{{title}}으로 창 채우기",
+    "resize": "{{title}} 크기 조절",
+    "closeHint": "닫기 — escape",
+    "close": "{{title}} 닫기"
+  },
+  "evidencePane": {
+    "closeHint": "닫기 — escape",
+    "close": "증거 닫기",
+    "empty": "{{type}}용 뷰어 없음 — 바이트는 위의 URL에 있습니다",
+    "unknownType": "알 수 없음",
+    "openNewTab": "새 탭에서 열기",
+    "openNewTabLabel": "{{filename}}을(를) 새 탭에서 열기"
+  },
+  "cron": {
+    "cadence": "주기",
+    "custom": "사용자 지정…",
+    "customDescription": "분, 시, 일, 월, 요일을 고르세요.",
+    "value": "값",
+    "any": "전체",
+    "everyDay": "매일",
+    "anyDay": "아무 날이나",
+    "part": {
+      "minute": "분",
+      "hour": "시",
+      "day": "일",
+      "month": "월",
+      "weekday": "요일"
+    },
+    "weekday": {
+      "sun": "일",
+      "mon": "월",
+      "tue": "화",
+      "wed": "수",
+      "thu": "목",
+      "fri": "금",
+      "sat": "토"
+    },
+    "preset": {
+      "hourly": "매시",
+      "hourlyDescription": "매시 정각.",
+      "daily": "매일 03:00",
+      "dailyDescription": "하루 한 번, 프로젝트의 조용한 시간대에.",
+      "weekly": "매주 월요일",
+      "weeklyDescription": "월요일 03:00.",
+      "monthly": "매월 1일",
+      "monthlyDescription": "매월 1일 03:00."
+    }
+  }
+}

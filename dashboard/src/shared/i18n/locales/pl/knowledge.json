@@ -1,0 +1,89 @@
+{
+  "page": {
+    "title": "Wiedza",
+    "summary": "zestaw reguł, rewizje, harness eval",
+    "tabsLabel": "Sekcje wiedzy"
+  },
+  "tab": {
+    "library": "biblioteka",
+    "gate": "bramka"
+  },
+  "load": {
+    "errorTitle": "Wiedza się nie załadowała"
+  },
+  "search": {
+    "label": "Filtruj reguły, dokumenty i skille",
+    "placeholder": "Szukaj reguł, dokumentów, skillów…",
+    "errorTitle": "Wyszukiwanie nie odpowiedziało",
+    "searching": "Szukanie",
+    "emptyTitle": "Brak dopasowań",
+    "emptySemantic": "Nic w bibliotece nie jest wystarczająco blisko tego zapytania.",
+    "emptyPlain": "Spróbuj innego zapytania po przypiętych regułach i dokumentach.",
+    "sectionTitle": "dopasowania semantyczne",
+    "sectionNote": "top {{count}} po podobieństwie cosinusowym",
+    "count": "{{shown}} z {{total}}"
+  },
+  "revision": {
+    "section": "obowiązująca rewizja",
+    "current": "bieżąca rewizja",
+    "sub": "{{sdk}} · zaktualizowano {{updated}}",
+    "rules": "aktywne reguły",
+    "rulesSub": "{{hard}} twardych · {{soft}} miękkich",
+    "reproducibility": "odtwarzalność",
+    "reproducibilitySub": "każde uruchomienie przypina zestaw reguł + SDK"
+  },
+  "entries": {
+    "section": "reguły, dokumenty i skille",
+    "updated": "zaktualizowano {{updated}}"
+  },
+  "sheet": {
+    "close": "Zamknij wpis",
+    "revisionAt": "rewizja @{{revision}}",
+    "scope": "zakres",
+    "updated": "zaktualizowano"
+  },
+  "badge": {
+    "kind": {
+      "rule": "reguła",
+      "doc": "dokument",
+      "skill": "skill"
+    },
+    "ruleKind": {
+      "hard": "twarda",
+      "soft": "miękka"
+    },
+    "pinned": "przypięte",
+    "pinnedAt": "przypięte @ {{revision}}",
+    "delta": {
+      "improved": "poprawione",
+      "regressed": "pogorszone",
+      "noChange": "bez zmiany"
+    }
+  },
+  "eval": {
+    "section": "zadania golden",
+    "note": "przed → po przy edycjach reguł",
+    "empty": "żadne zadanie golden nie zostało puszczone na tej rewizji",
+    "column": {
+      "task": "zadanie",
+      "before": "przed",
+      "after": "po",
+      "delta": "delta"
+    }
+  },
+  "gate": {
+    "errorTitle": "Nie udało się załadować bramki",
+    "changeFailed": "Zmiana nie udała się.",
+    "nothingMoved": "Nic się nie ruszyło — bramka jest z powrotem taka, jaka była.",
+    "intro": "Uruchomienie musi przejść własne kontrole klienta, zanim wyląduje. Kontrole żyją w ich repozytorium — jeden plik, commitowany jak wszystko inne — więc ta sekcja włącza i wyłącza bramkę i pokazuje, co każda kontrola powiedziała ostatnio. Edycja komendy znaczy edycję pliku; każda sekcja poniżej mówi dokładnie, gdzie jej plik jest.",
+    "emptyTitle": "Żaden projekt nie ma tu bramki",
+    "emptyDescription": "Nic w projektach tej sesji nie deklaruje własnych kontroli klienta. Bramka pojawi się, gdy jeden z nich zacommituje plik, który je trzyma.",
+    "onToast": "Bramka włączona",
+    "onToastDescription": "{{name}} — uruchomienia muszą przejść kontrole klienta",
+    "offToast": "Bramka wyłączona",
+    "offToastDescription": "{{name}} — uruchomienia lądują bez kontroli klienta",
+    "summary": "<on/> z <total/> bramek włączonych · <checks/> kontroli zadeklarowanych",
+    "summaryFailing": "<failing/> nie przechodzi",
+    "summaryNeverRan": "<never/> nigdy nie biegło"
+  }
+}

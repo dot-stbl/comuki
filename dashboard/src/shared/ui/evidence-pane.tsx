@@ -1,4 +1,5 @@
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "./button"
 import { Tooltip } from "./tooltip"
@@ -66,6 +67,7 @@ export function EvidencePane({
   title,
   sizeBytes,
 }: EvidencePaneProps) {
+  const { t } = useTranslation("kit")
   const heading = title ?? filename
   const lower = contentType.toLowerCase()
   const isPng = lower === "image/png"
@@ -91,12 +93,12 @@ export function EvidencePane({
             {typeof sizeBytes === "number" ? (
               <span className={styles.meta}>{formatBytes(sizeBytes)}</span>
             ) : null}
-            <Tooltip content="Close — escape">
+            <Tooltip content={t("evidencePane.closeHint")}>
               <Button
                 variant="ghost"
                 size="icon-sm"
                 data-test="evidence-pane-close"
-                aria-label="Close evidence"
+                aria-label={t("evidencePane.close")}
                 onClick={onClose}
               >
                 <span aria-hidden="true">×</span>
@@ -122,8 +124,9 @@ export function EvidencePane({
               />
             ) : (
               <p className={styles.empty}>
-                no viewer for {contentType || "unknown"} — bytes live at the URL
-                above
+                {t("evidencePane.empty", {
+                  type: contentType || t("evidencePane.unknownType"),
+                })}
               </p>
             )}
           </div>
@@ -134,9 +137,9 @@ export function EvidencePane({
               className={styles.download}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`Open ${filename} in a new tab`}
+              aria-label={t("evidencePane.openNewTabLabel", { filename })}
             >
-              open in a new tab
+              {t("evidencePane.openNewTab")}
             </a>
             <span className={styles.urlLabel}>{filename}</span>
           </footer>

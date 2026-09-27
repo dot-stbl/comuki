@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { RunDetailPage } from "@/domains/runs"
@@ -19,13 +20,18 @@ export const Route = createFileRoute("/runs/$runId")({
    generated route tree standing behind it. The route knows about routing, the
    page knows about a run. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { runId } = Route.useParams()
 
   return (
     <RequirePermission
       permission="runs.view"
-      title="Run"
-      crumbs={[{ label: "live runs", to: "/runs" }, { label: "run" }]}
+      title={t("route.run")}
+      crumbs={[
+        { label: t("crumb.liveRuns"), to: "/runs" },
+        { label: t("crumb.run") },
+      ]}
     >
       <RunDetailPage runId={runId} />
     </RequirePermission>

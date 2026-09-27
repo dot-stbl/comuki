@@ -1,1 +1,94 @@
-{}
+{
+  "page": {
+    "title": "Cost & failures",
+    "errorTitle": "The report did not load",
+    "retry": "Retry",
+    "period": {
+      "day": "today",
+      "week": "this week",
+      "month": "this month"
+    },
+    "periodEnd": {
+      "day": "end of day",
+      "week": "end of week",
+      "month": "end of month"
+    },
+    "deltaVs": "{{pct}}% vs previous {{period}}",
+    "mockMark": "mock snapshot · VITE_USE_MOCK"
+  },
+  "toggle": {
+    "aria": "Period"
+  },
+  "total": {
+    "label": "{{period}} spend",
+    "noPrior": "no prior period yet",
+    "vs": "vs previous {{period}}",
+    "flat": "flat",
+    "burnNote": "<burn/> / day on average · <days/>",
+    "daysObserved": {
+      "one": "{{count}} day observed",
+      "other": "{{count}} days observed"
+    }
+  },
+  "forecast": {
+    "label": "Forecast {{period}}",
+    "sub": "{{pct}}% of {{cap}} cap · burn rate {{rate}}"
+  },
+  "budget": {
+    "label": "Budget progress",
+    "today": "today",
+    "month": "month-to-date",
+    "ofCap": "{{used}} of {{cap}} cap"
+  },
+  "section": {
+    "byDay": "spend by day",
+    "byDayNote": {
+      "one": "the last {{count}} day",
+      "other": "the last {{count}} days"
+    },
+    "byModel": "spend by model",
+    "byModelNote": "tokens",
+    "topProjects": "top projects",
+    "topProjectsNote": "this period",
+    "byApp": "spend by app",
+    "byAppNote": "spend",
+    "failures": "where runs fail",
+    "failuresNote": "where it breaks"
+  },
+  "column": {
+    "spend": "spend",
+    "tokens": "tokens",
+    "share": "share"
+  },
+  "table": {
+    "app": "app",
+    "model": "model",
+    "project": "project"
+  },
+  "byApp": {
+    "empty": "nothing spent today"
+  },
+  "byModel": {
+    "empty": "no model spend this period",
+    "tokensTitle": "{{tokens}} tokens across {{runs}} runs"
+  },
+  "topProjects": {
+    "empty": "no project spend this period",
+    "ofCap": "of {{cap}} cap",
+    "noCap": "no cap"
+  },
+  "byDay": {
+    "empty": "nothing spent this week",
+    "figure": {
+      "one": "<total/> over the last {{count}} day · <average/> a day · heaviest <peak/> at <spend/>",
+      "other": "<total/> over the last {{count}} days · <average/> a day · heaviest <peak/> at <spend/>"
+    },
+    "chartLabel": {
+      "one": "Spend by day, dollars. {{total}} over the last {{count}} day, {{average}} a day on average; heaviest {{peak}} at {{spend}}.",
+      "other": "Spend by day, dollars. {{total}} over the last {{count}} days, {{average}} a day on average; heaviest {{peak}} at {{spend}}."
+    }
+  },
+  "failuresBlock": {
+    "empty": "nothing failed today"
+  }
+}

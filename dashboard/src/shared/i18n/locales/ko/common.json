@@ -1,0 +1,23 @@
+{
+  "actions": {
+    "cancel": "취소",
+    "retry": "재시도",
+    "close": "닫기"
+  },
+  "errors": {
+    "unknown": "알 수 없는 오류"
+  },
+  "relativeTime": {
+    "now": "방금",
+    "minute": "{{count}}분",
+    "hour": "{{count}}시간",
+    "day": "{{count}}일",
+    "future": "{{reading}} 후"
+  },
+  "denial": {
+    "unavailable": "사용할 수 없음",
+    "or": "또는",
+    "needs": "{{list}} 필요",
+    "needsOn": "{{where}}에서 {{list}} 필요"
+  }
+}

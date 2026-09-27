@@ -1,0 +1,293 @@
+{
+  "errors": {
+    "changeFailed": "Zmiana nie udała się."
+  },
+  "state": {
+    "connected": "połączone",
+    "error": "błąd",
+    "disabled": "wyłączone"
+  },
+  "word": {
+    "never": "nigdy"
+  },
+  "provider": {
+    "github": {
+      "label": "github",
+      "target": "repozytorium",
+      "intakeNote": "issues przychodzą z obserwowanego repozytorium. issue zapisany tutaj jest stemplowany jako repozytorium."
+    },
+    "gitlab": {
+      "label": "gitlab",
+      "target": "repozytorium",
+      "intakeNote": "issues przychodzą z obserwowanego repozytorium. issue zapisany tutaj jest stemplowany jako repozytorium."
+    },
+    "yandex-tracker": {
+      "label": "yandex tracker",
+      "target": "klucz kolejki",
+      "intakeNote": "zgłoszenia przychodzą z obserwowanej kolejki trackera. zgłoszenie zapisane tutaj jest stemplowane jako kolejka."
+    },
+    "jira": {
+      "label": "jira",
+      "target": "klucz projektu",
+      "intakeNote": "zgłoszenia przychodzą z obserwowanej tablicy. zgłoszenie zapisane tutaj jest stemplowane jako tablica."
+    },
+    "native": {
+      "label": "native",
+      "target": "nazwa",
+      "intakeNote": "zapisywane tutaj, przez człowieka — własne przyjęcie produktu, bez trackera za nim."
+    }
+  },
+  "intakeNoteUnknown": "zgłoszenia przychodzą z obserwowanego połączenia. zgłoszenie zapisane tutaj jest stemplowane jako tego dostawcy.",
+  "auth": {
+    "pat": "personal access token",
+    "oauth": "nadanie oauth",
+    "app-install": "instalacja aplikacji",
+    "none": "brak"
+  },
+  "authSecret": {
+    "pat": "access token",
+    "oauth": "client secret oauth",
+    "app-install": "klucz prywatny aplikacji",
+    "other": "sekret"
+  },
+  "nativeRefusal": "przyjęcia native nie da się odłączyć — to własny sposób produktu na przyjęcie zgłoszenia",
+  "admission": {
+    "watch": {
+      "label": "watch",
+      "description": "pasujące zgłoszenie startuje uruchomienie. nikt nie musi go podnosić."
+    },
+    "inbox-only": {
+      "label": "inbox-only",
+      "description": "pasujące zgłoszenie ląduje w katalogu i czeka, aż człowiek je weźmie."
+    },
+    "both": {
+      "label": "oba",
+      "description": "zgłoszenie startuje uruchomienie i zostaje w katalogu, żeby uruchomienie dało się znaleźć po zgłoszeniu, które je wywołało."
+    },
+    "nativeIntake": "przyjęcie native",
+    "watchOff": "watch wyłączony"
+  },
+  "host": {
+    "inPlatform": "w platformie",
+    "cloud": "chmura"
+  },
+  "note": {
+    "refusedSilent": "dostawca odmówił i nie powiedział nic użytecznego.",
+    "filedHere": {
+      "one": "{{count}} zgłoszenie złożone tutaj",
+      "few": "{{count}} zgłoszenia złożone tutaj",
+      "many": "{{count}} zgłoszeń złożonych tutaj",
+      "other": "{{count}} zgłoszeń złożonych tutaj"
+    },
+    "turnedOff": "wyłączone — ostatnia synchronizacja {{when}}",
+    "watchOff": "watch wyłączony — nic nie jest tu przyjmowane",
+    "matchedNothing": "filtr nic nie dopasował w ostatnim dniu",
+    "lastSynced": "ostatnia synchronizacja {{when}}"
+  },
+  "registry": {
+    "title": "Źródła",
+    "errorTitle": "Nie udało się załadować źródeł",
+    "connect": "Podłącz źródło",
+    "connectionsWord": "połączenia",
+    "admittingWord": "przyjmuje pracę",
+    "errorWord": "w błędzie",
+    "failureTail": "Nic się nie ruszyło — lista jest z powrotem taka, jaka była.",
+    "sectionTitle": "Połączenia",
+    "sectionNote": "Każde źródło na platformie, którykolwiek projekt karmi. Połączenie niesie credential; jego <em>watch</em> niesie to, co ten credential wolno przyjąć — psują się osobno, więc czyta się je osobno. Edycja jest nadawana per projekt, więc wiersz, którym administrujesz, siedzi nad wierszem, który tylko obserwujesz, a każdy mówi, który jest którym. <code>native</code> jest w każdym projekcie i nie da się go odłączyć."
+  },
+  "connectionsPanel": {
+    "shown": {
+      "one": "wyświetlono {{count}}",
+      "few": "wyświetlono {{count}}",
+      "many": "wyświetlono {{count}}",
+      "other": "wyświetlono {{count}}"
+    },
+    "emptyFiltered": "Żadne połączenie nie pasuje do bieżących filtrów.",
+    "emptyNone": "Brak podłączonych źródeł."
+  },
+  "disconnect": {
+    "title": "Odłączyć to źródło?",
+    "body": "{{name}} · {{project}} — credential zostaje porzucony i nic więcej nie jest tu przyjmowane. Zgłoszenia już wzięte trzymają swoje uruchomienia; ponowne podłączenie znaczy nowy sekret.",
+    "confirm": "Odłącz",
+    "keep": "Zostaw",
+    "toast": "Źródło odłączone"
+  },
+  "column": {
+    "state": "stan",
+    "source": "źródło",
+    "provider": "dostawca",
+    "project": "projekt",
+    "instance": "instancja",
+    "account": "konto",
+    "admission": "przyjmowanie",
+    "admitted": "przyjęte",
+    "note": "co się dzieje",
+    "actions": "akcje",
+    "allStates": "wszystkie stany",
+    "allProviders": "wszyscy dostawcy",
+    "allProjects": "wszystkie projekty",
+    "allModes": "wszystkie tryby",
+    "filterPlaceholder": "filtruj źródło, konto, host…",
+    "newTicket": "Nowe zgłoszenie",
+    "newTicketAria": "Nowe zgłoszenie w {{name}} na {{where}}",
+    "watchAndFilter": "Watch i filtr",
+    "watchAndFilterAria": "Edytuj watch na {{name}}",
+    "testConnection": "Przetestuj połączenie",
+    "testConnectionAria": "Przetestuj połączenie z {{name}}",
+    "disconnect": "Odłącz",
+    "disconnectAria": "Odłącz {{name}}"
+  },
+  "connectPage": {
+    "title": "Podłącz źródło",
+    "crumbNew": "nowe",
+    "summary": "Połączenie należy do jednego projektu i niesie jeden credential. Przychodzi z wyłączonym watchem — przyjmowanie zgłoszeń to osobna decyzja, podejmowana na stronie samego źródła.",
+    "refused": "Połączenie zostało odrzucone.",
+    "tail": "Nic nie zapisano — szczegóły poniżej są dokładnie takie, jakie wpisałeś.",
+    "leaveTitle": "Wyjść bez podłączania źródła?",
+    "leaveBody": "Nic tu nie jest jeszcze zapisane, a credential, który wpisałeś, nie jest nigdzie trzymany — opuszczenie tej strony go porzuca, a podłączenie później znaczy jego ponowne zdobycie.",
+    "discard": "Porzuć",
+    "keep": "Edytuj dalej",
+    "toast": "Źródło podłączone"
+  },
+  "connectForm": {
+    "providerCard": "dostawca",
+    "providerCardNote": "jakiego trackera to połączenie pilnuje i czyim dialektem mówi.",
+    "providerHint": "przyjęcia native tu nie ma: każdy projekt już je ma i nie ma czego celować credentialem.",
+    "connectionCard": "połączenie",
+    "connectionCardNote": "który projekt karmi, gdzie jest instancja i który credential do niej sięga.",
+    "projectLabel": "projekt",
+    "projectHint": "projekt, który to źródło karmi. Edycja źródeł jest nadawana per projekt, więc ten wybór jest tym, czemu odpowiada zapis.",
+    "settingsPreview": "Host trzyma to jako pojedynczy settings json:",
+    "probeProbing": "dociąganie do dostawcy…",
+    "probePending": "przetestuj połączenie przed zapisem — nieosiągalne źródło wygląda dokładnie jak zdrowe, dopóki czegoś nie będzie trzeba.",
+    "credentialCard": "credential",
+    "credentialCardNote": "nazwa env-var na hoście, która trzyma credential. Host rozstrzyga wartość — dashboard jej nigdy nie widzi.",
+    "secretEnvLabel": "env var sekretu",
+    "secretEnvHint": "nazwa env var na hoście, która trzyma credential. Host rozstrzyga wartość przy probie / webhooku — dashboard jej nigdy nie widzi.",
+    "mockNotice": "Tylko tryb mock: formularz trzyma dosłowny credential na tyle długo, żeby przetestować seed store. Tryb realny czyta env var na hoście i wartości nigdy nie widzi.",
+    "mockSecretLabel": "credential (tylko mock)",
+    "submit": "Zapisz połączenie",
+    "testConnection": "Przetestuj połączenie"
+  },
+  "connectionFields": {
+    "baseUrlLabel": "base url",
+    "baseUrlHint": "tylko self-hosted. https, bo credential przechodzi tym drutem.",
+    "accountLabel": "konto",
+    "accountPlaceholder": "bot albo aplikacja, do której należy credential",
+    "accountHint": "pokazane potem na wierszu, żeby nieaktualny credential dało się wyśledzić do osoby.",
+    "authKindLabel": "rodzaj auth"
+  },
+  "authChoice": {
+    "hint": "to, co przyjmuje {{provider}}, i nic więcej. Zapisane dosłownie w settings json; nigdy nie trzyma credentiala."
+  },
+  "connectionForm": {
+    "cardLabel": "droga wejścia",
+    "cardNote": "gdzie jest instancja, który credential do niej sięga i env-var na hoście, który go trzyma.",
+    "secretEnvLabel": "env var sekretu",
+    "secretEnvHint": "nazwa env-var na hoście. Dashboard nigdy nie widzi wartości; host rozstrzyga ją przy probie / webhooku.",
+    "probeProbing": "dociąganie do dostawcy…",
+    "probePending": "przetestuj połączenie przed zapisem — zmiana tego, jak się sięga do źródła, to nie jest coś, co robi się, gdy nikt nie wie, czy się da.",
+    "testConnectionAria": "Przetestuj połączenie z {{name}}",
+    "submit": "Zapisz połączenie"
+  },
+  "watchForm": {
+    "cardLabel": "przyjmowanie",
+    "cardNote": "czy cokolwiek jest przyjmowane, które zgłoszenia i kto kręci dalej, gdy jedno będzie.",
+    "watchLabel": "pilnuj tego źródła",
+    "watchHint": "wyłączone znaczy, że połączenie zostaje autoryzowane i przestaje cokolwiek wnosić. To nie to samo co odłączenie.",
+    "admissionModeLabel": "tryb przyjmowania",
+    "submit": "Zapisz watch"
+  },
+  "filterField": {
+    "label": "wyrażenie filtra",
+    "placeholder": "zostaw puste, żeby przyjmować wszystko, co to połączenie widzi",
+    "hintsLabel": "pola widziane na zgłoszeniach {{kind}}",
+    "verbatim": "zapisane dosłownie i nie parsowane — język filtra nie jest jeszcze rozstrzygnięty, więc ten tekst przechodzi do connectora dokładnie tak, jak został wpisany."
+  },
+  "statusPreview": {
+    "head": "status zapisywany z powrotem do {{provider}}",
+    "nativeNone": "przyjęcie native jest trackerem. Status uruchomienia jest statusem zgłoszenia, więc nie ma dokąd go pisać z powrotem.",
+    "unknownNone": "nic nie jest zapisywane z powrotem do {{provider}} — ten build nie ma mapowania dla tego dostawcy, więc status uruchomienia zostaje na uruchomieniu."
+  },
+  "detailPage": {
+    "titleFallback": "Źródło",
+    "crumbFallback": "źródło",
+    "errorTitle": "Nie udało się załadować tego źródła",
+    "notFoundTitle": "Brak połączenia o tym id",
+    "notFoundBody": "Nic na tej platformie nie jest podłączone pod tym id. Źródło, które zostało odłączone — tu albo w innej karcie — to zwykła droga na ten adres, a lista połączeń jest tam, gdzie są te, które jeszcze istnieją.",
+    "backToSources": "Wróć do źródeł",
+    "failureTail": "Nic się nie ruszyło — ta strona jest z powrotem taka, jaka była.",
+    "factsTitle": "czym jest to połączenie",
+    "factProvider": "dostawca",
+    "factAuth": "auth",
+    "factInstance": "instancja",
+    "factAccount": "konto",
+    "factCredential": "credential",
+    "factLastSync": "ostatnia synchronizacja",
+    "credentialEnvNote": "rozstrzygane na hoście przy probie / webhooku. Dashboard nigdy nie widzi wartości — zamiana znaczy zmianę env var na hoście i łatanie <code>secretEnvRef</code> połączenia.",
+    "credentialStoredNote": "zapisane write-only i nigdy więcej nie pokazane — nie na tej stronie, nie w formularzu, nie przez api. Zamiana znaczy podłączenie na nowo.",
+    "credentialNoneNote": "przyjęcie native nie ma zdalnego końca, więc nie ma z czym się autoryzować.",
+    "none": "brak",
+    "never": "nigdy",
+    "watchTitle": "watch i filtr",
+    "noWatch": "Przyjęcie native nie ma watcha. Zgłoszenia trafiają tu dlatego, że ktoś je złożył, a nie dlatego, że filtr je przyjął — więc nie ma co włączać i nie ma co zawężać.",
+    "connectionTitle": "połączenie",
+    "rotationTitle": "sekret webhooka",
+    "rotationBody": "Klik generuje świeży sekret webhooka i pokazuje go raz. Skopiuj go do ustawień webhooków trackera — ta strona nie pokaże go ponownie.",
+    "rotateButton": "Wygeneruj sekret",
+    "rotateAria": "Wygeneruj sekret webhooka dla {{name}}",
+    "rotateLabel": "Wygeneruj sekret webhooka",
+    "rotatedLabel": "nowy sekret webhooka — kopiuj teraz, ten panel nie przeżyje nawigacji",
+    "handoffsTitle": "dokąd to idzie",
+    "handoffFiled": "zgłoszenia złożone tutaj. Są w katalogu ze wszystkim innym — ",
+    "handoffAdmitted": "zgłoszenia przyjęte stąd. Są w katalogu ze wszystkim innym — ",
+    "handoffCatalogTail": "katalog nie jest zawężony do tego źródła.",
+    "openCatalog": "otwórz katalog",
+    "handoffProject": "projekt, który karmi to połączenie. Edycja źródła jest nadawana per projekt, więc to jest temu, czemu odpowiada każdy akt na tej stronie.",
+    "openProject": "otwórz projekt",
+    "handoffTicket": "złóż zgłoszenie prosto do przyjęć tego projektu. To akt członka, nie administratora, więc ma własny ekran i własne uprawnienie.",
+    "fileTicket": "złóż zgłoszenie",
+    "rotateTitle": "Wygenerować sekret webhooka tego źródła?",
+    "rotateBody": "{{name}} · {{project}} — nowy sekret jest generowany i pokazany raz. Webhooki podpisane poprzednim sekretem będą odrzucane, dopóki nie skopiujesz nowego do trackera.",
+    "rotateConfirm": "Wygeneruj",
+    "rotateKeep": "Zostaw obecny",
+    "leaveTitle": "Wyjść bez zapisu?",
+    "leaveBody": "Watch i szczegóły połączenia, które zmieniłeś na tej stronie, nie są jeszcze zapisane. Wyjście je porzuca, a źródło zostaje dokładnie takie, jakie było.",
+    "discard": "Porzuć",
+    "keep": "Edytuj dalej",
+    "watchSavedToast": "Watch zapisany",
+    "connectionSavedToast": "Połączenie zapisane",
+    "rotatedToast": "Sekret webhooka wygenerowany",
+    "rotatedToastDescription": "{{name}} — skopiuj nową wartość do trackera"
+  },
+  "ticketPage": {
+    "title": "Nowe zgłoszenie w {{project}}",
+    "titleFallback": "Nowe zgłoszenie",
+    "crumb": "nowe zgłoszenie",
+    "summary": "Przyjęcie native jest własnością produktu. Zgłoszenie zapisane tutaj nie ma za sobą trackera, więc jego status jest statusem uruchomienia i nie ma dokąd go synchronizować.",
+    "errorTitle": "Nie udało się odszukać tego źródła",
+    "notFoundTitle": "Brak połączenia o tym id",
+    "notFoundBody": "Żadne połączenie na tej platformie nie ma id {{id}}. Źródło odłączone, gdy ta karta stała otwarta, to zwykła droga tutaj.",
+    "backToSources": "Wróć do źródeł",
+    "refused": "Zgłoszenie zostało odrzucone.",
+    "tail": "Nic nie złożono — to, co wpisałeś, wciąż tu jest.",
+    "leaveTitle": "Wyjść bez składania zgłoszenia?",
+    "leaveBody": "Tytuł, treść i etykiety, które wpisałeś, nie są jeszcze nigdzie zapisane. Opuszczenie tej strony je porzuca i nic nie trafia do przyjęć.",
+    "discard": "Porzuć",
+    "keep": "Edytuj dalej",
+    "toast": "Zgłoszenie złożone"
+  },
+  "ticketForm": {
+    "titleLabel": "tytuł",
+    "titlePlaceholder": "co jest nie tak, w jednej linii",
+    "bodyLabel": "treść",
+    "bodyPlaceholder": "co widziałeś i gdzie. Mózg czyta to, zanim cokolwiek zaplanuje.",
+    "labelsLabel": "etykiety",
+    "labelsPlaceholder": "checkout-web, bug",
+    "labelsHint": "oddzielone przecinkiem. To własne etykiety zgłoszenia — nie wyrażenie filtra.",
+    "straightLabel": "prosto do pracy",
+    "straightHint": "wyłączone zostawia je komuś do podjęcia, co jest tym samym aktem minutę później.",
+    "submitStart": "Utwórz i startuj",
+    "submit": "Utwórz zgłoszenie"
+  }
+}

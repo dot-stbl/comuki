@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { TasksPage } from "@/domains/tasks"
@@ -25,13 +26,15 @@ export const Route = createFileRoute("/tasks/")({
 })
 
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { q } = Route.useSearch()
 
   return (
     <RequirePermission
       permission="inbox.view"
-      title="Tasks"
-      crumbs={[{ label: "tasks" }]}
+      title={t("route.tasks")}
+      crumbs={[{ label: t("crumb.tasks") }]}
     >
       <TasksPage focus={q} />
     </RequirePermission>

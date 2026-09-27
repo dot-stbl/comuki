@@ -1,4 +1,5 @@
 import { AlertTriangle, ExternalLink, FileCode2 } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import type { BoardsRepo, Grafana } from "@/domains/observability/model/types"
 import { Tooltip, buttonClass } from "@/shared/ui"
@@ -31,58 +32,54 @@ export function ConnectGuide({
   boardsRepo,
   noBoards,
 }: ConnectGuideProps) {
+  const { t } = useTranslation("observability")
+
   return (
     <div className={styles.guide} data-test="connect-guide">
       {grafana ? (
         <p className={styles.where} data-test="grafana-configured">
-          {grafana.baseUrl} · org {grafana.org} · authored against grafana{" "}
-          {grafana.version}
+          {t("connect.where", {
+            base: grafana.baseUrl,
+            org: grafana.org,
+            version: grafana.version,
+          })}
         </p>
       ) : (
         <p className={styles.none} data-test="no-grafana">
           <AlertTriangle className={styles.noneIcon} aria-hidden="true" />
-          <span>
-            No grafana is configured for this platform, so none of the boards
-            above can be opened yet. Their definitions still exist — they live
-            in our repository, not in a database — so importing them is the only
-            step between here and a working board.
-          </span>
+          <span>{t("connect.noGrafana")}</span>
         </p>
       )}
 
       {noBoards && grafana ? (
         <p className={styles.none} data-test="no-boards">
           <AlertTriangle className={styles.noneIcon} aria-hidden="true" />
-          <span>
-            Grafana is configured and none of the boards have been imported into
-            it yet. Nothing is broken — the definitions are in our repository
-            and the import below is the whole of the remaining work.
-          </span>
+          <span>{t("connect.noBoards")}</span>
         </p>
       ) : null}
 
       <ol className={styles.steps}>
         <li className={styles.step}>
-          Point a grafana at the platform&apos;s metrics endpoint. The
-          orchestrator serves prometheus metrics on its own port; the boards
-          expect that datasource to be named{" "}
-          <span className={styles.code}>comuki</span>.
+          <Trans
+            ns="observability"
+            i18nKey="connect.steps.one"
+            components={{
+              code: <span className={styles.code} />,
+            }}
+          />
         </li>
         <li className={styles.step}>
-          Import the board definitions from{" "}
-          <span className={styles.code}>{boardsRepo.path}</span> in{" "}
-          <span className={styles.code}>{boardsRepo.repo}</span>. They are
-          ordinary dashboard json — they are versioned with the platform on
-          purpose, so a board and the metric it reads change in one commit.
+          <Trans
+            ns="observability"
+            i18nKey="connect.steps.two"
+            components={{
+              path: <span className={styles.code}>{boardsRepo.path}</span>,
+              repo: <span className={styles.code}>{boardsRepo.repo}</span>,
+            }}
+          />
         </li>
-        <li className={styles.step}>
-          Keep the uids the definitions declare. This page links by uid, and a
-          board imported under a new one is a board this page cannot find.
-        </li>
-        <li className={styles.step}>
-          Set the grafana base url in the platform&apos;s deployment config. It
-          is what turns the entries above into links.
-        </li>
+        <li className={styles.step}>{t("connect.steps.three")}</li>
+        <li className={styles.step}>{t("connect.steps.four")}</li>
       </ol>
 
       {/* Two glyphs side by side, so they are deliberately not the same one:
@@ -90,26 +87,26 @@ export function ConnectGuide({
           running Grafana. Two `ExternalLink`s here would be two controls the
           eye cannot tell apart until it has hovered both. */}
       <div className={styles.actions}>
-        <Tooltip content="Board definitions">
+        <Tooltip content={t("connect.boardsLabel")}>
           <a
             className={buttonClass({ variant: "outline", size: "icon-sm" })}
             href={boardsRepo.url}
             target="_blank"
             rel="noreferrer"
-            aria-label="Board definitions"
+            aria-label={t("connect.boardsLabel")}
             data-test="boards-repo-link"
           >
             <FileCode2 aria-hidden="true" />
           </a>
         </Tooltip>
         {grafana ? (
-          <Tooltip content="Open grafana">
+          <Tooltip content={t("connect.openGrafana")}>
             <a
               className={buttonClass({ variant: "outline", size: "icon-sm" })}
               href={grafana.baseUrl}
               target="_blank"
               rel="noreferrer"
-              aria-label="Open grafana"
+              aria-label={t("connect.openGrafana")}
               data-test="grafana-link"
             >
               <ExternalLink aria-hidden="true" />

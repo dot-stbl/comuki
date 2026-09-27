@@ -1,1 +1,201 @@
-{}
+{
+  "errors": {
+    "saveDidNotLand": "O salvamento não passou.",
+    "stopDidNotApply": "O stop não foi aplicado."
+  },
+  "page": {
+    "title": "Ajustes",
+    "summaryMock": "configuração do plano de controle",
+    "summaryReal": "configuração da plataforma — somente leitura, definida no boot",
+    "errorTitle": "Os ajustes não carregaram",
+    "retry": "Tentar de novo",
+    "tabsAria": "Seções dos ajustes"
+  },
+  "tabs": {
+    "apps": "apps",
+    "rules": "regras",
+    "autonomy": "autonomia",
+    "routing": "roteamento",
+    "budgets": "orçamentos",
+    "keys": "chaves",
+    "tracker": "trackers"
+  },
+  "toast": {
+    "routingSaved": "Roteamento salvo",
+    "routingSavedNote": "mapa papel → modelo atualizado (simulado)",
+    "routingNotSaved": "Roteamento não salvo",
+    "budgetsSaved": "Orçamentos salvos",
+    "budgetsSavedNote": "tetos atualizados (simulado)",
+    "budgetsNotSaved": "Orçamentos não salvos"
+  },
+  "apps": {
+    "section": "Apps",
+    "note": "somente leitura · o registro é declarado no git do cliente",
+    "emptyFiltered": "nenhuma app passa pelos filtros atuais",
+    "empty": "o registro não declara nenhuma app",
+    "count": "{{count}} exibidas",
+    "column": {
+      "app": "app",
+      "repo": "repo",
+      "stack": "stack",
+      "envs": "ambientes",
+      "deploy": "deploy"
+    },
+    "filterPlaceholder": "filtrar app, repo, stack…",
+    "allTargets": "todos os destinos",
+    "nowhere": "nenhum"
+  },
+  "rules": {
+    "section": "Regras do enxame",
+    "note": "somente leitura · as regras vivem no git do cliente e mudam por commit",
+    "conflicts": "Nenhum conflito · {{count}} regras ativas · os escopos não se sobrepõem.",
+    "emptyFiltered": "nenhuma regra passa pelos filtros atuais",
+    "empty": "o conjunto de regras está vazio",
+    "count": "{{count}} exibidas",
+    "column": {
+      "rule": "regra",
+      "scope": "escopo",
+      "kind": "tipo",
+      "version": "versão",
+      "description": "descrição"
+    },
+    "filterPlaceholder": "filtrar regra, escopo, descrição…",
+    "allScopes": "todos os escopos",
+    "allKinds": "todos os tipos"
+  },
+  "autonomy": {
+    "section": "Autonomia",
+    "note": "o que é automático · o que precisa de humano",
+    "emptyFiltered": "nenhuma classe de mudança passa pelos filtros atuais",
+    "empty": "nenhuma classe de mudança está classificada",
+    "count": "{{count}} exibidas",
+    "column": {
+      "changeClass": "classe de mudança",
+      "mode": "modo"
+    },
+    "filterPlaceholder": "filtrar classe de mudança…",
+    "allModes": "todos os modos"
+  },
+  "routing": {
+    "section": "Roteamento de modelos",
+    "note": "papel → modelo físico",
+    "emptyFiltered": "nenhum papel passa pelos filtros atuais",
+    "empty": "nenhum papel está roteado",
+    "count": "{{count}} exibidos",
+    "column": {
+      "role": "papel",
+      "model": "modelo",
+      "usage": "uso"
+    },
+    "editSection": "Editar o mapa papel → modelo",
+    "editNote": "líder / worker / juiz",
+    "field": {
+      "lead": "líder",
+      "worker": "worker",
+      "judge": "juiz"
+    },
+    "save": "Salvar roteamento",
+    "escalation": "Política de escalonamento — 2 retentativas falhadas no worker escalam para o líder. Um gate de tipos vermelho vai para um agente de debug com uma revisão fixada."
+  },
+  "budgets": {
+    "readingSection": "Orçamento do proxy",
+    "readingNote": "o que o enxame gastou hoje contra o teto global",
+    "killSwitch": "Kill-switch",
+    "killHint": "Parada dura de todos os novos claims — cada app, cada tarefa.",
+    "pause": "Pausar o enxame",
+    "pauseHint": "Pausa suave — workers em execução terminam; nenhum contêiner novo inicia.",
+    "stopFailureTail": "Nada se moveu — os stops estão como estavam.",
+    "killTitle": "Acionar o kill-switch?",
+    "killBody": "Os novos claims param agora — cada app, cada tarefa — e ficam parados até o switch ser religado. Workers no meio de um passo terminam o que seguram; nada na fila é cancelado.",
+    "killConfirm": "Bloquear novos claims",
+    "killCancel": "Deixar os claims abertos",
+    "capsSection": "Tetos de orçamento",
+    "capsNote": "o teto global que o medidor lê · por-tarefa e por-app o refinam",
+    "globalCap": "teto global",
+    "globalCapHint": "O medidor acima mede o gasto contra este teto.",
+    "refinements": "refinamentos",
+    "perTask": "por tarefa",
+    "perApp": "por app",
+    "save": "Salvar orçamentos",
+    "meter": {
+      "over": "acima do teto",
+      "left": "restam {{left}}",
+      "stopped": "kill-switch ligado · novos claims bloqueados",
+      "atCap": "kill-switch no teto"
+    }
+  },
+  "keys": {
+    "section": "Chaves de provedores",
+    "note": "somente leitura · as chaves vêm do env, a rotação roda no proxy",
+    "emptyFiltered": "nenhuma chave passa pelos filtros atuais",
+    "empty": "o proxy não detém nenhuma chave de provedor",
+    "count": "{{count}} exibidas",
+    "column": {
+      "provider": "provedor",
+      "scope": "escopo",
+      "rotation": "rotação",
+      "status": "estado"
+    },
+    "filterPlaceholder": "filtrar provedor, escopo…",
+    "allStatuses": "todos os estados"
+  },
+  "tracker": {
+    "section": "Fontes de intake",
+    "notice": "Um tracker conectado sincroniza seus tickets no backlog · o intake manual segue aberto de qualquer forma.",
+    "emptyTitle": "Nenhum tracker está conectado",
+    "emptyDescription": "Nada está sincronizando tickets no backlog. O intake manual segue aberto de qualquer forma — um tracker só adiciona uma segunda porta.",
+    "connected": "conectado",
+    "synced": "sincronizado {{when}}",
+    "sync": "Sincronizar",
+    "syncAria": "Sincronizar {{name}}",
+    "syncedToast": "{{name}} sincronizado",
+    "syncedToastNote": "novos issues importados (simulado)",
+    "connect": "Conectar",
+    "connectAria": "Conectar {{name}}",
+    "connectToast": "Conectar {{name}}",
+    "connectToastNote": "fluxo OAuth… (simulado)"
+  },
+  "platform": {
+    "hint": "Somente leitura — cada valor aqui é configurado no boot. Mudanças passam por configuração e um restart; nada nesta página escreve.",
+    "on": "ligado",
+    "off": "desligado",
+    "escalationOff": "desligado — o catraca está desativado ({{would}} se aplicaria)",
+    "orchestration": {
+      "section": "orquestração",
+      "leaseTtl": "ttl do lease",
+      "leaseTtlNote": "entregue no claim, estendido por heartbeat",
+      "reapInterval": "intervalo de ceifa",
+      "reapIntervalNote": "cadência da varredura do ceifador de leases",
+      "reapGrace": "grça de ceifa",
+      "reapGraceNote": "folga após expirar antes de o ceifador agir",
+      "maxAttempts": "tentativas máx.",
+      "maxAttemptsNote": "claims antes de um item travado falhar",
+      "escalationTimeout": "timeout de escalonamento",
+      "escalationTimeoutNote": "quanto tempo um run pode ficar escalado antes do auto-arquivo",
+      "escalationSweep": "varredura de escalonamento",
+      "escalationSweepNote": "cadência da varredura da catraca"
+    },
+    "compute": {
+      "section": "compute",
+      "provider": "provedor",
+      "providerNote": "a implementação de compute que a v1 roda",
+      "workerImage": "imagem do worker",
+      "workerImageNote": "fixada por digest em produção",
+      "profilesRef": "ref de profiles",
+      "profilesRefNote": "o git-ref de profiles fixado",
+      "minIdle": "min idle",
+      "minIdleNote": "piso de idle quente por perfil",
+      "maxConcurrent": "concorrência máx.",
+      "maxConcurrentNote": "teto de concorrência por projeto",
+      "idleTtl": "ttl de idle",
+      "idleTtlNote": "antes de um worker virar candidato do ceifador",
+      "pollInterval": "intervalo de polling",
+      "pollIntervalNote": "entre passagens do supervisor"
+    },
+    "proxy": {
+      "section": "proxy",
+      "passthrough": "openai / anthropic passthrough",
+      "passthroughNote": "se o proxy está composto ou não"
+    }
+  }
+}

@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "重试"
-  },
-  "errors": {
-    "unknown": "未知错误"
-  },
   "status": {
     "new": "新建",
     "queued": "排队中",

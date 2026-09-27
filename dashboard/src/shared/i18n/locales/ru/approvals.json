@@ -1,7 +1,4 @@
 {
-  "actions": {
-    "retry": "повторить"
-  },
   "registry": {
     "title": "Согласования",
     "summary": {
@@ -11,9 +8,6 @@
       "other": "<count/> ждут решения"
     },
     "errorTitle": "согласования не загрузились"
-  },
-  "errors": {
-    "unknown": "неизвестная ошибка"
   },
   "decide": {
     "approvedToast": "согласовано",

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import type { CostTopProject } from "@/domains/cost/model/cost"
 import { projectAxis, projectShare } from "@/domains/cost/model/cost"
@@ -12,14 +13,6 @@ export interface TopProjectsProps {
   limit?: number
   className?: string
 }
-
-/** The columns, beside the project the row names. */
-const COLUMNS = [
-  { label: "share" },
-  /* Spend is what the rows are ordered by, and the cap the column cannot fit
-     rides in the cell's `title`. */
-  { label: "spend", strong: true, help: true },
-] as const
 
 /**
  * The top-N projects by spend for the active period.
@@ -35,6 +28,7 @@ const COLUMNS = [
  * is missing.
  */
 export function TopProjects({ rows, limit = 7, className }: TopProjectsProps) {
+  const { t } = useTranslation("cost")
   const visible = rows.slice(0, limit)
   const axis = projectAxis(visible)
   const total = rows.reduce((sum, row) => sum + row.spend, 0)
@@ -58,7 +52,12 @@ export function TopProjects({ rows, limit = 7, className }: TopProjectsProps) {
       },
       {
         value: `$${row.spend.toFixed(0)}`,
-        title: row.cap > 0 ? `of $${row.cap.toFixed(0)} cap` : "no cap",
+        /* Spend is what the rows are ordered by, and the cap the column cannot
+           fit rides in the cell's `title`. */
+        title:
+          row.cap > 0
+            ? t("topProjects.ofCap", { cap: `$${row.cap.toFixed(0)}` })
+            : t("topProjects.noCap"),
         "data-test": "top-projects-spend",
       },
     ],
@@ -66,10 +65,13 @@ export function TopProjects({ rows, limit = 7, className }: TopProjectsProps) {
 
   return (
     <RankedTable
-      label="project"
-      columns={COLUMNS}
+      label={t("table.project")}
+      columns={[
+        { label: t("column.share") },
+        { label: t("column.spend"), strong: true, help: true },
+      ]}
       rows={ranked}
-      empty="no project spend this period"
+      empty={t("topProjects.empty")}
       data-test="top-projects"
       rowTest="top-projects-row"
       emptyTest="top-projects-empty"

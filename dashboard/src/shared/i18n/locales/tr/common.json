@@ -1,0 +1,23 @@
+{
+  "actions": {
+    "cancel": "İptal",
+    "retry": "Yeniden dene",
+    "close": "Kapat"
+  },
+  "errors": {
+    "unknown": "Bilinmeyen hata"
+  },
+  "relativeTime": {
+    "now": "şimdi",
+    "minute": "{{count}} dk",
+    "hour": "{{count}} sa",
+    "day": "{{count}} gün",
+    "future": "{{reading}} içinde"
+  },
+  "denial": {
+    "unavailable": "kullanılamıyor",
+    "or": "veya",
+    "needs": "{{list}} gerekiyor",
+    "needsOn": "{{where}} üzerinde {{list}} gerekiyor"
+  }
+}

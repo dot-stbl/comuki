@@ -1,0 +1,49 @@
+{
+  "registry": {
+    "title": "Zatwierdzenia",
+    "summary": {
+      "one": "<count/> czeka na decyzję",
+      "few": "<count/> czekają na decyzję",
+      "many": "<count/> czeka na decyzję",
+      "other": "<count/> czeka na decyzję"
+    },
+    "errorTitle": "Nie udało się załadować zatwierdzeń"
+  },
+  "decide": {
+    "approvedToast": "Zatwierdzone",
+    "rejectedToast": "Odrzucone",
+    "openedToast": "Otwarto przegląd",
+    "refused": "Decyzja nie wylądowała.",
+    "tail": "Kolejka jest taka, jaka była — uruchomienie wciąż czeka."
+  },
+  "empty": {
+    "title": "Kolejka pusta",
+    "description": "Nic nie czeka na człowieka."
+  },
+  "card": {
+    "details": "Szczegóły",
+    "hide": "Ukryj",
+    "review": "Przejrzyj",
+    "reject": "Odrzuć",
+    "approve": "Zatwierdź",
+    "reviewAria": "Przejrzyj {{noun}} dla {{app}}",
+    "rejectAria": "Odrzuć {{noun}} dla {{app}}",
+    "approveAria": "Zatwierdź {{noun}} dla {{app}}",
+    "planHead": "Plan — graf elementów roboczych",
+    "assumptionsFallback": "Założenia planisty",
+    "paneBaseline": "baseline",
+    "paneNew": "nowy"
+  },
+  "type": {
+    "plan": "plan",
+    "deploy": "deploy",
+    "baseline": "baseline",
+    "gate": "bramka",
+    "learning": "reguła"
+  },
+  "risk": {
+    "high": "wysokie",
+    "medium": "średnie",
+    "low": "niskie"
+  }
+}

@@ -1,10 +1,4 @@
 {
-  "errors": {
-    "unknown": "error desconocido"
-  },
-  "actions": {
-    "retry": "reintentar"
-  },
   "header": {
     "title": "Turno",
     "crumb": "turno",

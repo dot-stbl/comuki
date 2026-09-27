@@ -1,1 +1,20 @@
-{}
+{
+  "boards": {
+    "meta": "uid {{uid}} · definición actualizada {{updated}}",
+    "openAria": "Abrir {{title}}",
+    "notImported": "aún sin importar"
+  },
+  "connect": {
+    "where": "{{base}} · org {{org}} · escrita contra grafana {{version}}",
+    "noGrafana": "No hay ningún grafana configurado para esta plataforma, así que ninguno de los tableros de arriba se puede abrir todavía. Sus definiciones siguen existiendo — viven en nuestro repositorio, no en una base de datos —, así que importarlas es el único paso entre aquí y un tablero que funciona.",
+    "noBoards": "Grafana está configurado y ninguno de los tableros se ha importado en él todavía. Nada está roto — las definiciones están en nuestro repositorio y la importación de abajo es todo el trabajo restante.",
+    "steps": {
+      "one": "Apunte un grafana al endpoint de métricas de la plataforma. El orquestador sirve métricas de prometheus en su propio puerto; los tableros esperan que esa fuente de datos se llame <code>comuki</code>.",
+      "two": "Importe las definiciones de los tableros desde <path/> en <repo/>. Son json de dashboard ordinario — se versionan con la plataforma a propósito, para que un tablero y la métrica que lee cambien en un commit.",
+      "three": "Conserve los uid que declaran las definiciones. Esta página enlaza por uid, y un tablero importado bajo uno nuevo es un tablero que esta página no puede encontrar.",
+      "four": "Fije la base url del grafana en la configuración de despliegue de la plataforma. Es lo que convierte las entradas de arriba en enlaces."
+    },
+    "boardsLabel": "Definiciones de tableros",
+    "openGrafana": "Abrir grafana"
+  }
+}

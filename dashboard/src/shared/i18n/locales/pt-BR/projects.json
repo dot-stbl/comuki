@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "cancel": "Cancelar",
-    "retry": "Tentar de novo"
-  },
-  "errors": {
-    "unknown": "Erro desconhecido"
-  },
   "registry": {
     "title": "Projetos",
     "summary": "<count/> projetos · <runs/> execuções em voo · <spend/> hoje",

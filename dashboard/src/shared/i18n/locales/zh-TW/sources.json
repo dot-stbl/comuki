@@ -1,0 +1,287 @@
+{
+  "errors": {
+    "changeFailed": "更改失敗。"
+  },
+  "state": {
+    "connected": "已連線",
+    "error": "錯誤",
+    "disabled": "已停用"
+  },
+  "word": {
+    "never": "從未"
+  },
+  "provider": {
+    "github": {
+      "label": "github",
+      "target": "倉庫",
+      "intakeNote": "issue 來自受監視的倉庫。在這裡寫下的會被標記為該倉庫的。"
+    },
+    "gitlab": {
+      "label": "gitlab",
+      "target": "倉庫",
+      "intakeNote": "issue 來自受監視的倉庫。在這裡寫下的會被標記為該倉庫的。"
+    },
+    "yandex-tracker": {
+      "label": "yandex tracker",
+      "target": "佇列鍵",
+      "intakeNote": "工單來自受監視的 tracker 佇列。在這裡寫下的會被標記為該佇列的。"
+    },
+    "jira": {
+      "label": "jira",
+      "target": "專案鍵",
+      "intakeNote": "工單來自受監視的看板。在這裡寫下的會被標記為該看板的。"
+    },
+    "native": {
+      "label": "native",
+      "target": "名稱",
+      "intakeNote": "由人在這裡寫下 — 產品自己的接收口，背後沒有 tracker。"
+    }
+  },
+  "intakeNoteUnknown": "工單來自受監視的連線。在這裡寫下的會被標記為該提供方的。",
+  "auth": {
+    "pat": "個人訪問令牌",
+    "oauth": "oauth 授權",
+    "app-install": "應用安裝",
+    "none": "無"
+  },
+  "authSecret": {
+    "pat": "access token",
+    "oauth": "oauth client secret",
+    "app-install": "應用私鑰",
+    "other": "秘密"
+  },
+  "nativeRefusal": "自有接收口不能斷開 — 它是產品接受工單的方式",
+  "admission": {
+    "watch": {
+      "label": "watch",
+      "description": "匹配的工單啟動一個 run。沒有人需要認領它。"
+    },
+    "inbox-only": {
+      "label": "僅收件箱",
+      "description": "匹配的工單落入目錄，等待人來認領。"
+    },
+    "both": {
+      "label": "兩者",
+      "description": "工單啟動一個 run 並留在目錄中，這樣 run 可以通過引起它的工單找到。"
+    },
+    "nativeIntake": "native 接收",
+    "watchOff": "watch 已關"
+  },
+  "host": {
+    "inPlatform": "平臺內",
+    "cloud": "雲端"
+  },
+  "note": {
+    "refusedSilent": "提供方拒絕了，且沒有說出任何有用的話。",
+    "filedHere": {
+      "other": "此處提交了 {{count}} 個工單"
+    },
+    "turnedOff": "已關閉 — 最後同步 {{when}}",
+    "watchOff": "watch 已關 — 此處不再准入任何東西",
+    "matchedNothing": "篩選器在過去一天沒有匹配到任何東西",
+    "lastSynced": "最後同步 {{when}}"
+  },
+  "registry": {
+    "title": "來源",
+    "errorTitle": "無法載入來源",
+    "connect": "連線來源",
+    "connectionsWord": "個連線",
+    "admittingWord": "個正在准入工作",
+    "errorWord": "個處於錯誤",
+    "failureTail": "沒有任何東西移動 — 列表回到原樣。",
+    "sectionTitle": "連線",
+    "sectionNote": "平臺上的每個來源，無論它供給哪個專案。連線承載憑據；它的 <em>watch</em> 承載該憑據被允許准入的東西 — 二者分別失效，因此分別閱讀。編輯許可權按專案授予，因此你管理的行排在你只觀看的行上方，各行說明自己是哪種。<code>native</code> 存在於每個專案且不能斷開。"
+  },
+  "connectionsPanel": {
+    "shown": {
+      "other": "{{count}} 項"
+    },
+    "emptyFiltered": "沒有連線匹配當前篩選。",
+    "emptyNone": "沒有已連線的來源。"
+  },
+  "disconnect": {
+    "title": "斷開此來源？",
+    "body": "{{name}} · {{project}} — 憑據被丟棄，此處不再准入任何東西。已認領的工單保留其 run；重新連線意味著新秘密。",
+    "confirm": "斷開",
+    "keep": "保留",
+    "toast": "來源已斷開"
+  },
+  "column": {
+    "state": "狀態",
+    "source": "來源",
+    "provider": "提供方",
+    "project": "專案",
+    "instance": "例項",
+    "account": "賬戶",
+    "admission": "准入",
+    "admitted": "已准入",
+    "note": "正在發生什麼",
+    "actions": "操作",
+    "allStates": "所有狀態",
+    "allProviders": "所有提供方",
+    "allProjects": "所有專案",
+    "allModes": "所有模式",
+    "filterPlaceholder": "篩選來源、賬戶、主機…",
+    "newTicket": "新建工單",
+    "newTicketAria": "在 {{where}} 的 {{name}} 中新建工單",
+    "watchAndFilter": "Watch 與篩選",
+    "watchAndFilterAria": "編輯 {{name}} 的 watch",
+    "testConnection": "測試連線",
+    "testConnectionAria": "測試到 {{name}} 的連線",
+    "disconnect": "斷開",
+    "disconnectAria": "斷開 {{name}}"
+  },
+  "connectPage": {
+    "title": "連線來源",
+    "crumbNew": "新建",
+    "summary": "連線屬於一個專案並承載一份憑據。它以 watch 關閉的狀態到來 — 准入工單是單獨的決定，在來源自己的頁面上做出。",
+    "refused": "連線被拒絕。",
+    "tail": "沒有儲存任何東西 — 下面的細節與你輸入的完全一致。",
+    "leaveTitle": "不連線來源就離開？",
+    "leaveBody": "這裡還沒有儲存任何東西，你輸入的憑據也沒有存放在任何地方 — 離開此頁面將丟棄它，之後連線意味著重新獲取它。",
+    "discard": "丟棄",
+    "keep": "繼續編輯",
+    "toast": "來源已連線"
+  },
+  "connectForm": {
+    "providerCard": "提供方",
+    "providerCardNote": "此連線監視哪個 tracker，說誰的方言。",
+    "providerHint": "native 接收不在這裡：每個專案已經有一個，而且沒有可以指向憑據的東西。",
+    "connectionCard": "連線",
+    "connectionCardNote": "它供給哪個專案，例項在哪裡，哪份憑據能到達它。",
+    "projectLabel": "專案",
+    "projectHint": "此來源供給的專案。編輯來源的許可權按專案授予，因此儲存對這項選擇負責。",
+    "settingsPreview": "主機將其儲存為單個 settings json：",
+    "probeProbing": "正在聯絡提供方…",
+    "probePending": "儲存前先測試連線 — 一個不可達的來源在有東西需要它之前看起來和健康的一模一樣。",
+    "credentialCard": "憑據",
+    "credentialCardNote": "主機上儲存憑據的環境變數名。主機解析該值 — 儀表盤永遠看不到它。",
+    "secretEnvLabel": "秘密環境變數",
+    "secretEnvHint": "主機上儲存憑據的環境變數名。主機在探測 / webhook 時解析該值 — 儀表盤永遠看不到它。",
+    "mockNotice": "僅 mock 模式：表單持有字面憑據的時間剛好夠探測種子儲存。真真實模式讀取主機上的環境變數，永遠看不到該值。",
+    "mockSecretLabel": "憑據（僅 mock）",
+    "submit": "儲存連線",
+    "testConnection": "測試連線"
+  },
+  "connectionFields": {
+    "baseUrlLabel": "基礎 url",
+    "baseUrlHint": "僅限自託管。https，因為憑據經過這條線路。",
+    "accountLabel": "賬戶",
+    "accountPlaceholder": "憑據所屬的機器人或應用",
+    "accountHint": "之後顯示在行上，以便把過期憑據追溯到人。",
+    "authKindLabel": "憑據種類"
+  },
+  "authChoice": {
+    "hint": "{{provider}} 接受什麼，僅此而已。原樣儲存在 settings json 中；從不持有憑據。"
+  },
+  "connectionForm": {
+    "cardLabel": "進入方式",
+    "cardNote": "例項在哪裡，哪份憑據能到達它，以及主機上哪個環境變數儲存它。",
+    "secretEnvLabel": "秘密環境變數",
+    "secretEnvHint": "主機上的環境變數名。儀表盤永遠看不到該值；主機在探測 / webhook 時解析它。",
+    "probeProbing": "正在聯絡提供方…",
+    "probePending": "儲存前先測試連線 — 在沒人知道還能不能到達時改變到達來源的方式是不可取的。",
+    "testConnectionAria": "測試到 {{name}} 的連線",
+    "submit": "儲存連線"
+  },
+  "watchForm": {
+    "cardLabel": "准入",
+    "cardNote": "是否准入任何東西，哪些工單，以及准入一個時下一個行動的是誰。",
+    "watchLabel": "監視此來源",
+    "watchHint": "關閉意味著連線保持認證但不再帶入任何東西。這不同於斷開。",
+    "admissionModeLabel": "准入模式",
+    "submit": "儲存 watch"
+  },
+  "filterField": {
+    "label": "篩選表示式",
+    "placeholder": "留空以准入此連線能看到的一切",
+    "hintsLabel": "{{kind}} 工單上見過的欄位",
+    "verbatim": "原樣儲存且不解析 — 篩選語言尚未決定，因此此文本按輸入的原樣交給聯結器。"
+  },
+  "statusPreview": {
+    "head": "寫回 {{provider}} 的狀態",
+    "nativeNone": "native 接收就是 tracker。run 的狀態就是工單的狀態，因此沒有可以寫回的地方。",
+    "unknownNone": "沒有東西寫回 {{provider}} — 此構建沒有該提供方的對映，因此 run 的狀態留在 run 上。"
+  },
+  "detailPage": {
+    "titleFallback": "來源",
+    "crumbFallback": "來源",
+    "errorTitle": "此來源未能載入",
+    "notFoundTitle": "沒有此 id 的連線",
+    "notFoundBody": "此平臺上沒有在此 id 下連線的任何東西。被斷開的來源 — 在這裡或在另一個標籤頁 — 是到達此地址的尋常方式，而連線列表是仍然存在的那些所在的地方。",
+    "backToSources": "返回來源",
+    "failureTail": "沒有任何東西移動 — 此頁面回到原樣。",
+    "factsTitle": "此連線是什麼",
+    "factProvider": "提供方",
+    "factAuth": "憑據",
+    "factInstance": "例項",
+    "factAccount": "賬戶",
+    "factCredential": "憑據",
+    "factLastSync": "最後同步",
+    "credentialEnvNote": "在主機上於探測 / webhook 時解析。儀表盤永遠看不到該值 — 替換它意味著更改主機上的環境變數並修補連線的 <code>secretEnvRef</code>。",
+    "credentialStoredNote": "只寫儲存且不再顯示 — 不在此頁面，不在表單，不通過 api。替換它意味著重新連線。",
+    "credentialNoneNote": "native 接收沒有遠端，因此沒有可以認證的物件。",
+    "none": "無",
+    "never": "從未",
+    "watchTitle": "watch 與篩選",
+    "noWatch": "native 接收沒有 watch。工單到達這裡是因為有人提交了一個，而不是因為篩選器准入了一個 — 因此沒有可開啟的東西，也沒有可收窄的東西。",
+    "connectionTitle": "連線",
+    "rotationTitle": "webhook 秘密",
+    "rotationBody": "一次點選生成新的 webhook 秘密並顯示一次。把它複製到 tracker 的 webhook 設定中 — 此頁面不會再次顯示它。",
+    "rotateButton": "輪換秘密",
+    "rotateAria": "輪換 {{name}} 的 webhook 秘密",
+    "rotateLabel": "輪換 webhook 秘密",
+    "rotatedLabel": "新 webhook 秘密 — 現在就複製，此面板不會在導航後存活",
+    "handoffsTitle": "去向",
+    "handoffFiled": "此處提交的工單。它們和其他一切都在目錄中 — ",
+    "handoffAdmitted": "從此處准入的工單。它們和其他一切都在目錄中 — ",
+    "handoffCatalogTail": "目錄未收窄到此來源。",
+    "openCatalog": "開啟目錄",
+    "handoffProject": "此連線供給的專案。編輯來源的許可權按專案授予，因此這是此頁面上每個操作所負責的物件。",
+    "openProject": "開啟專案",
+    "handoffTicket": "直接向此專案的接收口寫一個工單。這是成員而非管理員的操作，因此它有自己的螢幕和自己的許可權。",
+    "fileTicket": "提交工單",
+    "rotateTitle": "輪換此來源的 webhook 秘密？",
+    "rotateBody": "{{name}} · {{project}} — 生成新秘密並顯示一次。用先前秘密簽名的 webhook 將被拒絕，直到你把新的複製到 tracker。",
+    "rotateConfirm": "輪換",
+    "rotateKeep": "保留當前",
+    "leaveTitle": "不儲存就離開？",
+    "leaveBody": "你在此頁面上更改的 watch 和連線細節尚未儲存。離開將丟棄它們，來源保持原樣。",
+    "discard": "丟棄",
+    "keep": "繼續編輯",
+    "watchSavedToast": "watch 已儲存",
+    "connectionSavedToast": "連線已儲存",
+    "rotatedToast": "webhook 秘密已輪換",
+    "rotatedToastDescription": "{{name}} — 把新值複製到 tracker"
+  },
+  "ticketPage": {
+    "title": "在 {{project}} 中新建工單",
+    "titleFallback": "新建工單",
+    "crumb": "新建工單",
+    "summary": "native 接收是產品自己的。在這裡寫下的工單背後沒有 tracker，因此其狀態就是 run 的狀態，也沒有可以同步回去的地方。",
+    "errorTitle": "無法查詢此來源",
+    "notFoundTitle": "沒有此 id 的連線",
+    "notFoundBody": "此平臺上沒有 id 為 {{id}} 的連線。在此標籤頁開啟期間被斷開的來源是到達這裡的尋常方式。",
+    "backToSources": "返回來源",
+    "refused": "工單被拒絕。",
+    "tail": "沒有提交任何東西 — 你輸入的還在這裡。",
+    "leaveTitle": "不提交工單就離開？",
+    "leaveBody": "你輸入的標題、正文和標籤尚未儲存到任何地方。離開此頁面將丟棄它們，沒有任何東西到達接收口。",
+    "discard": "丟棄",
+    "keep": "繼續編輯",
+    "toast": "工單已提交"
+  },
+  "ticketForm": {
+    "titleLabel": "標題",
+    "titlePlaceholder": "哪裡出了問題，一行說明",
+    "bodyLabel": "正文",
+    "bodyPlaceholder": "你看到了什麼，在哪裡。大腦在計劃任何事之前會先讀這個。",
+    "labelsLabel": "標籤",
+    "labelsPlaceholder": "checkout-web, bug",
+    "labelsHint": "逗號分隔。這些是工單自己的標籤 — 不是篩選表示式。",
+    "straightLabel": "直接開始工作",
+    "straightHint": "關閉則留待某人認領，這是一分鐘後的同一操作。",
+    "submitStart": "建立並啟動",
+    "submit": "建立工單"
+  }
+}

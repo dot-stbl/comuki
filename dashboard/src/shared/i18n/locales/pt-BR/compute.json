@@ -1,9 +1,5 @@
 {
-  "actions": {
-    "retry": "Tentar novamente"
-  },
   "errors": {
-    "unknown": "Erro desconhecido",
     "changeFailed": "A mudança falhou."
   },
   "page": {
@@ -63,7 +59,6 @@
     "sentences": {
       "noAnswer": "a api de capacidade não respondeu — nenhum teto é legível para este pool",
       "bothFull": "cota e cluster estão ambos cheios — nada pode arrancar aqui",
-
       "both": "cota e cluster concordam — lugar para {{slots}}",
       "quotaFull": "a cota é o teto — nada pode arrancar, e o cluster ainda tem {{slots}} livres",
       "quota": "a cota é o teto — lugar para {{slots}}, com {{spare}} livres no cluster",
@@ -108,7 +103,6 @@
     "retireConfirm": "Aposentar ociosos",
     "retireCancel": "Deixá-los de pé",
     "reason": {
-
       "both": "a imagem e o profiles ref mudaram os dois",
       "image": "um release atrás na imagem",
       "profiles": "mesma imagem, o profiles ref mudou"

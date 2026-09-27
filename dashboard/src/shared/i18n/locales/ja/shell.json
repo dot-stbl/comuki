@@ -18,7 +18,8 @@
     "projects": "プロジェクト",
     "identity": "アイデンティティ",
     "compute": "コンピュート",
-    "models": "モデル"
+    "models": "モデル",
+    "sections": "セクション"
   },
   "crumb": {
     "platform": "プラットフォーム",
@@ -36,7 +37,21 @@
     "onboard": "オンボーディング",
     "knowledge": "ナレッジ",
     "models": "モデル",
-    "compute": "コンピュート"
+    "compute": "コンピュート",
+    "cost": "コスト",
+    "settings": "設定",
+    "new": "新規",
+    "newUser": "新規ユーザー",
+    "grantRole": "ロールを付与",
+    "person": "ユーザー",
+    "linkOidc": "oidc サブジェクトをリンク",
+    "project": "プロジェクト",
+    "source": "ソース",
+    "worker": "ワーカー",
+    "run": "実行",
+    "newTicket": "新しいチケット",
+    "newApiKey": "新しい api キー",
+    "onboardRepo": "リポジトリを接続"
   },
   "topbar": {
     "home": "Comuki — ホーム",
@@ -135,5 +150,35 @@
       "queue": "キューで",
       "inbox": "受信箱で"
     }
+  },
+  "route": {
+    "attention": "当番",
+    "console": "コンソール",
+    "onboard": "リポジトリを接続",
+    "approvals": "承認",
+    "compute": "コンピュート",
+    "cost": "コストと失敗",
+    "identity": "アイデンティティ",
+    "grantRole": "ロールを付与",
+    "newApiKey": "新しい api キー",
+    "newUser": "新しいユーザー",
+    "person": "ユーザー",
+    "linkOidc": "oidc サブジェクトをリンク",
+    "knowledge": "ナレッジ",
+    "models": "モデル",
+    "projects": "プロジェクト",
+    "newProject": "新しいプロジェクト",
+    "project": "プロジェクト",
+    "queue": "キューとワーカー",
+    "worker": "ワーカー",
+    "liveRuns": "ライブ実行",
+    "run": "実行",
+    "settings": "設定",
+    "sources": "ソース",
+    "connectSource": "ソースを接続",
+    "source": "ソース",
+    "newTicket": "新しいチケット",
+    "tasks": "タスク",
+    "newTask": "新しいタスク"
   }
 }

@@ -294,7 +294,7 @@ export function ConnectionForm({
             setSecretEnvRef(storedSecret)
           }}
         >
-          {t("actions.cancel")}
+          {t("actions.cancel", { ns: "common" })}
         </Button>
       </FormActions>
     </FormLayout>

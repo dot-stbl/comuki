@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { LinkOidcPage } from "@/domains/identity"
@@ -17,17 +18,19 @@ export const Route = createFileRoute("/identity/users/$userId/link")({
    they name the crumb `person` rather than an address: nothing has been
    fetched at this point, and there is nothing here but an id. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { userId } = Route.useParams()
 
   return (
     <RequirePermission
       permission="identity.manage"
-      title="Link an oidc subject"
+      title={t("route.linkOidc")}
       crumbs={[
-        { label: "platform" },
-        { label: "identity", to: "/identity" },
-        { label: "person", to: `/identity/users/${userId}` },
-        { label: "link an oidc subject" },
+        { label: t("crumb.platform") },
+        { label: t("crumb.identity"), to: "/identity" },
+        { label: t("crumb.person"), to: `/identity/users/${userId}` },
+        { label: t("crumb.linkOidc") },
       ]}
     >
       <LinkOidcPage userId={userId} />

@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "重试"
-  },
-  "errors": {
-    "unknown": "未知错误"
-  },
   "page": {
     "title": "控制台",
     "summary": "与各屏幕驱动的是同一个控制面，只是改为键入",
@@ -121,14 +115,26 @@
     },
     "words": {
       "run": {
-        "start": { "confirm": "启动", "refuse": "丢弃" },
-        "stop": { "confirm": "停止", "refuse": "保持运行" }
+        "start": {
+          "confirm": "启动",
+          "refuse": "丢弃"
+        },
+        "stop": {
+          "confirm": "停止",
+          "refuse": "保持运行"
+        }
       },
       "plan": {
-        "approve": { "confirm": "批准", "refuse": "驳回" }
+        "approve": {
+          "confirm": "批准",
+          "refuse": "驳回"
+        }
       },
       "settings": {
-        "debug": { "confirm": "开启", "refuse": "保持关闭" }
+        "debug": {
+          "confirm": "开启",
+          "refuse": "保持关闭"
+        }
       }
     },
     "inProject": "在 {{project}}",
@@ -146,12 +152,10 @@
   },
   "wizard": {
     "title": "接入仓库",
-
     "running": "接入正在进行。",
     "streamHead": "接入",
     "stageWord": {
       "done": "完成",
-
       "running": "进行中",
       "queued": "排队中"
     },

@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react"
 import type { ReactNode, Ref } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Group,
   Panel,
@@ -172,12 +173,13 @@ export function SplitSeparator({
   orientation = "vertical",
   disabled,
   className,
-  "aria-label": ariaLabel = "Resize",
+  "aria-label": ariaLabel,
 }: SplitSeparatorProps) {
+  const { t } = useTranslation("kit")
   return (
     <Separator
       disabled={disabled}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t("splitPane.resize")}
       data-test="split-separator"
       className={cn(
         styles.separator,

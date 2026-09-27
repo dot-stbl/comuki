@@ -1,10 +1,4 @@
 {
-  "errors": {
-    "unknown": "неизвестная ошибка"
-  },
-  "actions": {
-    "retry": "повторить"
-  },
   "header": {
     "title": "Смена",
     "crumb": "смена",

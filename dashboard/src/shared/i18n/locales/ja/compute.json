@@ -1,9 +1,5 @@
 {
-  "actions": {
-    "retry": "再試行"
-  },
   "errors": {
-    "unknown": "不明なエラー",
     "changeFailed": "変更に失敗しました。"
   },
   "page": {
@@ -63,7 +59,6 @@
     "sentences": {
       "noAnswer": "容量 api が応答しませんでした — このプールの天井は読めません",
       "bothFull": "クォータとクラスターが両方満杯です — ここでは何も起動できません",
-
       "both": "クォータとクラスターが一致 — {{slots}} の余地",
       "quotaFull": "クォータが天井です — 何も起動できず、クラスターにはまだ {{slots}} 空きがあります",
       "quota": "クォータが天井です — {{slots}} の余地、クラスターには {{spare}} 空き",
@@ -107,7 +102,6 @@
     "retireConfirm": "遊休を廃止",
     "retireCancel": "稼働のままにする",
     "reason": {
-
       "both": "イメージと profiles ref の両方が動いた",
       "image": "イメージが 1 リリース遅れている",
       "profiles": "同じイメージ、profiles ref が動いた"

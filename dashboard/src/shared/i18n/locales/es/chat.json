@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Reintentar"
-  },
-  "errors": {
-    "unknown": "Error desconocido"
-  },
   "page": {
     "title": "Consola",
     "summary": "el mismo plano de control que manejan las pantallas, pero tecleado",
@@ -123,14 +117,26 @@
     },
     "words": {
       "run": {
-        "start": { "confirm": "Iniciar", "refuse": "Descartar" },
-        "stop": { "confirm": "Detener", "refuse": "Dejar corriendo" }
+        "start": {
+          "confirm": "Iniciar",
+          "refuse": "Descartar"
+        },
+        "stop": {
+          "confirm": "Detener",
+          "refuse": "Dejar corriendo"
+        }
       },
       "plan": {
-        "approve": { "confirm": "Aprobar", "refuse": "Rechazar" }
+        "approve": {
+          "confirm": "Aprobar",
+          "refuse": "Rechazar"
+        }
       },
       "settings": {
-        "debug": { "confirm": "Encender", "refuse": "Dejar apagado" }
+        "debug": {
+          "confirm": "Encender",
+          "refuse": "Dejar apagado"
+        }
       }
     },
     "inProject": "en {{project}}",
@@ -148,12 +154,10 @@
   },
   "wizard": {
     "title": "Incorporar un repositorio",
-
     "running": "El onboarding se está ejecutando.",
     "streamHead": "onboarding",
     "stageWord": {
       "done": "hecho",
-
       "running": "ejecutando",
       "queued": "en cola"
     },

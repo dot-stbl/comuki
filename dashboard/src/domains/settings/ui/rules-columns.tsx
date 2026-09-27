@@ -1,4 +1,6 @@
 import type { RuleKind, SwarmRule } from "@/domains/settings/model/types"
+import type { SettingsTranslator } from "@/domains/settings/model/translate"
+import { sharedSettingsT } from "@/domains/settings/model/translate"
 import type { DataColumn, DataFilterOption } from "@/shared/ui"
 
 import { RuleKindMark } from "./settings-badges"
@@ -23,14 +25,19 @@ export function uniqueRuleScopes(rules: SwarmRule[]): DataFilterOption[] {
  * client's git and change by commit, so nothing on a row is an act. The
  * description is the one field on the row a person wrote for another person to
  * read, and it is the only one in the interface voice.
+ *
+ * Copy arrives as a `t` parameter (`dashboard-i18n` D7): a `cell` is a plain
+ * function, so the panel passes its hook-bound translator and tests fall back
+ * to the shared instance.
  */
 export function createRuleColumns(
-  scopes: DataFilterOption[]
+  scopes: DataFilterOption[],
+  t: SettingsTranslator = sharedSettingsT
 ): DataColumn<SwarmRule>[] {
   return [
     {
       accessorKey: "id",
-      header: "rule",
+      header: t("rules.column.rule"),
       cell: ({ row }) => (
         <span className={styles.name} title={row.original.id}>
           {row.original.id}
@@ -41,7 +48,7 @@ export function createRuleColumns(
         pinned: true,
         filter: {
           kind: "text",
-          placeholder: "filter rule, scope, description…",
+          placeholder: t("rules.filterPlaceholder"),
           match: (rule, needle) =>
             `${rule.id} ${rule.scope} ${rule.desc}`
               .toLowerCase()
@@ -51,7 +58,7 @@ export function createRuleColumns(
     },
     {
       accessorKey: "scope",
-      header: "scope",
+      header: t("rules.column.scope"),
       cell: ({ row }) => (
         <span className={styles.value} title={row.original.scope}>
           {row.original.scope}
@@ -61,27 +68,27 @@ export function createRuleColumns(
         width: 160,
         filter: {
           kind: "select",
-          placeholder: "all scopes",
+          placeholder: t("rules.allScopes"),
           options: scopes,
         },
       },
     },
     {
       accessorKey: "kind",
-      header: "kind",
+      header: t("rules.column.kind"),
       cell: ({ row }) => <RuleKindMark kind={row.original.kind} />,
       meta: {
         width: 96,
         filter: {
           kind: "select",
-          placeholder: "all kinds",
+          placeholder: t("rules.allKinds"),
           options: RULE_KINDS.map((kind) => ({ value: kind, label: kind })),
         },
       },
     },
     {
       accessorKey: "ver",
-      header: "version",
+      header: t("rules.column.version"),
       cell: ({ row }) => (
         <span className={styles.faint}>@{row.original.ver}</span>
       ),
@@ -89,13 +96,13 @@ export function createRuleColumns(
     },
     {
       accessorKey: "desc",
-      header: "description",
+      header: t("rules.column.description"),
       cell: ({ row }) => (
         <span className={styles.note} title={row.original.desc}>
           {row.original.desc}
         </span>
       ),
-      meta: { label: "description" },
+      meta: { label: t("rules.column.description") },
     },
   ]
 }

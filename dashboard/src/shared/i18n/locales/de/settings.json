@@ -1,1 +1,201 @@
-{}
+{
+  "errors": {
+    "saveDidNotLand": "Das Speichern ist nicht durchgedrungen.",
+    "stopDidNotApply": "Der Stopp wurde nicht angewendet."
+  },
+  "page": {
+    "title": "Einstellungen",
+    "summaryMock": "Konfiguration der Kontrollrebene",
+    "summaryReal": "Plattformkonfiguration — read-only, beim Boot gesetzt",
+    "errorTitle": "Einstellungen wurden nicht geladen",
+    "retry": "Erneut versuchen",
+    "tabsAria": "Einstellungsabschnitte"
+  },
+  "tabs": {
+    "apps": "Apps",
+    "rules": "Regeln",
+    "autonomy": "Autonomie",
+    "routing": "Routing",
+    "budgets": "Budgets",
+    "keys": "Schlüssel",
+    "tracker": "Tracker"
+  },
+  "toast": {
+    "routingSaved": "Routing gespeichert",
+    "routingSavedNote": "Rolle-→-Modell-Karte aktualisiert (Mock)",
+    "routingNotSaved": "Routing nicht gespeichert",
+    "budgetsSaved": "Budgets gespeichert",
+    "budgetsSavedNote": "Caps aktualisiert (Mock)",
+    "budgetsNotSaved": "Budgets nicht gespeichert"
+  },
+  "apps": {
+    "section": "Apps",
+    "note": "read-only · die Registry ist im Git des Clients deklariert",
+    "emptyFiltered": "keine Apps passen zu den aktuellen Filtern",
+    "empty": "die Registry deklariert keine App",
+    "count": "{{count}} angezeigt",
+    "column": {
+      "app": "App",
+      "repo": "Repo",
+      "stack": "Stack",
+      "envs": "Umgebungen",
+      "deploy": "Deploy"
+    },
+    "filterPlaceholder": "App, Repo, Stack filtern…",
+    "allTargets": "alle Ziele",
+    "nowhere": "nirgendwo"
+  },
+  "rules": {
+    "section": "Schwarmregeln",
+    "note": "read-only · Regeln leben im Git des Clients und ändern sich per Commit",
+    "conflicts": "Keine Konflikte gefunden · {{count}} aktive Regeln · Scopes überlappen sich nicht.",
+    "emptyFiltered": "keine Regeln passen zu den aktuellen Filtern",
+    "empty": "der Regelsatz ist leer",
+    "count": "{{count}} angezeigt",
+    "column": {
+      "rule": "Regel",
+      "scope": "Scope",
+      "kind": "Art",
+      "version": "Version",
+      "description": "Beschreibung"
+    },
+    "filterPlaceholder": "Regel, Scope, Beschreibung filtern…",
+    "allScopes": "alle Scopes",
+    "allKinds": "alle Arten"
+  },
+  "autonomy": {
+    "section": "Autonomie",
+    "note": "was automatisch · was einen Menschen braucht",
+    "emptyFiltered": "keine Änderungsklassen passen zu den aktuellen Filtern",
+    "empty": "keine Änderungsklasse ist klassifiziert",
+    "count": "{{count}} angezeigt",
+    "column": {
+      "changeClass": "Änderungsklasse",
+      "mode": "Modus"
+    },
+    "filterPlaceholder": "Änderungsklasse filtern…",
+    "allModes": "alle Modi"
+  },
+  "routing": {
+    "section": "Modell-Routing",
+    "note": "Rolle → physisches Modell",
+    "emptyFiltered": "keine Rollen passen zu den aktuellen Filtern",
+    "empty": "keine Rolle ist geroutet",
+    "count": "{{count}} angezeigt",
+    "column": {
+      "role": "Rolle",
+      "model": "Modell",
+      "usage": "Verwendung"
+    },
+    "editSection": "Rolle-→-Modell-Karte bearbeiten",
+    "editNote": "Lead / Worker / Judge",
+    "field": {
+      "lead": "Lead",
+      "worker": "Worker",
+      "judge": "Judge"
+    },
+    "save": "Routing speichern",
+    "escalation": "Eskalationspolitik — 2 fehlgeschlagene Wiederholungen am Worker eskalieren zum Lead. Ein rotes Typ-Gate geht an einen Debug-Agent mit gepinnter Revision."
+  },
+  "budgets": {
+    "readingSection": "Proxy-Budget",
+    "readingNote": "was der Schwarm heute gegen das globale Cap ausgegeben hat",
+    "killSwitch": "Kill-Switch",
+    "killHint": "Harter Stopp aller neuen Claims — jede App, jede Aufgabe.",
+    "pause": "Schwarm pausieren",
+    "pauseHint": "Weiche Pause — laufende Worker finishen; keine neuen Container starten.",
+    "stopFailureTail": "Nichts hat sich bewegt — die Stopps sind wie zuvor.",
+    "killTitle": "Kill-Switch werfen?",
+    "killBody": "Neue Claims stoppen jetzt — jede App, jede Aufgabe — und bleiben gestoppt, bis der Switch zurückgestellt wird. Worker mitten im Schritt finishen, was sie halten; nichts in der Warteschlange wird abgebrochen.",
+    "killConfirm": "Neue Claims blockieren",
+    "killCancel": "Claims offen lassen",
+    "capsSection": "Budget-Caps",
+    "capsNote": "das globale Cap, das der Meter liest · per-Task und per-App verfeinern es",
+    "globalCap": "globales Cap",
+    "globalCapHint": "Der Meter oben misst Ausgaben gegen dieses Cap.",
+    "refinements": "Verfeinerungen",
+    "perTask": "pro Task",
+    "perApp": "pro App",
+    "save": "Budgets speichern",
+    "meter": {
+      "over": "über dem Cap",
+      "left": "{{left}} übrig",
+      "stopped": "Kill-Switch an · neue Claims blockiert",
+      "atCap": "Kill-Switch am Cap"
+    }
+  },
+  "keys": {
+    "section": "Provider-Schlüssel",
+    "note": "read-only · Schlüssel kommen aus env, die Rotation läuft im Proxy",
+    "emptyFiltered": "keine Schlüssel passen zu den aktuellen Filtern",
+    "empty": "der Proxy hält keinen Provider-Schlüssel",
+    "count": "{{count}} angezeigt",
+    "column": {
+      "provider": "Provider",
+      "scope": "Scope",
+      "rotation": "Rotation",
+      "status": "Status"
+    },
+    "filterPlaceholder": "Provider, Scope filtern…",
+    "allStatuses": "alle Status"
+  },
+  "tracker": {
+    "section": "Intake-Quellen",
+    "notice": "Ein verbundener Tracker synchronisiert seine Tickets in das Backlog · manueller Intake bleibt entweder Weise offen.",
+    "emptyTitle": "Kein Tracker ist verdrahtet",
+    "emptyDescription": "Nichts synchronisiert Tickets in das Backlog. Manueller Intake ist entweder Weise offen — ein Tracker fügt nur eine zweite Tür hinzu.",
+    "connected": "verbunden",
+    "synced": "synchronisiert {{when}}",
+    "sync": "Synchronisieren",
+    "syncAria": "{{name}} synchronisieren",
+    "syncedToast": "{{name}} synchronisiert",
+    "syncedToastNote": "neue Issues importiert (Mock)",
+    "connect": "Verbinden",
+    "connectAria": "{{name}} verbinden",
+    "connectToast": "{{name}} verbinden",
+    "connectToastNote": "OAuth-Flow… (Mock)"
+  },
+  "platform": {
+    "hint": "Read-only — jeder Wert hier wird beim Boot konfiguriert. Änderungen gehen über Konfiguration und einen Neustart; nichts auf dieser Seite schreibt.",
+    "on": "an",
+    "off": "aus",
+    "escalationOff": "aus — die Ratsche ist deaktiviert ({{would}} würde gelten)",
+    "orchestration": {
+      "section": "Orchestrierung",
+      "leaseTtl": "Lease-TTL",
+      "leaseTtlNote": "beim Claim vergeben, per Heartbeat verlängert",
+      "reapInterval": "Reap-Intervall",
+      "reapIntervalNote": "Sweep-Kadenz des Lease-Reapers",
+      "reapGrace": "Reap-Grace",
+      "reapGraceNote": "Puffer nach Ablauf, bevor der Reaper handelt",
+      "maxAttempts": "max. Versuche",
+      "maxAttemptsNote": "Claims, bevor ein hängendes Element fehlschlägt",
+      "escalationTimeout": "Eskalations-Timeout",
+      "escalationTimeoutNote": "wie lange ein Run eskaliert bleiben darf, bevor Auto-Archivierung",
+      "escalationSweep": "Eskalations-Sweep",
+      "escalationSweepNote": "Ratschen-Sweep-Kadenz"
+    },
+    "compute": {
+      "section": "Compute",
+      "provider": "Provider",
+      "providerNote": "die Compute-Implementierung, die v1 fährt",
+      "workerImage": "Worker-Image",
+      "workerImageNote": "in Produktion digest-gepinnt",
+      "profilesRef": "Profiles-Ref",
+      "profilesRefNote": "der gepinnte Profiles-Git-Ref",
+      "minIdle": "min idle",
+      "minIdleNote": "Warm-Idle-Floor pro Profil",
+      "maxConcurrent": "max. parallel",
+      "maxConcurrentNote": "Parallelitäts-Cap pro Projekt",
+      "idleTtl": "Idle-TTL",
+      "idleTtlNote": "bevor ein Worker ein Reaper-Kandidat ist",
+      "pollInterval": "Poll-Intervall",
+      "pollIntervalNote": "zwischen Supervisor-Durchgängen"
+    },
+    "proxy": {
+      "section": "Proxy",
+      "passthrough": "openai / anthropic passthrough",
+      "passthroughNote": "ob der Proxy überhaupt komponiert ist"
+    }
+  }
+}

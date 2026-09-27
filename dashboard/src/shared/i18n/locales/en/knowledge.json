@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "Retry",
-    "close": "Close"
-  },
-  "errors": {
-    "unknown": "Unknown error"
-  },
   "page": {
     "title": "Knowledge",
     "summary": "rule set, revisions, eval harness",

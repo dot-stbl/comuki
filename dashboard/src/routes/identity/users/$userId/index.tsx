@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { UserDetailPage } from "@/domains/identity"
@@ -17,16 +18,18 @@ export const Route = createFileRoute("/identity/users/$userId/")({
  * generated route tree. The page answers for an id that no longer resolves; a
  * stale tab is the ordinary way to arrive with one. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { userId } = Route.useParams()
 
   return (
     <RequirePermission
       permission="identity.manage"
-      title="Person"
+      title={t("route.person")}
       crumbs={[
-        { label: "platform" },
-        { label: "identity", to: "/identity" },
-        { label: "person" },
+        { label: t("crumb.platform") },
+        { label: t("crumb.identity"), to: "/identity" },
+        { label: t("crumb.person") },
       ]}
     >
       <UserDetailPage userId={userId} />

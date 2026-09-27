@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { cn } from "@/shared/lib/utils"
 
 import styles from "./skeleton.module.css"
@@ -97,10 +99,11 @@ export function Skeleton({
   lines = 4,
   inset = "flush",
   fill = false,
-  label = "Loading",
+  label,
   className,
   "data-test": dataTest,
 }: SkeletonProps) {
+  const { t } = useTranslation("kit")
   const widths = widthsOf(lines)
 
   return (
@@ -111,7 +114,7 @@ export function Skeleton({
          "Loading" once without talking over whatever the operator was reading
          when they navigated here. */
       role="status"
-      aria-label={label}
+      aria-label={label ?? t("skeleton.loading")}
       data-test={dataTest}
     >
       {widths.map((width, index) => (

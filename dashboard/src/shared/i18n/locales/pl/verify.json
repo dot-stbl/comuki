@@ -1,0 +1,32 @@
+{
+  "panel": {
+    "emptyFiltered": "Żadna kontrola nie pasuje do bieżących filtrów.",
+    "empty": "Brak zadeklarowanych kontroli.",
+    "switch": "biegnij bramką przy każdym uruchomieniu",
+    "sourceLead": "Te komendy są zadeklarowane w gicie tego klienta i są tu tylko do odczytu. Zmiana jednej to commit w ich repozytorium — właśnie to czyni uruchomienie odtwarzalnym, więc na tym ekranie z zamysłu nie ma edytora.",
+    "readAt": "odczytano {{when}}",
+    "openInGit": "Otwórz w gicie",
+    "off": "Bramka jest wyłączona, więc nic poniżej nie biegnie i żadne uruchomienie przez nią nie jest blokowane. Plik wciąż jest w gicie, a kontrole wciąż są zadeklarowane — włączenie z powrotem zaczyna je biegać od następnego uruchomienia.",
+    "emptyTitle": "Brak zadeklarowanych kontroli",
+    "emptyDescription": "Bramka szuka <path/> w <repo/> przy <ref/> i nie znalazła nic. Zacommituj plik tam, a zostanie podchwycony przy następnym odczycie — nie ma tu gdzie go utworzyć.",
+    "count": "{{count}} widocznych"
+  },
+  "column": {
+    "lastResult": "ostatni wynik",
+    "anyResult": "jakikolwiek wynik",
+    "check": "kontrola",
+    "filterPlaceholder": "filtruj kontrolę, komendę…",
+    "command": "komenda",
+    "declaredIn": "zadeklarowana w",
+    "output": "wyjście",
+    "neverReached": "żadne uruchomienie nie doszło do tej kontroli",
+    "when": "kiedy",
+    "took": "trwała",
+    "run": "uruchomienie"
+  },
+  "result": {
+    "failed": "nieudana",
+    "neverRan": "nigdy nie biegła",
+    "passed": "zdana"
+  }
+}

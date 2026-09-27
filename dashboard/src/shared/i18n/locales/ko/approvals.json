@@ -1,0 +1,46 @@
+{
+  "registry": {
+    "title": "승인",
+    "summary": {
+      "other": "<count/>개가 결정 대기"
+    },
+    "errorTitle": "승인을 로드하지 못했습니다"
+  },
+  "decide": {
+    "approvedToast": "승인됨",
+    "rejectedToast": "거절됨",
+    "openedToast": "리뷰 열림",
+    "refused": "결정이 닿지 않았습니다.",
+    "tail": "큐는 이전 상태입니다 — 런은 여전히 기다립니다."
+  },
+  "empty": {
+    "title": "큐가 비었습니다",
+    "description": "사람을 기다리는 것이 없습니다."
+  },
+  "card": {
+    "details": "상세",
+    "hide": "숨기기",
+    "review": "리뷰",
+    "reject": "거절",
+    "approve": "승인",
+    "reviewAria": "{{app}}의 {{noun}} 리뷰",
+    "rejectAria": "{{app}}의 {{noun}} 거절",
+    "approveAria": "{{app}}의 {{noun}} 승인",
+    "planHead": "플랜 — 작업 항목 그래프",
+    "assumptionsFallback": "플래너 가정",
+    "paneBaseline": "베이스라인",
+    "paneNew": "신규"
+  },
+  "type": {
+    "plan": "플랜",
+    "deploy": "배포",
+    "baseline": "베이스라인",
+    "gate": "게이트",
+    "learning": "규칙"
+  },
+  "risk": {
+    "high": "높음",
+    "medium": "중간",
+    "low": "낮음"
+  }
+}

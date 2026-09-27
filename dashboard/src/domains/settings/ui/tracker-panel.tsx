@@ -1,4 +1,5 @@
 import { Plug, RotateCcw } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import type { TrackerProvider } from "@/domains/settings/model/types"
@@ -38,19 +39,18 @@ export interface TrackerPanelProps {
  * pointer.
  */
 export function TrackerPanel({ trackers, edit }: TrackerPanelProps) {
+  const { t } = useTranslation("settings")
+
   return (
     <Section
       variant="screen"
       data-test="settings-tracker"
-      title="Intake sources"
+      title={t("tracker.section")}
     >
       {/* The sentence stays where it was — above the grid, and above the act.
           It is the rule that stops a disconnected tracker from reading as a
           broken screen, and a rule explained afterwards is an apology. */}
-      <Notice data-test="tracker-intake">
-        A connected tracker syncs its tickets into the backlog · manual intake
-        stays open either way.
-      </Notice>
+      <Notice data-test="tracker-intake">{t("tracker.notice")}</Notice>
 
       {/* No providers at all. The grid used to draw nothing here and the
           section read as a half-rendered screen — an intake list with no
@@ -60,8 +60,8 @@ export function TrackerPanel({ trackers, edit }: TrackerPanelProps) {
         <ScreenState
           kind="empty"
           inset="none"
-          title="No tracker is wired up"
-          description="Nothing is syncing tickets into the backlog. Manual intake is open either way — a tracker only adds a second door."
+          title={t("tracker.emptyTitle")}
+          description={t("tracker.emptyDescription")}
           data-test="tracker-empty"
         />
       ) : (
@@ -77,7 +77,7 @@ export function TrackerPanel({ trackers, edit }: TrackerPanelProps) {
                 <h3 className={styles.name}>{provider.name}</h3>
                 {provider.connected ? (
                   <StatusBadge status="success" size="sm">
-                    connected
+                    {t("tracker.connected")}
                   </StatusBadge>
                 ) : null}
               </header>
@@ -88,25 +88,30 @@ export function TrackerPanel({ trackers, edit }: TrackerPanelProps) {
                 {provider.connected ? (
                   <>
                     <span className={styles.synced}>
-                      synced {provider.last}
+                      {t("tracker.synced", { when: provider.last })}
                     </span>
-                    <Tooltip content={edit.denial ?? "Sync"}>
+                    <Tooltip content={edit.denial ?? t("tracker.sync")}>
                       <Button
                         type="button"
                         size="icon-sm"
                         variant="ghost"
                         data-test="tracker-sync"
                         denied={edit.denial}
-                        aria-label={`Sync ${provider.name}`}
+                        aria-label={t("tracker.syncAria", {
+                          name: provider.name,
+                        })}
                         /* No mutation behind it yet — the tracker surface
                            has no wire. The word in the description is the
                            same one every other mock act on this screen
                            carries, so nobody reads a green answer as a round
                            trip that happened. */
                         onClick={() =>
-                          toast.message(`Synced ${provider.name}`, {
-                            description: "imported new issues (mock)",
-                          })
+                          toast.message(
+                            t("tracker.syncedToast", { name: provider.name }),
+                            {
+                              description: t("tracker.syncedToastNote"),
+                            }
+                          )
                         }
                       >
                         <RotateCcw aria-hidden="true" />
@@ -119,18 +124,23 @@ export function TrackerPanel({ trackers, edit }: TrackerPanelProps) {
                    tracker that is already there is not being created by this
                    control, it is being wired up. Same mark, same act, as the
                    one that connects a source. */
-                  <Tooltip content={edit.denial ?? "Connect"}>
+                  <Tooltip content={edit.denial ?? t("tracker.connect")}>
                     <Button
                       type="button"
                       size="icon-sm"
                       variant="secondary"
                       data-test="tracker-connect"
                       denied={edit.denial}
-                      aria-label={`Connect ${provider.name}`}
+                      aria-label={t("tracker.connectAria", {
+                        name: provider.name,
+                      })}
                       onClick={() =>
-                        toast.message(`Connect ${provider.name}`, {
-                          description: "OAuth flow… (mock)",
-                        })
+                        toast.message(
+                          t("tracker.connectToast", { name: provider.name }),
+                          {
+                            description: t("tracker.connectToastNote"),
+                          }
+                        )
                       }
                     >
                       <Plug aria-hidden="true" />

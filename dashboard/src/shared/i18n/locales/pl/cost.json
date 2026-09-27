@@ -1,0 +1,102 @@
+{
+  "page": {
+    "title": "Koszty i awarie",
+    "errorTitle": "Raport się nie załadował",
+    "retry": "Ponów",
+    "period": {
+      "day": "dziś",
+      "week": "ten tydzień",
+      "month": "ten miesiąc"
+    },
+    "periodEnd": {
+      "day": "koniec dnia",
+      "week": "koniec tygodnia",
+      "month": "koniec miesiąca"
+    },
+    "deltaVs": "{{pct}}% vs poprzedni {{period}}",
+    "mockMark": "zrzut mock · VITE_USE_MOCK"
+  },
+  "toggle": {
+    "aria": "Okres"
+  },
+  "total": {
+    "label": "wydatek {{period}}",
+    "noPrior": "nie ma jeszcze wcześniejszego okresu",
+    "vs": "vs poprzedni {{period}}",
+    "flat": "płasko",
+    "burnNote": "<burn/> / dzień średnio · <days/>",
+    "daysObserved": {
+      "one": "{{count}} dzień obserwowany",
+      "few": "{{count}} dni obserwowane",
+      "many": "{{count}} dni obserwowanych",
+      "other": "{{count}} dni obserwowanych"
+    }
+  },
+  "forecast": {
+    "label": "Prognoza {{period}}",
+    "sub": "{{pct}}% z limitu {{cap}} · burn rate {{rate}}"
+  },
+  "budget": {
+    "label": "Postęp budżetu",
+    "today": "dziś",
+    "month": "od początku miesiąca",
+    "ofCap": "{{used}} z limitu {{cap}}"
+  },
+  "section": {
+    "byDay": "wydatek po dniach",
+    "byDayNote": {
+      "one": "ostatni {{count}} dzień",
+      "few": "ostatnie {{count}} dni",
+      "many": "ostatnich {{count}} dni",
+      "other": "ostatnich {{count}} dni"
+    },
+    "byModel": "wydatek po modelach",
+    "byModelNote": "tokeny",
+    "topProjects": "top projekty",
+    "topProjectsNote": "ten okres",
+    "byApp": "wydatek po aplikacjach",
+    "byAppNote": "wydatek",
+    "failures": "gdzie uruchomienia padają",
+    "failuresNote": "gdzie pęka"
+  },
+  "column": {
+    "spend": "wydatek",
+    "tokens": "tokeny",
+    "share": "udział"
+  },
+  "table": {
+    "app": "aplikacja",
+    "model": "model",
+    "project": "projekt"
+  },
+  "byApp": {
+    "empty": "dziś nic nie wydano"
+  },
+  "byModel": {
+    "empty": "brak wydatku na modele w tym okresie",
+    "tokensTitle": "{{tokens}} tokenów przez {{runs}} uruchomień"
+  },
+  "topProjects": {
+    "empty": "brak wydatku projektów w tym okresie",
+    "ofCap": "z limitu {{cap}}",
+    "noCap": "bez limitu"
+  },
+  "byDay": {
+    "empty": "w tym tygodniu nic nie wydano",
+    "figure": {
+      "one": "<total/> przez ostatni {{count}} dzień · <average/> dziennie · najcięższy <peak/> przy <spend/>",
+      "few": "<total/> przez ostatnie {{count}} dni · <average/> dziennie · najcięższy <peak/> przy <spend/>",
+      "many": "<total/> przez ostatnich {{count}} dni · <average/> dziennie · najcięższy <peak/> przy <spend/>",
+      "other": "<total/> przez ostatnich {{count}} dni · <average/> dziennie · najcięższy <peak/> przy <spend/>"
+    },
+    "chartLabel": {
+      "one": "Wydatek po dniach, w dolarach. {{total}} przez ostatni {{count}} dzień, {{average}} dziennie średnio; najcięższy {{peak}} przy {{spend}}.",
+      "few": "Wydatek po dniach, w dolarach. {{total}} przez ostatnie {{count}} dni, {{average}} dziennie średnio; najcięższy {{peak}} przy {{spend}}.",
+      "many": "Wydatek po dniach, w dolarach. {{total}} przez ostatnich {{count}} dni, {{average}} dziennie średnio; najcięższy {{peak}} przy {{spend}}.",
+      "other": "Wydatek po dniach, w dolarach. {{total}} przez ostatnich {{count}} dni, {{average}} dziennie średnio; najcięższy {{peak}} przy {{spend}}."
+    }
+  },
+  "failuresBlock": {
+    "empty": "dziś nic nie padło"
+  }
+}

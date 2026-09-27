@@ -1,6 +1,8 @@
 import { Cpu } from "lucide-react"
 
 import type { ModelRole, ModelRoute } from "@/domains/settings/model/types"
+import type { SettingsTranslator } from "@/domains/settings/model/translate"
+import { sharedSettingsT } from "@/domains/settings/model/translate"
 import { rankSort, type DataColumn } from "@/shared/ui"
 
 import styles from "./settings-table.module.css"
@@ -20,16 +22,22 @@ const roleSort = rankSort(ROLE_RANK)
 /**
  * Which physical model answers for each role.
  *
- * No session and no factory argument. The table states the current map and the
- * form under it is what writes — one control that writes, gated once, rather
- * than three inline edits each having to ask the same question. So nothing on a
- * row is an act and no cell needs a permission.
+ * No session and no factory argument beyond the translator. The table states
+ * the current map and the form under it is what writes — one control that
+ * writes, gated once, rather than three inline edits each having to ask the
+ * same question. So nothing on a row is an act and no cell needs a permission.
+ *
+ * Copy arrives as a `t` parameter (`dashboard-i18n` D7): a `cell` is a plain
+ * function, so the panel passes its hook-bound translator and tests fall back
+ * to the shared instance.
  */
-export function createRoutingColumns(): DataColumn<ModelRoute>[] {
+export function createRoutingColumns(
+  t: SettingsTranslator = sharedSettingsT
+): DataColumn<ModelRoute>[] {
   return [
     {
       accessorKey: "role",
-      header: "role",
+      header: t("routing.column.role"),
       sortFn: roleSort,
       cell: ({ row }) => (
         <span className={styles.role}>
@@ -44,7 +52,7 @@ export function createRoutingColumns(): DataColumn<ModelRoute>[] {
     },
     {
       accessorKey: "model",
-      header: "model",
+      header: t("routing.column.model"),
       cell: ({ row }) => (
         <span className={styles.name} title={row.original.model}>
           {row.original.model}
@@ -54,13 +62,13 @@ export function createRoutingColumns(): DataColumn<ModelRoute>[] {
     },
     {
       accessorKey: "use",
-      header: "usage",
+      header: t("routing.column.usage"),
       cell: ({ row }) => (
         <span className={styles.note} title={row.original.use}>
           {row.original.use}
         </span>
       ),
-      meta: { label: "usage" },
+      meta: { label: t("routing.column.usage") },
     },
   ]
 }

@@ -1,0 +1,23 @@
+{
+  "actions": {
+    "cancel": "Annulla",
+    "retry": "Riprova",
+    "close": "Chiudi"
+  },
+  "errors": {
+    "unknown": "Errore sconosciuto"
+  },
+  "relativeTime": {
+    "now": "proprio ora",
+    "minute": "{{count}} min",
+    "hour": "{{count}} h",
+    "day": "{{count}} g",
+    "future": "tra {{reading}}"
+  },
+  "denial": {
+    "unavailable": "non disponibile",
+    "or": "o",
+    "needs": "serve {{list}}",
+    "needsOn": "serve {{list}} su {{where}}"
+  }
+}

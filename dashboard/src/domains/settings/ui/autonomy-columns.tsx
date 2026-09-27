@@ -1,4 +1,6 @@
 import type { AutonomyMode, AutonomyRow } from "@/domains/settings/model/types"
+import type { SettingsTranslator } from "@/domains/settings/model/translate"
+import { sharedSettingsT } from "@/domains/settings/model/translate"
 import type { DataColumn } from "@/shared/ui"
 
 import { AutonomyModeMark } from "./settings-badges"
@@ -20,13 +22,16 @@ const MODES: AutonomyMode[] = ["auto", "human"]
  * while it builds a row and a hook inside one throws.
  *
  * The change class is the one field a person wrote for another person to read,
- * so it is the only one in the interface voice.
+ * so it is the only one in the interface voice. Copy arrives as a `t`
+ * parameter (`dashboard-i18n` D7), defaulting to the shared instance.
  */
-export function createAutonomyColumns(): DataColumn<AutonomyRow>[] {
+export function createAutonomyColumns(
+  t: SettingsTranslator = sharedSettingsT
+): DataColumn<AutonomyRow>[] {
   return [
     {
       accessorKey: "cls",
-      header: "change class",
+      header: t("autonomy.column.changeClass"),
       cell: ({ row }) => (
         <span className={styles.note} title={row.original.cls}>
           {row.original.cls}
@@ -35,10 +40,10 @@ export function createAutonomyColumns(): DataColumn<AutonomyRow>[] {
       meta: {
         pinned: true,
         width: 260,
-        label: "change class",
+        label: t("autonomy.column.changeClass"),
         filter: {
           kind: "text",
-          placeholder: "filter change class…",
+          placeholder: t("autonomy.filterPlaceholder"),
           match: (entry, needle) =>
             entry.cls.toLowerCase().includes(needle.toLowerCase()),
         },
@@ -46,14 +51,14 @@ export function createAutonomyColumns(): DataColumn<AutonomyRow>[] {
     },
     {
       accessorKey: "mode",
-      header: "mode",
+      header: t("autonomy.column.mode"),
       cell: ({ row }) => <AutonomyModeMark mode={row.original.mode} />,
       meta: {
         width: 120,
         align: "end",
         filter: {
           kind: "select",
-          placeholder: "all modes",
+          placeholder: t("autonomy.allModes"),
           options: MODES.map((mode) => ({ value: mode, label: mode })),
         },
       },

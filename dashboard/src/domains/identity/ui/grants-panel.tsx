@@ -188,7 +188,7 @@ export function GrantsPanel({ grants, initialFilter }: GrantsPanelProps) {
             : ""
         }
         confirmLabel={t("grantsPanel.revokeConfirm")}
-        cancelLabel={t("actions.cancel")}
+        cancelLabel={t("actions.cancel", { ns: "common" })}
         onCancel={() => setRevoking(null)}
         onConfirm={() => {
           const grant = revoking

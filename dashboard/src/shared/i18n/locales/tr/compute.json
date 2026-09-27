@@ -1,0 +1,122 @@
+{
+  "errors": {
+    "changeFailed": "Değişiklik başarısız oldu."
+  },
+  "page": {
+    "title": "Hesaplama",
+    "summary": "<providers/> sağlayıcı · <workers/> worker ayakta · <takes/>",
+    "summaryTakes": "<kind/> yeni başlangıçları alıyor",
+    "summaryNothing": "hiçbiri yeni başlangıçları almıyor",
+    "summaryStranded": "hiçbir şeyin eşleşmediği bir etikette <count/> boşta",
+    "loading": "Kayıt defteri yükleniyor",
+    "errorTitle": "Hesaplama yüklenemedi",
+    "failureTail": "Hiçbir şey kıpırdamadı — kayıt defteri eskisi gibi geri geldi."
+  },
+  "providers": {
+    "section": "Sağlayıcılar",
+    "note": "Dev ve compose için Docker, prod için Kubernetes — v1'in sahip olduğu iki <code>IComputeProvider</code> uygulaması. Biri yeni başlangıçları alır; geri kalanı zaten dağıttığı lease'leri tutar.",
+    "emptyFiltered": "geçerli filtrelerle eşleşen sağlayıcı yok",
+    "empty": "kayıtlı bir hesaplama sağlayıcısı yok",
+    "count": "{{count}} gösteriliyor",
+    "column": {
+      "kind": "tür",
+      "endpoint": "endpoint",
+      "state": "durum",
+      "newStarts": "yeni başlangıçlar",
+      "pools": "havuzlar",
+      "workers": "workerlar",
+      "allocatable": "ayrılabilir",
+      "note": "not",
+      "actions": "eylemler"
+    },
+    "allKinds": "tüm türler",
+    "allStates": "tüm durumlar",
+    "filterPlaceholder": "endpoint, not filtrele…",
+    "takingWork": "iş alıyor",
+    "noAnswer": "cevap yok",
+    "handWork": "Yeni başlangıçları bu sağlayıcıya ver",
+    "handWorkAria": "Yeni başlangıçları {{endpoint}} öğesine ver"
+  },
+  "pools": {
+    "section": "Havuzlar",
+    "note": "Ölçekleme, kota artı sağlayıcının kapasite api'sini bilir; dolayısıyla her havuzun iki ayrı sahibi olan iki tavanı vardır. <tag>binding</tag> ile işaretli olan, bir sonraki kontaineri reddeden tavan — öbürü, boşta kalanıdır.",
+    "empty": "yapılandırılmış bir havuz yok"
+  },
+  "card": {
+    "on": "üzerinde",
+    "unknown": "bilinmeyen",
+    "noReading": "okuma yok",
+    "slotFree": "slot boş",
+    "slotsFree": "slot boş",
+    "trackQuota": "kota",
+    "trackAllocatable": "ayrılabilir",
+    "binding": "binding",
+    "noAnswer": "cevap yok",
+    "full": "dolu",
+    "free": "{{room}} boş",
+    "up": "ayakta",
+    "idle": "boşta",
+    "sentences": {
+      "noAnswer": "kapasite api'si cevap vermedi — bu havuz için okunabilecek bir tavan yok",
+      "bothFull": "kota ve küme ikisi de dolu — burada hiçbir şey başlayamaz",
+      "both": "kota ve küme hemfikir — {{slots}} için yer var",
+      "quotaFull": "kota tavan — hiçbir şey başlayamaz ve kümede hâlâ {{slots}} boş",
+      "quota": "kota tavan — {{slots}} için yer var, kümede {{spare}} boş",
+      "clusterFull": "küme tavan — hiçbir şey başlayamaz ve kota hâlâ {{slots}} izin veriyor",
+      "cluster": "küme tavan — {{slots}} için yer var, kota altında {{spare}} kaldı"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — görev-başına-yarat",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "other": "{{count}} slot"
+    }
+  },
+  "versions": {
+    "section": "Worker sürümleri",
+    "note": "Bir worker, imaj digest'i <em>ve</em> profillerin git-ref'i ile etiketlenir. İkisinden birini değiştirmek yalnızca yeni bir başlangıcı etkiler — başka bir etiketteki boş bir worker, hiçbir zaman bir öğeyle eşleştirilmez; dolu bir havuzun büyüyen bir kuyruğun yanında durması böyle olur.",
+    "emptyFiltered": "geçerli filtrelerle eşleşen etiket yok",
+    "empty": "ayakta bir worker yok",
+    "count": "{{count}} gösteriliyor",
+    "countStranded": "{{count}} boşta, hiç eşleşmemiş · ",
+    "column": {
+      "label": "worker etiketi",
+      "matching": "eşleşme",
+      "workers": "workerlar",
+      "idle": "boşta",
+      "oldestUp": "en eski ayakta",
+      "why": "neden",
+      "actions": "eylemler"
+    },
+    "filterPlaceholder": "digest, profiller ref'i filtrele…",
+    "allLabels": "tüm etiketler",
+    "newStarts": "yeni başlangıçlar",
+    "neverMatched": "hiç eşleşmedi",
+    "strandedTitle": "hiçbir şeyin eşleşmediği bir etikette {{count}} boşta — bir öğeyi claim etmeyecekler",
+    "retireTooltip": "Bu etiketteki boş workerları emekliye ayır",
+    "retireAria": "{{label}} üzerindeki {{count}} boş workerı emekliye ayır",
+    "retireTitle": "Bu etiketteki boş workerlar emekliye ayrılsın mı?",
+    "retireBody": "{{label}} — {{idle}} boş kontainer yıkılır. Lease tutmaya devam eden {{rest}} tanesi, öğeleri inene dek çalışır.",
+    "retireConfirm": "Boştakileri ayır",
+    "retireCancel": "Ayakta kalsınlar",
+    "reason": {
+      "both": "imaj ve profiller ref'i ikisi de kıpırdadı",
+      "image": "imajda bir sürüm geride",
+      "profiles": "aynı imaj, profiller ref'i kıpırdadı"
+    }
+  },
+  "boards": {
+    "section": "Panolar",
+    "note": "Grafana panoları, bir zamanlar onlara sahip olan ekrandan katlandılar. Yeni sekmede açılırlar ve buraya kasıtlı olarak gömülmezler: infra metrikleriyle bir çalıştırmanın kendi zaman çizelgesi, farklı sorular soran insanlarca farklı saatlerde okunur ve ikisini birden gösteren bir yüzey, operatöre bir çalıştırmanın hikâyesini yalnızca yarısı orada olan bir metrik panosunda aramayı öğretirdi. Bir çalıştırmanın hikâyesi <code>/runs</code> üzerindedir. Tek bir pano bütün projeleri birden kapsar ve tanımlar platformla birlikte sürümlenir — listenin altındaki kılavuz, içinde henüz bir şey olmayan bir kurulumun nasıl bağlanacağını söyler.",
+    "loading": "Panolar yükleniyor",
+    "errorTitle": "Panolar yüklenemedi"
+  },
+  "state": {
+    "active": "etkin",
+    "draining": "boşaltılıyor",
+    "standby": "beklemede",
+    "unreachable": "ulaşılamaz"
+  }
+}

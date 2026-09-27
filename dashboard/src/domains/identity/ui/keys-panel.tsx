@@ -173,7 +173,7 @@ export function KeysPanel({ keys, initialFilter }: KeysPanelProps) {
           revoking ? t("keysPanel.revokeBody", { prefix: revoking.prefix }) : ""
         }
         confirmLabel={t("keysPanel.revokeConfirm")}
-        cancelLabel={t("actions.cancel")}
+        cancelLabel={t("actions.cancel", { ns: "common" })}
         onCancel={() => setRevoking(null)}
         onConfirm={() => {
           const key = revoking

@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "重试",
-    "close": "关闭"
-  },
-  "errors": {
-    "unknown": "未知错误"
-  },
   "page": {
     "title": "知识",
     "summary": "规则集、修订、评测基准",

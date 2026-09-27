@@ -1,1 +1,94 @@
-{}
+{
+  "page": {
+    "title": "Coste y fallos",
+    "errorTitle": "El informe no cargó",
+    "retry": "Reintentar",
+    "period": {
+      "day": "hoy",
+      "week": "esta semana",
+      "month": "este mes"
+    },
+    "periodEnd": {
+      "day": "fin del día",
+      "week": "fin de la semana",
+      "month": "fin del mes"
+    },
+    "deltaVs": "{{pct}}% frente a {{period}}",
+    "mockMark": "instantánea simulada · VITE_USE_MOCK"
+  },
+  "toggle": {
+    "aria": "Periodo"
+  },
+  "total": {
+    "label": "gasto de {{period}}",
+    "noPrior": "aún no hay periodo previo",
+    "vs": "frente a {{period}}",
+    "flat": "plano",
+    "burnNote": "<burn/> / día de media · <days/>",
+    "daysObserved": {
+      "one": "{{count}} día observado",
+      "other": "{{count}} días observados"
+    }
+  },
+  "forecast": {
+    "label": "Previsión {{period}}",
+    "sub": "{{pct}}% de {{cap}} de tope · ritmo de gasto {{rate}}"
+  },
+  "budget": {
+    "label": "Progreso del presupuesto",
+    "today": "hoy",
+    "month": "mes hasta hoy",
+    "ofCap": "{{used}} de {{cap}} de tope"
+  },
+  "section": {
+    "byDay": "gasto por día",
+    "byDayNote": {
+      "one": "el último {{count}} día",
+      "other": "los últimos {{count}} días"
+    },
+    "byModel": "gasto por modelo",
+    "byModelNote": "tokens",
+    "topProjects": "proyectos principales",
+    "topProjectsNote": "este periodo",
+    "byApp": "gasto por app",
+    "byAppNote": "gasto",
+    "failures": "dónde fallan los runs",
+    "failuresNote": "dónde se rompe"
+  },
+  "column": {
+    "spend": "gasto",
+    "tokens": "tokens",
+    "share": "cuota"
+  },
+  "table": {
+    "app": "app",
+    "model": "modelo",
+    "project": "proyecto"
+  },
+  "byApp": {
+    "empty": "nada gastado hoy"
+  },
+  "byModel": {
+    "empty": "sin gasto de modelos en este periodo",
+    "tokensTitle": "{{tokens}} tokens en {{runs}} runs"
+  },
+  "topProjects": {
+    "empty": "sin gasto de proyectos en este periodo",
+    "ofCap": "de {{cap}} de tope",
+    "noCap": "sin tope"
+  },
+  "byDay": {
+    "empty": "nada gastado esta semana",
+    "figure": {
+      "one": "<total/> en el último {{count}} día · <average/> al día · el más alto <peak/> con <spend/>",
+      "other": "<total/> en los últimos {{count}} días · <average/> al día · el más alto <peak/> con <spend/>"
+    },
+    "chartLabel": {
+      "one": "Gasto por día, dólares. {{total}} en el último {{count}} día, {{average}} al día de media; el más alto {{peak}} con {{spend}}.",
+      "other": "Gasto por día, dólares. {{total}} en los últimos {{count}} días, {{average}} al día de media; el más alto {{peak}} con {{spend}}."
+    }
+  },
+  "failuresBlock": {
+    "empty": "nada falló hoy"
+  }
+}

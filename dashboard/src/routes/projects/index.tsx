@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { ProjectsPage } from "@/domains/projects"
@@ -21,13 +22,15 @@ export const Route = createFileRoute("/projects/")({
 })
 
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { q } = Route.useSearch()
 
   return (
     <RequirePermission
       permission="projects.view"
-      title="Projects"
-      crumbs={[{ label: "platform" }, { label: "projects" }]}
+      title={t("route.projects")}
+      crumbs={[{ label: t("crumb.platform") }, { label: t("crumb.projects") }]}
     >
       <ProjectsPage focus={q} />
     </RequirePermission>

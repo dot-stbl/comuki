@@ -1,0 +1,184 @@
+{
+  "locale": {
+    "label": "語言"
+  },
+  "nav": {
+    "intake": "接入",
+    "observe": "觀察",
+    "configure": "配置",
+    "platform": "平臺",
+    "inbox": "收件箱",
+    "liveRuns": "即時執行",
+    "queue": "佇列",
+    "approvals": "審批",
+    "cost": "成本",
+    "sources": "來源",
+    "knowledge": "知識庫",
+    "settings": "設定",
+    "projects": "專案",
+    "identity": "身份",
+    "compute": "算力",
+    "models": "模型",
+    "sections": "分割槽"
+  },
+  "crumb": {
+    "platform": "平臺",
+    "projects": "專案",
+    "attention": "當班",
+    "liveRuns": "即時執行",
+    "tasks": "任務",
+    "queue": "佇列",
+    "observe": "觀察",
+    "identity": "身份",
+    "sources": "來源",
+    "approvals": "審批",
+    "configure": "配置",
+    "console": "控制台",
+    "onboard": "接入",
+    "knowledge": "知識",
+    "models": "模型",
+    "compute": "算力",
+    "cost": "成本",
+    "settings": "設定",
+    "new": "新建",
+    "newUser": "新建使用者",
+    "grantRole": "授予角色",
+    "person": "使用者",
+    "linkOidc": "關聯 oidc 主體",
+    "project": "專案",
+    "source": "來源",
+    "worker": "worker",
+    "run": "執行",
+    "newTicket": "新建工單",
+    "newApiKey": "新建 api 金鑰",
+    "onboardRepo": "接入倉庫"
+  },
+  "topbar": {
+    "home": "Comuki — 回首頁",
+    "newRun": "新建執行",
+    "github": "github",
+    "githubOpens": "Comuki 在 GitHub — 在新標籤頁開啟"
+  },
+  "page": {
+    "breadcrumb": "麵包屑",
+    "showRail": "顯示導航欄",
+    "hideRail": "隱藏導航欄",
+    "resizeRail": "調整導航欄寬度"
+  },
+  "account": {
+    "label": "賬戶",
+    "named": "賬戶 — {{name}}",
+    "settings": "設定",
+    "apiKeys": "API 金鑰",
+    "profile": "個人資料",
+    "signOut": "退出登入"
+  },
+  "appearance": {
+    "label": "外觀",
+    "current": "外觀 — {{mode}}",
+    "light": "淺色",
+    "dark": "深色",
+    "system": "跟隨系統"
+  },
+  "palette": {
+    "label": "配色",
+    "current": "配色 — {{name}}"
+  },
+  "live": {
+    "demo": "演示",
+    "polling": "輪詢",
+    "mockOnly": "正在使用合成數據 — 執行 bun run dev:real 切換",
+    "mockAndDown": "正在使用合成數據，後端不可達",
+    "down": "後端不可達 — 顯示最後已知狀態",
+    "pollingDown": "即時更新已中斷 — 此螢幕改為每 {{seconds}} 秒重新整理一次"
+  },
+  "search": {
+    "open": "搜尋 — {{chord}}",
+    "label": "搜尋 Comuki",
+    "placeholder": "貼上一個 id，或說出一個螢幕…",
+    "results": "結果",
+    "empty": "這裡沒有能回應它的東西",
+    "keys": {
+      "move": "↑↓ 移動",
+      "open": "enter 開啟",
+      "close": "esc 關閉"
+    },
+    "band": {
+      "resolved": "前往",
+      "section": "分割槽",
+      "act": "操作",
+      "handoff": "搜尋"
+    },
+    "kind": {
+      "run": "執行",
+      "workItem": "工作項",
+      "worker": "worker",
+      "approval": "審批",
+      "project": "專案",
+      "app": "應用",
+      "person": "人員",
+      "apiKey": "api 金鑰",
+      "image": "映象",
+      "section": "分割槽",
+      "act": "操作",
+      "search": "搜尋"
+    },
+    "act": {
+      "newTask": "新建任務",
+      "newTaskHint": "把一個工單放進待辦",
+      "newProject": "新建專案",
+      "newProjectHint": "註冊一個專案",
+      "newUser": "新建使用者",
+      "newUserHint": "邀請一個人",
+      "newApiKey": "新建 api 金鑰",
+      "newApiKeyHint": "簽發一個金鑰",
+      "grantRole": "授予角色",
+      "grantRoleHint": "給某人訪問權"
+    },
+    "resolvedHint": {
+      "liveRuns": "在即時執行中",
+      "claimQueue": "在認領佇列中",
+      "workerPool": "在 worker 池中",
+      "approvals": "在審批中",
+      "image": "使用此映象的 worker",
+      "apiKeys": "在 api 金鑰中",
+      "people": "在人員中",
+      "app": "此應用的執行"
+    },
+    "handoffHint": {
+      "runs": "在即時執行中",
+      "queue": "在佇列中",
+      "inbox": "在收件箱中"
+    }
+  },
+  "route": {
+    "attention": "當班",
+    "console": "控制台",
+    "onboard": "接入倉庫",
+    "approvals": "審批",
+    "compute": "算力",
+    "cost": "成本與故障",
+    "identity": "身份",
+    "grantRole": "授予角色",
+    "newApiKey": "新建 api 金鑰",
+    "newUser": "新建使用者",
+    "person": "使用者",
+    "linkOidc": "關聯 oidc 主體",
+    "knowledge": "知識",
+    "models": "模型",
+    "projects": "專案",
+    "newProject": "新建專案",
+    "project": "專案",
+    "queue": "佇列與 worker",
+    "worker": "Worker",
+    "liveRuns": "即時執行",
+    "run": "執行",
+    "settings": "設定",
+    "sources": "來源",
+    "connectSource": "連線來源",
+    "source": "來源",
+    "newTicket": "新建工單",
+    "tasks": "任務",
+    "newTask": "新建任務"
+  }
+}

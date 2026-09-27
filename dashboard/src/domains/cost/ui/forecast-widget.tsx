@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { CostForecast, CostHeat } from "@/domains/cost/model/cost"
 import { costHeat } from "@/domains/cost/model/cost"
@@ -40,17 +41,22 @@ export function ForecastWidget({
   className,
   meter,
 }: ForecastWidgetProps) {
+  const { t } = useTranslation("cost")
   const heat: CostHeat = costHeat(forecast.share)
   const pct = Math.round(forecast.share * 100)
 
   return (
     <CostStat
       name="forecast"
-      label={`Forecast ${projectedLabel}`}
+      label={t("forecast.label", { period: projectedLabel })}
       prefix="$"
       value={forecast.projectedEndOfPeriod.toFixed(2)}
       heat={heat}
-      sub={`${pct}% of $${forecast.cap.toFixed(0)} cap · burn rate ${burnRateLabel}`}
+      sub={t("forecast.sub", {
+        pct,
+        cap: `$${forecast.cap.toFixed(0)}`,
+        rate: burnRateLabel,
+      })}
       className={className}
     >
       {meter}

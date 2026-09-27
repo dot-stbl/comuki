@@ -1,16 +1,10 @@
 {
-  "actions": {
-    "retry": "重试"
-  },
   "registry": {
     "title": "审批",
     "summary": {
       "other": "<count/> 个等待决策"
     },
     "errorTitle": "审批加载失败"
-  },
-  "errors": {
-    "unknown": "未知错误"
   },
   "decide": {
     "approvedToast": "已批准",

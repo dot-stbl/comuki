@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "Réessayer",
-    "close": "Fermer"
-  },
-  "errors": {
-    "unknown": "Erreur inconnue"
-  },
   "page": {
     "title": "Connaissances",
     "summary": "jeu de règles, révisions, harnais d'évaluation",

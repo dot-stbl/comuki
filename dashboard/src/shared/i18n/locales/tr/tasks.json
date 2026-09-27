@@ -1,0 +1,76 @@
+{
+  "status": {
+    "new": "yeni",
+    "queued": "kuyrukta",
+    "planning": "planlanıyor"
+  },
+  "priority": {
+    "low": "düşük",
+    "normal": "normal",
+    "high": "yüksek"
+  },
+  "registry": {
+    "title": "Görevler",
+    "summary": "<total/> backlog'ta · <fresh/> yeni",
+    "newTask": "Yeni görev",
+    "count": {
+      "other": "{{count}} gösteriliyor"
+    },
+    "loading": "Backlog yükleniyor",
+    "errorTitle": "Backlog yüklenmedi",
+    "empty": {
+      "filtered": "geçerli filtrelerle eşleşen görev yok",
+      "none": "backlog boş"
+    }
+  },
+  "dispatch": {
+    "toast": "Orkestratöre gönderildi",
+    "fallback": "Orkestratör bunu almadı.",
+    "tail": "Kuyruğa hiçbir şey girmedi — iş hâlâ backlog'ta."
+  },
+  "column": {
+    "source": "kaynak",
+    "task": "görev",
+    "evidence": "kanıt",
+    "project": "proje",
+    "app": "uygulama",
+    "priority": "öncelik",
+    "status": "durum",
+    "age": "yaş",
+    "action": "eylem",
+    "filterPlaceholder": "başlık, id, uygulama filtrele…",
+    "allProjects": "tüm projeler",
+    "allApps": "tüm uygulamalar",
+    "allPriority": "tüm öncelikler",
+    "allStatus": "tüm durumlar",
+    "dispatch": "Gönder",
+    "dispatchTask": "{{title}} gönder"
+  },
+  "create": {
+    "title": "Yeni görev",
+    "crumb": "yeni",
+    "summary": "Sürünün önünde tek bir iş: nereden geldiği, hangi projenin backlog'una düştüğü ve ne kadar acil olduğu.",
+    "toastCreated": "Görev oluşturuldu",
+    "failureTail": "Kuyruğa hiçbir şey girmedi — yazdıklarınız tam bıraktığınız gibi duruyor.",
+    "guardTitle": "Görevi oluşturmadan çıkılsın mı?",
+    "guardBody": "Yazdığınız başlık ve brief henüz hiçbir yerde kayıtlı değil. Bu sayfadan ayrılmak onları düşürür ve kabullere hiçbir şey ulaşmaz.",
+    "guardConfirm": "Vazgeç",
+    "guardCancel": "Düzenlemeye devam et",
+    "submit": "Oluştur ve kuyruğa al",
+    "cancel": "İptal",
+    "sourceLabel": "kaynak",
+    "sourceNote": "işin nereden geldiği. native dışındaki her kart, o sağlayıcıyı izleyen bir bağlantı bekler — buraya yazılan bir iş nereden geldiğini kaydeder, oraya bir iş dosyalamaz.",
+    "ticketLabel": "iş",
+    "ticketNote": "ne yapılacak, nereye düşecek, ne kadar acil.",
+    "briefLabel": "brief",
+    "briefNote": "bağlam, kabul ölçütleri, bağlantılar — bunu kaldıracak kişi için, form için değil.",
+    "titleLabel": "başlık",
+    "titlePlaceholder": "ne yapılacak, tek satırda",
+    "projectLabel": "proje",
+    "appLabel": "uygulama",
+    "briefPlaceholder": "bağlam, kabul ölçütleri, bağlantılar…"
+  },
+  "priorityField": {
+    "label": "öncelik"
+  }
+}

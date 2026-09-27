@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "cancel": "отмена",
-    "retry": "повторить"
-  },
-  "errors": {
-    "unknown": "неизвестная ошибка"
-  },
   "registry": {
     "title": "Проекты",
     "summary": "<count/> проектов · <runs/> запусков в полёте · <spend/> сегодня",

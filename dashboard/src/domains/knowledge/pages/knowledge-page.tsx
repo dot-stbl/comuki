@@ -168,14 +168,17 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
           <ScreenState
             kind="error"
             title={t("load.errorTitle")}
-            description={requestFailureMessage(error, t("errors.unknown"))}
+            description={requestFailureMessage(
+              error,
+              t("errors.unknown", { ns: "common" })
+            )}
             inset="page"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="knowledge-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}
@@ -291,7 +294,7 @@ export function KnowledgePage({ tab, focus, onTabChange }: KnowledgePageProps) {
                       title={t("search.errorTitle")}
                       description={requestFailureMessage(
                         search.error,
-                        t("errors.unknown")
+                        t("errors.unknown", { ns: "common" })
                       )}
                       inset="none"
                       className={styles.empty}

@@ -1,1 +1,23 @@
-{}
+{
+  "actions": {
+    "cancel": "取消",
+    "retry": "重试",
+    "close": "关闭"
+  },
+  "errors": {
+    "unknown": "未知错误"
+  },
+  "relativeTime": {
+    "now": "刚刚",
+    "minute": "{{count}} 分钟",
+    "hour": "{{count}} 小时",
+    "day": "{{count}} 天",
+    "future": "{{reading}}后"
+  },
+  "denial": {
+    "unavailable": "不可用",
+    "or": "或",
+    "needs": "需要 {{list}}",
+    "needsOn": "需要在 {{where}} 拥有 {{list}}"
+  }
+}

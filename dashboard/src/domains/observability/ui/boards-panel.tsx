@@ -1,4 +1,5 @@
 import { ExternalLink, MinusCircle } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type { Board } from "@/domains/observability/model/types"
 import { Tooltip, buttonClass } from "@/shared/ui"
@@ -28,6 +29,8 @@ export interface BoardsPanelProps {
  * mark, and the sentence that says what to do sits under the list.
  */
 export function BoardsPanel({ boards }: BoardsPanelProps) {
+  const { t } = useTranslation("observability")
+
   return (
     <div className={styles.boards} data-test="boards-panel">
       {boards.map((board) => (
@@ -36,7 +39,7 @@ export function BoardsPanel({ boards }: BoardsPanelProps) {
             <h3 className={styles.title}>{board.title}</h3>
             <p className={styles.summary}>{board.summary}</p>
             <p className={styles.meta}>
-              uid {board.uid} · definition updated {board.updatedAt}
+              {t("boards.meta", { uid: board.uid, updated: board.updatedAt })}
             </p>
           </div>
           <div className={styles.action}>
@@ -44,7 +47,7 @@ export function BoardsPanel({ boards }: BoardsPanelProps) {
               // Two words, so the glyph carries the act. The board's own
               // title is a heading two lines up, so the name says which one
               // is about to open rather than repeating "board".
-              <Tooltip content={`Open ${board.title}`}>
+              <Tooltip content={t("boards.openAria", { title: board.title })}>
                 <a
                   className={buttonClass({
                     variant: "outline",
@@ -53,7 +56,7 @@ export function BoardsPanel({ boards }: BoardsPanelProps) {
                   href={board.url}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label={`Open ${board.title}`}
+                  aria-label={t("boards.openAria", { title: board.title })}
                   data-test="board-link"
                 >
                   <ExternalLink aria-hidden="true" />
@@ -65,7 +68,7 @@ export function BoardsPanel({ boards }: BoardsPanelProps) {
                   className={styles.pendingIcon}
                   aria-hidden="true"
                 />
-                not imported yet
+                {t("boards.notImported")}
               </span>
             )}
           </div>

@@ -1,0 +1,175 @@
+{
+  "workStatus": {
+    "queued": "w kolejce",
+    "running": "działa",
+    "blocked": "zablokowane",
+    "failed": "nieudane",
+    "cancelled": "anulowane",
+    "succeeded": "udane"
+  },
+  "workerState": {
+    "busy": "zajęty",
+    "idle": "bezczynny",
+    "draining": "opróżniany",
+    "offline": "offline"
+  },
+  "registry": {
+    "title": "Kolejka i workery",
+    "summary": "<queued/> w kolejce · <stalled/> niepobrane ponad pięć minut · <total/> workerów, <idle/> bezczynnych · <lost/> bez pulsu",
+    "errorTitle": "Nie udało się załadować kolejki",
+    "loading": "Ładowanie kolejki",
+    "expandPool": "Rozwiń pulę",
+    "collapsePool": "Zwiń pulę",
+    "resizePool": "Zmień rozmiar puli workerów"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "nic w kolejce na tym profilu",
+      "filtered": "żaden element roboczy nie pasuje do bieżących filtrów",
+      "none": "kolejka jest pusta"
+    },
+    "shown": {
+      "one": "wyświetlono {{count}}",
+      "few": "wyświetlono {{count}}",
+      "many": "wyświetlono {{count}}",
+      "other": "wyświetlono {{count}}"
+    },
+    "waitingTooLong": {
+      "one": "{{count}} czeka za długo · ",
+      "few": "{{count}} czekają za długo · ",
+      "many": "{{count}} czeka za długo · ",
+      "other": "{{count}} czeka za długo · "
+    }
+  },
+  "queueColumn": {
+    "status": "status",
+    "item": "element",
+    "run": "uruchomienie",
+    "project": "projekt",
+    "profile": "profil",
+    "step": "krok",
+    "claimedBy": "pobrane przez",
+    "age": "wiek",
+    "allStatuses": "wszystkie statusy",
+    "allProjects": "wszystkie projekty",
+    "allProfiles": "wszystkie profile",
+    "filterPlaceholder": "filtruj element, uruchomienie, krok…"
+  },
+  "ageMeter": {
+    "stalled": "w kolejce dłużej niż {{limit}} — żaden worker na tym profilu tego nie pobrał"
+  },
+  "lease": {
+    "noHeartbeat": "brak odczytu pulsu — lease wygasa, a element wraca do kolejki",
+    "lostHeartbeat": "brak pulsu przez {{quiet}} — lease wygasa, a element wraca do kolejki"
+  },
+  "depth": {
+    "label": "Głębokość kolejki po dniach",
+    "figure": "<today/> w kolejce teraz · w tygodniu było <week/>",
+    "deepest": " · dziś najgłębszy dzień tygodnia",
+    "chartLabel": "Głębokość kolejki po dniach, elementy czekające na pobranie. Dziś {{today}} w kolejce; tydzień biegł od {{weekMin}} do {{weekMax}}.",
+    "chartLabelDeepest": "Głębokość kolejki po dniach, elementy czekające na pobranie. Dziś {{today}} w kolejce — najgłębszy dzień tygodnia, który biegł od {{weekMin}} do {{weekMax}}."
+  },
+  "poolStrip": {
+    "expandEmpty": "Rozwiń pulę. Żaden worker nie stoi w górze.",
+    "expand": "Rozwiń pulę. {{total}} workerów: {{busy}} zajętych, {{draining}} opróżnianych, {{idle}} bezczynnych."
+  },
+  "workerColumn": {
+    "state": "stan",
+    "worker": "worker",
+    "project": "projekt",
+    "profile": "profil",
+    "currentWork": "bieżąca praca",
+    "compute": "obliczenia",
+    "handle": "handle",
+    "image": "obraz",
+    "lease": "lease",
+    "up": "w górze",
+    "actions": "akcje",
+    "idle": "bezczynny",
+    "allStates": "wszystkie stany",
+    "allProjects": "wszystkie projekty",
+    "allProfiles": "wszystkie profile",
+    "allProviders": "wszyscy dostawcy",
+    "filterPlaceholder": "filtruj workera, handle, obraz…",
+    "drain": "Opróżnij",
+    "forceStop": "Zatrzymaj siłą",
+    "drainWorker": "Opróżnij {{id}}",
+    "forceStopWorker": "Zatrzymaj siłą {{id}}"
+  },
+  "workersPanel": {
+    "count": "{{shown}} z {{total}} workerów",
+    "fallback": "Pula tego nie przyjęła.",
+    "tail": "Nic się nie zmieniło — worker jest taki, jaki był.",
+    "stopTitle": "Zatrzymać siłą tego workera?",
+    "stopIdle": "{{id}} jest bezczynny. Kontener jest zrywany teraz, a scale postawi kolejnego, gdy pojawi się dla niego praca.",
+    "stopBusy": "{{id}} trzyma \"{{label}}\" na uruchomieniu {{runId}}. Kontener jest zrywany teraz, lease jest zwalniany, a element wraca do kolejki, żeby inny worker go pobrał.",
+    "stopConfirm": "Zatrzymaj siłą",
+    "stopCancel": "Niech działa"
+  },
+  "workerEmpty": {
+    "clearFilters": "Wyczyść filtry",
+    "filteredTitle": "Żaden worker nie pasuje do filtrów",
+    "filteredDescription": {
+      "one": "Pula stoi w górze — <pool/> worker{{where}} działa, po prostu to nie te.",
+      "few": "Pula stoi w górze — <pool/> workery{{where}} działają, po prostu to nie te.",
+      "many": "Pula stoi w górze — <pool/> workerów{{where}} działa, po prostu to nie te.",
+      "other": "Pula stoi w górze — <pool/> workerów{{where}} działa, po prostu to nie te."
+    },
+    "backlogTitle": "Nie ma jeszcze workerów",
+    "backlogDescription": {
+      "one": "min idle = <zero/>{{where}}, więc pula stoi pusta, dopóki nie będzie pracy. A jest: <backlog/> element w kolejce bez pobrania. Scale podniesie workera, żeby je wziąć.",
+      "few": "min idle = <zero/>{{where}}, więc pula stoi pusta, dopóki nie będzie pracy. A jest: <backlog/> elementy w kolejce bez pobrania. Scale podniesie workera, żeby je wziąć.",
+      "many": "min idle = <zero/>{{where}}, więc pula stoi pusta, dopóki nie będzie pracy. A jest: <backlog/> elementów w kolejce bez pobrania. Scale podniesie workera, żeby je wziąć.",
+      "other": "min idle = <zero/>{{where}}, więc pula stoi pusta, dopóki nie będzie pracy. A jest: <backlog/> elementów w kolejce bez pobrania. Scale podniesie workera, żeby je wziąć."
+    },
+    "atRestTitle": "Nie ma workerów i żadnych nie trzeba",
+    "atRestDescription": "min idle = <zero/>{{where}} i nic nie ma w kolejce. Pusta pula to tutaj skonfigurowany stan spoczynku, nie awaria — kontener powstaje na zadanie i jest zrywany po nim.",
+    "underTargetTitle": "Pula jest poniżej celu",
+    "underTargetDescription": {
+      "one": "min idle = <minIdle/>{{where}}, a żaden worker nie stoi w górze. To nie jest stan spoczynku: obliczenia ich nie podnoszą, a <backlog/> element poczeka, aż to zrobią.",
+      "few": "min idle = <minIdle/>{{where}}, a żaden worker nie stoi w górze. To nie jest stan spoczynku: obliczenia ich nie podnoszą, a <backlog/> elementy poczekają, aż to zrobią.",
+      "many": "min idle = <minIdle/>{{where}}, a żaden worker nie stoi w górze. To nie jest stan spoczynku: obliczenia ich nie podnoszą, a <backlog/> elementów poczeka, aż to zrobią.",
+      "other": "min idle = <minIdle/>{{where}}, a żaden worker nie stoi w górze. To nie jest stan spoczynku: obliczenia ich nie podnoszą, a <backlog/> elementów poczeka, aż to zrobią."
+    },
+    "onProject": " na {{project}}"
+  },
+  "worker": {
+    "loading": "Ładowanie workera",
+    "errorTitle": "Nie udało się załadować puli",
+    "fallback": "Pula tego nie przyjęła.",
+    "tail": "Nic się nie zmieniło — worker jest taki, jaki był.",
+    "live": "na żywo",
+    "container": "kontener",
+    "currentWork": "bieżąca praca",
+    "leaseLeft": "lease — zostało",
+    "leaseNone": "nic nie pobrane, więc nie ma lease do bronienia",
+    "sinceHeartbeat": "od pulsu",
+    "heartbeatStale": "nieaktualny po {{limit}}",
+    "up": "w górze",
+    "upNote": "od kiedy kontener wstał",
+    "compute": "obliczenia",
+    "handle": "handle",
+    "image": "obraz",
+    "imageNote": "każdy kontener na tym obrazie",
+    "profile": "profil",
+    "profileNote": "oś, po której dopasowuje pobranie",
+    "project": "projekt",
+    "workNote": "Trzyma element, którego kolejka nie wysłała z tym ładunkiem.",
+    "idle": "bezczynny",
+    "idleNote": "Nic nie trzyma i może pobrać następny element pasujący do jego profilu.",
+    "tornDownTitle": "Ten kontener już nie istnieje",
+    "tornDownDescription": "<id/> został zerwany, gdy ta strona była otwarta. Zatrzymanego kontenera się nie trzyma — nie ma do czego wracać i nie ma tego być. Workery powstają dla pracy, która jest przed nimi, i znikają, gdy jest zrobiona albo gdy ktoś je zatrzyma; to pula zachowująca się tak, jak ją skonfigurowano, nie awaria.",
+    "tornDownHolding": "Trzymał <label/>. Ta praca nie poszła z nim: lease został zwolniony, a element wrócił do kolejki, żeby inny worker go pobrał.",
+    "tornDownIdle": "Był bezczynny, gdy zszedł, więc nic nie trzymał i nic nie wróciło do kolejki.",
+    "tornDownItem": "{{id}}",
+    "poolLink": "kolejka i workery",
+    "notFoundTitle": "Brak workera o nazwie <id/>",
+    "notFoundDescription": "Nic w puli nie odpowiada temu id. Workery są efemeryczne — jeden powstaje na kawałek pracy i znika po nim — więc id z wczorajszego loga, stara zakładka albo link, który uronił ogon, wszystkie lądują tu i żaden z nich nie znaczy, że coś jest nie tak.",
+    "notFoundLook": "szukaj {{id}} w puli",
+    "stopTitle": "Zatrzymać siłą tego workera?",
+    "stopIdle": "<id/> jest bezczynny. Kontener jest zrywany teraz, a scale postawi kolejnego, gdy pojawi się dla niego praca.",
+    "stopBusy": "<id/> trzyma <label/> na uruchomieniu <run/>. Kontener jest zrywany teraz, lease jest zwalniany, a element wraca do kolejki, żeby inny worker go pobrał.",
+    "stopConfirm": "Zatrzymaj siłą",
+    "stopCancel": "Niech działa"
+  }
+}

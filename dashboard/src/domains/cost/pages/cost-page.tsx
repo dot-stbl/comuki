@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { DollarSign, RotateCw } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 import { cn } from "@/shared/lib/utils"
 
 import { AppShell } from "@/app/layout/app-shell"
@@ -25,9 +26,9 @@ const SKELETON_WIDTHS = ["38%", "62%", "50%", "74%"]
 
 /** The three choices the toggle offers, in the order the report reads them. */
 const PERIOD_OPTIONS = [
-  { value: "day" as const, label: "today", note: "1d" },
-  { value: "week" as const, label: "this week", note: "7d" },
-  { value: "month" as const, label: "this month", note: "30d" },
+  { value: "day" as const, note: "1d" },
+  { value: "week" as const, note: "7d" },
+  { value: "month" as const, note: "30d" },
 ]
 
 const PERIOD_DAYS = {
@@ -53,6 +54,8 @@ const PERIOD_DAYS = {
  * shape the operator can read at a glance, none of them a chart library.
  */
 export function CostPage() {
+  const { t } = useTranslation("cost")
+  const { t: tShell } = useTranslation("shell")
   const [period, setPeriod] = useState<"day" | "week" | "month">("day")
   const { data, isLoading, isError, error, refetch } = useCostQuery(period)
 
@@ -69,17 +72,17 @@ export function CostPage() {
       ? data.totalPeriod / PERIOD_DAYS[data.period]
       : 0
 
-  const periodLabel =
-    period === "day"
-      ? "today"
-      : `this ${period.replace("week", "week").replace("month", "month")}`
+  const periodLabel = t(`page.period.${period}`)
 
   return (
     <AppShell
       header={
         <PageHeader
-          breadcrumbs={[{ label: "observe", to: "/runs" }, { label: "cost" }]}
-          title="Cost & failures"
+          breadcrumbs={[
+            { label: tShell("crumb.observe"), to: "/runs" },
+            { label: tShell("crumb.cost") },
+          ]}
+          title={t("page.title")}
           summary={periodLabel}
         />
       }
@@ -89,7 +92,11 @@ export function CostPage() {
           <PeriodToggle
             value={period}
             onChange={setPeriod}
-            options={PERIOD_OPTIONS}
+            options={PERIOD_OPTIONS.map((option) => ({
+              ...option,
+              label: t(`page.period.${option.value}`),
+            }))}
+            ariaLabel={t("toggle.aria")}
             trailing={
               data && delta !== null ? (
                 <span
@@ -104,8 +111,10 @@ export function CostPage() {
                     {delta > 0 ? "▲" : delta < 0 ? "▼" : "◆"}
                   </span>
                   <span>
-                    {Math.abs(delta * 100).toFixed(0)}% vs previous{" "}
-                    {periodLabel}
+                    {t("page.deltaVs", {
+                      pct: Math.abs(delta * 100).toFixed(0),
+                      period: periodLabel,
+                    })}
                   </span>
                 </span>
               ) : null
@@ -120,14 +129,17 @@ export function CostPage() {
         {isError ? (
           <ScreenState
             kind="error"
-            title="The report did not load"
-            description={requestFailureMessage(error, "Unknown error")}
+            title={t("page.errorTitle")}
+            description={requestFailureMessage(
+              error,
+              t("errors.unknown", { ns: "common" })
+            )}
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("page.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="cost-retry"
-                  aria-label="Retry"
+                  aria-label={t("page.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -147,17 +159,30 @@ export function CostPage() {
                 previousTotal={data.totalPreviousPeriod}
                 periodLabel={periodLabel}
                 burnNote={
-                  <>
-                    ${burnPerDay.toFixed(2)} / day on average ·{" "}
-                    {data.byDay.length} day{data.byDay.length === 1 ? "" : "s"}{" "}
-                    observed
-                  </>
+                  /* The figures are values in their own voice and the words are
+                      the product's; the slots stringify the numbers because a
+                      Trans slot holding a bare falsy `0` renders empty. */
+                  <Trans
+                    ns="cost"
+                    i18nKey="total.burnNote"
+                    values={{ count: data.byDay.length }}
+                    components={{
+                      burn: <span>{`$${burnPerDay.toFixed(2)}`}</span>,
+                      days: (
+                        <>
+                          {t("total.daysObserved", {
+                            count: data.byDay.length,
+                          })}
+                        </>
+                      ),
+                    }}
+                  />
                 }
               />
               <ForecastWidget
                 forecast={data.forecast}
                 burnRateLabel={`$${data.forecast.burnRatePerDay.toFixed(2)} / day`}
-                projectedLabel={`end of ${period.replace("week", "week").replace("month", "month")}`}
+                projectedLabel={t(`page.periodEnd.${period}`)}
                 /* The same bar the budget tile draws, from the same
                    component — the forecast is literally spend against a cap,
                    and the two tiles must not be able to disagree about how
@@ -182,8 +207,8 @@ export function CostPage() {
             <Section
               id="cost-by-day"
               data-test="cost-by-day"
-              title="spend by day"
-              note={`the last ${data.byDay.length} day${data.byDay.length === 1 ? "" : "s"}`}
+              title={t("section.byDay")}
+              note={t("section.byDayNote", { count: data.byDay.length })}
             >
               <SpendByDay days={data.byDay} />
             </Section>
@@ -192,8 +217,8 @@ export function CostPage() {
               <Section
                 id="cost-by-model"
                 data-test="cost-by-model"
-                title="spend by model"
-                note="tokens"
+                title={t("section.byModel")}
+                note={t("section.byModelNote")}
               >
                 <SpendByModel rows={data.byModel} />
               </Section>
@@ -201,8 +226,8 @@ export function CostPage() {
               <Section
                 id="top-projects"
                 data-test="top-projects-section"
-                title="top projects"
-                note="this period"
+                title={t("section.topProjects")}
+                note={t("section.topProjectsNote")}
               >
                 <TopProjects rows={data.topProjects} />
               </Section>
@@ -212,8 +237,8 @@ export function CostPage() {
               <Section
                 id="cost-by-app"
                 data-test="cost-by-app"
-                title="spend by app"
-                note="spend"
+                title={t("section.byApp")}
+                note={t("section.byAppNote")}
               >
                 <SpendByApp rows={data.byApp} />
               </Section>
@@ -221,8 +246,8 @@ export function CostPage() {
               <Section
                 id="cost-failures"
                 data-test="cost-failures"
-                title="where runs fail"
-                note="where it breaks"
+                title={t("section.failures")}
+                note={t("section.failuresNote")}
               >
                 <FailureAnalytics rows={data.failures} />
               </Section>
@@ -230,7 +255,7 @@ export function CostPage() {
 
             <p className={styles.mock} data-test="cost-mock-mark">
               <DollarSign className={styles.mockIcon} aria-hidden="true" />
-              mock snapshot · VITE_USE_MOCK
+              {t("page.mockMark")}
             </p>
           </>
         ) : null}

@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Retry"
-  },
-  "errors": {
-    "unknown": "Unknown error"
-  },
   "status": {
     "running": "running",
     "waiting": "waiting",

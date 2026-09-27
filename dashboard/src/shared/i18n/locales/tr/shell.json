@@ -1,0 +1,184 @@
+{
+  "locale": {
+    "label": "Dil"
+  },
+  "nav": {
+    "intake": "Kabul",
+    "observe": "Gözlem",
+    "configure": "Yapılandırma",
+    "platform": "Platform",
+    "inbox": "Gelen kutusu",
+    "liveRuns": "Canlı çalıştırmalar",
+    "queue": "Kuyruk",
+    "approvals": "Onaylar",
+    "cost": "Maliyet",
+    "sources": "Kaynaklar",
+    "knowledge": "Bilgi tabanı",
+    "settings": "Ayarlar",
+    "projects": "Projeler",
+    "identity": "Kimlik",
+    "compute": "Hesaplama",
+    "models": "Modeller",
+    "sections": "bölümler"
+  },
+  "crumb": {
+    "platform": "platform",
+    "projects": "projeler",
+    "attention": "nöbet",
+    "liveRuns": "canlı çalıştırmalar",
+    "tasks": "görevler",
+    "queue": "kuyruk",
+    "observe": "gözlem",
+    "identity": "kimlik",
+    "sources": "kaynaklar",
+    "approvals": "onaylar",
+    "configure": "yapılandırma",
+    "console": "konsol",
+    "onboard": "onboarding",
+    "knowledge": "bilgi",
+    "models": "modeller",
+    "compute": "hesaplama",
+    "cost": "maliyet",
+    "settings": "ayarlar",
+    "new": "yeni",
+    "newUser": "yeni kullanıcı",
+    "grantRole": "rol ver",
+    "person": "kişi",
+    "linkOidc": "oidc öznesi bağla",
+    "project": "proje",
+    "source": "kaynak",
+    "worker": "worker",
+    "run": "çalıştırma",
+    "newTicket": "yeni iş",
+    "newApiKey": "yeni api anahtarı",
+    "onboardRepo": "depo tanıt"
+  },
+  "topbar": {
+    "home": "Comuki — ana sayfa",
+    "newRun": "yeni çalıştırma",
+    "github": "github",
+    "githubOpens": "GitHub'daki Comuki — yeni sekmede açılır"
+  },
+  "page": {
+    "breadcrumb": "Sayfa yolu",
+    "showRail": "Gezinme rayını göster",
+    "hideRail": "Gezinme rayını gizle",
+    "resizeRail": "Gezinme rayını yeniden boyutlandır"
+  },
+  "account": {
+    "label": "Hesap",
+    "named": "Hesap — {{name}}",
+    "settings": "Ayarlar",
+    "apiKeys": "API anahtarları",
+    "profile": "Profil",
+    "signOut": "Oturumu kapat"
+  },
+  "appearance": {
+    "label": "Görünüm",
+    "current": "Görünüm — {{mode}}",
+    "light": "Açık",
+    "dark": "Koyu",
+    "system": "Sistem"
+  },
+  "palette": {
+    "label": "Palet",
+    "current": "Palet — {{name}}"
+  },
+  "live": {
+    "demo": "Demo",
+    "polling": "Yoklama",
+    "mockOnly": "Sentetik veriyle çalışıyor — geçmek için bun run dev:real",
+    "mockAndDown": "Sentetik veriyle çalışıyor, backend'e ulaşılamıyor",
+    "down": "Backend'e ulaşılamıyor — bilinen son durum gösteriliyor",
+    "pollingDown": "Canlı güncellemeler durdu — bu ekran onun yerine {{seconds}} sn'de bir yenileniyor"
+  },
+  "search": {
+    "open": "Ara — {{chord}}",
+    "label": "Comuki'de ara",
+    "placeholder": "bir id yapıştır ya da ekranı adlandır…",
+    "results": "Sonuçlar",
+    "empty": "bura buna cevap veren bir şey yok",
+    "keys": {
+      "move": "↑↓ gezinme",
+      "open": "enter aç",
+      "close": "esc kapat"
+    },
+    "band": {
+      "resolved": "şuraya git",
+      "section": "bölümler",
+      "act": "eylemler",
+      "handoff": "ara"
+    },
+    "kind": {
+      "run": "çalıştırma",
+      "workItem": "iş öğesi",
+      "worker": "worker",
+      "approval": "onay",
+      "project": "proje",
+      "app": "uygulama",
+      "person": "kişi",
+      "apiKey": "api anahtarı",
+      "image": "imaj",
+      "section": "bölüm",
+      "act": "eylem",
+      "search": "arama"
+    },
+    "act": {
+      "newTask": "Yeni görev",
+      "newTaskHint": "backlog'a bir iş koy",
+      "newProject": "Yeni proje",
+      "newProjectHint": "bir proje kaydet",
+      "newUser": "Yeni kullanıcı",
+      "newUserHint": "birini davet et",
+      "newApiKey": "Yeni api anahtarı",
+      "newApiKeyHint": "anahtar çıkar",
+      "grantRole": "Rol ver",
+      "grantRoleHint": "birine erişim ver"
+    },
+    "resolvedHint": {
+      "liveRuns": "canlı çalıştırmalarda",
+      "claimQueue": "claim kuyruğunda",
+      "workerPool": "worker havuzunda",
+      "approvals": "onaylarda",
+      "image": "bu imajdaki workerlar",
+      "apiKeys": "api anahtarlarında",
+      "people": "kişilerde",
+      "app": "bu uygulamanın çalıştırmaları"
+    },
+    "handoffHint": {
+      "runs": "canlı çalıştırmalarda",
+      "queue": "kuyrukta",
+      "inbox": "gelen kutusunda"
+    }
+  },
+  "route": {
+    "attention": "Nöbet",
+    "console": "Konsol",
+    "onboard": "Depo tanıt",
+    "approvals": "Onaylar",
+    "compute": "Hesaplama",
+    "cost": "Maliyet ve arızalar",
+    "identity": "Kimlik",
+    "grantRole": "Rol ver",
+    "newApiKey": "Yeni api anahtarı",
+    "newUser": "Yeni kullanıcı",
+    "person": "Kişi",
+    "linkOidc": "Oidc öznesi bağla",
+    "knowledge": "Bilgi tabanı",
+    "models": "Modeller",
+    "projects": "Projeler",
+    "newProject": "Yeni proje",
+    "project": "Proje",
+    "queue": "Kuyruk ve workerlar",
+    "worker": "Worker",
+    "liveRuns": "Canlı çalıştırmalar",
+    "run": "Çalıştırma",
+    "settings": "Ayarlar",
+    "sources": "Kaynaklar",
+    "connectSource": "Kaynak bağla",
+    "source": "Kaynak",
+    "newTicket": "Yeni iş",
+    "tasks": "Görevler",
+    "newTask": "Yeni görev"
+  }
+}

@@ -250,14 +250,14 @@ export function ModelsPage() {
             }
             description={requestFailureMessage(
               error ?? proxyKeys.error,
-              t("errors.unknown")
+              t("errors.unknown", { ns: "common" })
             )}
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="models-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                     void proxyKeys.refetch()

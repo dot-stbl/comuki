@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { ExternalLink, PowerOff } from "lucide-react"
+import { Trans, useTranslation } from "react-i18next"
 
 import { sourceLocation } from "@/domains/verify/model/gate"
 import type { VerifyCommand, VerifyProject } from "@/domains/verify/model/types"
@@ -58,20 +59,21 @@ export function VerifyProjectPanel({
   saving,
   onEnabledChange,
 }: VerifyProjectPanelProps) {
+  const { t } = useTranslation("verify")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
   const [sorting, setSorting] = useState<DataTableSorting>([])
 
-  const columns = useMemo(() => createVerifyColumns(), [])
+  const columns = useMemo(() => createVerifyColumns(t), [t])
   const rows = useMemo(
     () => applyDataFilters(commands, filters, columns),
     [commands, filters, columns]
   )
 
   const emptyLabel = hasActiveFilters(filters)
-    ? "No checks match the current filters."
-    : "No checks are declared."
+    ? t("panel.emptyFiltered")
+    : t("panel.empty")
 
   return (
     <section
@@ -85,7 +87,7 @@ export function VerifyProjectPanel({
         </h2>
         <SwitchField
           id={`verify-enabled-${project.projectId}`}
-          label="run the gate on every run"
+          label={t("panel.switch")}
           checked={project.enabled}
           onCheckedChange={onEnabledChange}
           disabled={saving}
@@ -96,26 +98,22 @@ export function VerifyProjectPanel({
 
       <div className={styles.source} data-test="verify-source">
         <div className={styles.sourceText}>
-          <p className={styles.sourceLead}>
-            These commands are declared in this client&apos;s git and are
-            read-only here. Changing one is a commit in their repository — that
-            is what makes a run reproducible, so there is no editor on this
-            screen by design.
-          </p>
+          <p className={styles.sourceLead}>{t("panel.sourceLead")}</p>
           <p className={styles.sourcePath} data-test="verify-source-path">
-            {sourceLocation(project.source)} · read {project.readAt}
+            {sourceLocation(project.source)} ·{" "}
+            {t("panel.readAt", { when: project.readAt })}
           </p>
         </div>
         {/* Three words became a glyph. The path this opens is printed
             beside it, so the tooltip and the name only have to say what the
             act is. */}
-        <Tooltip content="Open in git">
+        <Tooltip content={t("panel.openInGit")}>
           <a
             className={buttonClass({ variant: "outline", size: "icon-sm" })}
             href={project.source.url}
             target="_blank"
             rel="noreferrer"
-            aria-label="Open in git"
+            aria-label={t("panel.openInGit")}
             data-test="verify-source-link"
           >
             <ExternalLink aria-hidden="true" />
@@ -126,11 +124,7 @@ export function VerifyProjectPanel({
       {!project.enabled ? (
         <p className={styles.off} data-test="verify-gate-off">
           <PowerOff className={styles.offIcon} aria-hidden="true" />
-          <span>
-            The gate is off, so nothing below is run and no run is blocked by
-            it. The file is still in git and the checks are still declared —
-            turning this back on starts running them again from the next run.
-          </span>
+          <span>{t("panel.off")}</span>
         </p>
       ) : null}
 
@@ -140,26 +134,31 @@ export function VerifyProjectPanel({
            in the sentence and the way to it is the act. */
         <ScreenState
           kind="empty"
-          title="No checks are declared"
+          title={t("panel.emptyTitle")}
           description={
-            <>
-              The gate is looking for{" "}
-              <span className={styles.code}>{project.source.path}</span> in{" "}
-              <span className={styles.code}>{project.source.repo}</span> at{" "}
-              <span className={styles.code}>{project.source.ref}</span> and
-              found nothing. Commit the file there and it is picked up on the
-              next read — there is nowhere here to create one.
-            </>
+            <Trans
+              ns="verify"
+              i18nKey="panel.emptyDescription"
+              components={{
+                path: (
+                  <span className={styles.code}>{project.source.path}</span>
+                ),
+                repo: (
+                  <span className={styles.code}>{project.source.repo}</span>
+                ),
+                ref: <span className={styles.code}>{project.source.ref}</span>,
+              }}
+            />
           }
           data-test="verify-empty"
           action={
-            <Tooltip content="Open in git">
+            <Tooltip content={t("panel.openInGit")}>
               <a
                 className={buttonClass({ variant: "outline", size: "icon-sm" })}
                 href={project.source.url}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Open in git"
+                aria-label={t("panel.openInGit")}
                 data-test="verify-empty-link"
               >
                 <ExternalLink aria-hidden="true" />
@@ -177,7 +176,9 @@ export function VerifyProjectPanel({
               columnVisibility={columnVisibility}
               onColumnVisibilityChange={setColumnVisibility}
               trailing={
-                <span className={styles.count}>{rows.length} shown</span>
+                <span className={styles.count}>
+                  {t("panel.count", { count: rows.length })}
+                </span>
               }
             />
           </div>

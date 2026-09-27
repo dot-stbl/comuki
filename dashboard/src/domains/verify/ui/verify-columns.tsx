@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router"
 
 import { resultLabel } from "@/domains/verify/model/gate"
+import type { VerifyTranslator } from "@/domains/verify/model/gate"
+import { sharedVerifyT } from "@/domains/verify/model/gate"
 import type {
   VerifyCommand,
   VerifyResultLabel,
@@ -22,6 +24,13 @@ const RESULT_RANK: Record<VerifyResultLabel, number> = {
 
 const resultSort = rankSort(RESULT_RANK)
 
+/** A result label → the catalogue key that spells it in the active locale. */
+const RESULT_KEY: Record<VerifyResultLabel, string> = {
+  failed: "result.failed",
+  "never ran": "result.neverRan",
+  passed: "result.passed",
+}
+
 /**
  * The commands one project declares, and what each last said.
  *
@@ -33,16 +42,20 @@ const resultSort = rankSort(RESULT_RANK)
  * "RulesEditor" over a table nobody could edit — so the affordance is absent
  * and the section header says where the file is instead.
  *
- * A module-scope factory rather than a constant because the columns close over
- * nothing: no session, no callbacks, no per-screen state. There is nothing on a
- * row to gate.
+ * A factory with a translator parameter rather than a constant: a `cell` is a
+ * plain function TanStack calls while it builds a row, so the panel passes its
+ * hook-bound `t` and tests fall back to the shared instance. The filter's
+ * *values* stay the raw labels — `resultLabel` is the sort and match key —
+ * while the options' *labels* localise.
  */
-export function createVerifyColumns(): DataColumn<VerifyCommand>[] {
+export function createVerifyColumns(
+  t: VerifyTranslator = sharedVerifyT
+): DataColumn<VerifyCommand>[] {
   return [
     {
       id: "result",
       accessorFn: (command) => resultLabel(command.last),
-      header: "last result",
+      header: t("column.lastResult"),
       cell: ({ row }) => <VerifyResultBadge result={row.original.last} />,
       sortFn: resultSort,
       meta: {
@@ -50,19 +63,20 @@ export function createVerifyColumns(): DataColumn<VerifyCommand>[] {
         pinned: true,
         filter: {
           kind: "select",
-          placeholder: "any result",
-          options: [
-            { value: "failed", label: "failed" },
-            { value: "never ran", label: "never ran" },
-            { value: "passed", label: "passed" },
-          ],
+          placeholder: t("column.anyResult"),
+          options: (
+            ["failed", "never ran", "passed"] as VerifyResultLabel[]
+          ).map((label) => ({
+            value: label,
+            label: t(RESULT_KEY[label], { defaultValue: label }),
+          })),
           match: (command, value) => resultLabel(command.last) === value,
         },
       },
     },
     {
       accessorKey: "name",
-      header: "check",
+      header: t("column.check"),
       cell: ({ row }) => (
         <span className={styles.value}>{row.original.name}</span>
       ),
@@ -71,7 +85,7 @@ export function createVerifyColumns(): DataColumn<VerifyCommand>[] {
         pinned: true,
         filter: {
           kind: "text",
-          placeholder: "filter check, command…",
+          placeholder: t("column.filterPlaceholder"),
           match: (command, needle) =>
             `${command.name} ${command.command} ${command.path}`
               .toLowerCase()
@@ -81,35 +95,35 @@ export function createVerifyColumns(): DataColumn<VerifyCommand>[] {
     },
     {
       accessorKey: "command",
-      header: "command",
+      header: t("column.command"),
       cell: ({ row }) => (
         <span className={styles.value} title={row.original.command}>
           {row.original.command}
         </span>
       ),
-      meta: { label: "command" },
+      meta: { label: t("column.command") },
     },
     {
       accessorKey: "path",
-      header: "declared in",
+      header: t("column.declaredIn"),
       cell: ({ row }) => (
         <span className={styles.muted} title={row.original.path}>
           {row.original.path}
         </span>
       ),
-      meta: { width: 200, label: "declared in" },
+      meta: { width: 200, label: t("column.declaredIn") },
     },
     {
       id: "detail",
       accessorFn: (command) => command.last?.detail ?? "",
-      header: "output",
+      header: t("column.output"),
       cell: ({ row }) => {
         const last = row.original.last
         if (!last) {
           // Not a blank: a blank cell reads as a render that failed, and this
           // row is the one on the screen most worth noticing.
           return (
-            <span className={styles.never}>no run has reached this check</span>
+            <span className={styles.never}>{t("column.neverReached")}</span>
           )
         }
         if (last.outcome === "failed" && last.detail) {
@@ -121,31 +135,31 @@ export function createVerifyColumns(): DataColumn<VerifyCommand>[] {
         }
         return <span className={styles.never}>—</span>
       },
-      meta: { label: "output" },
+      meta: { label: t("column.output") },
     },
     {
       id: "at",
       accessorFn: (command) => command.last?.at ?? "",
-      header: "when",
+      header: t("column.when"),
       cell: ({ row }) => (
         <span className={styles.muted}>{row.original.last?.at ?? "—"}</span>
       ),
-      meta: { width: 116, label: "when" },
+      meta: { width: 116, label: t("column.when") },
     },
     {
       id: "duration",
       accessorFn: (command) => command.last?.durationSec ?? "",
-      header: "took",
+      header: t("column.took"),
       cell: ({ row }) => {
         const last = row.original.last
         return last ? `${last.durationSec}s` : "—"
       },
-      meta: { width: 88, numeric: true, label: "took" },
+      meta: { width: 88, numeric: true, label: t("column.took") },
     },
     {
       id: "run",
       accessorFn: (command) => command.last?.runId ?? "",
-      header: "run",
+      header: t("column.run"),
       cell: ({ row }) => {
         const last = row.original.last
         if (!last) {
@@ -162,7 +176,7 @@ export function createVerifyColumns(): DataColumn<VerifyCommand>[] {
           </Link>
         )
       },
-      meta: { width: 112, label: "run" },
+      meta: { width: 112, label: t("column.run") },
     },
   ]
 }

@@ -1,9 +1,5 @@
 {
-  "actions": {
-    "retry": "Reintentar"
-  },
   "errors": {
-    "unknown": "Error desconocido",
     "changeFailed": "El cambio falló."
   },
   "page": {
@@ -63,7 +59,6 @@
     "sentences": {
       "noAnswer": "la api de capacidad no respondió — no se puede leer techo para este pool",
       "bothFull": "la cuota y el clúster están ambos llenos — nada puede arrancar aquí",
-
       "both": "cuota y clúster coinciden — lugar para {{slots}}",
       "quotaFull": "la cuota es el techo — nada puede arrancar, y al clúster aún le quedan {{slots}} libres",
       "quota": "la cuota es el techo — lugar para {{slots}}, con {{spare}} libres en el clúster",
@@ -108,7 +103,6 @@
     "retireConfirm": "Retirar inactivos",
     "retireCancel": "Dejarlos arriba",
     "reason": {
-
       "both": "la imagen y el profiles ref se movieron ambos",
       "image": "un release por detrás en la imagen",
       "profiles": "misma imagen, el profiles ref se movió"

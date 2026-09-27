@@ -1,0 +1,160 @@
+{
+  "workStatus": {
+    "queued": "kuyrukta",
+    "running": "çalışıyor",
+    "blocked": "engellendi",
+    "failed": "başarısız",
+    "cancelled": "iptal edildi",
+    "succeeded": "başarılı oldu"
+  },
+  "workerState": {
+    "busy": "meşgul",
+    "idle": "boşta",
+    "draining": "boşaltılıyor",
+    "offline": "çevrimdışı"
+  },
+  "registry": {
+    "title": "Kuyruk ve workerlar",
+    "summary": "<queued/> kuyrukta · <stalled/> beş dakikadır claim edilmemiş · <total/> worker, <idle/> boşta · <lost/> kalp atışı yok",
+    "errorTitle": "Kuyruk yüklenemedi",
+    "loading": "Kuyruk yükleniyor",
+    "expandPool": "Havuzu genişlet",
+    "collapsePool": "Havuzu topla",
+    "resizePool": "Worker havuzunu yeniden boyutlandır"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "bu profilde kuyrukta bir şey yok",
+      "filtered": "geçerli filtrelerle eşleşen iş öğesi yok",
+      "none": "kuyruk boş"
+    },
+    "shown": {
+      "other": "{{count}} gösteriliyor"
+    },
+    "waitingTooLong": {
+      "other": "{{count}} çok uzun süredir bekliyor · "
+    }
+  },
+  "queueColumn": {
+    "status": "durum",
+    "item": "öğe",
+    "run": "çalıştırma",
+    "project": "proje",
+    "profile": "profil",
+    "step": "adım",
+    "claimedBy": "claim eden",
+    "age": "yaş",
+    "allStatuses": "tüm durumlar",
+    "allProjects": "tüm projeler",
+    "allProfiles": "tüm profiller",
+    "filterPlaceholder": "öğe, çalıştırma, adım filtrele…"
+  },
+  "ageMeter": {
+    "stalled": "{{limit}} süresinden uzun süredir kuyrukta — bu profildeki hiçbir worker claim etmedi"
+  },
+  "lease": {
+    "noHeartbeat": "kalp atışı okuması yok — lease düşer ve öğe kuyruğa geri döner",
+    "lostHeartbeat": "{{quiet}} süredir kalp atışı yok — lease düşer ve öğe kuyruğa geri döner"
+  },
+  "depth": {
+    "label": "Güne göre kuyruk derinliği",
+    "figure": "şimdi <today/> kuyrukta · hafta <week/> ile koştu",
+    "deepest": " · haftanın en derin günü bugün",
+    "chartLabel": "Güne göre kuyruk derinliği, claim bekleyen öğeler. Bugün {{today}} kuyrukta; hafta {{weekMin}} ile {{weekMax}} arasında koştu.",
+    "chartLabelDeepest": "Güne göre kuyruk derinliği, claim bekleyen öğeler. Bugün {{today}} kuyrukta — {{weekMin}} ile {{weekMax}} arasında koşan haftanın en derin günü."
+  },
+  "poolStrip": {
+    "expandEmpty": "Havuzu genişlet. Ayağa kalkmış worker yok.",
+    "expand": "Havuzu genişlet. {{total}} worker: {{busy}} meşgul, {{draining}} boşaltılıyor, {{idle}} boşta."
+  },
+  "workerColumn": {
+    "state": "durum",
+    "worker": "worker",
+    "project": "proje",
+    "profile": "profil",
+    "currentWork": "geçerli iş",
+    "compute": "hesaplama",
+    "handle": "handle",
+    "image": "imaj",
+    "lease": "lease",
+    "up": "ayakta",
+    "actions": "eylemler",
+    "idle": "boşta",
+    "allStates": "tüm durumlar",
+    "allProjects": "tüm projeler",
+    "allProfiles": "tüm profiller",
+    "allProviders": "tüm sağlayıcılar",
+    "filterPlaceholder": "worker, handle, imaj filtrele…",
+    "drain": "Boşalt",
+    "forceStop": "Zorla durdur",
+    "drainWorker": "{{id}} boşalt",
+    "forceStopWorker": "{{id}} zorla durdur"
+  },
+  "workersPanel": {
+    "count": "{{total}} workerdan {{shown}} tanesi",
+    "fallback": "Havuz bunu almadı.",
+    "tail": "Hiçbir şey değişmedi — worker eskisi gibi.",
+    "stopTitle": "Bu worker zorla durdurulsun mu?",
+    "stopIdle": "{{id}} boşta. Kontainer şimdi yıkılır; iş çıkınca scale bir başkasını kaldırır.",
+    "stopBusy": "{{id}}, {{runId}} çalıştırmasında \"{{label}}\" tutuyor. Kontainer şimdi yıkılır, lease bırakılır ve öğe başka bir workerın claim etmesi için kuyruğa döner.",
+    "stopConfirm": "Zorla durdur",
+    "stopCancel": "Çalışmaya devam etsin"
+  },
+  "workerEmpty": {
+    "clearFilters": "Filtreleri temizle",
+    "filteredTitle": "Filtrelerle eşleşen worker yok",
+    "filteredDescription": {
+      "other": "Havuz ayakta — <pool/> worker{{where}} çalışıyor, sadece onlar bunlar değil."
+    },
+    "backlogTitle": "Henüz worker yok",
+    "backlogDescription": {
+      "other": "min idle = <zero/>{{where}}, dolayısıyla havuz iş çıkana kadar boş durur. Şimdi çıktı: <backlog/> öğe kuyrukta claim edilmemiş. Scale onları alacak bir worker kaldırır."
+    },
+    "atRestTitle": "Worker yok ve gerekli de değil",
+    "atRestDescription": "min idle = <zero/>{{where}} ve kuyrukta bir şey yok. Boş bir havuz burada arıza değil, yapılandırılmış dinlenme durumudur — görev başına bir kontainer yaratılır ve sonrasında yıkılır.",
+    "underTargetTitle": "Havuz hedefinin altında",
+    "underTargetDescription": {
+      "other": "min idle = <minIdle/>{{where}} ve hiçbir worker ayakta değil. Bu bir dinlenme durumu değil: hesaplama onları kaldırmıyor ve <backlog/> öğe, kaldırana kadar bekleyecek."
+    },
+    "onProject": " — {{project}}"
+  },
+  "worker": {
+    "loading": "Worker yükleniyor",
+    "errorTitle": "Havuz yüklenemedi",
+    "fallback": "Havuz bunu almadı.",
+    "tail": "Hiçbir şey değişmedi — worker eskisi gibi.",
+    "live": "canlı",
+    "container": "kontainer",
+    "currentWork": "geçerli iş",
+    "leaseLeft": "kalan lease",
+    "leaseNone": "claim edilen bir şey yok, dolayısıyla savunulacak bir lease yok",
+    "sinceHeartbeat": "kalp atışından beri",
+    "heartbeatStale": "{{limit}} sonrası bayat",
+    "up": "ayakta",
+    "upNote": "kontainer ayağa kalktığından beri",
+    "compute": "hesaplama",
+    "handle": "handle",
+    "image": "imaj",
+    "imageNote": "bu imajdaki her kontainer",
+    "profile": "profil",
+    "profileNote": "claim'in eşleştiği eksen",
+    "project": "proje",
+    "workNote": "Kuyruğun bu yük ile göndermediği bir öğe tutuyor.",
+    "idle": "boşta",
+    "idleNote": "Hiçbir şey tutmuyor ve profiline uyan bir sonraki öğeyi claim etmeye hazır.",
+    "tornDownTitle": "Bu kontainer gitti",
+    "tornDownDescription": "<id/>, bu sayfa açıkken yıkıldı. Durdurulan bir kontainer saklanmaz — dönecek bir kaydı yok ve olmaması da gerekmez. Workerlar önlerindeki iş için kaldırılır ve iş bitince ya da biri onları durdurunca kaldırılırlar; bu, havuzun yapılandırıldığı gibi davranmasıdır, bir arıza değil.",
+    "tornDownHolding": "<label/> tutuyordu. O iş onunla gitmedi: lease bırakıldı ve öğe başka bir workerın claim etmesi için kuyruğa döndü.",
+    "tornDownIdle": "Giderken boştaydı, dolayısıyla bir şey tutmuyordu ve kuyruğa bir şey dönmedi.",
+    "tornDownItem": "{{id}}",
+    "poolLink": "kuyruk ve workerlar",
+    "notFoundTitle": "<id/> adında bir worker yok",
+    "notFoundDescription": "Havuzda bu id'ye cevap veren bir şey yok. Workerlar geçicidir — biri bir parça iş için kaldırılır ve sonrasında silinir — dolayısıyla dünkü logdan bir id, eski bir yer imi ya da kuyruğunu yitirmiş bir bağlantı buraya düşer ve hiçbiri bir şeylerin ters gittiği anlamına gelmez.",
+    "notFoundLook": "havuzda {{id}} ara",
+    "stopTitle": "Bu worker zorla durdurulsun mu?",
+    "stopIdle": "<id/> boşta. Kontainer şimdi yıkılır; iş çıkınca scale bir başkasını kaldırır.",
+    "stopBusy": "<id/>, <run/> çalıştırmasında <label/> tutuyor. Kontainer şimdi yıkılır, lease bırakılır ve öğe başka bir workerın claim etmesi için kuyruğa döner.",
+    "stopConfirm": "Zorla durdur",
+    "stopCancel": "Çalışmaya devam etsin"
+  }
+}

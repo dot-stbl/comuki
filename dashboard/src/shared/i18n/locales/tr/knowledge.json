@@ -1,0 +1,89 @@
+{
+  "page": {
+    "title": "Bilgi tabanı",
+    "summary": "kural seti, revizyonlar, eval koşumu",
+    "tabsLabel": "Bilgi bölümleri"
+  },
+  "tab": {
+    "library": "kütüphane",
+    "gate": "kapı"
+  },
+  "load": {
+    "errorTitle": "Bilgi tabanı yüklenmedi"
+  },
+  "search": {
+    "label": "Kuralları, belgeleri ve skilleri filtrele",
+    "placeholder": "Kural, belge, skill ara…",
+    "errorTitle": "Arama cevap vermedi",
+    "searching": "Aranıyor",
+    "emptyTitle": "Eşleşme yok",
+    "emptySemantic": "Kütüphanede bu sorguya yeterince yakın bir şey yok.",
+    "emptyPlain": "Sabitlenmiş kurallar ve belgeler üzerinde başka bir sorgu deneyin.",
+    "sectionTitle": "anlamsal eşleşmeler",
+    "sectionNote": "kosinüs benzerliğine göre ilk {{count}}",
+    "count": "toplam {{total}} içinden {{shown}}"
+  },
+  "revision": {
+    "section": "yürürlükteki revizyon",
+    "current": "geçerli revizyon",
+    "sub": "{{sdk}} · güncellendi {{updated}}",
+    "rules": "etkin kurallar",
+    "rulesSub": "{{hard}} sert · {{soft}} yumuşak",
+    "reproducibility": "tekrarlanabilirlik",
+    "reproducibilitySub": "her çalıştırma kural setini + SDK'yı sabitler"
+  },
+  "entries": {
+    "section": "kurallar, belgeler ve skiller",
+    "updated": "güncellendi {{updated}}"
+  },
+  "sheet": {
+    "close": "Girdiyi kapat",
+    "revisionAt": "revizyon @{{revision}}",
+    "scope": "kapsam",
+    "updated": "güncellendi"
+  },
+  "badge": {
+    "kind": {
+      "rule": "kural",
+      "doc": "belge",
+      "skill": "skill"
+    },
+    "ruleKind": {
+      "hard": "sert",
+      "soft": "yumuşak"
+    },
+    "pinned": "sabitlenmiş",
+    "pinnedAt": "sabitlendi @ {{revision}}",
+    "delta": {
+      "improved": "iyileşti",
+      "regressed": "geriledi",
+      "noChange": "değişim yok"
+    }
+  },
+  "eval": {
+    "section": "golden görevler",
+    "note": "kural düzenlemelerinde önce → sonra",
+    "empty": "bu revizyonda golden görev koşulmadı",
+    "column": {
+      "task": "görev",
+      "before": "önce",
+      "after": "sonra",
+      "delta": "delta"
+    }
+  },
+  "gate": {
+    "errorTitle": "Kapı yüklenemedi",
+    "changeFailed": "Değişiklik başarısız oldu.",
+    "nothingMoved": "Hiçbir şey kıpırdamadı — kapı eskisi gibi geri geldi.",
+    "intro": "Bir çalıştırma, yere inmeden önce istemcinin kendi kontrollerini geçmek zorundadır. Kontroller onların deposunda yaşar — her şey gibi commit'lenen tek bir dosya — dolayısıyla bu bölüm kapıyı açıp kapatır ve her kontrolün en son ne dediğini gösterir. Bir komutu düzenlemek dosyayı düzenlemek demektir; aşağıdaki her bölüm dosyasının nerede olduğunu tam olarak söyler.",
+    "emptyTitle": "Burada kapısı olan bir proje yok",
+    "emptyDescription": "Bu oturumun projelerinden hiçbiri istemcinin kendi kontrollerini bildirmiyor. Bir kapı, onlardan biri o dosyayı commit'lediği anda belirir.",
+    "onToast": "Kapı açık",
+    "onToastDescription": "{{name}} — çalıştırmalar istemcinin kontrollerini geçmek zorunda",
+    "offToast": "Kapı kapalı",
+    "offToastDescription": "{{name}} — çalıştırmalar istemcinin kontrolleri olmadan iner",
+    "summary": "<total/> kapıdan <on/> açık · <checks/> kontrol bildirildi",
+    "summaryFailing": "<failing/> başarısız",
+    "summaryNeverRan": "<never/> hiç koşmadı"
+  }
+}

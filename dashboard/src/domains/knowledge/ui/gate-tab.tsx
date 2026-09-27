@@ -91,13 +91,16 @@ export function GateTab() {
         <ScreenState
           kind="error"
           title={t("gate.errorTitle")}
-          description={requestFailureMessage(error, t("errors.unknown"))}
+          description={requestFailureMessage(
+            error,
+            t("errors.unknown", { ns: "common" })
+          )}
           action={
-            <Tooltip content={t("actions.retry")}>
+            <Tooltip content={t("actions.retry", { ns: "common" })}>
               <Button
                 size="icon-sm"
                 data-test="verify-retry"
-                aria-label={t("actions.retry")}
+                aria-label={t("actions.retry", { ns: "common" })}
                 onClick={() => {
                   void refetch()
                 }}

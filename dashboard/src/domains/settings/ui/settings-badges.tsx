@@ -1,4 +1,5 @@
 import { Check, Feather, Lock, TriangleAlert, Users, Zap } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type {
   AutonomyMode,
@@ -120,8 +121,10 @@ export interface EnvTagsProps {
  * nowhere says so rather than rendering an empty row of nothing.
  */
 export function EnvTags({ envs, className }: EnvTagsProps) {
+  const { t } = useTranslation("settings")
+
   if (envs.length === 0) {
-    return <span className={styles.absent}>nowhere</span>
+    return <span className={styles.absent}>{t("apps.nowhere")}</span>
   }
 
   return (

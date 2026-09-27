@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "再試行",
-    "cancel": "キャンセル"
-  },
-  "errors": {
-    "unknown": "不明なエラー"
-  },
   "userStatus": {
     "active": "有効",
     "invited": "招待済み",

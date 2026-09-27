@@ -1,1 +1,23 @@
-{}
+{
+  "actions": {
+    "cancel": "キャンセル",
+    "retry": "再試行",
+    "close": "閉じる"
+  },
+  "errors": {
+    "unknown": "不明なエラー"
+  },
+  "relativeTime": {
+    "now": "たった今",
+    "minute": "{{count}} 分",
+    "hour": "{{count}} 時間",
+    "day": "{{count}} 日",
+    "future": "{{reading}}後"
+  },
+  "denial": {
+    "unavailable": "利用不可",
+    "or": "または",
+    "needs": "{{list}} が必要",
+    "needsOn": "{{where}} で {{list}} が必要"
+  }
+}

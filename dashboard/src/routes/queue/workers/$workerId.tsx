@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { WorkerDetailPage } from "@/domains/queue"
@@ -19,16 +20,18 @@ export const Route = createFileRoute("/queue/workers/$workerId")({
  * about routing, the page knows about a worker.
  */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { workerId } = Route.useParams()
 
   return (
     <RequirePermission
       permission="queue.view"
-      title="Worker"
+      title={t("route.worker")}
       crumbs={[
-        { label: "observe", to: "/runs" },
-        { label: "queue", to: "/queue" },
-        { label: "worker" },
+        { label: t("crumb.observe"), to: "/runs" },
+        { label: t("crumb.queue"), to: "/queue" },
+        { label: t("crumb.worker") },
       ]}
     >
       <WorkerDetailPage workerId={workerId} />

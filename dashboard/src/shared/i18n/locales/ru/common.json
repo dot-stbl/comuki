@@ -1,1 +1,23 @@
-{}
+{
+  "actions": {
+    "cancel": "отмена",
+    "retry": "повторить",
+    "close": "закрыть"
+  },
+  "errors": {
+    "unknown": "неизвестная ошибка"
+  },
+  "relativeTime": {
+    "now": "только что",
+    "minute": "{{count}} мин",
+    "hour": "{{count}} ч",
+    "day": "{{count}} д",
+    "future": "через {{reading}}"
+  },
+  "denial": {
+    "unavailable": "недоступно",
+    "or": "или",
+    "needs": "нужен {{list}}",
+    "needsOn": "нужен {{list}} в «{{where}}»"
+  }
+}

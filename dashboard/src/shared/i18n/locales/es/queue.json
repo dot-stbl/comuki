@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Reintentar"
-  },
-  "errors": {
-    "unknown": "Error desconocido"
-  },
   "workStatus": {
     "queued": "en cola",
     "running": "en ejecución",

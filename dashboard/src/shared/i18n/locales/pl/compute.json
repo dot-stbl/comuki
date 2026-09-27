@@ -1,0 +1,125 @@
+{
+  "errors": {
+    "changeFailed": "Zmiana nie udała się."
+  },
+  "page": {
+    "title": "Obliczenia",
+    "summary": "<providers/> dostawców · <workers/> workerów w górze · <takes/>",
+    "summaryTakes": "<kind/> bierze nowe starty",
+    "summaryNothing": "nic nie bierze nowych startów",
+    "summaryStranded": "<count/> bezczynnych na etykiecie, do której nic nie pasuje",
+    "loading": "Ładowanie rejestru",
+    "errorTitle": "Nie udało się załadować obliczeń",
+    "failureTail": "Nic się nie ruszyło — rejestr jest z powrotem taki, jaki był."
+  },
+  "providers": {
+    "section": "Dostawcy",
+    "note": "Docker dla deva i compose, Kubernetes dla produkcji — dwie implementacje <code>IComputeProvider</code>, które ma v1. Jedna bierze nowe starty; reszta trzyma lease'y, które już rozdała.",
+    "emptyFiltered": "żaden dostawca nie pasuje do bieżących filtrów",
+    "empty": "żaden dostawca obliczeń nie jest zarejestrowany",
+    "count": "{{count}} widocznych",
+    "column": {
+      "kind": "rodzaj",
+      "endpoint": "endpoint",
+      "state": "stan",
+      "newStarts": "nowe starty",
+      "pools": "pule",
+      "workers": "workery",
+      "allocatable": "przydzielne",
+      "note": "notka",
+      "actions": "akcje"
+    },
+    "allKinds": "wszystkie rodzaje",
+    "allStates": "wszystkie stany",
+    "filterPlaceholder": "filtruj endpoint, notkę…",
+    "takingWork": "bierze pracę",
+    "noAnswer": "brak odpowiedzi",
+    "handWork": "Przekaż nowe starty temu dostawcy",
+    "handWorkAria": "Przekaż nowe starty {{endpoint}}"
+  },
+  "pools": {
+    "section": "Pule",
+    "note": "Skalowanie zna limity quota plus api pojemności dostawcy, więc każda pula ma dwa sufity z dwoma różnymi właścicielami. Ten oznaczony <tag>binding</tag> to ten, który odmawia następny kontener — drugi to to, co mu zostało wolnego.",
+    "empty": "żadna pula nie jest skonfigurowana"
+  },
+  "card": {
+    "on": "na",
+    "unknown": "nieznane",
+    "noReading": "brak odczytu",
+    "slotFree": "slot wolny",
+    "slotsFree": "slotów wolnych",
+    "trackQuota": "quota",
+    "trackAllocatable": "przydzielne",
+    "binding": "binding",
+    "noAnswer": "brak odpowiedzi",
+    "full": "pełne",
+    "free": "{{room}} wolnych",
+    "up": "w górze",
+    "idle": "bezczynne",
+    "sentences": {
+      "noAnswer": "api pojemności nie odpowiedziało — dla tej puli nie da się odczytać żadnego sufitu",
+      "bothFull": "quota i klaster są pełne — nic tu nie wystartuje",
+      "both": "quota i klaster się zgadzają — miejsce na {{slots}}",
+      "quotaFull": "quota jest sufitem — nic nie wystartuje, a klaster ma wciąż {{slots}} wolnych",
+      "quota": "quota jest sufitem — miejsce na {{slots}}, z {{spare}} wolnych na klastrze",
+      "clusterFull": "klaster jest sufitem — nic nie wystartuje, a quota wciąż pozwala na {{slots}}",
+      "cluster": "klaster jest sufitem — miejsce na {{slots}}, z {{spare}} pod limitem quota"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — create-per-task",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "one": "{{count}} slot",
+      "few": "{{count}} sloty",
+      "many": "{{count}} slotów",
+      "other": "{{count}} slotów"
+    }
+  },
+  "versions": {
+    "section": "Wersje workerów",
+    "note": "Worker jest etykietowany dygestem obrazu <em>i</em> git-refem profili. Zmiana któregokolwiek dotyczy tylko nowego startu — bezczynny worker na każdej innej etykiecie nigdy nie jest dopasowany do elementu, i tak właśnie pełna pula sąsiaduje z rosnącą kolejką.",
+    "emptyFiltered": "żadna etykieta nie pasuje do bieżących filtrów",
+    "empty": "żaden worker nie stoi w górze",
+    "count": "{{count}} widocznych",
+    "countStranded": "{{count}} bezczynnych nigdy nie dopasowanych · ",
+    "column": {
+      "label": "etykieta workera",
+      "matching": "dopasowanie",
+      "workers": "workery",
+      "idle": "bezczynne",
+      "oldestUp": "najstarszy w górze",
+      "why": "dlaczego",
+      "actions": "akcje"
+    },
+    "filterPlaceholder": "filtruj dygest, ref profili…",
+    "allLabels": "wszystkie etykiety",
+    "newStarts": "nowe starty",
+    "neverMatched": "nigdy nie dopasowane",
+    "strandedTitle": "{{count}} bezczynnych na etykiecie, do której nic nie jest dopasowane — nie wezmą elementu",
+    "retireTooltip": "Wycofaj bezczynnych workerów na tej etykiecie",
+    "retireAria": "Wycofaj {{count}} bezczynnych workerów na {{label}}",
+    "retireTitle": "Wycofać bezczynnych workerów na tej etykiecie?",
+    "retireBody": "{{label}} — {{idle}} bezczynnych kontenerów jest zrywanych. Te {{rest}}, które wciąż trzymają lease, działają, aż ich element wyląduje.",
+    "retireConfirm": "Wycofaj bezczynne",
+    "retireCancel": "Zostaw je w górze",
+    "reason": {
+      "both": "obraz i ref profili przesunęły się",
+      "image": "wydanie w tyle na obrazie",
+      "profiles": "ten sam obraz, ref profili się przesunął"
+    }
+  },
+  "boards": {
+    "section": "Tablice",
+    "note": "Tablice grafana, złożone z ekranu, który kiedyś je miał. Otwierają się w nowej karcie i nie są tu osadzone celowo: metryki infra i własna oś czasu uruchomienia czyta się w różnych zegarach i przy różnych pytaniach, a powierzchnia, która pokazywałaby obie, uczyłaby operatora szukać historii uruchomienia w tablicy metryk, gdzie jest tylko jej połowa. Historia uruchomienia jest na <code>/runs</code>. Jedna tablica obejmuje wszystkie projekty naraz, a definicje są wersjonowane z platformą — przewodnik pod listą mówi, jak podłączyć instalację, w której nie ma jeszcze nic.",
+    "loading": "Ładowanie tablic",
+    "errorTitle": "Nie udało się załadować tablic"
+  },
+  "state": {
+    "active": "aktywny",
+    "draining": "opróżniany",
+    "standby": "w gotowości",
+    "unreachable": "nieosiągalny"
+  }
+}

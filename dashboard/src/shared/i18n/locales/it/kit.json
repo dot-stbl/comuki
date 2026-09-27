@@ -1,0 +1,121 @@
+{
+  "field": {
+    "required": "obbligatorio"
+  },
+  "formDialog": {
+    "cancel": "Annulla"
+  },
+  "dialog": {
+    "close": "Chiudi"
+  },
+  "copyButton": {
+    "copy": "copia",
+    "copied": "copiato"
+  },
+  "codeBlock": {
+    "wrap": "a capo",
+    "showLess": "mostra meno",
+    "showAll": {
+      "one": "mostra {{count}} riga",
+      "many": "mostra tutte le {{count}} righe",
+      "other": "mostra tutte le {{count}} righe"
+    }
+  },
+  "skeleton": {
+    "loading": "Caricamento"
+  },
+  "forbidden": {
+    "subject": "Questa vista",
+    "title": "{{subject}} è chiusa ai tuoi ruoli",
+    "description": "{{needs}} — chiedi il ruolo, oppure passa a un progetto in cui lo hai già."
+  },
+  "searchField": {
+    "clear": "Cancella la ricerca"
+  },
+  "select": {
+    "any": "qualsiasi"
+  },
+  "combobox": {
+    "openList": "apri l'elenco"
+  },
+  "datePicker": {
+    "openCalendar": "Apri il calendario"
+  },
+  "splitPane": {
+    "resize": "Ridimensiona"
+  },
+  "dataTable": {
+    "empty": "Nessuna riga",
+    "noun": "riga",
+    "selectColumn": "Seleziona",
+    "selectAll": "Seleziona tutte le {{noun}}",
+    "selectRow": "Seleziona la {{noun}} {{id}}",
+    "resizeColumn": "Ridimensiona la colonna {{label}}",
+    "resizeHint": "Trascina per ridimensionare, doppio clic per ripristinare"
+  },
+  "toolbar": {
+    "filters": "filtri",
+    "filtersLabel": "Filtri",
+    "filtersActive": "Filtri, {{count}} attivi",
+    "clearFilters": "Cancella tutti i filtri",
+    "columns": "Colonne",
+    "searchPlaceholder": "cerca {{label}}…",
+    "filterBy": "Filtra per {{label}}",
+    "filterAll": "tutte le {{label}}",
+    "filterPlaceholder": "filtra {{label}}…",
+    "clearFilterTitle": "Cancella il filtro {{label}}",
+    "clearFilterLabel": "Cancella il filtro {{label}}: {{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "Torna a un pannello",
+    "fillWindow": "Riempi la finestra",
+    "shrinkBack": "Riduci {{title}} di nuovo a pannello",
+    "fillWith": "Riempi la finestra con {{title}}",
+    "resize": "Ridimensiona {{title}}",
+    "closeHint": "Chiudi — escape",
+    "close": "Chiudi {{title}}"
+  },
+  "evidencePane": {
+    "closeHint": "Chiudi — escape",
+    "close": "Chiudi le evidenze",
+    "empty": "nessun viewer per {{type}} — i byte vivono all'URL sopra",
+    "unknownType": "sconosciuto",
+    "openNewTab": "apri in una nuova scheda",
+    "openNewTabLabel": "Apri {{filename}} in una nuova scheda"
+  },
+  "cron": {
+    "cadence": "cadenza",
+    "custom": "Personalizzato…",
+    "customDescription": "Scegli minuto, ora, giorno, mese, giorno della settimana.",
+    "value": "valore",
+    "any": "qualsiasi",
+    "everyDay": "ogni giorno",
+    "anyDay": "un giorno qualsiasi",
+    "part": {
+      "minute": "minuto",
+      "hour": "ora",
+      "day": "giorno",
+      "month": "mese",
+      "weekday": "giorno della settimana"
+    },
+    "weekday": {
+      "sun": "Dom",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mer",
+      "thu": "Gio",
+      "fri": "Ven",
+      "sat": "Sab"
+    },
+    "preset": {
+      "hourly": "Ogni ora",
+      "hourlyDescription": "Ogni ora, allo scoccare.",
+      "daily": "Ogni giorno alle 03:00",
+      "dailyDescription": "Una volta al giorno, nella finestra tranquilla del progetto.",
+      "weekly": "Ogni lunedì",
+      "weeklyDescription": "Lunedì alle 03:00.",
+      "monthly": "Ogni primo del mese",
+      "monthlyDescription": "Il primo del mese alle 03:00."
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "registry": {
+    "title": "Approvazioni",
+    "summary": {
+      "one": "<count/> in attesa di decisione",
+      "many": "<count/> in attesa di decisione",
+      "other": "<count/> in attesa di decisione"
+    },
+    "errorTitle": "Caricamento delle approvazioni non riuscito"
+  },
+  "decide": {
+    "approvedToast": "Approvato",
+    "rejectedToast": "Rifiutato",
+    "openedToast": "Revisione aperta",
+    "refused": "La decisione non è atterrata.",
+    "tail": "La coda è com'era — la run sta ancora aspettando."
+  },
+  "empty": {
+    "title": "Coda vuota",
+    "description": "Niente in attesa di una persona."
+  },
+  "card": {
+    "details": "Dettagli",
+    "hide": "Nascondi",
+    "review": "Revisiona",
+    "reject": "Rifiuta",
+    "approve": "Approva",
+    "reviewAria": "Revisiona {{noun}} per {{app}}",
+    "rejectAria": "Rifiuta {{noun}} per {{app}}",
+    "approveAria": "Approva {{noun}} per {{app}}",
+    "planHead": "Piano — grafo degli item di lavoro",
+    "assumptionsFallback": "Assunzioni del planner",
+    "paneBaseline": "baseline",
+    "paneNew": "nuovo"
+  },
+  "type": {
+    "plan": "piano",
+    "deploy": "deploy",
+    "baseline": "baseline",
+    "gate": "gate",
+    "learning": "regola"
+  },
+  "risk": {
+    "high": "alto",
+    "medium": "medio",
+    "low": "basso"
+  }
+}

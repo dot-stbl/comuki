@@ -354,4 +354,3 @@ describe("the duty list in russian", () => {
     cleanup()
   })
 })
-

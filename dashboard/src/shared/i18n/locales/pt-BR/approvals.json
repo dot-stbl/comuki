@@ -1,7 +1,4 @@
 {
-  "actions": {
-    "retry": "Tentar novamente"
-  },
   "registry": {
     "title": "Aprovações",
     "summary": {
@@ -9,9 +6,6 @@
       "other": "<count/> aguardando decisão"
     },
     "errorTitle": "Falha ao carregar aprovações"
-  },
-  "errors": {
-    "unknown": "Erro desconhecido"
   },
   "decide": {
     "approvedToast": "Aprovado",

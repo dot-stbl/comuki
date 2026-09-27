@@ -190,14 +190,17 @@ export function UserDetailPage({ userId }: UserDetailPageProps) {
             /* The host's own problem detail, not the transport's message:
                "request failed 503" is not a reading an administrator can
                act on. */
-            description={requestFailureMessage(error, t("errors.unknown"))}
+            description={requestFailureMessage(
+              error,
+              t("errors.unknown", { ns: "common" })
+            )}
             data-test="user-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="user-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}

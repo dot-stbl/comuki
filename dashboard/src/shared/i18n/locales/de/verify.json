@@ -1,1 +1,32 @@
-{}
+{
+  "panel": {
+    "emptyFiltered": "Keine Prüfung passt zu den aktuellen Filtern.",
+    "empty": "Es sind keine Prüfungen deklariert.",
+    "switch": "das Gate bei jedem Run ausführen",
+    "sourceLead": "Diese Kommandos sind im Git dieses Clients deklariert und hier read-only. Eines zu ändern ist ein Commit in deren Repository — genau das macht einen Run reproduzierbar, deshalb gibt es hier bewusst keinen Editor.",
+    "readAt": "gelesen {{when}}",
+    "openInGit": "Im Git öffnen",
+    "off": "Das Gate ist aus, also läuft nichts davon und kein Run wird von ihm blockiert. Die Datei ist noch im Git und die Prüfungen noch deklariert — wieder einschalten heißt, sie ab dem nächsten Run wieder auszuführen.",
+    "emptyTitle": "Es sind keine Prüfungen deklariert",
+    "emptyDescription": "Das Gate sucht nach <path/> in <repo/> auf <ref/> und findet nichts. Committen Sie die Datei dorthin und sie wird beim nächsten Lesen aufgenommen — hier gibt es keinen Ort, eine zu erstellen.",
+    "count": "{{count}} angezeigt"
+  },
+  "column": {
+    "lastResult": "letztes Ergebnis",
+    "anyResult": "beliebiges Ergebnis",
+    "check": "Prüfung",
+    "filterPlaceholder": "Prüfung, Kommando filtern…",
+    "command": "Kommando",
+    "declaredIn": "deklariert in",
+    "output": "Ausgabe",
+    "neverReached": "kein Run hat diese Prüfung erreicht",
+    "when": "wann",
+    "took": "dauerte",
+    "run": "Run"
+  },
+  "result": {
+    "failed": "fehlgeschlagen",
+    "neverRan": "nie gelaufen",
+    "passed": "bestanden"
+  }
+}

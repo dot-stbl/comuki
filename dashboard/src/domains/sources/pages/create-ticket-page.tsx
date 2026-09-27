@@ -128,14 +128,17 @@ export function CreateTicketPage({ sourceId }: CreateTicketPageProps) {
         <ScreenState
           kind="error"
           title={t("ticketPage.errorTitle")}
-          description={requestFailureMessage(error, t("errors.unknown"))}
+          description={requestFailureMessage(
+            error,
+            t("errors.unknown", { ns: "common" })
+          )}
           data-test="ticket-source-failed"
           action={
-            <Tooltip content={t("actions.retry")}>
+            <Tooltip content={t("actions.retry", { ns: "common" })}>
               <Button
                 size="icon-sm"
                 data-test="ticket-retry"
-                aria-label={t("actions.retry")}
+                aria-label={t("actions.retry", { ns: "common" })}
                 onClick={() => {
                   void refetch()
                 }}

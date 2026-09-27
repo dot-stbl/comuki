@@ -1,10 +1,4 @@
 {
-  "errors": {
-    "unknown": "未知错误"
-  },
-  "actions": {
-    "retry": "重试"
-  },
   "header": {
     "title": "当班",
     "crumb": "当班",

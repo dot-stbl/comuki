@@ -104,7 +104,7 @@ export function ProjectIdentityEditor({
           disabled={busy}
           onClick={onCancel}
         >
-          {t("actions.cancel")}
+          {t("actions.cancel", { ns: "common" })}
         </Button>
       </div>
     </div>

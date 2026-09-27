@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "повторить",
-    "cancel": "отмена"
-  },
-  "errors": {
-    "unknown": "неизвестная ошибка"
-  },
   "userStatus": {
     "active": "активен",
     "invited": "приглашён",

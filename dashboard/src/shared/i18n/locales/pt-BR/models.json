@@ -1,10 +1,5 @@
 {
-  "actions": {
-    "retry": "Tentar novamente",
-    "close": "Fechar"
-  },
   "errors": {
-    "unknown": "Erro desconhecido",
     "changeFailed": "A mudança falhou."
   },
   "page": {

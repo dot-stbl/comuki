@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { AppRegistryItem } from "@/domains/settings/model/types"
 import {
@@ -31,6 +32,7 @@ export interface AppsPanelProps {
  * somebody forgot to finish.
  */
 export function AppsPanel({ apps }: AppsPanelProps) {
+  const { t } = useTranslation("settings")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
@@ -39,8 +41,8 @@ export function AppsPanel({ apps }: AppsPanelProps) {
 
   const deployTargets = useMemo(() => uniqueDeployTargets(apps), [apps])
   const columns = useMemo(
-    () => createAppColumns(deployTargets),
-    [deployTargets]
+    () => createAppColumns(deployTargets, t),
+    [deployTargets, t]
   )
   const rows = useMemo(
     () => applyDataFilters(apps, filters, columns),
@@ -51,8 +53,8 @@ export function AppsPanel({ apps }: AppsPanelProps) {
     <Section
       variant="screen"
       data-test="settings-apps"
-      title="Apps"
-      note="read-only · the registry is declared in the client's git"
+      title={t("apps.section")}
+      note={t("apps.note")}
     >
       <div className={styles.toolbar}>
         <DataTableToolbar
@@ -63,7 +65,7 @@ export function AppsPanel({ apps }: AppsPanelProps) {
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="apps-count">
-              {rows.length} shown
+              {t("apps.count", { count: rows.length })}
             </span>
           }
         />
@@ -82,8 +84,8 @@ export function AppsPanel({ apps }: AppsPanelProps) {
           onColumnSizingChange={setColumnSizing}
           emptyLabel={
             hasActiveFilters(filters)
-              ? "no apps match the current filters"
-              : "the registry declares no app"
+              ? t("apps.emptyFiltered")
+              : t("apps.empty")
           }
         />
       </div>

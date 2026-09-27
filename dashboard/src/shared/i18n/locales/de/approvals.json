@@ -1,7 +1,4 @@
 {
-  "actions": {
-    "retry": "Wiederholen"
-  },
   "registry": {
     "title": "Genehmigungen",
     "summary": {
@@ -9,9 +6,6 @@
       "other": "<count/> warten auf eine Entscheidung"
     },
     "errorTitle": "Genehmigungen konnten nicht geladen werden"
-  },
-  "errors": {
-    "unknown": "Unbekannter Fehler"
   },
   "decide": {
     "approvedToast": "Genehmigt",

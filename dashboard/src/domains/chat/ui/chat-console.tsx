@@ -340,16 +340,16 @@ export function ChatConsole({
             title={t("console.consoleErrorTitle")}
             description={requestFailureMessage(
               sessions.error,
-              t("errors.unknown")
+              t("errors.unknown", { ns: "common" })
             )}
             inset="gutter"
             data-test="chat-console-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="chat-console-error-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void sessions.refetch()
                   }}
@@ -365,16 +365,16 @@ export function ChatConsole({
             title={t("console.transcriptErrorTitle")}
             description={requestFailureMessage(
               transcript.error,
-              t("errors.unknown")
+              t("errors.unknown", { ns: "common" })
             )}
             inset="gutter"
             data-test="chat-transcript-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="chat-transcript-error-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void transcript.refetch()
                   }}

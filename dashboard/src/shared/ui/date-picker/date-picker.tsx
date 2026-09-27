@@ -1,5 +1,6 @@
 import type { CalendarDate } from "@internationalized/date"
 import { parseDate, today } from "@internationalized/date"
+import { useTranslation } from "react-i18next"
 import {
   Button as AriaButton,
   Calendar as AriaCalendar,
@@ -175,6 +176,7 @@ export function DatePickerField({
   const min = toCalendarDate(minValue)
   const max = toCalendarDate(maxValue)
   const empty = date === null
+  const { t } = useTranslation("kit")
 
   return (
     <Field id={id} label={label} required={required} hint={hint} error={error}>
@@ -217,7 +219,7 @@ export function DatePickerField({
               field itself is reserved for editing the segments. */}
           <AriaButton
             className={styles.iconButton}
-            aria-label="Open calendar"
+            aria-label={t("datePicker.openCalendar")}
             data-test={dataTest ? `${dataTest}-calendar` : undefined}
           >
             <CalendarDays className={styles.icon} aria-hidden="true" />
@@ -312,6 +314,7 @@ export function DateRangePickerField({
   const max = toCalendarDate(maxValue)
   const start = toCalendarDate(value?.start ?? null)
   const end = toCalendarDate(value?.end ?? null)
+  const { t } = useTranslation("kit")
   // `DateRangePicker` does not accept a half-set range: when one side is
   // null, fall back to today on that side. The picker writes back the
   // real shape in `onChange` — this is a render-time bridge, never a value
@@ -386,7 +389,7 @@ export function DateRangePickerField({
           </DateInput>
           <AriaButton
             className={styles.iconButton}
-            aria-label="Open calendar"
+            aria-label={t("datePicker.openCalendar")}
             data-test={dataTest ? `${dataTest}-calendar` : undefined}
           >
             <CalendarDays className={styles.icon} aria-hidden="true" />

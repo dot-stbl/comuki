@@ -5,6 +5,7 @@ import {
   budgetShare,
 } from "@/domains/settings/model/budgets"
 import type { Budgets } from "@/domains/settings/model/types"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/shared/lib/utils"
 import { Meter } from "@/shared/ui"
 
@@ -39,6 +40,7 @@ export interface BudgetMeterProps {
  * assertions already select by, so this is the side that moved.
  */
 export function BudgetMeter({ budgets, className }: BudgetMeterProps) {
+  const { t } = useTranslation("settings")
   const heat = budgetHeat(budgets)
   const percent = budgetPercent(budgets)
   const left = budgetLeftUsd(budgets)
@@ -54,7 +56,9 @@ export function BudgetMeter({ budgets, className }: BudgetMeterProps) {
         <span className={styles.percent}>{percent}</span>
         <span className={styles.unit}>%</span>
         <span className={styles.left}>
-          {heat === "over" ? "over the cap" : `${dollars(left)} left`}
+          {heat === "over"
+            ? t("budgets.meter.over")
+            : t("budgets.meter.left", { left: dollars(left) })}
         </span>
       </p>
 
@@ -76,8 +80,8 @@ export function BudgetMeter({ budgets, className }: BudgetMeterProps) {
         </span>
         <span className={styles.note}>
           {budgets.killSwitch
-            ? "kill-switch on · new claims blocked"
-            : "kill-switch at cap"}
+            ? t("budgets.meter.stopped")
+            : t("budgets.meter.atCap")}
         </span>
       </p>
     </div>

@@ -18,7 +18,8 @@
     "projects": "项目",
     "identity": "身份",
     "compute": "算力",
-    "models": "模型"
+    "models": "模型",
+    "sections": "分区"
   },
   "crumb": {
     "platform": "平台",
@@ -36,7 +37,21 @@
     "onboard": "接入",
     "knowledge": "知识",
     "models": "模型",
-    "compute": "算力"
+    "compute": "算力",
+    "cost": "成本",
+    "settings": "设置",
+    "new": "新建",
+    "newUser": "新建用户",
+    "grantRole": "授予角色",
+    "person": "用户",
+    "linkOidc": "关联 oidc 主体",
+    "project": "项目",
+    "source": "来源",
+    "worker": "worker",
+    "run": "运行",
+    "newTicket": "新建工单",
+    "newApiKey": "新建 api 密钥",
+    "onboardRepo": "接入仓库"
   },
   "topbar": {
     "home": "Comuki — 回首页",
@@ -135,5 +150,35 @@
       "queue": "在队列中",
       "inbox": "在收件箱中"
     }
+  },
+  "route": {
+    "attention": "当班",
+    "console": "控制台",
+    "onboard": "接入仓库",
+    "approvals": "审批",
+    "compute": "算力",
+    "cost": "成本与故障",
+    "identity": "身份",
+    "grantRole": "授予角色",
+    "newApiKey": "新建 api 密钥",
+    "newUser": "新建用户",
+    "person": "用户",
+    "linkOidc": "关联 oidc 主体",
+    "knowledge": "知识",
+    "models": "模型",
+    "projects": "项目",
+    "newProject": "新建项目",
+    "project": "项目",
+    "queue": "队列与 worker",
+    "worker": "Worker",
+    "liveRuns": "实时运行",
+    "run": "运行",
+    "settings": "设置",
+    "sources": "来源",
+    "connectSource": "连接来源",
+    "source": "来源",
+    "newTicket": "新建工单",
+    "tasks": "任务",
+    "newTask": "新建任务"
   }
 }

@@ -1,5 +1,6 @@
 import { failurePercent } from "@/domains/cost/model/cost"
 import type { CostFailure } from "@/domains/cost/model/types"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/shared/lib/utils"
 
 import styles from "./failure-analytics.module.css"
@@ -18,10 +19,12 @@ export interface FailureAnalyticsProps {
  * truncating, because the list is scanned before it is read.
  */
 export function FailureAnalytics({ rows, className }: FailureAnalyticsProps) {
+  const { t } = useTranslation("cost")
+
   if (rows.length === 0) {
     return (
       <p className={cn(styles.empty, className)} data-test="failures-empty">
-        nothing failed today
+        {t("failuresBlock.empty")}
       </p>
     )
   }

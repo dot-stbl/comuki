@@ -1,0 +1,287 @@
+{
+  "errors": {
+    "changeFailed": "변경이 실패했습니다."
+  },
+  "state": {
+    "connected": "연결됨",
+    "error": "오류",
+    "disabled": "비활성"
+  },
+  "word": {
+    "never": "없음"
+  },
+  "provider": {
+    "github": {
+      "label": "github",
+      "target": "리포지토리",
+      "intakeNote": "issues는 지켜보는 리포지토리에서 들어옵니다. 여기 쓴 것은 리포지토리의 것으로 찍힙니다."
+    },
+    "gitlab": {
+      "label": "gitlab",
+      "target": "리포지토리",
+      "intakeNote": "issues는 지켜보는 리포지토리에서 들어옵니다. 여기 쓴 것은 리포지토리의 것으로 찍힙니다."
+    },
+    "yandex-tracker": {
+      "label": "야낙스 트래커",
+      "target": "큐 키",
+      "intakeNote": "티켓은 지켜보는 트래커 큐에서 들어옵니다. 여기 쓴 것은 큐의 것으로 찍힙니다."
+    },
+    "jira": {
+      "label": "jira",
+      "target": "프로젝트 키",
+      "intakeNote": "티켓은 지켜보는 보드에서 들어옵니다. 여기 쓴 것은 보드의 것으로 찍힙니다."
+    },
+    "native": {
+      "label": "네이티브",
+      "target": "이름",
+      "intakeNote": "여기, 사람이 씁니다 — 트래커 없는 제품 자체의 인테이크입니다."
+    }
+  },
+  "intakeNoteUnknown": "티켓은 지켜보는 연결에서 들어옵니다. 여기 쓴 것은 해당 프로바이더의 것으로 찍힙니다.",
+  "auth": {
+    "pat": "개인 접근 토큰",
+    "oauth": "oauth 승인",
+    "app-install": "앱 설치",
+    "none": "없음"
+  },
+  "authSecret": {
+    "pat": "접근 토큰",
+    "oauth": "oauth 클라이언트 시크릿",
+    "app-install": "앱 프라이빗 키",
+    "other": "시크릿"
+  },
+  "nativeRefusal": "네이티브 인테이크는 연결 해제할 수 없습니다 — 제품이 티켓을 받아들이는 자기 자신의 방식입니다",
+  "admission": {
+    "watch": {
+      "label": "watch",
+      "description": "일치하는 티켓이 런을 시작합니다. 아무도 클레임할 필요가 없습니다."
+    },
+    "inbox-only": {
+      "label": "inbox-only",
+      "description": "일치하는 티켓이 카탈로그에 떨어지고 사람이 가져가길 기다립니다."
+    },
+    "both": {
+      "label": "both",
+      "description": "티켓이 런을 시작하고 카탈로그에도 남습니다 — 런을 일으킨 티켓으로 런을 찾을 수 있습니다."
+    },
+    "nativeIntake": "네이티브 인테이크",
+    "watchOff": "watch 꺼짐"
+  },
+  "host": {
+    "inPlatform": "플랫폼 내",
+    "cloud": "클라우드"
+  },
+  "note": {
+    "refusedSilent": "프로바이더가 거부했고, 쓸 만한 말은 없었습니다.",
+    "filedHere": {
+      "other": "{{count}}개 티켓이 여기 접수됨"
+    },
+    "turnedOff": "꺼짐 — 마지막 동기화 {{when}}",
+    "watchOff": "watch 꺼짐 — 여기서 들어오는 것이 없습니다",
+    "matchedNothing": "필터가 지난 하루에 아무 것도 못 찾았습니다",
+    "lastSynced": "마지막 동기화 {{when}}"
+  },
+  "registry": {
+    "title": "소스",
+    "errorTitle": "소스를 로드할 수 없습니다",
+    "connect": "소스 연결",
+    "connectionsWord": "연결",
+    "admittingWord": "작업 받는 중",
+    "errorWord": "오류",
+    "failureTail": "아무 것도 움직이지 않았습니다 — 목록은 이전 상태입니다.",
+    "sectionTitle": "연결",
+    "sectionNote": "어느 프로젝트에 들어오든, 플랫폼의 모든 소스. 연결이 자격증명을 옮기고, 그 <em>watch</em>가 그 자격증명이 받아들일 수 있는 것을 옮깁니다 — 따로 부서지니 따로 읽습니다. 편집은 프로젝트별로 부여되므로, 관리하는 행이 지켜보기만 하는 행 위에 앉고 각자 그것이 어느 쪽인지 말합니다. <code>native</code>는 모든 프로젝트에 있고 연결 해제할 수 없습니다."
+  },
+  "connectionsPanel": {
+    "shown": {
+      "other": "{{count}}개 표시됨"
+    },
+    "emptyFiltered": "현재 필터에 맞는 연결이 없습니다.",
+    "emptyNone": "연결된 소스가 없습니다."
+  },
+  "disconnect": {
+    "title": "이 소스를 연결 해제합니까?",
+    "body": "{{name}} · {{project}} — 자격증명이 버려지고 여기서 더는 아무 것도 받아들이지 않습니다. 이미 가져온 티켓은 자기 런을 유지합니다. 다시 연결하는 것은 새 시크릿을 의미합니다.",
+    "confirm": "연결 해제",
+    "keep": "유지",
+    "toast": "소스 연결 해제됨"
+  },
+  "column": {
+    "state": "상태",
+    "source": "소스",
+    "provider": "프로바이더",
+    "project": "프로젝트",
+    "instance": "인스턴스",
+    "account": "계정",
+    "admission": "어드미션",
+    "admitted": "접수됨",
+    "note": "현재 상황",
+    "actions": "작업",
+    "allStates": "전체 상태",
+    "allProviders": "전체 프로바이더",
+    "allProjects": "전체 프로젝트",
+    "allModes": "전체 모드",
+    "filterPlaceholder": "소스, 계정, 호스트 필터…",
+    "newTicket": "새 티켓",
+    "newTicketAria": "{{where}}의 {{name}}에 새 티켓",
+    "watchAndFilter": "watch와 필터",
+    "watchAndFilterAria": "{{name}}의 watch 편집",
+    "testConnection": "연결 테스트",
+    "testConnectionAria": "{{name}} 연결 테스트",
+    "disconnect": "연결 해제",
+    "disconnectAria": "{{name}} 연결 해제"
+  },
+  "connectPage": {
+    "title": "소스 연결",
+    "crumbNew": "신규",
+    "summary": "연결은 한 프로젝트에 속하고 하나의 자격증명을 옮깁니다. watch가 꺼진 채 도착합니다 — 티켓을 받아들이는 것은 소스 자체의 페이지에서 내리는 별도의 결정입니다.",
+    "refused": "연결이 거부되었습니다.",
+    "tail": "저장된 것은 없습니다 — 아래 세부 내용은 입력한 그대로입니다.",
+    "leaveTitle": "소스를 연결하지 않고 나갑니까?",
+    "leaveBody": "여기엔 아직 아무 것도 저장되지 않았고, 입력한 자격증명은 어디에도 보관되지 않습니다 — 이 페이지를 떠나면 버려지고, 나중에 연결하는 것은 그것을 다시 가져오는 일입니다.",
+    "discard": "버리기",
+    "keep": "계속 편집",
+    "toast": "소스 연결됨"
+  },
+  "connectForm": {
+    "providerCard": "프로바이더",
+    "providerCardNote": "이 연결이 어떤 트래커를 지켜보고 누구의 방언을 쓰는지.",
+    "providerHint": "네이티브 인테이크는 여기 없습니다: 모든 프로젝트가 이미 하나 가지고 있고, 자격증명을 겨눌 대상도 없습니다.",
+    "connectionCard": "연결",
+    "connectionCardNote": "어느 프로젝트에 들어오는지, 인스턴스가 어디 있는지, 어떤 자격증명이 닿는지.",
+    "projectLabel": "프로젝트",
+    "projectHint": "이 소스가 들어오는 프로젝트. 소스 편집은 프로젝트별로 부여되므로, 이 선택이 저장의 기준입니다.",
+    "settingsPreview": "호스트는 이것을 하나의 settings json으로 저장합니다:",
+    "probeProbing": "프로바이더에 도달하는 중…",
+    "probePending": "저장 전에 연결을 테스트하세요 — 닿지 않는 소스는 누군가 필요로 할 때까지 건강한 소스와 정확히 똑같아 보입니다.",
+    "credentialCard": "자격증명",
+    "credentialCardNote": "자격증명을 든 호스트의 env 변수 이름. 값은 호스트가 해석합니다 — 대시보드는 그것을 절대 보지 않습니다.",
+    "secretEnvLabel": "시크릿 env 변수",
+    "secretEnvHint": "자격증명을 든 호스트의 env 변수 이름. 호스트가 프로브 / 웹훅 시점에 값을 해석합니다 — 대시보드는 그것을 절대 보지 않습니다.",
+    "mockNotice": "mock 모드 전용: 폼은 시드 저장소를 프로브할 만큼 오래 실제 자격증명을 담습니다. 실제 모드는 대신 호스트의 env 변수를 읽고 값을 절대 보지 않습니다.",
+    "mockSecretLabel": "자격증명 (mock 전용)",
+    "submit": "연결 저장",
+    "testConnection": "연결 테스트"
+  },
+  "connectionFields": {
+    "baseUrlLabel": "base url",
+    "baseUrlHint": "셀프호스티드 전용. https — 자격증명이 이 선을 건넙니다.",
+    "accountLabel": "계정",
+    "accountPlaceholder": "자격증명이 속한 봇이나 앱",
+    "accountHint": "이후 행에 표시됩니다 — 낡은 자격증명을 사람까지 추적할 수 있습니다.",
+    "authKindLabel": "인증 종류"
+  },
+  "authChoice": {
+    "hint": "{{provider}}이(가) 받아들이는 것, 그리고 그것만. settings json에 그대로 저장됩니다. 자격증명을 절대 담지 않습니다."
+  },
+  "connectionForm": {
+    "cardLabel": "들어가는 길",
+    "cardNote": "인스턴스가 어디 있는지, 어떤 자격증명이 닿는지, 그것을 든 호스트의 env 변수.",
+    "secretEnvLabel": "시크릿 env 변수",
+    "secretEnvHint": "호스트의 env 변수 이름. 대시보드는 값을 절대 보지 않습니다. 호스트가 프로브 / 웹훅 시점에 해석합니다.",
+    "probeProbing": "프로바이더에 도달하는 중…",
+    "probePending": "저장 전에 연결을 테스트하세요 — 소스에 닿는 방식을 바꾸는 일은, 닿을 수 있는지 아무도 모르는 상태에서 하는 일이 아닙니다.",
+    "testConnectionAria": "{{name}} 연결 테스트",
+    "submit": "연결 저장"
+  },
+  "watchForm": {
+    "cardLabel": "어드미션",
+    "cardNote": "무엇이 받아들여지는지, 어떤 티켓이, 하나가 받아들여지면 누가 다음으로 움직이는지.",
+    "watchLabel": "이 소스 watch",
+    "watchHint": "끄면 연결은 인증을 유지한 채 아무 것도 들이오지 않습니다. 연결 해제와는 다릅니다.",
+    "admissionModeLabel": "어드미션 모드",
+    "submit": "watch 저장"
+  },
+  "filterField": {
+    "label": "필터 표현식",
+    "placeholder": "비워 두면 이 연결이 볼 수 있는 모든 것을 받아들입니다",
+    "hintsLabel": "{{kind}} 티켓에서 본 필드",
+    "verbatim": "그대로 저장되고 파싱되지 않습니다 — 필터 언어가 아직 정해지지 않았으므로, 이 텍스트는 입력된 그대로 커넥터에 전달됩니다."
+  },
+  "statusPreview": {
+    "head": "{{provider}}에 다시 쓰는 상태",
+    "nativeNone": "네이티브 인테이크가 트래커입니다. 런의 상태가 티켓의 상태이므로, 다시 쓸 곳이 없습니다.",
+    "unknownNone": "{{provider}}에 쓰는 것은 없습니다 — 이 빌드에는 그 프로바이더용 매핑이 없어서, 런의 상태는 런에 남습니다."
+  },
+  "detailPage": {
+    "titleFallback": "소스",
+    "crumbFallback": "소스",
+    "errorTitle": "이 소스를 로드할 수 없습니다",
+    "notFoundTitle": "그 id의 연결이 없습니다",
+    "notFoundBody": "이 플랫폼에는 이 id로 연결된 것이 없습니다. 연결 해제된 소스 — 여기서든 다른 탭에서든 — 가 이 주소로 오는 보통의 길이고, 아직 존재하는 것들은 연결 목록에 있습니다.",
+    "backToSources": "소스로 돌아가기",
+    "failureTail": "아무 것도 움직이지 않았습니다 — 이 페이지는 이전 상태입니다.",
+    "factsTitle": "이 연결이 무엇인지",
+    "factProvider": "프로바이더",
+    "factAuth": "인증",
+    "factInstance": "인스턴스",
+    "factAccount": "계정",
+    "factCredential": "자격증명",
+    "factLastSync": "마지막 동기화",
+    "credentialEnvNote": "프로브 / 웹훅 시점에 호스트에서 해석됩니다. 대시보드는 값을 절대 보지 않습니다 — 교체는 호스트의 env 변수를 바꾸고 연결의 <code>secretEnvRef</code>를 패치하는 일입니다.",
+    "credentialStoredNote": "쓰기 전용으로 저장되고 다시는 보여지지 않습니다 — 이 페이지에서도, 폼에서도, api를 통해서도. 교체는 다시 연결하는 일입니다.",
+    "credentialNoneNote": "네이티브 인테이크에는 원격 끝이 없어서, 인증할 대상도 없습니다.",
+    "none": "없음",
+    "never": "없음",
+    "watchTitle": "watch와 필터",
+    "noWatch": "네이티브 인테이크에는 watch가 없습니다. 티켓은 필터가 받아들여서가 아니라 누군가 접수해서 여기 옵니다 — 켤 것도 좁힐 것도 없습니다.",
+    "connectionTitle": "연결",
+    "rotationTitle": "웹훅 시크릿",
+    "rotationBody": "클릭하면 새 웹훅 시크릿이 만들어지고 한 번 보여집니다. 트래커의 웹훅 설정에 복사하세요 — 이 페이지는 다시 보여주지 않습니다.",
+    "rotateButton": "시크릿 교체",
+    "rotateAria": "{{name}}의 웹훅 시크릿 교체",
+    "rotateLabel": "웹훅 시크릿 교체",
+    "rotatedLabel": "새 웹훅 시크릿 — 지금 복사하세요, 이 패널은 화면 이동을 버티지 못합니다",
+    "handoffsTitle": "이것이 가는 곳",
+    "handoffFiled": "티켓이 여기 접수됩니다. 나머지와 함께 카탈로그에 있습니다 — ",
+    "handoffAdmitted": "티켓이 여기서 받아들여집니다. 나머지와 함께 카탈로그에 있습니다 — ",
+    "handoffCatalogTail": "카탈로그는 이 소스로 좁혀지지 않습니다.",
+    "openCatalog": "카탈로그 열기",
+    "handoffProject": "이 연결이 들어오는 프로젝트. 소스 편집은 프로젝트별로 부여되므로, 이 페이지의 모든 행위가 이것에 기준을 둡니다.",
+    "openProject": "프로젝트 열기",
+    "handoffTicket": "이 프로젝트의 인테이크에 티켓을 바로 씁니다. 관리자가 아닌 멤버의 행위이므로, 자기 화면과 자기 권한을 가집니다.",
+    "fileTicket": "티켓 접수",
+    "rotateTitle": "이 소스의 웹훅 시크릿을 교체합니까?",
+    "rotateBody": "{{name}} · {{project}} — 새 시크릿이 만들어지고 한 번 보여집니다. 이전 시크릿으로 서명된 웹훅은 새 것을 트래커에 복사할 때까지 거부됩니다.",
+    "rotateConfirm": "교체",
+    "rotateKeep": "현재 것 유지",
+    "leaveTitle": "저장하지 않고 나갑니까?",
+    "leaveBody": "이 페이지에서 바꾼 watch와 연결 세부 사항은 아직 저장되지 않았습니다. 떠나면 버려지고 소스는 정확히 이전 상태로 남습니다.",
+    "discard": "버리기",
+    "keep": "계속 편집",
+    "watchSavedToast": "watch 저장됨",
+    "connectionSavedToast": "연결 저장됨",
+    "rotatedToast": "웹훅 시크릿 교체됨",
+    "rotatedToastDescription": "{{name}} — 새 값을 트래커에 복사하세요"
+  },
+  "ticketPage": {
+    "title": "{{project}}의 새 티켓",
+    "titleFallback": "새 티켓",
+    "crumb": "새 티켓",
+    "summary": "네이티브 인테이크는 제품 자체의 것입니다. 여기 쓴 티켓에는 트래커가 없습니다. 그래서 상태는 런의 상태이고, 되돌려 동기화할 곳도 없습니다.",
+    "errorTitle": "이 소스를 찾을 수 없습니다",
+    "notFoundTitle": "그 id의 연결이 없습니다",
+    "notFoundBody": "이 플랫폼에 id가 {{id}}인 연결이 없습니다. 이 탭이 열려 있는 동안 소스가 연결 해제된 것이 여기 오는 보통의 길입니다.",
+    "backToSources": "소스로 돌아가기",
+    "refused": "티켓이 거부되었습니다.",
+    "tail": "접수된 것은 없습니다 — 입력한 것은 여기 그대로 있습니다.",
+    "leaveTitle": "티켓을 접수하지 않고 나갑니까?",
+    "leaveBody": "입력한 제목, 본문, 라벨은 아직 어디에도 저장되지 않았습니다. 이 페이지를 떠나면 버려지고, 인테이크에 아무 것도 도달하지 않습니다.",
+    "discard": "버리기",
+    "keep": "계속 편집",
+    "toast": "티켓 접수됨"
+  },
+  "ticketForm": {
+    "titleLabel": "제목",
+    "titlePlaceholder": "무엇이 잘못됐는지 한 줄로",
+    "bodyLabel": "본문",
+    "bodyPlaceholder": "무엇을 봤고 어디서 봤는지. 브레인은 플랜하기 전에 이것을 읽습니다.",
+    "labelsLabel": "라벨",
+    "labelsPlaceholder": "checkout-web, bug",
+    "labelsHint": "쉼표로 구분. 티켓 자체의 라벨입니다 — 필터 표현식이 아닙니다.",
+    "straightLabel": "바로 작업 시작",
+    "straightHint": "끄면 누군가 클레임할 때까지 남습니다 — 일 분 뒤의 같은 행위입니다.",
+    "submitStart": "생성하고 시작",
+    "submit": "티켓 생성"
+  }
+}

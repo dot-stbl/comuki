@@ -227,16 +227,18 @@ export function ComputePage() {
             kind="error"
             title={t("page.errorTitle")}
             description={
-              error instanceof Error ? error.message : t("errors.unknown")
+              error instanceof Error
+                ? error.message
+                : t("errors.unknown", { ns: "common" })
             }
             inset="flush"
             data-test="compute-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="compute-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}
@@ -375,18 +377,18 @@ export function ComputePage() {
                     description={
                       observability.error instanceof Error
                         ? observability.error.message
-                        : t("errors.unknown")
+                        : t("errors.unknown", { ns: "common" })
                     }
                     /* The section has already paid for its own room, so the
                        state stands on its edge rather than buying more. */
                     inset="none"
                     data-test="boards-error"
                     action={
-                      <Tooltip content={t("actions.retry")}>
+                      <Tooltip content={t("actions.retry", { ns: "common" })}>
                         <Button
                           size="icon-sm"
                           data-test="boards-retry"
-                          aria-label={t("actions.retry")}
+                          aria-label={t("actions.retry", { ns: "common" })}
                           onClick={() => {
                             void observability.refetch()
                           }}

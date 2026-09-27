@@ -1,16 +1,10 @@
 {
-  "actions": {
-    "retry": "再試行"
-  },
   "registry": {
     "title": "承認",
     "summary": {
       "other": "<count/> 件が決定待ち"
     },
     "errorTitle": "承認を読み込めませんでした"
-  },
-  "errors": {
-    "unknown": "不明なエラー"
   },
   "decide": {
     "approvedToast": "承認しました",

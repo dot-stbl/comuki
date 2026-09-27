@@ -1,1 +1,120 @@
-{}
+{
+  "field": {
+    "required": "erforderlich"
+  },
+  "formDialog": {
+    "cancel": "abbrechen"
+  },
+  "dialog": {
+    "close": "schließen"
+  },
+  "copyButton": {
+    "copy": "kopieren",
+    "copied": "kopiert"
+  },
+  "codeBlock": {
+    "wrap": "umbruch",
+    "showLess": "weniger anzeigen",
+    "showAll": {
+      "one": "alle {{count}} zeilen anzeigen",
+      "other": "alle {{count}} zeilen anzeigen"
+    }
+  },
+  "skeleton": {
+    "loading": "wird geladen"
+  },
+  "forbidden": {
+    "subject": "diese ansicht",
+    "title": "{{subject}} ist für ihre rollen geschlossen",
+    "description": "{{needs}} — bitten sie um die rolle oder wechseln sie zu einem projekt, in dem sie sie bereits haben."
+  },
+  "searchField": {
+    "clear": "suche löschen"
+  },
+  "select": {
+    "any": "beliebig"
+  },
+  "combobox": {
+    "openList": "liste öffnen"
+  },
+  "datePicker": {
+    "openCalendar": "kalender öffnen"
+  },
+  "splitPane": {
+    "resize": "größe ändern"
+  },
+  "dataTable": {
+    "empty": "keine zeilen",
+    "noun": "zeile",
+    "selectColumn": "auswahl",
+    "selectAll": "alle {{noun}} auswählen",
+    "selectRow": "{{noun}} {{id}} auswählen",
+    "resizeColumn": "spalte {{label}} in der breite ändern",
+    "resizeHint": "ziehen zum änderen der breite, doppelklick zum zurücksetzen"
+  },
+  "toolbar": {
+    "filters": "filter",
+    "filtersLabel": "filter",
+    "filtersActive": "filter, {{count}} aktiv",
+    "clearFilters": "alle filter löschen",
+    "columns": "spalten",
+    "searchPlaceholder": "{{label}} suchen…",
+    "filterBy": "nach {{label}} filtern",
+    "filterAll": "alle {{label}}",
+    "filterPlaceholder": "{{label}} filtern…",
+    "clearFilterTitle": "filter {{label}} löschen",
+    "clearFilterLabel": "filter {{label}} löschen: {{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "zurück zum panel",
+    "fillWindow": "fenster füllen",
+    "shrinkBack": "{{title}} zurück zu einem panel verkleinern",
+    "fillWith": "fenster mit {{title}} füllen",
+    "resize": "größe von {{title}} ändern",
+    "closeHint": "schließen — escape",
+    "close": "{{title}} schließen"
+  },
+  "evidencePane": {
+    "closeHint": "schließen — escape",
+    "close": "beleg schließen",
+    "empty": "kein viewer für {{type}} — die bytes liegen unter der url oben",
+    "unknownType": "unbekannt",
+    "openNewTab": "in neuem tab öffnen",
+    "openNewTabLabel": "{{filename}} in neuem tab öffnen"
+  },
+  "cron": {
+    "cadence": "rhythmus",
+    "custom": "eigene…",
+    "customDescription": "minute, stunde, tag, monat und wochentag wählen.",
+    "value": "wert",
+    "any": "beliebig",
+    "everyDay": "jeden tag",
+    "anyDay": "beliebiger tag",
+    "part": {
+      "minute": "minute",
+      "hour": "stunde",
+      "day": "tag",
+      "month": "monat",
+      "weekday": "wochentag"
+    },
+    "weekday": {
+      "sun": "so",
+      "mon": "mo",
+      "tue": "di",
+      "wed": "mi",
+      "thu": "do",
+      "fri": "fr",
+      "sat": "sa"
+    },
+    "preset": {
+      "hourly": "stündlich",
+      "hourlyDescription": "jede stunde, zur vollen stunde.",
+      "daily": "täglich um 03:00",
+      "dailyDescription": "einmal am tag, im ruhigen fenster des projekts.",
+      "weekly": "montags",
+      "weeklyDescription": "montags um 03:00.",
+      "monthly": "monatserster",
+      "monthlyDescription": "am ersten des monats um 03:00."
+    }
+  }
+}

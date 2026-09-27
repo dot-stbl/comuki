@@ -1,0 +1,171 @@
+{
+  "status": {
+    "running": "in esecuzione",
+    "waiting": "in attesa",
+    "queued": "in coda",
+    "escalated": "escalata",
+    "failed": "fallita",
+    "success": "successo",
+    "cancelled": "annullata"
+  },
+  "registry": {
+    "title": "Run attive",
+    "summary": "<total/> run · <running/> in esecuzione · <blocked/> in attesa di una persona",
+    "errorTitle": "Impossibile caricare le run",
+    "anomaliesOnly": "Mostra solo le anomalie",
+    "count": {
+      "one": "{{count}} mostrata",
+      "many": "{{count}} mostrate",
+      "other": "{{count}} mostrate"
+    },
+    "empty": {
+      "profile": "Nessuna run su questo profilo.",
+      "filtered": "Nessuna run matcha i filtri correnti.",
+      "none": "Ancora nessuna run."
+    },
+    "unplannedTitle": "Ancora nessun piano",
+    "unplannedDescription": "Queste run sono accettate ma il brain non le ha ancora pianificate. Il flusso appare quando il primo piano ha item di lavoro.",
+    "expandFlow": "Espandi il flusso",
+    "collapseFlow": "Comprimi il flusso",
+    "resizeBoard": "Ridimensiona la board del flusso",
+    "expandStrip": "Espandi la board del flusso"
+  },
+  "notice": {
+    "fallback": "La decisione non è andata a buon fine.",
+    "tail": "Niente è cambiato — la run è tornata com'era."
+  },
+  "cancelDialog": {
+    "title": "Annullare questa run?",
+    "body": "{{title}} · {{where}} — il container viene smontato e il lease rilasciato. Il lavoro già mergiato resta.",
+    "confirm": "Annulla run",
+    "cancel": "Lascia in esecuzione"
+  },
+  "column": {
+    "status": "stato",
+    "run": "run",
+    "project": "progetto",
+    "app": "app",
+    "task": "task",
+    "profile": "profilo",
+    "step": "passo",
+    "inStep": "al passo",
+    "cost": "costo",
+    "worker": "worker",
+    "actions": "azioni",
+    "allStatuses": "tutti gli stati",
+    "allProjects": "tutti i progetti",
+    "allApps": "tutte le app",
+    "allProfiles": "tutti i profili",
+    "filterPlaceholder": "filtra run, task, passo…",
+    "waitingOnPlan": "in attesa di un piano",
+    "approve": "Approva",
+    "cancelRun": "Annulla run",
+    "approveRun": "Approva {{title}}",
+    "cancelTask": "Annulla {{title}}"
+  },
+  "detail": {
+    "fallbackTitle": "Run {{runId}}",
+    "tok": "tok",
+    "errorTitle": "Impossibile caricare questa run",
+    "notFoundTitle": "Nessuna run con quell'id",
+    "notFoundDescription": "Lo swarm non ha nulla sotto <id/>. Un id di run da un vecchio link è il modo ordinario di arrivare qui — un indirizzo sopravvive alla run che nominava, e la lista di turno è dove stanno quelle ancora in volo.",
+    "backToList": "Torna alle run attive",
+    "unplannedTitle": "Non ancora pianificata",
+    "unplannedDescription": "Questa run è accettata e il brain non l'ha ancora decomposta in item di lavoro. Niente è rotto e niente aspetta te — il grafo e l'ispettore item appaiono qui appena il piano ha il suo primo item.",
+    "unplannedHint": "{{status}} · nessun item di lavoro · niente da ispezionare",
+    "noInspectorTitle": "Nessun dettaglio per questo item",
+    "noInspectorDescription": "Il piano sopra è completo; questo item non ha ancora un record ispettore. Scegli un altro item, o torna quando sarà iniziato.",
+    "resizeGraph": "Ridimensiona il grafo della run"
+  },
+  "river": {
+    "group": "Flusso dei profili. I tasti freccia spostano tra i profili.",
+    "cleared": "passato",
+    "waitingOnHuman": "in attesa di una persona",
+    "noWork": "nessun lavoro",
+    "poolEntry": "{{count}} {{status}}",
+    "clearedProfile": {
+      "one": "{{count}} ha passato il profilo",
+      "many": "{{count}} hanno passato il profilo",
+      "other": "{{count}} hanno passato il profilo"
+    },
+    "mark": {
+      "one": "{{count}} in attesa di una persona",
+      "many": "{{count}} in attesa di una persona",
+      "other": "{{count}} in attesa di una persona"
+    },
+    "pinched": {
+      "one": " {{count}} in attesa di una persona, più di ogni altro profilo.",
+      "many": " {{count}} in attesa di una persona, più di ogni altro profilo.",
+      "other": " {{count}} in attesa di una persona, più di ogni altro profilo."
+    },
+    "node": "{{profile}}: {{pool}}. {{cleared}}.{{mark}}"
+  },
+  "evidence": {
+    "title": "evidenze",
+    "empty": "nessuno screenshot ancora pubblicato"
+  },
+  "anomaly": {
+    "badgeLabel": "{{multiplier}}× la mediana",
+    "badgeTip": "Costo {{multiplier}}× la mediana di {{median}} di questo progetto — supera la soglia di {{threshold}}×. Clicca per il dettaglio.",
+    "badgeAria": "Anomalia di costo — {{label}}. Apri il dettaglio.",
+    "dialogTitle": "Picco di costo · run {{runId}}",
+    "acknowledge": "Prendi atto",
+    "cancelRun": "Annulla run",
+    "summary": "Riepilogo",
+    "spend": "Dettaglio spesa",
+    "why": "Perché è segnalata",
+    "project": "progetto",
+    "profile": "profilo",
+    "status": "stato",
+    "cost": "costo",
+    "tokensInOut": "token (ingresso / uscita)",
+    "total": "({{total}} totali)",
+    "reason": "Spesi <spent/>, cioè <multiplier/> la mediana di costo di <median/> per <project/>.",
+    "rule": "Regola: costo > {{threshold}}× il costo mediano di run del progetto.",
+    "openCost": "Apri la pagina costi →"
+  },
+  "graph": {
+    "group": "Grafo della run. I tasti freccia spostano tra gli item di lavoro.",
+    "empty": "Nessun item di lavoro in questo piano.",
+    "parallel": {
+      "one": "{{count}} in parallelo",
+      "many": "{{count}} in parallelo",
+      "other": "{{count}} in parallelo"
+    },
+    "here": "qui",
+    "dependsOnEarlier": {
+      "one": "dipende da {{count}} precedente",
+      "many": "dipende da {{count}} precedenti",
+      "other": "dipende da {{count}} precedenti"
+    },
+    "blocked": "bloccato",
+    "standingHere": "la run si trova qui.",
+    "blockedByFailure": "bloccato da un guasto a monte.",
+    "blockedByEscalation": "bloccato da un'escalation a monte.",
+    "longEdges": "dipende da {{count}} item più di una colonna indietro: {{named}}.",
+    "longEdgesPlural": "dipende da {{count}} item più di una colonna indietro: {{named}}."
+  },
+  "inspector": {
+    "itemOf": "item {{index}} di {{total}}",
+    "env": "env",
+    "tokens": "token",
+    "cost": "costo",
+    "started": "iniziato",
+    "waitsOn": "aspetta",
+    "waitsOnLong": "{{count}} più di una colonna indietro",
+    "waitsOnNone": "Niente — questo item avvia il piano.",
+    "distancePrevious": "colonna precedente",
+    "distanceBack": {
+      "one": "{{count}} colonna indietro",
+      "many": "{{count}} colonne indietro",
+      "other": "{{count}} colonne indietro"
+    },
+    "dependencyAria": "Mostra {{label}}, {{profile}}, {{status}}, {{distance}}.",
+    "input": "input — cosa lo ha alimentato",
+    "log": "log",
+    "appendOnly": "append-only",
+    "gate": "gate di verifica",
+    "output": "output — cosa ha prodotto",
+    "outputNone": "Ancora niente."
+  }
+}

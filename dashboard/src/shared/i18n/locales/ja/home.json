@@ -1,10 +1,4 @@
 {
-  "errors": {
-    "unknown": "不明なエラー"
-  },
-  "actions": {
-    "retry": "再試行"
-  },
   "header": {
     "title": "当番",
     "crumb": "当番",

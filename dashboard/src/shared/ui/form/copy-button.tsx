@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Check, Copy } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "../button"
 
@@ -29,9 +30,11 @@ const CONFIRM_MS = 2000
  */
 export function CopyButton({
   value,
-  label = "copy",
+  label,
   "data-test": dataTest = "copy",
 }: CopyButtonProps) {
+  const { t } = useTranslation("kit")
+  const resting = label ?? t("copyButton.copy")
   const [copied, setCopied] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -63,7 +66,9 @@ export function CopyButton({
   return (
     <Button variant="outline" size="sm" data-test={dataTest} onClick={copy}>
       {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-      <span aria-live="polite">{copied ? "copied" : label}</span>
+      <span aria-live="polite">
+        {copied ? t("copyButton.copied") : resting}
+      </span>
     </Button>
   )
 }

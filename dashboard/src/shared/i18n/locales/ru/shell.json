@@ -18,7 +18,8 @@
     "projects": "Проекты",
     "identity": "Идентичность",
     "compute": "Вычисления",
-    "models": "Модели"
+    "models": "Модели",
+    "sections": "разделы"
   },
   "crumb": {
     "platform": "платформа",
@@ -36,7 +37,21 @@
     "onboard": "онбординг",
     "knowledge": "знания",
     "models": "модели",
-    "compute": "compute"
+    "compute": "compute",
+    "cost": "стоимость",
+    "settings": "настройки",
+    "new": "новый",
+    "newUser": "новый пользователь",
+    "grantRole": "выдать роль",
+    "person": "пользователь",
+    "linkOidc": "привязать oidc-субъект",
+    "project": "проект",
+    "source": "источник",
+    "worker": "воркер",
+    "run": "запуск",
+    "newTicket": "новый тикет",
+    "newApiKey": "новый api-ключ",
+    "onboardRepo": "подключить репозиторий"
   },
   "topbar": {
     "home": "Comuki — на главную",
@@ -135,5 +150,35 @@
       "queue": "в очереди",
       "inbox": "во входящих"
     }
+  },
+  "route": {
+    "attention": "Смена",
+    "console": "Консоль",
+    "onboard": "Подключить репозиторий",
+    "approvals": "Согласования",
+    "compute": "Вычисления",
+    "cost": "Стоимость и отказы",
+    "identity": "Идентичность",
+    "grantRole": "Выдать роль",
+    "newApiKey": "Новый api-ключ",
+    "newUser": "Новый пользователь",
+    "person": "Пользователь",
+    "linkOidc": "Привязать oidc-субъект",
+    "knowledge": "База знаний",
+    "models": "Модели",
+    "projects": "Проекты",
+    "newProject": "Новый проект",
+    "project": "Проект",
+    "queue": "Очередь и воркеры",
+    "worker": "Воркер",
+    "liveRuns": "Живые запуски",
+    "run": "Запуск",
+    "settings": "Настройки",
+    "sources": "Источники",
+    "connectSource": "Подключить источник",
+    "source": "Источник",
+    "newTicket": "Новый тикет",
+    "tasks": "Задачи",
+    "newTask": "Новая задача"
   }
 }

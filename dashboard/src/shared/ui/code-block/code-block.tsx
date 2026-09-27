@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react"
 import { ChevronDown, ChevronUp, WrapText } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -80,6 +81,7 @@ export function CodeBlock({
   const [markup, setMarkup] = useState<string | null>(null)
   const [wrapping, setWrapping] = useState(wrap)
   const [expanded, setExpanded] = useState(false)
+  const { t } = useTranslation("kit")
 
   useEffect(() => {
     if (!resolved) {
@@ -142,7 +144,7 @@ export function CodeBlock({
             onClick={() => setWrapping((on) => !on)}
           >
             <WrapText aria-hidden="true" />
-            <span>wrap</span>
+            <span>{t("codeBlock.wrap")}</span>
           </Button>
           <CopyButton value={body} data-test="code-block-copy" />
         </div>
@@ -177,7 +179,11 @@ export function CodeBlock({
           ) : (
             <ChevronDown aria-hidden="true" />
           )}
-          <span>{expanded ? "show less" : `show all ${lines} lines`}</span>
+          <span>
+            {expanded
+              ? t("codeBlock.showLess")
+              : t("codeBlock.showAll", { count: lines })}
+          </span>
         </Button>
       ) : null}
     </div>

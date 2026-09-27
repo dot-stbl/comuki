@@ -1,1 +1,201 @@
-{}
+{
+  "errors": {
+    "saveDidNotLand": "The save did not land.",
+    "stopDidNotApply": "The stop did not apply."
+  },
+  "page": {
+    "title": "Settings",
+    "summaryMock": "control plane configuration",
+    "summaryReal": "platform configuration — read-only, set at boot",
+    "errorTitle": "Settings did not load",
+    "retry": "Retry",
+    "tabsAria": "Settings sections"
+  },
+  "tabs": {
+    "apps": "apps",
+    "rules": "rules",
+    "autonomy": "autonomy",
+    "routing": "routing",
+    "budgets": "budgets",
+    "keys": "keys",
+    "tracker": "tracker"
+  },
+  "toast": {
+    "routingSaved": "Routing saved",
+    "routingSavedNote": "role → model map updated (mock)",
+    "routingNotSaved": "Routing not saved",
+    "budgetsSaved": "Budgets saved",
+    "budgetsSavedNote": "caps updated (mock)",
+    "budgetsNotSaved": "Budgets not saved"
+  },
+  "apps": {
+    "section": "Apps",
+    "note": "read-only · the registry is declared in the client's git",
+    "emptyFiltered": "no apps match the current filters",
+    "empty": "the registry declares no app",
+    "count": "{{count}} shown",
+    "column": {
+      "app": "app",
+      "repo": "repo",
+      "stack": "stack",
+      "envs": "envs",
+      "deploy": "deploy"
+    },
+    "filterPlaceholder": "filter app, repo, stack…",
+    "allTargets": "all targets",
+    "nowhere": "nowhere"
+  },
+  "rules": {
+    "section": "Swarm rules",
+    "note": "read-only · rules live in the client's git and change by commit",
+    "conflicts": "No conflicts found · {{count}} active rules · scopes don't overlap.",
+    "emptyFiltered": "no rules match the current filters",
+    "empty": "the rule set is empty",
+    "count": "{{count}} shown",
+    "column": {
+      "rule": "rule",
+      "scope": "scope",
+      "kind": "kind",
+      "version": "version",
+      "description": "description"
+    },
+    "filterPlaceholder": "filter rule, scope, description…",
+    "allScopes": "all scopes",
+    "allKinds": "all kinds"
+  },
+  "autonomy": {
+    "section": "Autonomy",
+    "note": "what's auto · what needs a human",
+    "emptyFiltered": "no change classes match the current filters",
+    "empty": "no change class is classified",
+    "count": "{{count}} shown",
+    "column": {
+      "changeClass": "change class",
+      "mode": "mode"
+    },
+    "filterPlaceholder": "filter change class…",
+    "allModes": "all modes"
+  },
+  "routing": {
+    "section": "Model routing",
+    "note": "role → physical model",
+    "emptyFiltered": "no roles match the current filters",
+    "empty": "no role is routed",
+    "count": "{{count}} shown",
+    "column": {
+      "role": "role",
+      "model": "model",
+      "usage": "usage"
+    },
+    "editSection": "Edit role → model map",
+    "editNote": "leading / worker / judge",
+    "field": {
+      "lead": "lead",
+      "worker": "worker",
+      "judge": "judge"
+    },
+    "save": "Save routing",
+    "escalation": "Escalation policy — 2 failed retries on worker escalate to lead. A red type gate goes to a debug agent with a pinned revision."
+  },
+  "budgets": {
+    "readingSection": "Proxy budget",
+    "readingNote": "what the swarm has spent today against the global cap",
+    "killSwitch": "Kill-switch",
+    "killHint": "Hard-stop all new claims — every app, every task.",
+    "pause": "Pause swarm",
+    "pauseHint": "Soft pause — running workers finish; no new containers start.",
+    "stopFailureTail": "Nothing moved — the stops are as they were.",
+    "killTitle": "Throw the kill-switch?",
+    "killBody": "New claims stop now — every app, every task — and stay stopped until the switch is turned back off. Workers mid-step finish what they are holding; nothing queued is cancelled.",
+    "killConfirm": "Block new claims",
+    "killCancel": "Leave claims open",
+    "capsSection": "Budget caps",
+    "capsNote": "the global cap the meter reads · per-task and per-app refine it",
+    "globalCap": "global cap",
+    "globalCapHint": "The meter above measures spend against this cap.",
+    "refinements": "refinements",
+    "perTask": "per task",
+    "perApp": "per app",
+    "save": "Save budgets",
+    "meter": {
+      "over": "over the cap",
+      "left": "{{left}} left",
+      "stopped": "kill-switch on · new claims blocked",
+      "atCap": "kill-switch at cap"
+    }
+  },
+  "keys": {
+    "section": "Provider keys",
+    "note": "read-only · keys come from env, rotation runs in the proxy",
+    "emptyFiltered": "no keys match the current filters",
+    "empty": "the proxy holds no provider key",
+    "count": "{{count}} shown",
+    "column": {
+      "provider": "provider",
+      "scope": "scope",
+      "rotation": "rotation",
+      "status": "status"
+    },
+    "filterPlaceholder": "filter provider, scope…",
+    "allStatuses": "all statuses"
+  },
+  "tracker": {
+    "section": "Intake sources",
+    "notice": "A connected tracker syncs its tickets into the backlog · manual intake stays open either way.",
+    "emptyTitle": "No tracker is wired up",
+    "emptyDescription": "Nothing is syncing tickets into the backlog. Manual intake is open either way — a tracker only adds a second door.",
+    "connected": "connected",
+    "synced": "synced {{when}}",
+    "sync": "Sync",
+    "syncAria": "Sync {{name}}",
+    "syncedToast": "Synced {{name}}",
+    "syncedToastNote": "imported new issues (mock)",
+    "connect": "Connect",
+    "connectAria": "Connect {{name}}",
+    "connectToast": "Connect {{name}}",
+    "connectToastNote": "OAuth flow… (mock)"
+  },
+  "platform": {
+    "hint": "Read-only — every value here is configured at boot. Changes go through configuration and a restart; nothing on this page writes.",
+    "on": "on",
+    "off": "off",
+    "escalationOff": "off — the ratchet is disabled ({{would}} would apply)",
+    "orchestration": {
+      "section": "orchestration",
+      "leaseTtl": "lease ttl",
+      "leaseTtlNote": "handed out on claim, extended by heartbeat",
+      "reapInterval": "reap interval",
+      "reapIntervalNote": "lease reaper sweep cadence",
+      "reapGrace": "reap grace",
+      "reapGraceNote": "buffer past expiry before the reaper acts",
+      "maxAttempts": "max attempts",
+      "maxAttemptsNote": "claims before a stalled item fails",
+      "escalationTimeout": "escalation timeout",
+      "escalationTimeoutNote": "how long a run may sit escalated before auto-archival",
+      "escalationSweep": "escalation sweep",
+      "escalationSweepNote": "ratchet sweep cadence"
+    },
+    "compute": {
+      "section": "compute",
+      "provider": "provider",
+      "providerNote": "the compute implementation v1 runs",
+      "workerImage": "worker image",
+      "workerImageNote": "digest-pinned in production",
+      "profilesRef": "profiles ref",
+      "profilesRefNote": "the pinned profiles git ref",
+      "minIdle": "min idle",
+      "minIdleNote": "warm-idle floor per profile",
+      "maxConcurrent": "max concurrent",
+      "maxConcurrentNote": "concurrency cap per project",
+      "idleTtl": "idle ttl",
+      "idleTtlNote": "before a worker is a reaper candidate",
+      "pollInterval": "poll interval",
+      "pollIntervalNote": "between supervisor passes"
+    },
+    "proxy": {
+      "section": "proxy",
+      "passthrough": "openai / anthropic passthrough",
+      "passthroughNote": "whether the proxy is composed at all"
+    }
+  }
+}

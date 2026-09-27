@@ -286,16 +286,18 @@ function TasksBody({ focus, onArtifactOpen }: TasksBodyProps) {
             kind="error"
             title={t("registry.errorTitle")}
             description={
-              error instanceof Error ? error.message : t("errors.unknown")
+              error instanceof Error
+                ? error.message
+                : t("errors.unknown", { ns: "common" })
             }
             inset="gutter"
             data-test="tasks-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="tasks-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}

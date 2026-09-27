@@ -1,4 +1,5 @@
 import { Search, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -90,6 +91,7 @@ export function SearchField({
   "data-test": dataTest,
   className,
 }: SearchFieldProps) {
+  const { t } = useTranslation("kit")
   const hasValue = value.length > 0
 
   return (
@@ -112,7 +114,7 @@ export function SearchField({
         <button
           type="button"
           className={styles.clear}
-          aria-label="Clear search"
+          aria-label={t("searchField.clear")}
           data-test={dataTest ? `${dataTest}-clear` : undefined}
           disabled={disabled}
           onClick={() => {

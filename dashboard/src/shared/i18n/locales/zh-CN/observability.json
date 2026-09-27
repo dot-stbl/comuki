@@ -1,1 +1,20 @@
-{}
+{
+  "boards": {
+    "meta": "uid {{uid}} · 定义更新于 {{updated}}",
+    "openAria": "打开{{title}}",
+    "notImported": "尚未导入"
+  },
+  "connect": {
+    "where": "{{base}} · 组织 {{org}} · 基于 grafana {{version}} 编写",
+    "noGrafana": "此平台未配置任何 grafana，因此上面的看板都还无法打开。它们的定义仍然存在 — 位于我们的仓库而非数据库 — 所以导入是通往可用看板的唯一一步。",
+    "noBoards": "grafana 已配置，但还没有任何看板导入其中。没有东西坏了 — 定义在我们的仓库里，下面的导入就是剩下的全部工作。",
+    "steps": {
+      "one": "将一个 grafana 指向平台的指标端点。编排器在自己的端口上提供 prometheus 指标；看板要求该数据源命名为 <code>comuki</code>。",
+      "two": "从 <repo/> 中的 <path/> 导入看板定义。它们是普通的 dashboard json — 有意与平台一起版本化，看板和它读取的指标在一个提交里变更。",
+      "three": "保留定义声明的 uid。本页面按 uid 链接，用新 uid 导入的看板是本页面找不到的看板。",
+      "four": "在平台的部署配置中设定 grafana base url。正是它把上面的条目变成链接。"
+    },
+    "boardsLabel": "看板定义",
+    "openGrafana": "打开 grafana"
+  }
+}

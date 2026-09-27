@@ -1,0 +1,201 @@
+{
+  "errors": {
+    "saveDidNotLand": "Kayıt yerine varmadı.",
+    "stopDidNotApply": "Durdurma uygulanmadı."
+  },
+  "page": {
+    "title": "Ayarlar",
+    "summaryMock": "control plane yapılandırması",
+    "summaryReal": "platform yapılandırması — salt okunur, açılışta ayarlanır",
+    "errorTitle": "Ayarlar yüklenmedi",
+    "retry": "Yeniden dene",
+    "tabsAria": "Ayarlar bölümleri"
+  },
+  "tabs": {
+    "apps": "uygulamalar",
+    "rules": "kurallar",
+    "autonomy": "özerklik",
+    "routing": "yönlendirme",
+    "budgets": "bütçeler",
+    "keys": "anahtarlar",
+    "tracker": "tracker"
+  },
+  "toast": {
+    "routingSaved": "Yönlendirme kaydedildi",
+    "routingSavedNote": "rol → model haritası güncellendi (mock)",
+    "routingNotSaved": "Yönlendirme kaydedilmedi",
+    "budgetsSaved": "Bütçeler kaydedildi",
+    "budgetsSavedNote": "üst sınırlar güncellendi (mock)",
+    "budgetsNotSaved": "Bütçeler kaydedilmedi"
+  },
+  "apps": {
+    "section": "Uygulamalar",
+    "note": "salt okunur · kayıt defteri istemcinin git'inde bildirilir",
+    "emptyFiltered": "geçerli filtrelerle eşleşen uygulama yok",
+    "empty": "kayıt defteri bir uygulama bildirmiyor",
+    "count": "{{count}} gösteriliyor",
+    "column": {
+      "app": "uygulama",
+      "repo": "depo",
+      "stack": "stack",
+      "envs": "env'ler",
+      "deploy": "deploy"
+    },
+    "filterPlaceholder": "uygulama, depo, stack filtrele…",
+    "allTargets": "tüm hedefler",
+    "nowhere": "hiçbir yere"
+  },
+  "rules": {
+    "section": "Sürü kuralları",
+    "note": "salt okunur · kurallar istemcinin git'inde yaşar ve commit ile değişir",
+    "conflicts": "Çakışma bulunamadı · {{count}} etkin kural · kapsamlar örtüşmüyor.",
+    "emptyFiltered": "geçerli filtrelerle eşleşen kural yok",
+    "empty": "kural seti boş",
+    "count": "{{count}} gösteriliyor",
+    "column": {
+      "rule": "kural",
+      "scope": "kapsam",
+      "kind": "tür",
+      "version": "sürüm",
+      "description": "açıklama"
+    },
+    "filterPlaceholder": "kural, kapsam, açıklama filtrele…",
+    "allScopes": "tüm kapsamlar",
+    "allKinds": "tüm türler"
+  },
+  "autonomy": {
+    "section": "Özerklik",
+    "note": "ne otomatik · ne insana düşüyor",
+    "emptyFiltered": "geçerli filtrelerle eşleşen değişiklik sınıfı yok",
+    "empty": "sınıflandırılmış bir değişiklik sınıfı yok",
+    "count": "{{count}} gösteriliyor",
+    "column": {
+      "changeClass": "değişiklik sınıfı",
+      "mode": "mod"
+    },
+    "filterPlaceholder": "değişiklik sınıfı filtrele…",
+    "allModes": "tüm modlar"
+  },
+  "routing": {
+    "section": "Model yönlendirme",
+    "note": "rol → fiziksel model",
+    "emptyFiltered": "geçerli filtrelerle eşleşen rol yok",
+    "empty": "yönlendirilmiş bir rol yok",
+    "count": "{{count}} gösteriliyor",
+    "column": {
+      "role": "rol",
+      "model": "model",
+      "usage": "kullanım"
+    },
+    "editSection": "Rol → model haritasını düzenle",
+    "editNote": "öncü / worker / hakem",
+    "field": {
+      "lead": "öncü",
+      "worker": "worker",
+      "judge": "hakem"
+    },
+    "save": "Yönlendirmeyi kaydet",
+    "escalation": "Eskalasyon politikası — worker üzerindeki 2 başarısız yeniden deneme öncüye yükselir. Kırmızı bir tip kapısı, sabit bir revizyonla bir debug aracına gider."
+  },
+  "budgets": {
+    "readingSection": "Proxy bütçesi",
+    "readingNote": "sürünün bugün, küresel üst sınıra karşı harcadığı",
+    "killSwitch": "Kill-switch",
+    "killHint": "Tüm yeni claim'ler sert durur — her uygulama, her görev.",
+    "pause": "Sürüyü duraklat",
+    "pauseHint": "Yumuşak duraklatma — çalışan workerlar biter; yeni kontainer başlamaz.",
+    "stopFailureTail": "Hiçbir şey kıpırdamadı — durdurmalar eskisi gibi.",
+    "killTitle": "Kill-switch ateşlensin mi?",
+    "killBody": "Yeni claim'ler şimdi durur — her uygulama, her görev — ve düğme geri kapatılana dek dururlar. Adım ortasındaki workerlar tuttuklarını bitirir; kuyruktaki hiçbir şey iptal edilmez.",
+    "killConfirm": "Yeni claim'leri engelle",
+    "killCancel": "Claim'ler açık kalsın",
+    "capsSection": "Bütçe üst sınırları",
+    "capsNote": "sayaçların okuduğu küresel üst sınır · görev-başına ve uygulama-başına onu inceltir",
+    "globalCap": "küresel üst sınır",
+    "globalCapHint": "Yukarıdaki sayaç, harcamayı bu üst sınıra karşı ölçer.",
+    "refinements": "inceltmeler",
+    "perTask": "görev başına",
+    "perApp": "uygulama başına",
+    "save": "Bütçeleri kaydet",
+    "meter": {
+      "over": "üst sınırın üzerinde",
+      "left": "{{left}} kaldı",
+      "stopped": "kill-switch açık · yeni claim'ler engelli",
+      "atCap": "kill-switch üst sınırda"
+    }
+  },
+  "keys": {
+    "section": "Sağlayıcı anahtarları",
+    "note": "salt okunur · anahtarlar env'den gelir, rotasyon proxy'de koşar",
+    "emptyFiltered": "geçerli filtrelerle eşleşen anahtar yok",
+    "empty": "proxy bir sağlayıcı anahtarı tutmuyor",
+    "count": "{{count}} gösteriliyor",
+    "column": {
+      "provider": "sağlayıcı",
+      "scope": "kapsam",
+      "rotation": "rotasyon",
+      "status": "durum"
+    },
+    "filterPlaceholder": "sağlayıcı, kapsam filtrele…",
+    "allStatuses": "tüm durumlar"
+  },
+  "tracker": {
+    "section": "Kabul kaynakları",
+    "notice": "Bağlı bir tracker, işlerini backlog'a eşitler · elle kabul her durumda açık kalır.",
+    "emptyTitle": "Bağlanmış bir tracker yok",
+    "emptyDescription": "Backlog'a iş eşitleyen bir şey yok. Elle kabul her durumda açıktır — tracker yalnızca ikinci bir kapı ekler.",
+    "connected": "bağlı",
+    "synced": "eşitlendi {{when}}",
+    "sync": "Eşitle",
+    "syncAria": "{{name}} eşitle",
+    "syncedToast": "{{name}} eşitlendi",
+    "syncedToastNote": "yeni issue'lar içe aktarıldı (mock)",
+    "connect": "Bağlan",
+    "connectAria": "{{name}} bağla",
+    "connectToast": "{{name}} bağla",
+    "connectToastNote": "OAuth akışı… (mock)"
+  },
+  "platform": {
+    "hint": "Salt okunur — buradaki her değer açılışta yapılandırılır. Değişiklikler yapılandırma ve yeniden başlatmayla gider; bu sayfadaki hiçbir şey yazmaz.",
+    "on": "açık",
+    "off": "kapalı",
+    "escalationOff": "kapalı — çıkrık devre dışı ({{would}} uygulanırdı)",
+    "orchestration": {
+      "section": "orkestrasyon",
+      "leaseTtl": "lease ttl",
+      "leaseTtlNote": "claim'de verilir, kalp atışıyla uzatılır",
+      "reapInterval": "reap aralığı",
+      "reapIntervalNote": "lease reaper'ının tarama tekrarı",
+      "reapGrace": "reap grace",
+      "reapGraceNote": "reaper harekete geçmeden süre aşımının ardından tampon",
+      "maxAttempts": "en çok deneme",
+      "maxAttemptsNote": "donan bir öğe başarısız olmadan önceki claim'ler",
+      "escalationTimeout": "eskalasyon zaman aşımı",
+      "escalationTimeoutNote": "bir çalıştırmanın otomatik arşivlenmeden önce eskalasyonda ne kadar durabileceği",
+      "escalationSweep": "eskalasyon taraması",
+      "escalationSweepNote": "çıkrık taramasının tekrarı"
+    },
+    "compute": {
+      "section": "hesaplama",
+      "provider": "sağlayıcı",
+      "providerNote": "v1'in koştuğu hesaplama uygulaması",
+      "workerImage": "worker imajı",
+      "workerImageNote": "üretimde digest ile sabitlenmiş",
+      "profilesRef": "profiller ref'i",
+      "profilesRefNote": "sabitlenmiş profiller git ref'i",
+      "minIdle": "min idle",
+      "minIdleNote": "profil başına sıcak-boşta tabanı",
+      "maxConcurrent": "en çok eşzamanlı",
+      "maxConcurrentNote": "proje başına eşzamanlılık üst sınırı",
+      "idleTtl": "idle ttl",
+      "idleTtlNote": "bir worker reaper adayı olmadan önce",
+      "pollInterval": "poll aralığı",
+      "pollIntervalNote": "supervisor geçişleri arasında"
+    },
+    "proxy": {
+      "section": "proxy",
+      "passthrough": "openai / anthropic passthrough",
+      "passthroughNote": "proxy'nin hiç kurulup kurulmadığı"
+    }
+  }
+}

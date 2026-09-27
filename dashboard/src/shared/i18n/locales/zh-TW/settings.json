@@ -1,0 +1,201 @@
+{
+  "errors": {
+    "saveDidNotLand": "儲存未生效。",
+    "stopDidNotApply": "停止未應用。"
+  },
+  "page": {
+    "title": "設定",
+    "summaryMock": "控制面配置",
+    "summaryReal": "平臺配置 — 只讀，啟動時設定",
+    "errorTitle": "設定未載入",
+    "retry": "重試",
+    "tabsAria": "設定分割槽"
+  },
+  "tabs": {
+    "apps": "應用",
+    "rules": "規則",
+    "autonomy": "自治",
+    "routing": "路由",
+    "budgets": "預算",
+    "keys": "金鑰",
+    "tracker": "追蹤器"
+  },
+  "toast": {
+    "routingSaved": "路由已儲存",
+    "routingSavedNote": "角色 → 模型對映已更新（模擬）",
+    "routingNotSaved": "路由未儲存",
+    "budgetsSaved": "預算已儲存",
+    "budgetsSavedNote": "上限已更新（模擬）",
+    "budgetsNotSaved": "預算未儲存"
+  },
+  "apps": {
+    "section": "應用",
+    "note": "只讀 · 登錄檔宣告在客戶端的 git 裡",
+    "emptyFiltered": "沒有應用匹配當前篩選",
+    "empty": "登錄檔未宣告任何應用",
+    "count": "顯示 {{count}} 個",
+    "column": {
+      "app": "應用",
+      "repo": "倉庫",
+      "stack": "技術棧",
+      "envs": "環境",
+      "deploy": "部署"
+    },
+    "filterPlaceholder": "篩選應用、倉庫、技術棧…",
+    "allTargets": "所有目標",
+    "nowhere": "無處"
+  },
+  "rules": {
+    "section": "群體規則",
+    "note": "只讀 · 規則活在客戶端的 git 裡，隨提交變更",
+    "conflicts": "未發現衝突 · {{count}} 條活躍規則 · 作用域不重疊。",
+    "emptyFiltered": "沒有規則匹配當前篩選",
+    "empty": "規則集為空",
+    "count": "顯示 {{count}} 條",
+    "column": {
+      "rule": "規則",
+      "scope": "作用域",
+      "kind": "類別",
+      "version": "版本",
+      "description": "描述"
+    },
+    "filterPlaceholder": "篩選規則、作用域、描述…",
+    "allScopes": "所有作用域",
+    "allKinds": "所有類別"
+  },
+  "autonomy": {
+    "section": "自治",
+    "note": "哪些自動 · 哪些需要人",
+    "emptyFiltered": "沒有變更類別匹配當前篩選",
+    "empty": "沒有變更類別被分類",
+    "count": "顯示 {{count}} 條",
+    "column": {
+      "changeClass": "變更類別",
+      "mode": "模式"
+    },
+    "filterPlaceholder": "篩選變更類別…",
+    "allModes": "所有模式"
+  },
+  "routing": {
+    "section": "模型路由",
+    "note": "角色 → 物理模型",
+    "emptyFiltered": "沒有角色匹配當前篩選",
+    "empty": "沒有角色被路由",
+    "count": "顯示 {{count}} 條",
+    "column": {
+      "role": "角色",
+      "model": "模型",
+      "usage": "用途"
+    },
+    "editSection": "編輯角色 → 模型對映",
+    "editNote": "主控 / 工作器 / 評審",
+    "field": {
+      "lead": "主控",
+      "worker": "工作器",
+      "judge": "評審"
+    },
+    "save": "儲存路由",
+    "escalation": "升級策略 — 工作器上 2 次失敗重試升級到主控。紅色型別門進到帶固定修訂的除錯代理。"
+  },
+  "budgets": {
+    "readingSection": "代理預算",
+    "readingNote": "群體今日對照全域性上限的花費",
+    "killSwitch": "急停開關",
+    "killHint": "硬停所有新認領 — 每個應用、每個任務。",
+    "pause": "暫停群體",
+    "pauseHint": "軟暫停 — 執行中的工作器跑完；不啟動新容器。",
+    "stopFailureTail": "沒有變化 — 停止開關維持原狀。",
+    "killTitle": "拉下急停開關？",
+    "killBody": "新認領立即停止 — 每個應用、每個任務 — 並保持停止，直到開關被撥回。執行中的工作器會完成手頭工作；佇列中的內容不會被取消。",
+    "killConfirm": "阻斷新認領",
+    "killCancel": "保留認領開放",
+    "capsSection": "預算上限",
+    "capsNote": "儀表讀取的全域性上限 · 每任務與每應用細化它",
+    "globalCap": "全域性上限",
+    "globalCapHint": "上方儀表以該上限度量花費。",
+    "refinements": "細化項",
+    "perTask": "每任務",
+    "perApp": "每應用",
+    "save": "儲存預算",
+    "meter": {
+      "over": "超上限",
+      "left": "剩 {{left}}",
+      "stopped": "急停開關開啟 · 新認領被阻斷",
+      "atCap": "急停開關在上限處"
+    }
+  },
+  "keys": {
+    "section": "提供商金鑰",
+    "note": "只讀 · 金鑰來自環境變數，輪換在代理內執行",
+    "emptyFiltered": "沒有金鑰匹配當前篩選",
+    "empty": "代理未持有任何提供商金鑰",
+    "count": "顯示 {{count}} 條",
+    "column": {
+      "provider": "提供商",
+      "scope": "作用域",
+      "rotation": "輪換",
+      "status": "狀態"
+    },
+    "filterPlaceholder": "篩選提供商、作用域…",
+    "allStatuses": "所有狀態"
+  },
+  "tracker": {
+    "section": "接入來源",
+    "notice": "已連線的追蹤器將工單同步進 backlog · 手動接入始終保持開放。",
+    "emptyTitle": "未接入任何追蹤器",
+    "emptyDescription": "沒有東西在向 backlog 同步工單。手動接入無論如何都開放 — 追蹤器只是多開一扇門。",
+    "connected": "已連線",
+    "synced": "同步於 {{when}}",
+    "sync": "同步",
+    "syncAria": "同步 {{name}}",
+    "syncedToast": "已同步 {{name}}",
+    "syncedToastNote": "匯入了新 issue（模擬）",
+    "connect": "連線",
+    "connectAria": "連線 {{name}}",
+    "connectToast": "連線 {{name}}",
+    "connectToastNote": "OAuth 流程…（模擬）"
+  },
+  "platform": {
+    "hint": "只讀 — 這裡的每個值都在啟動時配置。變更需通過配置與重啟；本頁不寫入任何內容。",
+    "on": "開",
+    "off": "關",
+    "escalationOff": "關 — 棘輪已停用（將應用 {{would}}）",
+    "orchestration": {
+      "section": "編排",
+      "leaseTtl": "租約 ttl",
+      "leaseTtlNote": "認領時發放，靠心跳續期",
+      "reapInterval": "回收間隔",
+      "reapIntervalNote": "租約回收器的清掃節奏",
+      "reapGrace": "回收寬限",
+      "reapGraceNote": "過期後到回收器動手前的緩衝",
+      "maxAttempts": "最大嘗試",
+      "maxAttemptsNote": "卡住條目失敗前的認領數",
+      "escalationTimeout": "升級超時",
+      "escalationTimeoutNote": "一次執行最多可保持升級狀態多久後自動歸檔",
+      "escalationSweep": "升級清掃",
+      "escalationSweepNote": "棘輪清掃節奏"
+    },
+    "compute": {
+      "section": "算力",
+      "provider": "提供商",
+      "providerNote": "v1 執行的算力實現",
+      "workerImage": "工作器映象",
+      "workerImageNote": "生產環境按 digest 固定",
+      "profilesRef": "profiles ref",
+      "profilesRefNote": "固定的 profiles git ref",
+      "minIdle": "最小空閒",
+      "minIdleNote": "每配置檔案的溫空閒下限",
+      "maxConcurrent": "最大併發",
+      "maxConcurrentNote": "每專案併發上限",
+      "idleTtl": "空閒 ttl",
+      "idleTtlNote": "工作器成為回收候選之前",
+      "pollInterval": "輪詢間隔",
+      "pollIntervalNote": "監管器兩次巡檢之間"
+    },
+    "proxy": {
+      "section": "代理",
+      "passthrough": "openai / anthropic passthrough",
+      "passthroughNote": "代理是否被組合進來"
+    }
+  }
+}

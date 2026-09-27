@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "Tentar novamente",
-    "cancel": "Cancelar"
-  },
-  "errors": {
-    "unknown": "Erro desconhecido"
-  },
   "userStatus": {
     "active": "ativo",
     "invited": "convidado",

@@ -295,18 +295,20 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
             kind="error"
             title={t("worker.errorTitle")}
             description={
-              error instanceof Error ? error.message : t("errors.unknown")
+              error instanceof Error
+                ? error.message
+                : t("errors.unknown", { ns: "common" })
             }
             /* `none`: every region on this page already pays for its own room,
                so the state stands on the same edge they do. */
             inset="none"
             data-test="worker-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="worker-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}
@@ -324,9 +326,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
             role="alert"
             data-test="worker-act-failed"
           >
-            {failure instanceof Error
-              ? failure.message
-              : t("worker.fallback")}{" "}
+            {failure instanceof Error ? failure.message : t("worker.fallback")}{" "}
             {t("worker.tail")}
           </p>
         ) : null}
@@ -338,14 +338,16 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                 takes to read it, which is the whole reason the page exists in
                 the shape it does. The state itself is up in the header beside
                 the acts that change it — said once, where the verbs are. */}
-            <Section title={t("worker.live")} id="worker-live" data-test="worker-live">
+            <Section
+              title={t("worker.live")}
+              id="worker-live"
+              data-test="worker-live"
+            >
               <div className={styles.readings}>
                 <Reading
                   label={t("worker.leaseLeft")}
                   note={
-                    worker.leaseSec === null
-                      ? t("worker.leaseNone")
-                      : undefined
+                    worker.leaseSec === null ? t("worker.leaseNone") : undefined
                   }
                 >
                   <LeaseMeter worker={worker} />
@@ -362,10 +364,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     : formatDuration(worker.heartbeatAgeSec)}
                 </Reading>
 
-                <Reading
-                  label={t("worker.up")}
-                  note={t("worker.upNote")}
-                >
+                <Reading label={t("worker.up")} note={t("worker.upNote")}>
                   {worker.upSec === null
                     ? // The derived registry has no container start to read;
                       // a dash is the honest figure and the note says what is
@@ -409,10 +408,7 @@ export function WorkerDetailPage({ workerId }: WorkerDetailPageProps) {
                     for a digest — the same address a pasted `sha256:…`
                     resolves to. An idle wire row carries no image, and a dash
                     without a link says so without inventing a destination. */}
-                <Reading
-                  label={t("worker.image")}
-                  note={t("worker.imageNote")}
-                >
+                <Reading label={t("worker.image")} note={t("worker.imageNote")}>
                   {worker.digest ? (
                     <Link
                       to="/queue"
@@ -635,7 +631,9 @@ function TornDown({
         <Trans
           ns="queue"
           i18nKey="worker.tornDownDescription"
-          components={{ id: <span className={styles.figure}>{worker.id}</span> }}
+          components={{
+            id: <span className={styles.figure}>{worker.id}</span>,
+          }}
         />
       }
       inset="none"
@@ -648,9 +646,7 @@ function TornDown({
               ns="queue"
               i18nKey="worker.tornDownHolding"
               components={{
-                label: (
-                  <span className={styles.figure}>{item.label}</span>
-                ),
+                label: <span className={styles.figure}>{item.label}</span>,
               }}
             />
           </StateText>
@@ -753,10 +749,7 @@ function NotFound({ workerId }: { workerId: string }) {
  * all — and the identifiers in it are values, which is why the dialog takes a
  * node rather than a string.
  */
-function stopBody(
-  worker: Worker | null,
-  item: QueueItem | null
-): ReactNode {
+function stopBody(worker: Worker | null, item: QueueItem | null): ReactNode {
   const figure = (value: string) => (
     <span className={styles.figure}>{value}</span>
   )

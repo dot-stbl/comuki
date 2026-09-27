@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { AutonomyRow } from "@/domains/settings/model/types"
 import {
@@ -35,13 +36,14 @@ export interface AutonomyPanelProps {
  * missing control is a feature this screen has not been given yet.
  */
 export function AutonomyPanel({ rows }: AutonomyPanelProps) {
+  const { t } = useTranslation("settings")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
   const [sorting, setSorting] = useState<DataTableSorting>([])
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
 
-  const columns = useMemo(() => createAutonomyColumns(), [])
+  const columns = useMemo(() => createAutonomyColumns(t), [t])
   const shown = useMemo(
     () => applyDataFilters(rows, filters, columns),
     [rows, filters, columns]
@@ -51,8 +53,8 @@ export function AutonomyPanel({ rows }: AutonomyPanelProps) {
     <Section
       variant="screen"
       data-test="settings-autonomy"
-      title="Autonomy"
-      note="what's auto · what needs a human"
+      title={t("autonomy.section")}
+      note={t("autonomy.note")}
     >
       <div className={styles.toolbar}>
         <DataTableToolbar
@@ -63,7 +65,7 @@ export function AutonomyPanel({ rows }: AutonomyPanelProps) {
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="autonomy-count">
-              {shown.length} shown
+              {t("autonomy.count", { count: shown.length })}
             </span>
           }
         />
@@ -82,8 +84,8 @@ export function AutonomyPanel({ rows }: AutonomyPanelProps) {
           onColumnSizingChange={setColumnSizing}
           emptyLabel={
             hasActiveFilters(filters)
-              ? "no change classes match the current filters"
-              : "no change class is classified"
+              ? t("autonomy.emptyFiltered")
+              : t("autonomy.empty")
           }
         />
       </div>

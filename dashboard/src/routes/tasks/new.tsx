@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { CreateTaskPage } from "@/domains/tasks"
@@ -12,11 +13,16 @@ export const Route = createFileRoute("/tasks/new")({
    state with the roles that would work written on it — rather than a form
    whose only submit refuses. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   return (
     <RequirePermission
       permission="inbox.take"
-      title="New task"
-      crumbs={[{ label: "tasks", to: "/tasks" }, { label: "new" }]}
+      title={t("route.newTask")}
+      crumbs={[
+        { label: t("crumb.tasks"), to: "/tasks" },
+        { label: t("crumb.new") },
+      ]}
     >
       <CreateTaskPage />
     </RequirePermission>

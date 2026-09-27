@@ -3,15 +3,18 @@
  * Four domains had each written this, and each had written it slightly
  * differently: `chat/api/mappers.ts` said `3m ago`, `tasks/api/mappers.ts` said
  * `8 min` (its docstring admitted the copy outright), `approvals/api/mappers.ts`
- * said `12 min` but had no bucket above hours at all, and
- * `models/model/keys.ts` said `7 days ago` in a ladder made only of days. The
- * same fact, on four screens of one console, in four spellings.
+ * said `12 min` but had no bucket above hours at all, and `models/model/keys.ts`
+ * said `7 days ago` in a ladder made only of days. The same fact, on four
+ * screens of one console, in four spellings.
  *
  * The spelling kept here is the one the seeds already speak — `just now`,
  * `8 min`, `2 h`, `3 d`. Three of the four domains and every mock row were
  * already saying it, so it is the product's word rather than a new one, and it
  * is the terse register the rest of the console is written in: a figure and its
- * unit, no sentence around it.
+ * unit, no sentence around it. The unit words resolve through the shared i18n
+ * instance (`dashboard-i18n` D7 — this is not a component and cannot call the
+ * hook), so the reading follows the active locale; the figures keep their
+ * shapes, the words do not.
  *
  * **No `ago`.** The word belongs to the caller's sentence, not to the reading:
  * these strings sit in a column headed `age`, in a `<dl>` row labelled
@@ -23,6 +26,8 @@
  * minutes have passed, which is the claim an age is making. Rounding would let
  * a reading run ahead of the fact it reports.
  */
+
+import { i18n } from "@/shared/i18n"
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
@@ -41,15 +46,23 @@ export function formatRelativeTime(deltaMs: number): string {
   if (size < MINUTE) {
     // Below a minute there is nothing worth counting in either direction, and
     // "in 0 min" is not a reading anybody wants.
-    return "just now"
+    return i18n.t("common:relativeTime.now", { ns: "common" })
   }
-  const reading =
+  const key =
     size < HOUR
-      ? `${Math.floor(size / MINUTE)} min`
+      ? "common:relativeTime.minute"
       : size < DAY
-        ? `${Math.floor(size / HOUR)} h`
-        : `${Math.floor(size / DAY)} d`
-  return deltaMs < 0 ? `in ${reading}` : reading
+        ? "common:relativeTime.hour"
+        : "common:relativeTime.day"
+  const reading = i18n.t(key, {
+    ns: "common",
+    count: Math.floor(
+      size < HOUR ? size / MINUTE : size < DAY ? size / HOUR : size / DAY
+    ),
+  })
+  return deltaMs < 0
+    ? i18n.t("common:relativeTime.future", { ns: "common", reading })
+    : reading
 }
 
 /**

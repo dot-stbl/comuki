@@ -1,9 +1,5 @@
 {
-  "actions": {
-    "retry": "重试"
-  },
   "errors": {
-    "unknown": "未知错误",
     "changeFailed": "更改失败。"
   },
   "page": {
@@ -63,7 +59,6 @@
     "sentences": {
       "noAnswer": "容量 api 未响应 — 无法读出该池的上限",
       "bothFull": "配额和集群都已满 — 这里无法启动任何内容",
-
       "both": "配额与集群一致 — 可容纳 {{slots}}",
       "quotaFull": "配额是上限 — 无法再启动，集群还剩 {{slots}} 空闲",
       "quota": "配额是上限 — 可容纳 {{slots}}，集群另有 {{spare}} 空闲",
@@ -107,7 +102,6 @@
     "retireConfirm": "退役闲置",
     "retireCancel": "保持在线",
     "reason": {
-
       "both": "镜像和 profiles ref 都变了",
       "image": "镜像落后一个 release",
       "profiles": "镜像相同，profiles ref 变了"

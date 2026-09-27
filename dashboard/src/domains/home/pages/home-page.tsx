@@ -153,15 +153,18 @@ export function HomePage() {
                the consequence — this screen's whole job is to answer "am I
                needed", and a screen that cannot answer has to say so. */
             description={t("header.errorTail", {
-              detail: requestFailureMessage(error, t("errors.unknown")),
+              detail: requestFailureMessage(
+                error,
+                t("errors.unknown", { ns: "common" })
+              ),
             })}
             data-test="home-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="home-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}

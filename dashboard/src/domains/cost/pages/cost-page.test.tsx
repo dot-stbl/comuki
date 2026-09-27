@@ -11,6 +11,7 @@ import { render, waitFor } from "@testing-library/react"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
 import { ThemeProvider } from "@/app/theme-provider"
+import { i18n, loadLocale } from "@/shared/i18n"
 import { TestSession } from "@/shared/session/test-session"
 
 import { CostPage } from "./cost-page"
@@ -297,5 +298,40 @@ describe("the cost report, end to end over the seed", () => {
       expect(weekButton!.getAttribute("aria-pressed")).toBe("true")
     )
     await waitFor(() => expect(tileText("total")).toContain("$917.80"))
+  })
+})
+
+describe("the cost report in russian", () => {
+  it("renders the title, the period and the section names in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    try {
+      await screenReady()
+
+      expect(find('[data-test="cost-period-row"]')?.textContent).toContain(
+        "сегодня"
+      )
+      // The five sections name themselves in russian, in reading order.
+      expect(text('[data-test="cost-by-day"] h2')).toContain("расход по дням")
+      expect(text('[data-test="cost-by-model"] h2')).toContain(
+        "расход по моделям"
+      )
+      expect(text('[data-test="top-projects-section"] h2')).toContain(
+        "топ проектов"
+      )
+      expect(text('[data-test="cost-by-app"] h2')).toContain(
+        "расход по приложениям"
+      )
+      expect(text('[data-test="cost-failures"] h2')).toContain(
+        "где раны падают"
+      )
+      // The mock mark carries its env var verbatim beside the russian words.
+      expect(text('[data-test="cost-mock-mark"]')).toContain(
+        "мок-снимок · VITE_USE_MOCK"
+      )
+    } finally {
+      await i18n.changeLanguage("en")
+    }
   })
 })

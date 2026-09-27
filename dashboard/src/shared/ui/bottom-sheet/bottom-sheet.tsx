@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, type ReactNode } from "react"
 import { Maximize2, Minimize2, X } from "lucide-react"
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components"
 import type { PanelImperativeHandle } from "react-resizable-panels"
+import { useTranslation } from "react-i18next"
 
 import { Button } from "../button"
 import { SplitPane, SplitPanel, SplitSeparator } from "../split-pane"
@@ -95,6 +96,7 @@ export function BottomSheet({
   dismissable = false,
   "data-test": dataTest = "bottom-sheet",
 }: BottomSheetProps) {
+  const { t } = useTranslation("kit")
   const above = useRef<PanelImperativeHandle | null>(null)
   // Read at write time by `persist`, which runs on a pointer release — long
   // after this effect has told it what state the sheet is in.
@@ -174,7 +176,7 @@ export function BottomSheet({
 
           <SplitSeparator
             orientation="vertical"
-            aria-label={`Resize ${title}`}
+            aria-label={t("bottomSheet.resize", { title })}
             disabled={expanded}
             className={expanded ? styles.edgeGone : styles.edge}
           />
@@ -199,7 +201,11 @@ export function BottomSheet({
                 <span className={styles.spacer} />
                 {toolbar}
                 <Tooltip
-                  content={expanded ? "Back to a panel" : "Fill the window"}
+                  content={
+                    expanded
+                      ? t("bottomSheet.backToPanel")
+                      : t("bottomSheet.fillWindow")
+                  }
                 >
                   <Button
                     variant="ghost"
@@ -207,8 +213,8 @@ export function BottomSheet({
                     data-test="bottom-sheet-expand"
                     aria-label={
                       expanded
-                        ? `Shrink ${title} back to a panel`
-                        : `Fill the window with ${title}`
+                        ? t("bottomSheet.shrinkBack", { title })
+                        : t("bottomSheet.fillWith", { title })
                     }
                     aria-pressed={expanded}
                     onClick={() => onExpandedChange(!expanded)}
@@ -220,12 +226,12 @@ export function BottomSheet({
                     )}
                   </Button>
                 </Tooltip>
-                <Tooltip content="Close — escape">
+                <Tooltip content={t("bottomSheet.closeHint")}>
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     data-test="bottom-sheet-close"
-                    aria-label={`Close ${title}`}
+                    aria-label={t("bottomSheet.close", { title })}
                     onClick={() => onOpenChange(false)}
                   >
                     <X aria-hidden="true" />

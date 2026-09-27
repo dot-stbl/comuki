@@ -1,1 +1,23 @@
-{}
+{
+  "actions": {
+    "cancel": "abbrechen",
+    "retry": "wiederholen",
+    "close": "schließen"
+  },
+  "errors": {
+    "unknown": "unbekannter fehler"
+  },
+  "relativeTime": {
+    "now": "gerade eben",
+    "minute": "{{count}} min",
+    "hour": "{{count}} std",
+    "day": "{{count}} t",
+    "future": "in {{reading}}"
+  },
+  "denial": {
+    "unavailable": "nicht verfügbar",
+    "or": "oder",
+    "needs": "erfordert {{list}}",
+    "needsOn": "erfordert {{list}} in {{where}}"
+  }
+}

@@ -1,1 +1,32 @@
-{}
+{
+  "panel": {
+    "emptyFiltered": "Ninguna comprobación pasa los filtros actuales.",
+    "empty": "No hay comprobaciones declaradas.",
+    "switch": "ejecutar la compuerta en cada run",
+    "sourceLead": "Estos comandos están declarados en el git de este cliente y aquí son de solo lectura. Cambiar uno es un commit en su repositorio — eso es lo que hace reproducible un run, así que no hay editor en esta pantalla a propósito.",
+    "readAt": "leído {{when}}",
+    "openInGit": "Abrir en git",
+    "off": "La compuerta está apagada, así que nada de abajo se ejecuta y ningún run queda bloqueado por ella. El archivo sigue en git y las comprobaciones siguen declaradas — volver a encenderla empieza a ejecutarlas de nuevo desde el próximo run.",
+    "emptyTitle": "No hay comprobaciones declaradas",
+    "emptyDescription": "La compuerta busca <path/> en <repo/> en <ref/> y no encuentra nada. Haz commit del archivo allí y se recoge en la próxima lectura — no hay dónde crear una aquí.",
+    "count": "{{count}} mostradas"
+  },
+  "column": {
+    "lastResult": "último resultado",
+    "anyResult": "cualquier resultado",
+    "check": "comprobación",
+    "filterPlaceholder": "filtrar comprobación, comando…",
+    "command": "comando",
+    "declaredIn": "declarado en",
+    "output": "salida",
+    "neverReached": "ningún run ha alcanzado esta comprobación",
+    "when": "cuándo",
+    "took": "tardó",
+    "run": "run"
+  },
+  "result": {
+    "failed": "falló",
+    "neverRan": "nunca se ejecutó",
+    "passed": "pasó"
+  }
+}

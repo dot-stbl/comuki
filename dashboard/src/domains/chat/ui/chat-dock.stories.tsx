@@ -48,7 +48,9 @@ import { ChatConsole } from "./chat-console"
 function byTest(root: ParentNode, name: string): HTMLElement {
   const found = root.querySelector<HTMLElement>(`[data-test="${name}"]`)
   if (!found) {
-    throw new Error(`[data-test="${name}"] not found in document (BottomSheet portals to document.body)`)
+    throw new Error(
+      `[data-test="${name}"] not found in document (BottomSheet portals to document.body)`
+    )
   }
   return found
 }
@@ -56,7 +58,10 @@ function byTest(root: ParentNode, name: string): HTMLElement {
 /** `ChatConsole` shows a loading skeleton until its (mock) queries settle,
  *  and only mounts the composer/seed chip after — poll instead of a single
  *  synchronous query, which races the story's own first render. */
-async function waitForTest(root: ParentNode, name: string): Promise<HTMLElement> {
+async function waitForTest(
+  root: ParentNode,
+  name: string
+): Promise<HTMLElement> {
   return waitFor(() => byTest(root, name))
 }
 

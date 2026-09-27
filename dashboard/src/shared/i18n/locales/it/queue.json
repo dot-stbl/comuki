@@ -1,0 +1,170 @@
+{
+  "workStatus": {
+    "queued": "in coda",
+    "running": "in esecuzione",
+    "blocked": "bloccato",
+    "failed": "fallito",
+    "cancelled": "annullato",
+    "succeeded": "riuscito"
+  },
+  "workerState": {
+    "busy": "occupato",
+    "idle": "inattivo",
+    "draining": "in draining",
+    "offline": "offline"
+  },
+  "registry": {
+    "title": "Coda e worker",
+    "summary": "<queued/> in coda · <stalled/> non claimati da cinque minuti · <total/> worker, <idle/> inattivi · <lost/> senza heartbeat",
+    "errorTitle": "Impossibile caricare la coda",
+    "loading": "Caricamento della coda",
+    "expandPool": "Espandi il pool",
+    "collapsePool": "Comprimi il pool",
+    "resizePool": "Ridimensiona il pool di worker"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "niente in coda su questo profilo",
+      "filtered": "nessun item di lavoro matcha i filtri correnti",
+      "none": "la coda è vuota"
+    },
+    "shown": {
+      "one": "{{count}} mostrato",
+      "many": "{{count}} mostrati",
+      "other": "{{count}} mostrati"
+    },
+    "waitingTooLong": {
+      "one": "{{count}} in attesa da troppo · ",
+      "many": "{{count}} in attesa da troppo · ",
+      "other": "{{count}} in attesa da troppo · "
+    }
+  },
+  "queueColumn": {
+    "status": "stato",
+    "item": "item",
+    "run": "run",
+    "project": "progetto",
+    "profile": "profilo",
+    "step": "passo",
+    "claimedBy": "claimmato da",
+    "age": "età",
+    "allStatuses": "tutti gli stati",
+    "allProjects": "tutti i progetti",
+    "allProfiles": "tutti i profili",
+    "filterPlaceholder": "filtra item, run, passo…"
+  },
+  "ageMeter": {
+    "stalled": "in coda da più di {{limit}} — nessun worker su questo profilo l'ha claimmato"
+  },
+  "lease": {
+    "noHeartbeat": "nessuna lettura di heartbeat — il lease scade e l'item torna in coda",
+    "lostHeartbeat": "nessun heartbeat da {{quiet}} — il lease scade e l'item torna in coda"
+  },
+  "depth": {
+    "label": "Profondità della coda per giorno",
+    "figure": "<today/> in coda ora · la settimana ha percorso <week/>",
+    "deepest": " · oggi il giorno più profondo della settimana",
+    "chartLabel": "Profondità della coda per giorno, item in attesa di un claim. {{today}} in coda oggi; la settimana ha percorso {{weekMin}} fino a {{weekMax}}.",
+    "chartLabelDeepest": "Profondità della coda per giorno, item in attesa di un claim. {{today}} in coda oggi — il giorno più profondo di una settimana corsa da {{weekMin}} a {{weekMax}}."
+  },
+  "poolStrip": {
+    "expandEmpty": "Espandi il pool. Nessun worker è su.",
+    "expand": "Espandi il pool. {{total}} worker: {{busy}} occupati, {{draining}} in draining, {{idle}} inattivi."
+  },
+  "workerColumn": {
+    "state": "stato",
+    "worker": "worker",
+    "project": "progetto",
+    "profile": "profilo",
+    "currentWork": "lavoro corrente",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "immagine",
+    "lease": "lease",
+    "up": "su",
+    "actions": "azioni",
+    "idle": "inattivo",
+    "allStates": "tutti gli stati",
+    "allProjects": "tutti i progetti",
+    "allProfiles": "tutti i profili",
+    "allProviders": "tutti i provider",
+    "filterPlaceholder": "filtra worker, handle, immagine…",
+    "drain": "Draina",
+    "forceStop": "Fermata forzata",
+    "drainWorker": "Draina {{id}}",
+    "forceStopWorker": "Fermata forzata di {{id}}"
+  },
+  "workersPanel": {
+    "count": "{{shown}} di {{total}} worker",
+    "fallback": "Il pool non l'ha preso.",
+    "tail": "Niente è cambiato — il worker è com'era.",
+    "stopTitle": "Fermata forzata di questo worker?",
+    "stopIdle": "{{id}} è inattivo. Il container viene smontato ora, e il scale ne alza un altro quando c'è lavoro per lui.",
+    "stopBusy": "{{id}} sta tenendo \"{{label}}\" sulla run {{runId}}. Il container viene smontato ora, il lease è rilasciato, e l'item torna in coda perché un altro worker lo claimmi.",
+    "stopConfirm": "Fermata forzata",
+    "stopCancel": "Lascialo girare"
+  },
+  "workerEmpty": {
+    "clearFilters": "Cancella i filtri",
+    "filteredTitle": "Nessun worker matcha i filtri",
+    "filteredDescription": {
+      "one": "Il pool è su — <pool/> worker{{where}} stanno girando, semplicemente non sono questi.",
+      "many": "Il pool è su — <pool/> worker{{where}} stanno girando, semplicemente non sono questi.",
+      "other": "Il pool è su — <pool/> worker{{where}} stanno girando, semplicemente non sono questi."
+    },
+    "backlogTitle": "Ancora nessun worker",
+    "backlogDescription": {
+      "one": "min idle = <zero/>{{where}}, quindi il pool resta vuoto finché c'è lavoro da fare. Ora c'è: <backlog/> item in coda e non claimmato. Il scale alza un worker per prenderlo.",
+      "many": "min idle = <zero/>{{where}}, quindi il pool resta vuoto finché c'è lavoro da fare. Ora c'è: <backlog/> item in coda e non claimmati. Il scale alza worker per prenderli.",
+      "other": "min idle = <zero/>{{where}}, quindi il pool resta vuoto finché c'è lavoro da fare. Ora c'è: <backlog/> item in coda e non claimmati. Il scale alza worker per prenderli."
+    },
+    "atRestTitle": "Nessun worker, e nessuno richiesto",
+    "atRestDescription": "min idle = <zero/>{{where}} e niente è in coda. Un pool vuoto è qui lo stato di riposo configurato, non un guasto — un container viene creato per task e smontato dopo.",
+    "underTargetTitle": "Il pool è sotto il suo obiettivo",
+    "underTargetDescription": {
+      "one": "min idle = <minIdle/>{{where}} e nessun worker è su. Questo non è uno stato di riposo: il compute non li sta alzando, e <backlog/> item aspetterà finché non lo farà.",
+      "many": "min idle = <minIdle/>{{where}} e nessun worker è su. Questo non è uno stato di riposo: il compute non li sta alzando, e <backlog/> item aspetteranno finché non lo farà.",
+      "other": "min idle = <minIdle/>{{where}} e nessun worker è su. Questo non è uno stato di riposo: il compute non li sta alzando, e <backlog/> item aspetteranno finché non lo farà."
+    },
+    "onProject": " su {{project}}"
+  },
+  "worker": {
+    "loading": "Caricamento del worker",
+    "errorTitle": "Impossibile caricare il pool",
+    "fallback": "Il pool non l'ha preso.",
+    "tail": "Niente è cambiato — il worker è com'era.",
+    "live": "live",
+    "container": "container",
+    "currentWork": "lavoro corrente",
+    "leaseLeft": "lease rimasto",
+    "leaseNone": "niente claimmato, quindi non c'è lease da difendere",
+    "sinceHeartbeat": "dall'heartbeat",
+    "heartbeatStale": "stale oltre {{limit}}",
+    "up": "su",
+    "upNote": "da quando il container è salito",
+    "compute": "compute",
+    "handle": "handle",
+    "image": "immagine",
+    "imageNote": "ogni container su questa immagine",
+    "profile": "profilo",
+    "profileNote": "l'asse su cui un claim combacia",
+    "project": "progetto",
+    "workNote": "Tiene un item che la coda non ha ancora inviato con questo payload.",
+    "idle": "inattivo",
+    "idleNote": "Non tiene niente, ed è libero di claimmare il prossimo item che combacia col suo profilo.",
+    "tornDownTitle": "Questo container non c'è più",
+    "tornDownDescription": "<id/> è stato smontato mentre questa pagina era aperta. Un container fermato non viene conservato — non c'è record a cui tornare, e non deve esserci. I worker vengono alzati per il lavoro che hanno davanti e rimossi quando è fatto o quando qualcuno li ferma; questo è il pool che si comporta com'è configurato, non un guasto.",
+    "tornDownHolding": "Teneva <label/>. Quel lavoro non è andato con lui: il lease è stato rilasciato e l'item è tornato in coda perché un altro worker lo claimmi.",
+    "tornDownIdle": "Era inattivo quando è andato, quindi non teneva niente e niente è tornato in coda.",
+    "tornDownItem": "{{id}}",
+    "poolLink": "coda e worker",
+    "notFoundTitle": "Nessun worker chiamato <id/>",
+    "notFoundDescription": "Niente nel pool risponde a quell'id. I worker sono effimeri — uno viene alzato per un lavoro e rimosso dopo — quindi un id dal log di ieri, un vecchio bookmark o un link che ha perso la coda finiscono tutti qui, e nessuno di loro significa che qualcosa non va.",
+    "notFoundLook": "cerca {{id}} nel pool",
+    "stopTitle": "Fermata forzata di questo worker?",
+    "stopIdle": "<id/> è inattivo. Il container viene smontato ora, e il scale ne alza un altro quando c'è lavoro per lui.",
+    "stopBusy": "<id/> sta tenendo <label/> sulla run <run/>. Il container viene smontato ora, il lease è rilasciato, e l'item torna in coda perché un altro worker lo claimmi.",
+    "stopConfirm": "Fermata forzata",
+    "stopCancel": "Lascialo girare"
+  }
+}

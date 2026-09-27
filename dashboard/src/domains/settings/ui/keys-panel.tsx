@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { ProviderKey } from "@/domains/settings/model/types"
 import {
@@ -32,13 +33,14 @@ export interface KeysPanelProps {
  * three hours, and it is legible here before it is legible anywhere else.
  */
 export function KeysPanel({ keys }: KeysPanelProps) {
+  const { t } = useTranslation("settings")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
   const [sorting, setSorting] = useState<DataTableSorting>([])
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
 
-  const columns = useMemo(() => createProviderKeyColumns(), [])
+  const columns = useMemo(() => createProviderKeyColumns(t), [t])
   const rows = useMemo(
     () => applyDataFilters(keys, filters, columns),
     [keys, filters, columns]
@@ -48,8 +50,8 @@ export function KeysPanel({ keys }: KeysPanelProps) {
     <Section
       variant="screen"
       data-test="settings-keys"
-      title="Provider keys"
-      note="read-only · keys come from env, rotation runs in the proxy"
+      title={t("keys.section")}
+      note={t("keys.note")}
     >
       <div className={styles.toolbar}>
         <DataTableToolbar
@@ -60,7 +62,7 @@ export function KeysPanel({ keys }: KeysPanelProps) {
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="keys-count">
-              {rows.length} shown
+              {t("keys.count", { count: rows.length })}
             </span>
           }
         />
@@ -79,8 +81,8 @@ export function KeysPanel({ keys }: KeysPanelProps) {
           onColumnSizingChange={setColumnSizing}
           emptyLabel={
             hasActiveFilters(filters)
-              ? "no keys match the current filters"
-              : "the proxy holds no provider key"
+              ? t("keys.emptyFiltered")
+              : t("keys.empty")
           }
         />
       </div>

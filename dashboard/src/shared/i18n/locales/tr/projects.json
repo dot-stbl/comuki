@@ -1,0 +1,164 @@
+{
+  "registry": {
+    "title": "Projeler",
+    "summary": "<count/> proje · <runs/> uçuşta · <spend/> bugün",
+    "errorTitle": "Kayıt defteri yüklenmedi",
+    "newProject": "Yeni proje",
+    "filterByTag": "Etikete göre filtrele",
+    "count": {
+      "other": "{{count}} gösteriliyor"
+    },
+    "empty": {
+      "filtered": "geçerli filtrelerle eşleşen proje yok",
+      "none": "henüz proje yok"
+    }
+  },
+  "column": {
+    "slug": "slug",
+    "name": "ad",
+    "tags": "etiketler",
+    "inFlight": "uçuşta",
+    "runs": "çalıştırmalar",
+    "costToday": "bugünkü maliyet",
+    "profiles": "profiller",
+    "created": "oluşturuldu",
+    "slugFilterPlaceholder": "slug, ad, depo filtrele…"
+  },
+  "identity": {
+    "icon": "ikon",
+    "accentColour": "vurgu rengi",
+    "tags": "etiketler",
+    "repo": "git profil deposu",
+    "iconPlaceholder": "🛰️ veya https://example.com/mark.png",
+    "platformDefaults": "platform varsayılanları"
+  },
+  "mark": {
+    "stored": "saklanan ikon",
+    "neutral": "proje imi",
+    "brand": "{{brand}} imi"
+  },
+  "slug": {
+    "error": {
+      "required": "bir slug zorunlu",
+      "spaces": "boşluk yok — tire kullanın",
+      "lowercase": "slug küçük harflerden oluşur",
+      "min": "en az {{min}} karakter",
+      "max": "en çok {{max}} karakter",
+      "edges": "bir harf ya da rakamla başlayıp bitmeli",
+      "pattern": "yalnızca harfler, rakamlar ve tek tireler",
+      "taken": "bu slug alınmış"
+    }
+  },
+  "form": {
+    "nameLabel": "ad",
+    "slugLabel": "slug",
+    "namePlaceholder": "bu projenin ne olduğu, birkaç kelimeyle",
+    "slugPlaceholder": "küçük harfler, tireler, boşluksuz",
+    "slugHint": "Üründeki her listede bir sütun olarak görünür. Küçük harfler, rakamlar ve tireler.",
+    "repoPlaceholder": "git@github.com:org/worker-profiles.git",
+    "repoHint": "İsteğe bağlı. Bu projenin worker profillerinin yazıldığı yer — boş bırakınca platform varsayılanlarıyla çalışılır.",
+    "iconHint": "İsteğe bağlı. Tek bir emoji ya da bir görsel url'si; slug'ın yanında görünür. Olmayınca imi deponun host'undan gelir.",
+    "colorClear": "renksiz",
+    "colorHint": "İsteğe bağlı. İmin yanındaki noktayı boyar ve etiketleri renklendirir — arayüzü asla.",
+    "tagsHint": "İsteğe bağlı. Bu proje nedir — her biri için Enter ya da virgül ekler, Backspace sonuncuyu kaldırır.",
+    "submit": "Proje oluştur"
+  },
+  "tagEntry": {
+    "placeholder": "web, billing…",
+    "remove": "{{tag}} etiketini kaldır"
+  },
+  "create": {
+    "title": "Yeni proje",
+    "crumb": "yeni",
+    "summary": "Bir proje, kendi uygulamalarının, çalıştırmalarının ve bütçesinin sahibidir. Slug, her yerden bilindiği adıdır.",
+    "toastCreated": "Proje oluşturuldu",
+    "failureFallback": "Proje oluşturulmadı.",
+    "failureTail": "Hiçbir şey oluşturulmadı — yazdıklarınız tam bıraktığınız gibi duruyor.",
+    "guardTitle": "Projeyi oluşturmadan çıkılsın mı?",
+    "guardBody": "Yazdığınız ad, slug ve depo henüz hiçbir yerde kayıtlı değil. Bu sayfadan ayrılmak onları düşürür.",
+    "guardConfirm": "Vazgeç",
+    "guardCancel": "Düzenlemeye devam et"
+  },
+  "detail": {
+    "fallbackTitle": "Proje",
+    "crumbFallback": "proje",
+    "summary": "<slug/> · oluşturuldu <created/>",
+    "notFoundTitle": "Bu id'ye ait proje yok",
+    "notFoundDescription": "Kayıt defterinde <id/> altında bir şey yok. Eski bir bağlantıdan gelen proje id'si buraya gelmenin olağan yoludur — bir adres, adlandırdığı projeden uzun yaşar ve hâlâ var olanların yeri kayıt defteridir.",
+    "notFoundBack": "Projelere dön",
+    "factsSection": "projenin kendisi",
+    "editIdentity": "kimliği düzenle",
+    "editIdentityFailure": "Kimlik kaydedilmedi.",
+    "rolesSection": "bu projedeki roller",
+    "rolesForbiddenSubject": "Bu projedeki roller",
+    "rolesHeld": {
+      "other": "{{count}} tutuluyor"
+    },
+    "fact": {
+      "slug": "slug",
+      "name": "ad",
+      "mark": "im",
+      "created": "oluşturuldu",
+      "iconAbsent": "saklanan yok",
+      "colourAbsent": "ayarlanmamış",
+      "tagsAbsent": "henüz yok"
+    },
+    "rolesEmpty": "Bu projede rol tutan kimse yok. Ulaşabilen herkes, her yerde geçerli olan ve burada listelenmeyen bir platform atamayla ulaşır.",
+    "rolesAll": "bu projedeki tüm atamalar",
+    "rolesGrant": "rol ver"
+  },
+  "editor": {
+    "iconHint": "Tek bir emoji ya da bir görsel url'si. Boş, geçerli imi korur.",
+    "colorClear": "saklanan rengi koru",
+    "colorHint": "İmin yanındaki noktayı boyar ve etiketleri renklendirir — arayüzü asla.",
+    "tagsHint": "Bu proje nedir. Boş bir liste kaydedilirse etiketler temizlenir.",
+    "save": "Kimliği kaydet"
+  },
+  "handoff": {
+    "section": "bu projenin işi nerede",
+    "counting": "sayılıyor",
+    "runsWhat": "canlı çalıştırmalar",
+    "runsCount": "görülen <total/> içinden <count/> uçuşta",
+    "runsNote": "bu projeye daraltılmış nöbet listesini aç",
+    "queueWhat": "kuyruk ve workerlar",
+    "queueCount": "<items/> iş öğesi · <workers/> worker ayakta",
+    "queueNote": "bu projeye daraltılmış claim kuyruğunu aç",
+    "sourcesWhat": "kaynaklar",
+    "sourcesCount": "<count/> bağlantı",
+    "sourcesNote": "bu projeye daraltılmış kabulleri aç",
+    "costWhat": "maliyet ve arızalar",
+    "costToday": "<spend/> bugün",
+    "costNothing": "<dash/> henüz atfedilen bir şey yok",
+    "costNote": "rakam bu projenindir — ardındaki rapor platformundur"
+  },
+  "jobs": {
+    "section": "zamanlanmış görevler",
+    "unknown": "bilinmeyen",
+    "counting": "sayılıyor",
+    "loading": "Zamanlanmış görevler yükleniyor",
+    "errorTitle": "Zamanlamalar yüklenmedi",
+    "statusEnabled": "etkin",
+    "statusPaused": "duraklatılmış",
+    "pause": "Zamanlamayı duraklat",
+    "resume": "Zamanlamayı sürdür",
+    "delete": "Zamanlamayı sil",
+    "emptyTitle": "Burada saatle çalışan bir şey yok",
+    "emptyDescription": "Bu projede hiçbir zamanlama kendi kendine iş başlatmıyor. Burada çalışan her şeyi bir kişi dosyaladı ya da gönderdi.",
+    "create": "Bir görev zamanla",
+    "dialogDescription": "Platformun bu projeye kendi kendine dosyaladığı bir cron girdisi — brief bileti, profil ilk adım olur.",
+    "dialogSubmit": "Zamanla",
+    "cronLabel": "cron",
+    "cronHint": "Beş alanlı cron, projenin kendi saat dilimi politikasıyla. Bir hazır ayar seçin ya da ifadeyi doğrudan kurun.",
+    "profileLabel": "profil anahtarı",
+    "profilePlaceholder": "implementer",
+    "profileHint": "Çalıştırmanın başladığı iş öğesi profili — katalog istemcinin git'inde durur.",
+    "briefLabel": "brief json",
+    "briefHint": "Olduğu gibi saklanır. Bu kutuyla host arasındaki hiçbir şey ona dokunmaz.",
+    "deleteTitle": "Bu zamanlama silinsin mi?",
+    "deleteBody": "<cron/>, <profile/> için artık ateşlenmez ve kaldırılır. Yüzünden zaten çalışan işe dokunulmaz.",
+    "deleteCancel": "Kalsın",
+    "configured": {
+      "other": "{{count}} yapılandırılmış"
+    }
+  }
+}

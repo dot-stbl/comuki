@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "重试"
-  },
-  "errors": {
-    "unknown": "未知错误"
-  },
   "workStatus": {
     "queued": "排队中",
     "running": "运行中",

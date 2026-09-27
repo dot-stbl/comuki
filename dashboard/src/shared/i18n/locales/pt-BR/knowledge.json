@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "Tentar novamente",
-    "close": "Fechar"
-  },
-  "errors": {
-    "unknown": "Erro desconhecido"
-  },
   "page": {
     "title": "Conhecimento",
     "summary": "conjunto de regras, revisões, bateria de avaliação",

@@ -1,1 +1,122 @@
-{}
+{
+  "field": {
+    "required": "обязательно"
+  },
+  "formDialog": {
+    "cancel": "отмена"
+  },
+  "dialog": {
+    "close": "закрыть"
+  },
+  "copyButton": {
+    "copy": "копировать",
+    "copied": "скопировано"
+  },
+  "codeBlock": {
+    "wrap": "перенос",
+    "showLess": "свернуть",
+    "showAll": {
+      "one": "показать {{count}} строку",
+      "few": "показать {{count}} строки",
+      "many": "показать {{count}} строк",
+      "other": "показать {{count}} строки"
+    }
+  },
+  "skeleton": {
+    "loading": "загрузка"
+  },
+  "forbidden": {
+    "subject": "этот экран",
+    "title": "{{subject}} закрыт для ваших ролей",
+    "description": "{{needs}} — попросите роль или перейдите в проект, где она у вас уже есть."
+  },
+  "searchField": {
+    "clear": "очистить поиск"
+  },
+  "select": {
+    "any": "любой"
+  },
+  "combobox": {
+    "openList": "открыть список"
+  },
+  "datePicker": {
+    "openCalendar": "открыть календарь"
+  },
+  "splitPane": {
+    "resize": "изменить размер"
+  },
+  "dataTable": {
+    "empty": "нет строк",
+    "noun": "строка",
+    "selectColumn": "выбор",
+    "selectAll": "выбрать все {{noun}}",
+    "selectRow": "выбрать {{noun}} {{id}}",
+    "resizeColumn": "изменить ширину колонки {{label}}",
+    "resizeHint": "потяните, чтобы изменить ширину; двойной клик — сбросить"
+  },
+  "toolbar": {
+    "filters": "фильтры",
+    "filtersLabel": "фильтры",
+    "filtersActive": "фильтры, активно: {{count}}",
+    "clearFilters": "сбросить все фильтры",
+    "columns": "колонки",
+    "searchPlaceholder": "искать {{label}}…",
+    "filterBy": "фильтровать по {{label}}",
+    "filterAll": "все {{label}}",
+    "filterPlaceholder": "фильтровать {{label}}…",
+    "clearFilterTitle": "сбросить фильтр {{label}}",
+    "clearFilterLabel": "сбросить фильтр {{label}}: {{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "вернуть в панель",
+    "fillWindow": "растянуть на окно",
+    "shrinkBack": "свернуть {{title}} обратно в панель",
+    "fillWith": "растянуть {{title}} на всё окно",
+    "resize": "изменить размер {{title}}",
+    "closeHint": "закрыть — escape",
+    "close": "закрыть {{title}}"
+  },
+  "evidencePane": {
+    "closeHint": "закрыть — escape",
+    "close": "закрыть улику",
+    "empty": "нет просмотрщика для {{type}} — байты лежат по ссылке выше",
+    "unknownType": "неизвестно",
+    "openNewTab": "открыть в новой вкладке",
+    "openNewTabLabel": "открыть {{filename}} в новой вкладке"
+  },
+  "cron": {
+    "cadence": "период",
+    "custom": "свой…",
+    "customDescription": "задайте минуту, час, день, месяц и день недели.",
+    "value": "значение",
+    "any": "любой",
+    "everyDay": "каждый день",
+    "anyDay": "любой день",
+    "part": {
+      "minute": "минута",
+      "hour": "час",
+      "day": "день",
+      "month": "месяц",
+      "weekday": "день недели"
+    },
+    "weekday": {
+      "sun": "вс",
+      "mon": "пн",
+      "tue": "вт",
+      "wed": "ср",
+      "thu": "чт",
+      "fri": "пт",
+      "sat": "сб"
+    },
+    "preset": {
+      "hourly": "ежечасно",
+      "hourlyDescription": "каждый час, в начале часа.",
+      "daily": "ежедневно в 03:00",
+      "dailyDescription": "раз в день, в тихое окно проекта.",
+      "weekly": "по понедельникам",
+      "weeklyDescription": "по понедельникам в 03:00.",
+      "monthly": "1-го числа",
+      "monthlyDescription": "первого числа месяца в 03:00."
+    }
+  }
+}

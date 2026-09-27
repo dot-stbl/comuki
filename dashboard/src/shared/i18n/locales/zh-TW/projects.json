@@ -1,0 +1,164 @@
+{
+  "registry": {
+    "title": "專案",
+    "summary": "<count/> 個專案 · <runs/> 個執行中 · 今日 <spend/>",
+    "errorTitle": "登錄檔未載入",
+    "newProject": "新建專案",
+    "filterByTag": "按標籤篩選",
+    "count": {
+      "other": "已顯示 {{count}} 條"
+    },
+    "empty": {
+      "filtered": "沒有專案匹配當前篩選條件",
+      "none": "還沒有專案"
+    }
+  },
+  "column": {
+    "slug": "slug",
+    "name": "名稱",
+    "tags": "標籤",
+    "inFlight": "進行中",
+    "runs": "執行",
+    "costToday": "今日開銷",
+    "profiles": "配置檔案",
+    "created": "創建於",
+    "slugFilterPlaceholder": "篩選 slug、名稱、倉庫…"
+  },
+  "identity": {
+    "icon": "圖示",
+    "accentColour": "強調色",
+    "tags": "標籤",
+    "repo": "git 配置倉庫",
+    "iconPlaceholder": "🛰️ 或 https://example.com/mark.png",
+    "platformDefaults": "平臺預設配置"
+  },
+  "mark": {
+    "stored": "已存圖示",
+    "neutral": "專案標識",
+    "brand": "{{brand}} 標識"
+  },
+  "slug": {
+    "error": {
+      "required": "必須填寫 slug",
+      "spaces": "不能有空格 — 請用連字元",
+      "lowercase": "slug 使用小寫",
+      "min": "至少 {{min}} 個字元",
+      "max": "至多 {{max}} 個字元",
+      "edges": "必須以字母或數字開頭和結尾",
+      "pattern": "僅限字母、數字和單個連字元",
+      "taken": "該 slug 已被佔用"
+    }
+  },
+  "form": {
+    "nameLabel": "名稱",
+    "slugLabel": "slug",
+    "namePlaceholder": "用幾句話說明這個專案是什麼",
+    "slugPlaceholder": "小寫、連字元、無空格",
+    "slugHint": "在產品的每個列表中都作為一列顯示。小寫字母、數字和連字元。",
+    "repoPlaceholder": "git@github.com:org/worker-profiles.git",
+    "repoHint": "可選。該專案的 worker 配置檔案在哪裡編寫 — 留空則使用平臺預設配置。",
+    "iconHint": "可選。一個 emoji 或圖片 URL，顯示在 slug 旁。沒有時，標識取自倉庫所在主機。",
+    "colorClear": "無顏色",
+    "colorHint": "可選。為標識旁的圓點上色並渲染標籤色調 — 不影響介面本身。",
+    "tagsHint": "可選。這個專案是什麼 — 按 Enter 或逗號新增，Backspace 刪除最後一個。",
+    "submit": "建立專案"
+  },
+  "tagEntry": {
+    "placeholder": "web、billing…",
+    "remove": "移除標籤 {{tag}}"
+  },
+  "create": {
+    "title": "新建專案",
+    "crumb": "新建",
+    "summary": "專案擁有它的應用、執行和預算。slug 是它在其他所有地方被稱呼的名字。",
+    "toastCreated": "專案已建立",
+    "failureFallback": "專案未被建立。",
+    "failureTail": "沒有建立任何內容 — 你輸入的內容原樣保留。",
+    "guardTitle": "不建立專案就離開？",
+    "guardBody": "你輸入的名稱、slug 和倉庫尚未儲存到任何地方。離開此頁面將丟棄它們。",
+    "guardConfirm": "丟棄",
+    "guardCancel": "繼續編輯"
+  },
+  "detail": {
+    "fallbackTitle": "專案",
+    "crumbFallback": "專案",
+    "summary": "<slug/> · 創建於 <created/>",
+    "notFoundTitle": "沒有該 id 的專案",
+    "notFoundDescription": "登錄檔中沒有 <id/> 的任何內容。來自舊連結的專案 id 是到達此處的常見方式 — 地址比它命名的專案活得更久，而登錄檔是現存專案的居所。",
+    "notFoundBack": "返回專案列表",
+    "factsSection": "專案本身",
+    "editIdentity": "編輯標識",
+    "editIdentityFailure": "標識未儲存。",
+    "rolesSection": "此專案上的角色",
+    "rolesForbiddenSubject": "此專案上的角色",
+    "rolesHeld": {
+      "other": "已授予 {{count}} 個"
+    },
+    "fact": {
+      "slug": "slug",
+      "name": "名稱",
+      "mark": "標識",
+      "created": "創建於",
+      "iconAbsent": "未儲存",
+      "colourAbsent": "未設定",
+      "tagsAbsent": "暫無"
+    },
+    "rolesEmpty": "沒有人在此專案上持有角色。任何能訪問它的人都通過平臺授權訪問 — 平臺授權全域性生效，不在此列出。",
+    "rolesAll": "此專案上的所有分配",
+    "rolesGrant": "授予角色"
+  },
+  "editor": {
+    "iconHint": "一個 emoji 或圖片 URL。留空保持當前標識。",
+    "colorClear": "保留已存顏色",
+    "colorHint": "為標識旁的圓點上色並渲染標籤色調 — 不影響介面本身。",
+    "tagsHint": "這個專案是什麼。儲存空列表將清空標籤。",
+    "save": "儲存標識"
+  },
+  "handoff": {
+    "section": "此專案的工作在哪裡",
+    "counting": "統計中",
+    "runsWhat": "活躍執行",
+    "runsCount": "<count/> 個進行中，共見 <total/> 個",
+    "runsNote": "開啟收窄到此專案的值班列表",
+    "queueWhat": "佇列與 worker",
+    "queueCount": "<items/> 個工作項 · <workers/> 個 worker 線上",
+    "queueNote": "開啟收窄到此專案的認領佇列",
+    "sourcesWhat": "來源",
+    "sourcesCount": "<count/> 個連線",
+    "sourcesNote": "開啟收窄到此專案的接入",
+    "costWhat": "開銷與失敗",
+    "costToday": "今日 <spend/>",
+    "costNothing": "<dash/> 尚無歸集",
+    "costNote": "數字屬於此專案 — 其背後的報告屬於平臺"
+  },
+  "jobs": {
+    "section": "定時作業",
+    "unknown": "未知",
+    "counting": "統計中",
+    "loading": "正在載入定時作業",
+    "errorTitle": "定時任務未載入",
+    "statusEnabled": "已啟用",
+    "statusPaused": "已暫停",
+    "pause": "暫停定時任務",
+    "resume": "恢復定時任務",
+    "delete": "刪除定時任務",
+    "emptyTitle": "這裡沒有按時鐘執行的東西",
+    "emptyDescription": "沒有定時任務會在此專案中自行啟動工作。這裡執行的一切都由人提交或派發。",
+    "create": "安排一個作業",
+    "dialogDescription": "平臺自行在此專案中提交的一條 cron 條目 — 簡報成為工單，配置檔案成為第一步。",
+    "dialogSubmit": "安排",
+    "cronLabel": "cron",
+    "cronHint": "五欄位 cron，按專案自身的時區策略。選擇預設或直接編寫表示式。",
+    "profileLabel": "配置鍵",
+    "profilePlaceholder": "implementer",
+    "profileHint": "執行起始的工作項配置 — 目錄在客戶的 git 中。",
+    "briefLabel": "簡報 json",
+    "briefHint": "原樣儲存。此輸入框與主機之間沒有任何東西會改動它。",
+    "deleteTitle": "刪除此定時任務？",
+    "deleteBody": "<cron/>（<profile/>）將停止觸發並被移除。因它而已在執行的工作不受影響。",
+    "deleteCancel": "保留",
+    "configured": {
+      "other": "已配置 {{count}} 個"
+    }
+  }
+}

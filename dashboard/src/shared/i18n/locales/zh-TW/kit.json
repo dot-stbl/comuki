@@ -1,0 +1,119 @@
+{
+  "field": {
+    "required": "必填"
+  },
+  "formDialog": {
+    "cancel": "取消"
+  },
+  "dialog": {
+    "close": "關閉"
+  },
+  "copyButton": {
+    "copy": "複製",
+    "copied": "已複製"
+  },
+  "codeBlock": {
+    "wrap": "換行",
+    "showLess": "收起",
+    "showAll": {
+      "other": "顯示全部 {{count}} 行"
+    }
+  },
+  "skeleton": {
+    "loading": "載入中"
+  },
+  "forbidden": {
+    "subject": "此檢視",
+    "title": "{{subject}}對你的角色關閉",
+    "description": "{{needs}} — 請申請該角色，或切換到你已擁有它的專案。"
+  },
+  "searchField": {
+    "clear": "清除搜尋"
+  },
+  "select": {
+    "any": "任意"
+  },
+  "combobox": {
+    "openList": "開啟列表"
+  },
+  "datePicker": {
+    "openCalendar": "開啟日曆"
+  },
+  "splitPane": {
+    "resize": "調整大小"
+  },
+  "dataTable": {
+    "empty": "暫無行",
+    "noun": "行",
+    "selectColumn": "選擇",
+    "selectAll": "選擇所有{{noun}}",
+    "selectRow": "選擇{{noun}} {{id}}",
+    "resizeColumn": "調整 {{label}} 列寬",
+    "resizeHint": "拖動調整列寬，雙擊重置"
+  },
+  "toolbar": {
+    "filters": "篩選",
+    "filtersLabel": "篩選",
+    "filtersActive": "篩選，{{count}} 個生效",
+    "clearFilters": "清除全部篩選",
+    "columns": "列",
+    "searchPlaceholder": "搜尋{{label}}…",
+    "filterBy": "按 {{label}} 篩選",
+    "filterAll": "全部 {{label}}",
+    "filterPlaceholder": "篩選{{label}}…",
+    "clearFilterTitle": "清除 {{label}} 篩選",
+    "clearFilterLabel": "清除 {{label}} 篩選：{{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "回到面板",
+    "fillWindow": "鋪滿視窗",
+    "shrinkBack": "將 {{title}} 縮回面板",
+    "fillWith": "用 {{title}} 鋪滿視窗",
+    "resize": "調整 {{title}} 大小",
+    "closeHint": "關閉 — escape",
+    "close": "關閉 {{title}}"
+  },
+  "evidencePane": {
+    "closeHint": "關閉 — escape",
+    "close": "關閉證據",
+    "empty": "沒有 {{type}} 的檢視器 — 位元組在上方的 url 處",
+    "unknownType": "未知",
+    "openNewTab": "在新標籤頁開啟",
+    "openNewTabLabel": "在新標籤頁開啟 {{filename}}"
+  },
+  "cron": {
+    "cadence": "週期",
+    "custom": "自定義…",
+    "customDescription": "選擇分鐘、小時、日、月和星期。",
+    "value": "值",
+    "any": "任意",
+    "everyDay": "每天",
+    "anyDay": "任意一天",
+    "part": {
+      "minute": "分鐘",
+      "hour": "小時",
+      "day": "日",
+      "month": "月",
+      "weekday": "星期"
+    },
+    "weekday": {
+      "sun": "週日",
+      "mon": "週一",
+      "tue": "週二",
+      "wed": "週三",
+      "thu": "週四",
+      "fri": "週五",
+      "sat": "週六"
+    },
+    "preset": {
+      "hourly": "每小時",
+      "hourlyDescription": "每小時的整點。",
+      "daily": "每天 03:00",
+      "dailyDescription": "每天一次，在專案的安靜時段。",
+      "weekly": "每週一",
+      "weeklyDescription": "每週一 03:00。",
+      "monthly": "每月 1 日",
+      "monthlyDescription": "每月第一天的 03:00。"
+    }
+  }
+}

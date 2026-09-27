@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Tentar novamente"
-  },
-  "errors": {
-    "unknown": "Erro desconhecido"
-  },
   "status": {
     "new": "nova",
     "queued": "enfileirada",

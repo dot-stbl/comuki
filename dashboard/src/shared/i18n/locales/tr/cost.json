@@ -1,0 +1,90 @@
+{
+  "page": {
+    "title": "Maliyet ve arızalar",
+    "errorTitle": "Rapor yüklenmedi",
+    "retry": "Yeniden dene",
+    "period": {
+      "day": "bugün",
+      "week": "bu hafta",
+      "month": "bu ay"
+    },
+    "periodEnd": {
+      "day": "gün sonu",
+      "week": "hafta sonu",
+      "month": "ay sonu"
+    },
+    "deltaVs": "{{pct}}% — önceki döneme karşı: {{period}}",
+    "mockMark": "mock anlık görüntü · VITE_USE_MOCK"
+  },
+  "toggle": {
+    "aria": "Dönem"
+  },
+  "total": {
+    "label": "{{period}} harcaması",
+    "noPrior": "henüz önceki dönem yok",
+    "vs": "önceki döneme karşı: {{period}}",
+    "flat": "düz",
+    "burnNote": "ortalama <burn/> / gün · <days/>",
+    "daysObserved": {
+      "other": "{{count}} gün gözlendi"
+    }
+  },
+  "forecast": {
+    "label": "{{period}} tahmini",
+    "sub": "{{cap}} üst sınırının {{pct}}%'i · tüketim hızı {{rate}}"
+  },
+  "budget": {
+    "label": "Bütçe ilerlemesi",
+    "today": "bugün",
+    "month": "ayın başından beri",
+    "ofCap": "{{cap}} üst sınırından {{used}}"
+  },
+  "section": {
+    "byDay": "güne göre harcama",
+    "byDayNote": {
+      "other": "son {{count}} gün"
+    },
+    "byModel": "modele göre harcama",
+    "byModelNote": "token",
+    "topProjects": "en çok harcayan projeler",
+    "topProjectsNote": "bu dönem",
+    "byApp": "uygulamaya göre harcama",
+    "byAppNote": "harcama",
+    "failures": "çalıştırmalar nerede başarısız oluyor",
+    "failuresNote": "nerede kırılıyor"
+  },
+  "column": {
+    "spend": "harcama",
+    "tokens": "token",
+    "share": "pay"
+  },
+  "table": {
+    "app": "uygulama",
+    "model": "model",
+    "project": "proje"
+  },
+  "byApp": {
+    "empty": "bugün harcanan bir şey yok"
+  },
+  "byModel": {
+    "empty": "bu dönemde model harcaması yok",
+    "tokensTitle": "{{runs}} çalıştırmada {{tokens}} token"
+  },
+  "topProjects": {
+    "empty": "bu dönemde proje harcaması yok",
+    "ofCap": "{{cap}} üst sınırından",
+    "noCap": "üst sınır yok"
+  },
+  "byDay": {
+    "empty": "bu hafta harcanan bir şey yok",
+    "figure": {
+      "other": "son {{count}} günde <total/> · günlük <average/> · en ağır <peak/>, <spend/> ile"
+    },
+    "chartLabel": {
+      "other": "Güne göre harcama, dolar. Son {{count}} günde {{total}}, ortalama günlük {{average}}; en ağır {{peak}}, {{spend}} ile."
+    }
+  },
+  "failuresBlock": {
+    "empty": "bugün başarısız olan bir şey yok"
+  }
+}

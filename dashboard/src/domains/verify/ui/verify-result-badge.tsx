@@ -1,4 +1,5 @@
 import { Check, MinusCircle, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import type { VerifyResult } from "@/domains/verify/model/types"
 import { cn } from "@/shared/lib/utils"
@@ -25,6 +26,8 @@ export function VerifyResultBadge({
   result,
   className,
 }: VerifyResultBadgeProps) {
+  const { t } = useTranslation("verify")
+
   if (!result) {
     return (
       <span
@@ -33,7 +36,7 @@ export function VerifyResultBadge({
         data-outcome="never"
       >
         <MinusCircle />
-        never ran
+        {t("result.neverRan")}
       </span>
     )
   }
@@ -52,7 +55,7 @@ export function VerifyResultBadge({
       data-outcome={failed ? "failed" : "passed"}
     >
       <Mark />
-      {failed ? "failed" : "passed"}
+      {failed ? t("result.failed") : t("result.passed")}
     </span>
   )
 }

@@ -1,0 +1,87 @@
+{
+  "header": {
+    "title": "當班",
+    "crumb": "當班",
+    "summary": {
+      "other": "<owed/> 需要你 · <running/> 執行中 · <total/> 個執行"
+    },
+    "errorTitle": "當班檢視沒有加載出來",
+    "errorTail": "{{detail}} — 在它加載出來之前，此螢幕上的任何內容都無法說明是否有決定在等你。"
+  },
+  "notice": {
+    "fallback": "決定失敗了。",
+    "tail": "{{detail}} 沒有任何改變 — 執行已回到原狀。"
+  },
+  "verdict": {
+    "clear": "沒有需要你的事",
+    "owed": {
+      "other": "個執行在等待決定"
+    },
+    "swarmEmpty": "叢集為空 — 佇列裡沒有，飛行中沒有。",
+    "moving": "<running/> 執行中 · <queued/> 排隊中 — 叢集在自己運轉。"
+  },
+  "attention": {
+    "section": "需要你",
+    "column": {
+      "run": "執行",
+      "project": "專案",
+      "task": "任務",
+      "step": "步驟",
+      "inStep": "處於步驟"
+    },
+    "status": {
+      "escalated": "已升級",
+      "failed": "已失敗",
+      "waiting": "等待中"
+    },
+    "reason": {
+      "escalated": "從叢集升級給某個人",
+      "failed": "停在了一道校驗關口",
+      "waiting": "在等一個人"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "批准",
+    "stop": "停止",
+    "open": "開啟",
+    "approveRun": "批准 {{title}}",
+    "stopRun": "停止 {{title}}",
+    "openRun": "開啟 {{title}}",
+    "more": "還有 {{count}} 個 — 開啟即時執行"
+  },
+  "list": {
+    "waitingOnPlan": "在等一個計劃",
+    "timeInStep": "步驟耗時"
+  },
+  "running": {
+    "section": "當前執行中",
+    "note": "{{running}} 飛行中 · {{queued}} 排隊中",
+    "empty": "沒有在飛行中的。",
+    "more": "還有 {{count}} 個在飛行中 — 開啟即時執行"
+  },
+  "outcomes": {
+    "loading": "正在載入本週結果",
+    "failed": "當班背後的這一週沒有加載出來，沒有可對照的歷史。此螢幕上的其他內容不依賴它 — 下面飛行中的內容就是即時讀數。",
+    "reading": "今日至今完成 <today/> · 本週 <week/> · 失敗 <failed/>",
+    "chartLabel": "按天的執行結果。今日至今完成 {{today}}，本週 {{week}}，其中失敗 {{failed}}。",
+    "status": {
+      "success": "成功",
+      "failed": "失敗",
+      "escalated": "升級"
+    }
+  },
+  "shortcuts": {
+    "section": "快捷入口",
+    "newRun": "新建執行",
+    "newRunNote": "從收件箱取一個工單",
+    "liveRuns": "即時執行",
+    "liveRunsNote": "整個叢集，帶流程板和篩選器",
+    "approvals": "審批",
+    "approvalsNote": "排隊等決定的計劃"
+  },
+  "stopDialog": {
+    "title": "停止這個執行？",
+    "body": "{{title}} — 容器將被拆除，租約被釋放。已合併的工作保留。",
+    "confirm": "停止",
+    "cancel": "繼續執行"
+  }
+}

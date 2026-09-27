@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { PlatformSettings } from "@/domains/settings/model/types"
 import { Section } from "@/shared/ui"
@@ -46,6 +47,7 @@ export interface PlatformSettingsPanelProps {
 export function PlatformSettingsPanel({
   settings,
 }: PlatformSettingsPanelProps) {
+  const { t } = useTranslation("settings")
   const lease = settings.orchestration.lease
   const escalation = settings.orchestration.escalationTimeout
   const scale = settings.compute.scale
@@ -53,44 +55,54 @@ export function PlatformSettingsPanel({
   return (
     <div className={styles.platform}>
       <p className={styles.platformHint} data-test="settings-readonly-hint">
-        Read-only — every value here is configured at boot. Changes go through
-        configuration and a restart; nothing on this page writes.
+        {t("platform.hint")}
       </p>
 
       <Section
         variant="region"
         id="platform-orchestration"
-        title="orchestration"
+        title={t("platform.orchestration.section")}
         data-test="settings-orchestration"
       >
         <div className={styles.platformRows}>
           <Row
-            label="lease ttl"
-            note="handed out on claim, extended by heartbeat"
+            label={t("platform.orchestration.leaseTtl")}
+            note={t("platform.orchestration.leaseTtlNote")}
           >
             {seconds(lease.leaseTtlSeconds)}
           </Row>
-          <Row label="reap interval" note="lease reaper sweep cadence">
+          <Row
+            label={t("platform.orchestration.reapInterval")}
+            note={t("platform.orchestration.reapIntervalNote")}
+          >
             {seconds(lease.reapIntervalSeconds)}
           </Row>
           <Row
-            label="reap grace"
-            note="buffer past expiry before the reaper acts"
+            label={t("platform.orchestration.reapGrace")}
+            note={t("platform.orchestration.reapGraceNote")}
           >
             {seconds(lease.reapGraceSeconds)}
           </Row>
-          <Row label="max attempts" note="claims before a stalled item fails">
+          <Row
+            label={t("platform.orchestration.maxAttempts")}
+            note={t("platform.orchestration.maxAttemptsNote")}
+          >
             {lease.maxAttempts}
           </Row>
           <Row
-            label="escalation timeout"
-            note="how long a run may sit escalated before auto-archival"
+            label={t("platform.orchestration.escalationTimeout")}
+            note={t("platform.orchestration.escalationTimeoutNote")}
           >
             {escalation.enabled
               ? seconds(escalation.timeoutSeconds)
-              : `off — the ratchet is disabled (${seconds(escalation.timeoutSeconds)} would apply)`}
+              : t("platform.escalationOff", {
+                  would: seconds(escalation.timeoutSeconds),
+                })}
           </Row>
-          <Row label="escalation sweep" note="ratchet sweep cadence">
+          <Row
+            label={t("platform.orchestration.escalationSweep")}
+            note={t("platform.orchestration.escalationSweepNote")}
+          >
             {seconds(escalation.sweepIntervalSeconds)}
           </Row>
         </div>
@@ -99,29 +111,50 @@ export function PlatformSettingsPanel({
       <Section
         variant="region"
         id="platform-compute"
-        title="compute"
+        title={t("platform.compute.section")}
         data-test="settings-compute"
       >
         <div className={styles.platformRows}>
-          <Row label="provider" note="the compute implementation v1 runs">
+          <Row
+            label={t("platform.compute.provider")}
+            note={t("platform.compute.providerNote")}
+          >
             {settings.compute.provider}
           </Row>
-          <Row label="worker image" note="digest-pinned in production">
+          <Row
+            label={t("platform.compute.workerImage")}
+            note={t("platform.compute.workerImageNote")}
+          >
             {scale.workerImage}
           </Row>
-          <Row label="profiles ref" note="the pinned profiles git ref">
+          <Row
+            label={t("platform.compute.profilesRef")}
+            note={t("platform.compute.profilesRefNote")}
+          >
             {scale.profilesGitRef}
           </Row>
-          <Row label="min idle" note="warm-idle floor per profile">
+          <Row
+            label={t("platform.compute.minIdle")}
+            note={t("platform.compute.minIdleNote")}
+          >
             {scale.minIdle}
           </Row>
-          <Row label="max concurrent" note="concurrency cap per project">
+          <Row
+            label={t("platform.compute.maxConcurrent")}
+            note={t("platform.compute.maxConcurrentNote")}
+          >
             {scale.maxConcurrent}
           </Row>
-          <Row label="idle ttl" note="before a worker is a reaper candidate">
+          <Row
+            label={t("platform.compute.idleTtl")}
+            note={t("platform.compute.idleTtlNote")}
+          >
             {seconds(scale.idleTtlSeconds)}
           </Row>
-          <Row label="poll interval" note="between supervisor passes">
+          <Row
+            label={t("platform.compute.pollInterval")}
+            note={t("platform.compute.pollIntervalNote")}
+          >
             {seconds(scale.pollIntervalSeconds)}
           </Row>
         </div>
@@ -130,15 +163,15 @@ export function PlatformSettingsPanel({
       <Section
         variant="region"
         id="platform-proxy"
-        title="proxy"
+        title={t("platform.proxy.section")}
         data-test="settings-proxy"
       >
         <div className={styles.platformRows}>
           <Row
-            label="openai / anthropic passthrough"
-            note="whether the proxy is composed at all"
+            label={t("platform.proxy.passthrough")}
+            note={t("platform.proxy.passthroughNote")}
           >
-            {settings.proxy.enabled ? "on" : "off"}
+            {settings.proxy.enabled ? t("platform.on") : t("platform.off")}
           </Row>
         </div>
       </Section>

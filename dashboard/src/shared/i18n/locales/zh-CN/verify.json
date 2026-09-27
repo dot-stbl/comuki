@@ -1,1 +1,32 @@
-{}
+{
+  "panel": {
+    "emptyFiltered": "没有检查匹配当前筛选。",
+    "empty": "未声明任何检查。",
+    "switch": "每次运行都执行门禁",
+    "sourceLead": "这些命令声明在该客户端的 git 中，在这里只读。改动一条就是在他们的仓库里提交一个 commit — 正是这让运行可复现，所以本屏刻意没有编辑器。",
+    "readAt": "读取于 {{when}}",
+    "openInGit": "在 git 中打开",
+    "off": "门禁已关闭，因此下面的内容不会运行，也没有运行被它阻塞。文件仍在 git 里，检查仍被声明 — 重新打开即从下一次运行起恢复执行。",
+    "emptyTitle": "未声明任何检查",
+    "emptyDescription": "门禁在 <repo/> 的 <ref/> 上寻找 <path/>，什么也没找到。把文件提交到那里，下次读取就会带上 — 这里没有地方创建。",
+    "count": "显示 {{count}} 条"
+  },
+  "column": {
+    "lastResult": "上次结果",
+    "anyResult": "任意结果",
+    "check": "检查",
+    "filterPlaceholder": "筛选检查、命令…",
+    "command": "命令",
+    "declaredIn": "声明于",
+    "output": "输出",
+    "neverReached": "尚无运行到达此检查",
+    "when": "何时",
+    "took": "耗时",
+    "run": "运行"
+  },
+  "result": {
+    "failed": "失败",
+    "neverRan": "从未运行",
+    "passed": "通过"
+  }
+}

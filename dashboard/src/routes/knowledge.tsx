@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import {
@@ -52,6 +53,8 @@ export const Route = createFileRoute("/knowledge")({
 })
 
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const search = Route.useSearch()
 
   /* A match's search is the URL's raw values merged over what
@@ -67,8 +70,11 @@ function RouteComponent() {
   return (
     <RequirePermission
       permission="knowledge.view"
-      title="Knowledge"
-      crumbs={[{ label: "configure" }, { label: "knowledge" }]}
+      title={t("route.knowledge")}
+      crumbs={[
+        { label: t("crumb.configure") },
+        { label: t("crumb.knowledge") },
+      ]}
     >
       <KnowledgePage
         tab={tab}

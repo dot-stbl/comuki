@@ -1,0 +1,32 @@
+{
+  "panel": {
+    "emptyFiltered": "沒有檢查匹配當前篩選。",
+    "empty": "未宣告任何檢查。",
+    "switch": "每次執行都執行門禁",
+    "sourceLead": "這些命令宣告在該客戶端的 git 中，在這裡只讀。改動一條就是在他們的倉庫裡提交一個 commit — 正是這讓執行可復現，所以本屏刻意沒有編輯器。",
+    "readAt": "讀取於 {{when}}",
+    "openInGit": "在 git 中開啟",
+    "off": "門禁已關閉，因此下面的內容不會執行，也沒有執行被它阻塞。檔案仍在 git 裡，檢查仍被宣告 — 重新開啟即從下一次執行起恢復執行。",
+    "emptyTitle": "未宣告任何檢查",
+    "emptyDescription": "門禁在 <repo/> 的 <ref/> 上尋找 <path/>，什麼也沒找到。把檔案提交到那裡，下次讀取就會帶上 — 這裡沒有地方建立。",
+    "count": "顯示 {{count}} 條"
+  },
+  "column": {
+    "lastResult": "上次結果",
+    "anyResult": "任意結果",
+    "check": "檢查",
+    "filterPlaceholder": "篩選檢查、命令…",
+    "command": "命令",
+    "declaredIn": "聲明於",
+    "output": "輸出",
+    "neverReached": "尚無執行到達此檢查",
+    "when": "何時",
+    "took": "耗時",
+    "run": "執行"
+  },
+  "result": {
+    "failed": "失敗",
+    "neverRan": "從未執行",
+    "passed": "通過"
+  }
+}

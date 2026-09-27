@@ -161,15 +161,9 @@ export function QueuePage({
               ns="queue"
               i18nKey="registry.summary"
               components={{
-                queued: (
-                  <span className={styles.strong}>{String(queued)}</span>
-                ),
+                queued: <span className={styles.strong}>{String(queued)}</span>,
                 stalled: (
-                  <span
-                    className={
-                      stalled > 0 ? styles.warn : styles.strong
-                    }
-                  >
+                  <span className={stalled > 0 ? styles.warn : styles.strong}>
                     {String(stalled)}
                   </span>
                 ),
@@ -180,9 +174,7 @@ export function QueuePage({
                   <span className={styles.strong}>{String(counts.idle)}</span>
                 ),
                 lost: (
-                  <span
-                    className={lost > 0 ? styles.warn : styles.strong}
-                  >
+                  <span className={lost > 0 ? styles.warn : styles.strong}>
                     {String(lost)}
                   </span>
                 ),
@@ -239,15 +231,17 @@ export function QueuePage({
             kind="error"
             title={t("registry.errorTitle")}
             description={
-              error instanceof Error ? error.message : t("errors.unknown")
+              error instanceof Error
+                ? error.message
+                : t("errors.unknown", { ns: "common" })
             }
             inset="gutter"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="queue-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}

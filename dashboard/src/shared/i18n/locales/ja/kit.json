@@ -1,1 +1,119 @@
-{}
+{
+  "field": {
+    "required": "必須"
+  },
+  "formDialog": {
+    "cancel": "キャンセル"
+  },
+  "dialog": {
+    "close": "閉じる"
+  },
+  "copyButton": {
+    "copy": "コピー",
+    "copied": "コピーしました"
+  },
+  "codeBlock": {
+    "wrap": "折り返し",
+    "showLess": "折りたたむ",
+    "showAll": {
+      "other": "全 {{count}} 行を表示"
+    }
+  },
+  "skeleton": {
+    "loading": "読み込み中"
+  },
+  "forbidden": {
+    "subject": "この画面",
+    "title": "{{subject}}はあなたのロールには閉じられています",
+    "description": "{{needs}} — ロールを申請するか、すでに持っているプロジェクトに切り替えてください。"
+  },
+  "searchField": {
+    "clear": "検索をクリア"
+  },
+  "select": {
+    "any": "任意"
+  },
+  "combobox": {
+    "openList": "リストを開く"
+  },
+  "datePicker": {
+    "openCalendar": "カレンダーを開く"
+  },
+  "splitPane": {
+    "resize": "サイズ変更"
+  },
+  "dataTable": {
+    "empty": "行がありません",
+    "noun": "行",
+    "selectColumn": "選択",
+    "selectAll": "すべての{{noun}}を選択",
+    "selectRow": "{{noun}} {{id}} を選択",
+    "resizeColumn": "{{label}} 列の幅を変更",
+    "resizeHint": "ドラッグで幅変更、ダブルクリックでリセット"
+  },
+  "toolbar": {
+    "filters": "フィルター",
+    "filtersLabel": "フィルター",
+    "filtersActive": "フィルター、{{count}} 件有効",
+    "clearFilters": "すべてのフィルターをクリア",
+    "columns": "列",
+    "searchPlaceholder": "{{label}}を検索…",
+    "filterBy": "{{label}}でフィルター",
+    "filterAll": "すべての{{label}}",
+    "filterPlaceholder": "{{label}}をフィルター…",
+    "clearFilterTitle": "{{label}}フィルターをクリア",
+    "clearFilterLabel": "{{label}}フィルターをクリア： {{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "パネルに戻る",
+    "fillWindow": "ウィンドウに広げる",
+    "shrinkBack": "{{title}}をパネルに戻す",
+    "fillWith": "{{title}}をウィンドウに広げる",
+    "resize": "{{title}}のサイズを変更",
+    "closeHint": "閉じる — escape",
+    "close": "{{title}}を閉じる"
+  },
+  "evidencePane": {
+    "closeHint": "閉じる — escape",
+    "close": "エビデンスを閉じる",
+    "empty": "{{type}}のビューアがありません — バイトは上のurlにあります",
+    "unknownType": "不明",
+    "openNewTab": "新しいタブで開く",
+    "openNewTabLabel": "{{filename}}を新しいタブで開く"
+  },
+  "cron": {
+    "cadence": "周期",
+    "custom": "カスタム…",
+    "customDescription": "分・時・日・月・曜日を選択してください。",
+    "value": "値",
+    "any": "任意",
+    "everyDay": "毎日",
+    "anyDay": "任意の日",
+    "part": {
+      "minute": "分",
+      "hour": "時",
+      "day": "日",
+      "month": "月",
+      "weekday": "曜日"
+    },
+    "weekday": {
+      "sun": "日",
+      "mon": "月",
+      "tue": "火",
+      "wed": "水",
+      "thu": "木",
+      "fri": "金",
+      "sat": "土"
+    },
+    "preset": {
+      "hourly": "毎時",
+      "hourlyDescription": "毎時、正時に。",
+      "daily": "毎日 03:00",
+      "dailyDescription": "1日1回、プロジェクトの静かな時間帯に。",
+      "weekly": "毎週月曜",
+      "weeklyDescription": "毎週月曜 03:00。",
+      "monthly": "毎月1日",
+      "monthlyDescription": "毎月最初の日の 03:00。"
+    }
+  }
+}

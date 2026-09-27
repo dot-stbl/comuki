@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "重试"
-  },
-  "errors": {
-    "unknown": "未知错误"
-  },
   "status": {
     "running": "运行中",
     "waiting": "等待中",

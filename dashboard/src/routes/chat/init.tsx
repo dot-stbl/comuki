@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { InitWizardPage, stepFrom, type InitStep } from "@/domains/chat"
@@ -47,15 +48,17 @@ export const Route = createFileRoute("/chat/init")({
    URL meets the forbidden state with the roles that would work written on it —
    rather than a five-step form whose last button refuses. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { step = "repo", project } = Route.useSearch()
 
   return (
     <RequirePermission
       permission="sources.edit"
-      title="Onboard a repository"
+      title={t("route.onboard")}
       crumbs={[
-        { label: "console", to: "/chat" },
-        { label: "onboard a repository" },
+        { label: t("crumb.console"), to: "/chat" },
+        { label: t("crumb.onboardRepo") },
       ]}
     >
       <InitWizardPage step={step} project={project} />

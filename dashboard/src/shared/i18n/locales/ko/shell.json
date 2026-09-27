@@ -1,0 +1,184 @@
+{
+  "locale": {
+    "label": "언어"
+  },
+  "nav": {
+    "intake": "인테이크",
+    "observe": "관찰",
+    "configure": "설정",
+    "platform": "플랫폼",
+    "inbox": "수신함",
+    "liveRuns": "라이브 런",
+    "queue": "큐",
+    "approvals": "승인",
+    "cost": "비용",
+    "sources": "소스",
+    "knowledge": "지식",
+    "settings": "설정",
+    "projects": "프로젝트",
+    "identity": "신원",
+    "compute": "컴퓨트",
+    "models": "모델",
+    "sections": "섹션"
+  },
+  "crumb": {
+    "platform": "플랫폼",
+    "projects": "프로젝트",
+    "attention": "어텐션",
+    "liveRuns": "라이브 런",
+    "tasks": "태스크",
+    "queue": "큐",
+    "observe": "관찰",
+    "identity": "신원",
+    "sources": "소스",
+    "approvals": "승인",
+    "configure": "설정",
+    "console": "콘솔",
+    "onboard": "온보드",
+    "knowledge": "지식",
+    "models": "모델",
+    "compute": "컴퓨트",
+    "cost": "비용",
+    "settings": "설정",
+    "new": "신규",
+    "newUser": "새 사용자",
+    "grantRole": "역할 부여",
+    "person": "사람",
+    "linkOidc": "oidc 서브젝트 연결",
+    "project": "프로젝트",
+    "source": "소스",
+    "worker": "워커",
+    "run": "런",
+    "newTicket": "새 티켓",
+    "newApiKey": "새 api 키",
+    "onboardRepo": "리포지토리 온보드"
+  },
+  "topbar": {
+    "home": "Comuki — 홈",
+    "newRun": "새 런",
+    "github": "github",
+    "githubOpens": "GitHub의 Comuki — 새 탭에서 열림"
+  },
+  "page": {
+    "breadcrumb": "브레드크럼",
+    "showRail": "내비게이션 레일 펼치기",
+    "hideRail": "내비게이션 레일 접기",
+    "resizeRail": "내비게이션 레일 크기 조절"
+  },
+  "account": {
+    "label": "계정",
+    "named": "계정 — {{name}}",
+    "settings": "설정",
+    "apiKeys": "API 키",
+    "profile": "프로필",
+    "signOut": "로그아웃"
+  },
+  "appearance": {
+    "label": "화면 모드",
+    "current": "화면 모드 — {{mode}}",
+    "light": "라이트",
+    "dark": "다크",
+    "system": "시스템"
+  },
+  "palette": {
+    "label": "팔레트",
+    "current": "팔레트 — {{name}}"
+  },
+  "live": {
+    "demo": "데모",
+    "polling": "폴링",
+    "mockOnly": "합성 데이터로 동작 중 — 전환은 bun run dev:real",
+    "mockAndDown": "합성 데이터로 동작 중, 백엔드에 닿지 않음",
+    "down": "백엔드에 닿지 않음 — 마지막 알려진 상태를 표시 중",
+    "pollingDown": "라이브 업데이트가 중단됨 — 이 화면은 대신 {{seconds}}초마다 새로고칩니다"
+  },
+  "search": {
+    "open": "검색 — {{chord}}",
+    "label": "Comuki 검색",
+    "placeholder": "id를 붙여넣거나 화면 이름 입력…",
+    "results": "결과",
+    "empty": "여기엔 응답하는 것이 없습니다",
+    "keys": {
+      "move": "↑↓ 이동",
+      "open": "enter 열기",
+      "close": "esc 닫기"
+    },
+    "band": {
+      "resolved": "이동",
+      "section": "섹션",
+      "act": "행동",
+      "handoff": "검색"
+    },
+    "kind": {
+      "run": "런",
+      "workItem": "작업 항목",
+      "worker": "워커",
+      "approval": "승인",
+      "project": "프로젝트",
+      "app": "앱",
+      "person": "사람",
+      "apiKey": "api 키",
+      "image": "이미지",
+      "section": "섹션",
+      "act": "행동",
+      "search": "검색"
+    },
+    "act": {
+      "newTask": "새 태스크",
+      "newTaskHint": "백로그에 티켓 넣기",
+      "newProject": "새 프로젝트",
+      "newProjectHint": "프로젝트 등록",
+      "newUser": "새 사용자",
+      "newUserHint": "사람 초대",
+      "newApiKey": "새 api 키",
+      "newApiKeyHint": "키 발급",
+      "grantRole": "역할 부여",
+      "grantRoleHint": "누군가에게 접근 권한 주기"
+    },
+    "resolvedHint": {
+      "liveRuns": "라이브 런에서",
+      "claimQueue": "클레임 큐에서",
+      "workerPool": "워커 풀에서",
+      "approvals": "승인에서",
+      "image": "이 이미지의 워커",
+      "apiKeys": "api 키에서",
+      "people": "사람에서",
+      "app": "이 앱의 런"
+    },
+    "handoffHint": {
+      "runs": "라이브 런에서",
+      "queue": "큐에서",
+      "inbox": "수신함에서"
+    }
+  },
+  "route": {
+    "attention": "어텐션",
+    "console": "콘솔",
+    "onboard": "리포지토리 온보드",
+    "approvals": "승인",
+    "compute": "컴퓨트",
+    "cost": "비용 & 실패",
+    "identity": "신원",
+    "grantRole": "역할 부여",
+    "newApiKey": "새 api 키",
+    "newUser": "새 사용자",
+    "person": "사람",
+    "linkOidc": "oidc 서브젝트 연결",
+    "knowledge": "지식",
+    "models": "모델",
+    "projects": "프로젝트",
+    "newProject": "새 프로젝트",
+    "project": "프로젝트",
+    "queue": "큐 & 워커",
+    "worker": "워커",
+    "liveRuns": "라이브 런",
+    "run": "런",
+    "settings": "설정",
+    "sources": "소스",
+    "connectSource": "소스 연결",
+    "source": "소스",
+    "newTicket": "새 티켓",
+    "tasks": "태스크",
+    "newTask": "새 태스크"
+  }
+}

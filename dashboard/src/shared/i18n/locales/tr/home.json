@@ -1,0 +1,87 @@
+{
+  "header": {
+    "title": "Nöbet",
+    "crumb": "nöbet",
+    "summary": {
+      "other": "<owed/> seni bekliyor · <running/> çalışıyor · <total/> çalıştırma"
+    },
+    "errorTitle": "Nöbet yüklenemedi",
+    "errorTail": "{{detail}} — bu yüklenene dek, bu ekrandaki hiçbir şey bir karar borcu olup olmadığını söylediğine güvenilemez."
+  },
+  "notice": {
+    "fallback": "Karar verilemedi.",
+    "tail": "{{detail}} Hiçbir şey değişmedi — çalıştırma eskisi gibi geri geldi."
+  },
+  "verdict": {
+    "clear": "Hiçbir şey seni beklemiyor",
+    "owed": {
+      "other": "çalıştırma karar bekliyor"
+    },
+    "swarmEmpty": "Sürü boş — kuyrukta bir şey yok, uçuşta bir şey yok.",
+    "moving": "<running/> çalışıyor · <queued/> kuyrukta — sürü kendi başına ilerliyor."
+  },
+  "attention": {
+    "section": "Seni bekleyen",
+    "column": {
+      "run": "çalıştırma",
+      "project": "proje",
+      "task": "görev",
+      "step": "adım",
+      "inStep": "adımda"
+    },
+    "status": {
+      "escalated": "eskalasyonda",
+      "failed": "başarısız",
+      "waiting": "bekliyor"
+    },
+    "reason": {
+      "escalated": "sürünün üstünden bir insana yükseltildi",
+      "failed": "bir doğrulama kapısında durdu",
+      "waiting": "insan bekliyor"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "Onayla",
+    "stop": "Durdur",
+    "open": "Aç",
+    "approveRun": "{{title}} onayla",
+    "stopRun": "{{title}} durdur",
+    "openRun": "{{title}} aç",
+    "more": "ve {{count}} tane daha — canlı çalıştırmaları aç"
+  },
+  "list": {
+    "waitingOnPlan": "plan bekliyor",
+    "timeInStep": "adımda geçen süre"
+  },
+  "running": {
+    "section": "Şimdi çalışıyor",
+    "note": "uçuşta {{running}} · kuyrukta {{queued}}",
+    "empty": "Uçuşta bir şey yok.",
+    "more": "uçuşta {{count}} tane daha — canlı çalıştırmaları aç"
+  },
+  "outcomes": {
+    "loading": "Haftanın sonuçları yükleniyor",
+    "failed": "Bu nöbetin ardındaki hafta yüklenmedi; dolayısıyla karşılaştırılacak bir geçmiş yok. Bu ekrandaki başka hiçbir şey ona bağlı değil — aşağıda uçuşta olanlar canlı okumadır.",
+    "reading": "bugüne dek bugün <today/> bitti · bu hafta <week/> · <failed/> başarısız",
+    "chartLabel": "Güne göre çalıştırma sonuçları. Bugüne dek bugün {{today}} bitti, bu hafta {{week}}, bunların {{failed}} tanesi başarısız.",
+    "status": {
+      "success": "başarılı",
+      "failed": "başarısız",
+      "escalated": "eskalasyonda"
+    }
+  },
+  "shortcuts": {
+    "section": "Kısayollar",
+    "newRun": "Yeni çalıştırma",
+    "newRunNote": "gelen kutusundan bir iş al",
+    "liveRuns": "Canlı çalıştırmalar",
+    "liveRunsNote": "akış panosu ve filtrelerle bütün sürü",
+    "approvals": "Onaylar",
+    "approvalsNote": "karar için sıraya girmiş planlar"
+  },
+  "stopDialog": {
+    "title": "Bu çalıştırma durdurulsun mu?",
+    "body": "{{title}} — kontainer yıkılır ve lease bırakılır. Zaten birleşmiş olan iş kalır.",
+    "confirm": "Çalıştırmayı durdur",
+    "cancel": "Çalışmaya devam etsin"
+  }
+}

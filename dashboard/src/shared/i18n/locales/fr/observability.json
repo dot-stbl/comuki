@@ -1,1 +1,20 @@
-{}
+{
+  "boards": {
+    "meta": "uid {{uid}} · définition mise à jour {{updated}}",
+    "openAria": "Ouvrir {{title}}",
+    "notImported": "pas encore importée"
+  },
+  "connect": {
+    "where": "{{base}} · org {{org}} · écrit contre grafana {{version}}",
+    "noGrafana": "Aucun grafana n'est configuré pour cette plateforme, donc aucun des boards ci-dessus ne peut encore être ouvert. Leurs définitions existent toujours — elles vivent dans notre dépôt, pas dans une base —, donc les importer est la seule étape entre ici et un board qui fonctionne.",
+    "noBoards": "Grafana est configuré et aucun des boards n'a encore été importé dedans. Rien n'est cassé — les définitions sont dans notre dépôt et l'import ci-dessous est tout le travail restant.",
+    "steps": {
+      "one": "Pointez un grafana vers l'endpoint de métriques de la plateforme. L'orchestrateur sert les métriques prometheus sur son propre port ; les boards attendent que cette source de données s'appelle <code>comuki</code>.",
+      "two": "Importez les définitions des boards depuis <path/> dans <repo/>. Ce sont des json de dashboard ordinaires — ils sont versionnés avec la plateforme exprès, pour qu'un board et la métrique qu'il lit changent en un commit.",
+      "three": "Gardez les uids que les définitions déclarent. Cette page lie par uid, et un board importé sous un nouveau est un board que cette page ne peut pas trouver.",
+      "four": "Fixez la base url du grafana dans la configuration de déploiement de la plateforme. C'est ce qui transforme les entrées ci-dessus en liens."
+    },
+    "boardsLabel": "Définitions des boards",
+    "openGrafana": "Ouvrir grafana"
+  }
+}

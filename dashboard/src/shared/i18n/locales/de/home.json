@@ -1,10 +1,4 @@
 {
-  "errors": {
-    "unknown": "unbekannter fehler"
-  },
-  "actions": {
-    "retry": "wiederholen"
-  },
   "header": {
     "title": "Schicht",
     "crumb": "schicht",

@@ -37,10 +37,22 @@ import {
 } from "@tanstack/react-table"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { ChevronDown, ChevronUp } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/shared/lib/utils"
 
 import styles from "./data-table.module.css"
+
+/**
+ * The one translator shape the table's own words resolve through
+ * (`dashboard-i18n` D7): `selectionColumn` is a plain function TanStack-era
+ * code calls while building a column, so the component hands its hook-bound
+ * `t` in rather than the function reaching for a hook it cannot call.
+ */
+export type DataTableTranslator = (
+  key: string,
+  options?: Record<string, unknown>
+) => string
 
 /**
  * The feature set every kit table registers. TanStack v9 has no global
@@ -494,6 +506,7 @@ function ColumnGrip<TData extends RowData>({
   onResize,
   onReset,
 }: ColumnGripProps<TData>) {
+  const { t } = useTranslation("kit")
   const drag = useRef<{
     pointerId: number
     originX: number
@@ -579,8 +592,10 @@ function ColumnGrip<TData extends RowData>({
       type="button"
       className={styles.grip}
       data-test={`data-table-resize-${column.id}`}
-      aria-label={`Resize ${columnLabel(column)} column`}
-      title="Drag to resize, double-click to reset"
+      aria-label={t("dataTable.resizeColumn", {
+        label: columnLabel(column),
+      })}
+      title={t("dataTable.resizeHint")}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -593,7 +608,8 @@ function ColumnGrip<TData extends RowData>({
 }
 
 function selectionColumn<TData extends RowData>(
-  noun: string
+  noun: string,
+  t: DataTableTranslator
 ): DataColumn<TData> {
   return {
     id: SELECT_COLUMN_ID,
@@ -604,7 +620,7 @@ function selectionColumn<TData extends RowData>(
     // like every other track width, and it has to agree with `.gutter` in the
     // stylesheet: this width is what the next pinned column offsets itself by,
     // so a checkbox that overflowed it would be clipped rather than move it.
-    meta: { width: 28, resizable: false, label: "Select" },
+    meta: { width: 28, resizable: false, label: t("dataTable.selectColumn") },
     header: ({ table }) => {
       const all = table.getIsAllRowsSelected()
       const some = table.getIsSomeRowsSelected()
@@ -613,7 +629,7 @@ function selectionColumn<TData extends RowData>(
           type="checkbox"
           className={styles.check}
           data-test="data-table-select-all"
-          aria-label={`Select all ${noun}s`}
+          aria-label={t("dataTable.selectAll", { noun })}
           checked={all}
           ref={(node) => {
             if (node) {
@@ -629,7 +645,7 @@ function selectionColumn<TData extends RowData>(
         type="checkbox"
         className={styles.check}
         data-test="data-table-select-row"
-        aria-label={`Select ${noun} ${row.id}`}
+        aria-label={t("dataTable.selectRow", { noun, id: row.id })}
         checked={row.getIsSelected()}
         onChange={row.getToggleSelectedHandler()}
         onClick={(event) => {
@@ -666,10 +682,11 @@ export function DataTable<TData extends RowData>({
   onColumnSizingChange,
   selection,
   onRowClick,
-  emptyLabel = "No rows",
+  emptyLabel,
   className,
   ref,
 }: DataTableProps<TData>) {
+  const { t } = useTranslation("kit")
   const scrollRef = useRef<HTMLDivElement>(null)
   // Whether the port is scrolled off its start edge, and nothing more: the
   // pinned seam has to read as "there is a column hiding under here", which is
@@ -711,7 +728,7 @@ export function DataTable<TData extends RowData>({
   // Depend on the primitive bits, not the `selection` object: a screen that
   // inlines `selection={{ value, onChange }}` would otherwise rebuild the
   // column list — and with it the whole table model — on every render.
-  const selectionNoun = selection?.noun ?? "row"
+  const selectionNoun = selection?.noun ?? t("dataTable.noun")
   const hasSelection = selection !== undefined
 
   const sortable = onSortingChange !== undefined
@@ -726,7 +743,7 @@ export function DataTable<TData extends RowData>({
     // scrolls away while a pinned column sticks in front of it leaves a row you
     // can read and cannot select, so the one declaration carries both.
     const anyPinned = columns.some((column) => metaOf<TData>(column)?.pinned)
-    const select = selectionColumn<TData>(selectionNoun)
+    const select = selectionColumn<TData>(selectionNoun, t)
     return [
       withSize(
         anyPinned
@@ -735,7 +752,7 @@ export function DataTable<TData extends RowData>({
       ),
       ...declared,
     ]
-  }, [columns, hasSelection, selectionNoun])
+  }, [columns, hasSelection, selectionNoun, t])
 
   const table = useTable<DataTableFeatures, TData>({
     features: dataTableFeatures,
@@ -1001,7 +1018,7 @@ export function DataTable<TData extends RowData>({
                   colSpan={Math.max(columnCount, 1)}
                   data-test="data-table-empty"
                 >
-                  {emptyLabel}
+                  {emptyLabel ?? t("dataTable.empty")}
                 </td>
               </tr>
             </tbody>

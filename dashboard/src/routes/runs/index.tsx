@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { RunsPage } from "@/domains/runs"
@@ -35,14 +36,16 @@ export const Route = createFileRoute("/runs/")({
 })
 
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { q } = Route.useSearch()
   const navigate = useNavigate()
 
   return (
     <RequirePermission
       permission="runs.view"
-      title="Live runs"
-      crumbs={[{ label: "live runs" }]}
+      title={t("route.liveRuns")}
+      crumbs={[{ label: t("crumb.liveRuns") }]}
     >
       <RunsPage
         search={q}

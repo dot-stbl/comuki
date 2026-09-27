@@ -64,10 +64,10 @@ export function QueuePanel({
   const [sorting, setSorting] = useState<DataTableSorting>([])
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
 
-  const columns = useMemo(() => createQueueColumns({ projects, t }), [
-    projects,
-    t,
-  ])
+  const columns = useMemo(
+    () => createQueueColumns({ projects, t }),
+    [projects, t]
+  )
 
   /* The filter the toolbar promotes to its search field, asked of the same
      declarations the toolbar reads — see the derivation rule on

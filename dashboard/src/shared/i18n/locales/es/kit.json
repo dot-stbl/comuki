@@ -1,1 +1,120 @@
-{}
+{
+  "field": {
+    "required": "obligatorio"
+  },
+  "formDialog": {
+    "cancel": "cancelar"
+  },
+  "dialog": {
+    "close": "cerrar"
+  },
+  "copyButton": {
+    "copy": "copiar",
+    "copied": "copiado"
+  },
+  "codeBlock": {
+    "wrap": "ajustar",
+    "showLess": "mostrar menos",
+    "showAll": {
+      "one": "mostrar las {{count}} líneas",
+      "other": "mostrar las {{count}} líneas"
+    }
+  },
+  "skeleton": {
+    "loading": "cargando"
+  },
+  "forbidden": {
+    "subject": "esta vista",
+    "title": "{{subject}} está cerrada para tus roles",
+    "description": "{{needs}} — pide el rol o cambia a un proyecto donde ya lo tengas."
+  },
+  "searchField": {
+    "clear": "limpiar búsqueda"
+  },
+  "select": {
+    "any": "cualquiera"
+  },
+  "combobox": {
+    "openList": "abrir lista"
+  },
+  "datePicker": {
+    "openCalendar": "abrir calendario"
+  },
+  "splitPane": {
+    "resize": "cambiar tamaño"
+  },
+  "dataTable": {
+    "empty": "sin filas",
+    "noun": "fila",
+    "selectColumn": "selección",
+    "selectAll": "seleccionar todas las {{noun}}",
+    "selectRow": "seleccionar {{noun}} {{id}}",
+    "resizeColumn": "cambiar el ancho de la columna {{label}}",
+    "resizeHint": "arrastra para cambiar el ancho, doble clic para restablecer"
+  },
+  "toolbar": {
+    "filters": "filtros",
+    "filtersLabel": "filtros",
+    "filtersActive": "filtros, {{count}} activos",
+    "clearFilters": "limpiar todos los filtros",
+    "columns": "columnas",
+    "searchPlaceholder": "buscar {{label}}…",
+    "filterBy": "filtrar por {{label}}",
+    "filterAll": "todos los {{label}}",
+    "filterPlaceholder": "filtrar {{label}}…",
+    "clearFilterTitle": "quitar el filtro {{label}}",
+    "clearFilterLabel": "quitar el filtro {{label}}: {{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "volver al panel",
+    "fillWindow": "llenar la ventana",
+    "shrinkBack": "reducir {{title}} de nuevo a un panel",
+    "fillWith": "llenar la ventana con {{title}}",
+    "resize": "cambiar el tamaño de {{title}}",
+    "closeHint": "cerrar — escape",
+    "close": "cerrar {{title}}"
+  },
+  "evidencePane": {
+    "closeHint": "cerrar — escape",
+    "close": "cerrar evidencia",
+    "empty": "sin visor para {{type}} — los bytes están en la url de arriba",
+    "unknownType": "desconocido",
+    "openNewTab": "abrir en una pestaña nueva",
+    "openNewTabLabel": "abrir {{filename}} en una pestaña nueva"
+  },
+  "cron": {
+    "cadence": "cadencia",
+    "custom": "personalizado…",
+    "customDescription": "elige minuto, hora, día, mes y día de la semana.",
+    "value": "valor",
+    "any": "cualquiera",
+    "everyDay": "cada día",
+    "anyDay": "cualquier día",
+    "part": {
+      "minute": "minuto",
+      "hour": "hora",
+      "day": "día",
+      "month": "mes",
+      "weekday": "día de la semana"
+    },
+    "weekday": {
+      "sun": "dom",
+      "mon": "lun",
+      "tue": "mar",
+      "wed": "mié",
+      "thu": "jue",
+      "fri": "vie",
+      "sat": "sáb"
+    },
+    "preset": {
+      "hourly": "cada hora",
+      "hourlyDescription": "cada hora, en punto.",
+      "daily": "diario a las 03:00",
+      "dailyDescription": "una vez al día, en la ventana tranquila del proyecto.",
+      "weekly": "lunes semanal",
+      "weeklyDescription": "los lunes a las 03:00.",
+      "monthly": "día 1 mensual",
+      "monthlyDescription": "el primero del mes a las 03:00."
+    }
+  }
+}

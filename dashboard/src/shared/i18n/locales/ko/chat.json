@@ -1,0 +1,249 @@
+{
+  "page": {
+    "title": "콘솔",
+    "summary": "화면이 다루는 것과 같은 컨트롤 플레인 — 클릭 대신 타이핑으로",
+    "onboard": "리포지토리 온보드"
+  },
+  "console": {
+    "sendFailure": "메시지가 전송되지 않았습니다",
+    "decisionFailure": "결정이 기록되지 않았습니다",
+    "startFailure": "대화가 시작되지 않았습니다",
+    "consoleErrorTitle": "콘솔이 로드되지 않았습니다",
+    "transcriptErrorTitle": "트랜스크립트가 로드되지 않았습니다",
+    "loading": "대화 로딩 중"
+  },
+  "sessions": {
+    "navLabel": "대화",
+    "head": "대화",
+    "new": "새 대화",
+    "loading": "대화 로딩 중",
+    "emptyTitle": "아직 대화가 없습니다",
+    "emptyDescription": "위의 플러스로 시작하세요. 모든 대화는 다시 돌아올 수 있게 여기 남습니다."
+  },
+  "thread": {
+    "emptyTitle": "아직 아무 말도 없습니다",
+    "emptyBody": "여기는 화면이 다루는 것과 같은 컨트롤 플레인을 타이핑으로 만나는 곳입니다. 스웜이 무엇을 하고 있는지 물어보거나, 슬래시로 시작해 할 수 있는 모든 것을 보세요. 무언가를 바꾸는 일은 누르는 제안으로 돌아옵니다 — 스스로 행동하는 일은 절대 없습니다.",
+    "logLabel": "대화",
+    "jump": "최신으로 이동",
+    "announceReplying": "어시스턴트가 응답 중",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "나",
+    "comuki": "comuki",
+    "iteration": "반복 {{iteration}}",
+    "blank": "이 턴은 비어 도착했습니다"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "생각 중",
+    "tokenWord": "토큰"
+  },
+  "memory": {
+    "label": "메모리",
+    "facts": {
+      "other": "{{count}}개 사실"
+    }
+  },
+  "composer": {
+    "boxLabel": "콘솔에 메시지 보내기",
+    "placeholder": "물어보거나, 슬래시로 시작하세요",
+    "commandsHead": "커맨드",
+    "originFrom": "{{project}}에서",
+    "seedAbout": "정보",
+    "seedDrop": "{{id}} 참조 버리기",
+    "scopeRunsIn": "런 위치",
+    "scopePick": "프로젝트 고르기",
+    "scopeAria": "{{command}}이(가) 실행되는 프로젝트",
+    "sendTooltip": "보내기 — enter",
+    "send": "보내기"
+  },
+  "scope": {
+    "needsProject": "{{command}}에 프로젝트가 필요합니다",
+    "notAvailable": "사용할 수 없음"
+  },
+  "command": {
+    "init": {
+      "description": "리포지토리 온보드: git 접근, 컴퓨트, 모델, 지식"
+    },
+    "project": {
+      "description": "이 시프트가 행동할 수 있는 프로젝트 나열"
+    },
+    "run": {
+      "description": "티켓에서 런 시작"
+    },
+    "status": {
+      "description": "스웜이 지금 무엇을 하고 있는지"
+    },
+    "stop": {
+      "description": "런을 멈추고 컨테이너 철거"
+    },
+    "plan": {
+      "description": "런의 플랜을 읽고, 그것에 대해 결정"
+    },
+    "debug": {
+      "description": "한 시간 동안 상세 워커 로깅 켜기"
+    },
+    "help": {
+      "description": "콘솔이 할 수 있는 것"
+    }
+  },
+  "panel": {
+    "label": "콘솔 사이드 패널",
+    "awaiting": "결정 대기 중",
+    "noProject": "프로젝트 없음",
+    "steps": {
+      "other": "{{count}}단계"
+    },
+    "quiet": "여기서 당신을 기다리는 것은 없습니다",
+    "slashHelp": "슬래시 도움말"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "런 시작",
+        "stop": "런 중지"
+      },
+      "plan": {
+        "approve": "플랜 승인"
+      },
+      "settings": {
+        "debug": "라이브 설정 변경"
+      }
+    },
+    "words": {
+      "run": {
+        "start": {
+          "confirm": "시작",
+          "refuse": "버리기"
+        },
+        "stop": {
+          "confirm": "중지",
+          "refuse": "계속 실행"
+        }
+      },
+      "plan": {
+        "approve": {
+          "confirm": "승인",
+          "refuse": "거절"
+        }
+      },
+      "settings": {
+        "debug": {
+          "confirm": "켜기",
+          "refuse": "꺼두기"
+        }
+      }
+    },
+    "inProject": "{{project}}에서",
+    "decidedConfirmed": "사람이 확인했고, 다른 모든 결정과 같은 곳에 기록되었습니다",
+    "decidedRejected": "사람이 거절했고, 다른 모든 결정과 같은 곳에 기록되었습니다",
+    "needsProjectDenial": "행동할 프로젝트가 필요합니다"
+  },
+  "handoff": {
+    "searchFor": "{{where}}에서 검색"
+  },
+  "dock": {
+    "tooltip": "콘솔 — {{chord}}",
+    "openAria": "콘솔 열기 — {{chord}}",
+    "title": "콘솔"
+  },
+  "wizard": {
+    "title": "리포지토리 온보드",
+    "running": "온보딩이 진행 중입니다.",
+    "streamHead": "온보딩",
+    "stageWord": {
+      "done": "완료",
+      "running": "실행 중",
+      "queued": "큐 대기"
+    },
+    "doneNotice": "프로젝트가 등록되었습니다. 그 규칙 세트, 워커 이미지, 엔드포인트가 다음 런부터 스웜이 쓰는 것입니다.",
+    "backToConsole": "콘솔로 돌아가기",
+    "start": "온보딩 시작",
+    "continue": "계속",
+    "back": "뒤로",
+    "cancel": "취소",
+    "confirmNotice": "아직 만들어진 것은 없습니다. 확인하면 온보딩 런이 시작되고, 그것이 하는 모든 일은 다른 모든 런과 같은 곳에 기록됩니다.",
+    "guardTitle": "온보딩 없이 마법사를 나갑니까?",
+    "guardBody": "입력한 리포지토리, 모델 엔드포인트, 시크릿 참조는 아직 어디에도 저장되지 않았습니다. 이 페이지를 떠나면 버려집니다.",
+    "guardConfirm": "버리기",
+    "guardCancel": "계속 편집",
+    "step": {
+      "repo": {
+        "title": "리포지토리와 git 접근",
+        "summary": "코드가 어디 있고 스웜이 그것에 무엇을 해도 되는지. 이 단계가 마법사의 나머지가 어떤 프로젝트를 구성할지 결정합니다."
+      },
+      "compute": {
+        "title": "컴퓨트 프로바이더",
+        "summary": "워커 컨테이너가 어디서 시작되고, 한 번에 몇 개까지 돌 수 있는지의 상한."
+      },
+      "models": {
+        "title": "모델 엔드포인트",
+        "summary": "리드 모델과 워커를 위한 OpenAI 또는 Anthropic 호환 base url. 시크릿은 여기서 이름만 짓지, 입력하지 않습니다."
+      },
+      "knowledge": {
+        "title": "지식",
+        "summary": "이 프로젝트가 인덱싱된 규칙 세트를 유지할지, 첫 패스가 무엇을 읽을지."
+      },
+      "confirm": {
+        "title": "확인",
+        "summary": "온보딩이 할 일을, 할 순서대로. 아직 만들어진 것은 없습니다."
+      }
+    },
+    "stage": {
+      "clone": "리포지토리 클론",
+      "rules": "클라이언트의 규칙과 스킬 읽기",
+      "image": "워커 이미지 풀",
+      "endpoints": "모델 엔드포인트 도달",
+      "knowledge": "지식 인덱스 시드",
+      "register": "스웜에 프로젝트 등록"
+    },
+    "field": {
+      "project": "프로젝트",
+      "projectHint": "소스를 연결할 수 있는 프로젝트만 나열됩니다.",
+      "pickProject": "프로젝트 고르기",
+      "remote": "git remote",
+      "branch": "기본 브랜치",
+      "write": "브랜치 푸시 허용",
+      "writeHint": "끄면 스웜은 리포지토리를 읽기만 하고 아무 것도 열지 않습니다.",
+      "provider": "프로바이더",
+      "workers": "동시 워커 수",
+      "workersHint": "이 프로젝트가 가질 수 있는 컨테이너의 상한.",
+      "lead": "리드 모델 엔드포인트",
+      "leadHint": "OpenAI 또는 Anthropic 호환.",
+      "workerModel": "워커 모델 엔드포인트",
+      "workerPlaceholder": "비워 두면 리드 엔드포인트 사용",
+      "secret": "시크릿 참조",
+      "secretHint": "시크릿의 이름이지 시크릿이 아닙니다. 키는 이 제품에 절대 입력되지 않습니다.",
+      "knowledge": "인덱싱된 규칙 세트 유지",
+      "knowledgeHint": "docs 워커가 작성합니다. 여기엔 문서 편집기가 없습니다.",
+      "seed": "시드",
+      "seedHint": "첫 패스가 읽을 것, glob으로."
+    },
+    "error": {
+      "project": "이 리포지토리가 속할 프로젝트를 고르세요",
+      "remote": "git remote가 필요합니다",
+      "branch": "기본 브랜치가 필요합니다",
+      "workers": "워커 수는 1 이상의 정수여야 합니다",
+      "lead": "리드 모델에 base url이 필요합니다",
+      "secret": "키를 담은 시크릿의 이름을 지어주세요"
+    },
+    "review": {
+      "project": "프로젝트",
+      "remote": "remote",
+      "branch": "브랜치",
+      "pushAccess": "푸시 접근",
+      "compute": "컴퓨트",
+      "workers": "워커",
+      "lead": "리드 모델",
+      "workerModel": "워커 모델",
+      "secret": "시크릿",
+      "knowledge": "지식",
+      "on": "켜짐",
+      "off": "꺼짐",
+      "sameAsLead": "리드와 동일"
+    }
+  }
+}

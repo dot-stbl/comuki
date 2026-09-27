@@ -58,7 +58,7 @@ export function KnowledgeDetailSheet({
                 </div>
                 {/* Escape and the scrim both close this; the glyph is the third
                     way, for a pointer that never learned either. */}
-                <Tooltip content={t("actions.close")}>
+                <Tooltip content={t("actions.close", { ns: "common" })}>
                   <Button
                     variant="ghost"
                     size="icon-sm"

@@ -1,0 +1,76 @@
+{
+  "status": {
+    "new": "新建",
+    "queued": "排隊中",
+    "planning": "規劃中"
+  },
+  "priority": {
+    "low": "低",
+    "normal": "普通",
+    "high": "高"
+  },
+  "registry": {
+    "title": "任務",
+    "summary": "<total/> 在積壓中 · <fresh/> 個新建",
+    "newTask": "新建任務",
+    "count": {
+      "other": "已顯示 {{count}} 條"
+    },
+    "loading": "正在載入積壓列表",
+    "errorTitle": "積壓列表未能載入",
+    "empty": {
+      "filtered": "沒有任務匹配當前篩選",
+      "none": "積壓列表為空"
+    }
+  },
+  "dispatch": {
+    "toast": "已派發給編排器",
+    "fallback": "編排器沒有接受。",
+    "tail": "沒有任何入隊 — 工單仍在積壓列表中。"
+  },
+  "column": {
+    "source": "來源",
+    "task": "任務",
+    "evidence": "證據",
+    "project": "專案",
+    "app": "應用",
+    "priority": "優先順序",
+    "status": "狀態",
+    "age": "年齡",
+    "action": "操作",
+    "filterPlaceholder": "篩選標題、id、應用…",
+    "allProjects": "所有專案",
+    "allApps": "所有應用",
+    "allPriority": "所有優先順序",
+    "allStatus": "所有狀態",
+    "dispatch": "派發",
+    "dispatchTask": "派發 {{title}}"
+  },
+  "create": {
+    "title": "新建任務",
+    "crumb": "新建",
+    "summary": "擺在叢集面前的一張工單：它從哪來、落入誰的積壓列表、有多緊急。",
+    "toastCreated": "任務已建立",
+    "failureTail": "沒有任何入隊 — 你輸入的內容原樣保留。",
+    "guardTitle": "不建立任務就離開？",
+    "guardBody": "你輸入的標題和簡報尚未儲存到任何地方。離開此頁將丟棄它們，也不會有任何內容進入接收。",
+    "guardConfirm": "丟棄",
+    "guardCancel": "繼續編輯",
+    "submit": "建立併入隊",
+    "cancel": "取消",
+    "sourceLabel": "來源",
+    "sourceNote": "工單從哪來。除原生外的每張卡片都期望有一個監視該提供方的連線 — 在這裡寫工單只是記錄它從哪來，不會提交到那邊。",
+    "ticketLabel": "工單",
+    "ticketNote": "做什麼、落到哪、多緊急。",
+    "briefLabel": "簡報",
+    "briefNote": "背景、驗收標準、連結 — 給接手的人，不是給表單的。",
+    "titleLabel": "標題",
+    "titlePlaceholder": "要做什麼，一句話",
+    "projectLabel": "專案",
+    "appLabel": "應用",
+    "briefPlaceholder": "背景、驗收標準、連結…"
+  },
+  "priorityField": {
+    "label": "優先順序"
+  }
+}

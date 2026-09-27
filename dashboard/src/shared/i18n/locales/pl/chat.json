@@ -1,0 +1,255 @@
+{
+  "page": {
+    "title": "Konsola",
+    "summary": "ten sam control plane, którym sterują ekrany — wpisany zamiast kliknięty",
+    "onboard": "Onboarduj repo"
+  },
+  "console": {
+    "sendFailure": "Wiadomość nie została wysłana",
+    "decisionFailure": "Decyzja nie została zapisana",
+    "startFailure": "Rozmowa nie została rozpoczęta",
+    "consoleErrorTitle": "Konsola się nie załadowała",
+    "transcriptErrorTitle": "Zapis rozmowy się nie załadował",
+    "loading": "Ładowanie rozmowy"
+  },
+  "sessions": {
+    "navLabel": "Rozmowy",
+    "head": "rozmowy",
+    "new": "Nowa rozmowa",
+    "loading": "Ładowanie rozmów",
+    "emptyTitle": "Nie ma jeszcze rozmów",
+    "emptyDescription": "Zacznij jednym plusem u góry. Każda rozmowa zostaje tu, żeby do niej wrócić."
+  },
+  "thread": {
+    "emptyTitle": "Jeszcze nic nie powiedziano",
+    "emptyBody": "To ten sam control plane, którym sterują ekrany, osiągnięty przez pisanie. Zapytaj go, co robi rój, albo zacznij od slasha, żeby zobaczyć wszystko, co umie. Wszystko, co coś by zmieniło, wraca jako propozycja, którą naciskasz — nigdy nie działa sam.",
+    "logLabel": "Rozmowa",
+    "jump": "przeskocz do najnowszych",
+    "announceReplying": "asystent odpowiada",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "ty",
+    "comuki": "comuki",
+    "iteration": "iter {{iteration}}",
+    "blank": "ta tura przyszła z niczym w środku"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "myślenie",
+    "tokenWord": "tokeny"
+  },
+  "memory": {
+    "label": "pamięć",
+    "facts": {
+      "one": "{{count}} fakt",
+      "few": "{{count}} fakty",
+      "many": "{{count}} faktów",
+      "other": "{{count}} faktu"
+    }
+  },
+  "composer": {
+    "boxLabel": "Napisz do konsoli",
+    "placeholder": "Zapytaj albo zacznij od slasha",
+    "commandsHead": "komendy",
+    "originFrom": "z {{project}}",
+    "seedAbout": "o",
+    "seedDrop": "Upuść odwołanie do {{id}}",
+    "scopeRunsIn": "uruchamia się w",
+    "scopePick": "wybierz projekt",
+    "scopeAria": "Projekt, w którym działa {{command}}",
+    "sendTooltip": "Wyślij — enter",
+    "send": "Wyślij"
+  },
+  "scope": {
+    "needsProject": "{{command}} potrzebuje projektu",
+    "notAvailable": "niedostępne"
+  },
+  "command": {
+    "init": {
+      "description": "onboarduj repozytorium: dostęp git, obliczenia, modele, wiedza"
+    },
+    "project": {
+      "description": "wypisz projekty, w których ta zmiana może działać"
+    },
+    "run": {
+      "description": "startuj uruchomienie ze zgłoszenia"
+    },
+    "status": {
+      "description": "co rój robi właśnie teraz"
+    },
+    "stop": {
+      "description": "zatrzymaj uruchomienie i zerwij jego kontener"
+    },
+    "plan": {
+      "description": "przeczytaj plan uruchomienia i zdecyduj o nim"
+    },
+    "debug": {
+      "description": "włącz szczegółowe logi workerów na godzinę"
+    },
+    "help": {
+      "description": "co potrafi konsola"
+    }
+  },
+  "panel": {
+    "label": "Panel boczny konsoli",
+    "awaiting": "czeka na decyzję",
+    "noProject": "bez projektu",
+    "steps": {
+      "one": "{{count}} krok",
+      "few": "{{count}} kroki",
+      "many": "{{count}} kroków",
+      "other": "{{count}} kroków"
+    },
+    "quiet": "nic tu na Ciebie nie czeka",
+    "slashHelp": "pomoc slash"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "startuj uruchomienie",
+        "stop": "zatrzymaj uruchomienie"
+      },
+      "plan": {
+        "approve": "zatwierdź plan"
+      },
+      "settings": {
+        "debug": "zmień ustawienie na żywo"
+      }
+    },
+    "words": {
+      "run": {
+        "start": {
+          "confirm": "Startuj",
+          "refuse": "Porzuć"
+        },
+        "stop": {
+          "confirm": "Zatrzymaj",
+          "refuse": "Niech działa"
+        }
+      },
+      "plan": {
+        "approve": {
+          "confirm": "Zatwierdź",
+          "refuse": "Odrzuć"
+        }
+      },
+      "settings": {
+        "debug": {
+          "confirm": "Włącz",
+          "refuse": "Zostaw wyłączone"
+        }
+      }
+    },
+    "inProject": "w {{project}}",
+    "decidedConfirmed": "potwierdzone przez człowieka i zapisane tam, gdzie każda inna decyzja",
+    "decidedRejected": "odrzucone przez człowieka i zapisane tam, gdzie każda inna decyzja",
+    "needsProjectDenial": "potrzebuje projektu, w którym działa"
+  },
+  "handoff": {
+    "searchFor": "szukaj w {{where}}"
+  },
+  "dock": {
+    "tooltip": "Konsola — {{chord}}",
+    "openAria": "Otwórz konsolę — {{chord}}",
+    "title": "Konsola"
+  },
+  "wizard": {
+    "title": "Onboarduj repozytorium",
+    "running": "Onboarding działa.",
+    "streamHead": "onboarding",
+    "stageWord": {
+      "done": "zrobione",
+      "running": "działa",
+      "queued": "w kolejce"
+    },
+    "doneNotice": "Projekt jest zarejestrowany. Jego zestaw reguł, obraz workera i endpointy to te, których rój użyje od następnego uruchomienia.",
+    "backToConsole": "Wróć do konsoli",
+    "start": "Rozpocznij onboarding",
+    "continue": "Dalej",
+    "back": "Wstecz",
+    "cancel": "Anuluj",
+    "confirmNotice": "Jeszcze nic nie utworzono. Potwierdzenie startuje uruchomienie onboardingowe, a wszystko, co zrobi, ląduje tam, gdzie każde inne uruchomienie.",
+    "guardTitle": "Opuścić kreator bez onboardingu?",
+    "guardBody": "Repozytorium, endpointy modeli i referencja sekretu, które wpisałeś, nie są jeszcze nigdzie zapisane. Opuszczenie tej strony je porzuca.",
+    "guardConfirm": "Porzuć",
+    "guardCancel": "Edytuj dalej",
+    "step": {
+      "repo": {
+        "title": "Repozytorium i dostęp git",
+        "summary": "Gdzie żyje kod i co rój wolno mu zrobić. Ten krok rozstrzyga, który projekt konfiguruje resztę kreatora."
+      },
+      "compute": {
+        "title": "Dostawca obliczeń",
+        "summary": "Gdzie powstają kontenery workerów i sufit, ile z nich biega naraz."
+      },
+      "models": {
+        "title": "Endpointy modeli",
+        "summary": "Base url zgodny z openai albo anthropic dla modelu prowadzącego i dla workerów. Sekrety są tu nazywane, nigdy wpisywane."
+      },
+      "knowledge": {
+        "title": "Wiedza",
+        "summary": "Czy ten projekt trzyma indeksowany zestaw reguł i co ma przeczytać pierwszy przebieg."
+      },
+      "confirm": {
+        "title": "Potwierdź",
+        "summary": "Co zrobi onboarding, w kolejności, w jakiej to zrobi. Jeszcze nic nie utworzono."
+      }
+    },
+    "stage": {
+      "clone": "klonuj repozytorium",
+      "rules": "przeczytaj reguły i skille klienta",
+      "image": "ściągnij obraz workera",
+      "endpoints": "dociągnij się do endpointów modeli",
+      "knowledge": "zasiej indeks wiedzy",
+      "register": "zarejestruj projekt w roju"
+    },
+    "field": {
+      "project": "projekt",
+      "projectHint": "Wypisane są tylko projekty, w których możesz podłączyć źródło.",
+      "pickProject": "wybierz projekt",
+      "remote": "remote git",
+      "branch": "gałąź domyślna",
+      "write": "może wypychać gałęzie",
+      "writeHint": "Wyłączone znaczy, że rój czyta repozytorium i niczego nie otwiera.",
+      "provider": "dostawca",
+      "workers": "workerów naraz",
+      "workersHint": "Sufit kontenerów, które ten projekt może trzymać.",
+      "lead": "endpoint modelu prowadzącego",
+      "leadHint": "Zgodny z openai albo anthropic.",
+      "workerModel": "endpoint modelu workerów",
+      "workerPlaceholder": "zostaw puste, żeby użyć endpointu prowadzącego",
+      "secret": "referencja sekretu",
+      "secretHint": "Nazwa sekretu, nie sekret. Klucze nigdy nie są wpisywane w ten produkt.",
+      "knowledge": "trzymaj indeksowany zestaw reguł",
+      "knowledgeHint": "Zapisuje go worker dokumentacyjny. Nie ma tu edytora dokumentów.",
+      "seed": "zasiew",
+      "seedHint": "Co czyta pierwszy przebieg, jako globy."
+    },
+    "error": {
+      "project": "wybierz projekt, do którego należy to repozytorium",
+      "remote": "remote git jest wymagane",
+      "branch": "gałąź domyślna jest wymagana",
+      "workers": "całkowita liczba workerów, co najmniej jeden",
+      "lead": "model prowadzący potrzebuje base url",
+      "secret": "nazwij sekret, który trzyma klucz"
+    },
+    "review": {
+      "project": "projekt",
+      "remote": "remote",
+      "branch": "gałąź",
+      "pushAccess": "dostęp push",
+      "compute": "obliczenia",
+      "workers": "workery",
+      "lead": "model prowadzący",
+      "workerModel": "model workerów",
+      "secret": "sekret",
+      "knowledge": "wiedza",
+      "on": "wł.",
+      "off": "wył.",
+      "sameAsLead": "jak prowadzący"
+    }
+  }
+}

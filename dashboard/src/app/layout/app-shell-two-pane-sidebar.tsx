@@ -48,7 +48,11 @@ export function AppShellTwoPaneOuter({
   const visible = visibleNavSections(sections, session)
 
   return (
-    <nav className={styles.outer} data-outer-rail aria-label="Sections">
+    <nav
+      className={styles.outer}
+      data-outer-rail
+      aria-label={t("nav.sections")}
+    >
       {visible.map((section) => {
         const Icon = section.icon
         const isActive = activeId === section.id

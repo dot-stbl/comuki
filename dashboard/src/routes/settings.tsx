@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import {
@@ -30,14 +31,16 @@ export const Route = createFileRoute("/settings")({
 })
 
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { tab = "apps" } = Route.useSearch()
   const navigate = useNavigate()
 
   return (
     <RequirePermission
       permission="settings.live"
-      title="Settings"
-      crumbs={[{ label: "settings" }]}
+      title={t("route.settings")}
+      crumbs={[{ label: t("crumb.settings") }]}
     >
       <SettingsPage
         tab={tab}

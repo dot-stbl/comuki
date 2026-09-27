@@ -1,0 +1,89 @@
+{
+  "page": {
+    "title": "知識",
+    "summary": "規則集、修訂、評測基準",
+    "tabsLabel": "知識分割槽"
+  },
+  "tab": {
+    "library": "庫",
+    "gate": "門禁"
+  },
+  "load": {
+    "errorTitle": "知識未載入"
+  },
+  "search": {
+    "label": "篩選規則、文件與技能",
+    "placeholder": "搜尋規則、文件、技能…",
+    "errorTitle": "搜尋未響應",
+    "searching": "搜尋中",
+    "emptyTitle": "無匹配",
+    "emptySemantic": "庫中沒有任何內容足夠接近該查詢。",
+    "emptyPlain": "換個查詢詞，在固定的規則和文件中再試。",
+    "sectionTitle": "語義匹配",
+    "sectionNote": "按餘弦相似度取前 {{count}} 條",
+    "count": "{{shown}} / {{total}}"
+  },
+  "revision": {
+    "section": "生效修訂",
+    "current": "當前修訂",
+    "sub": "{{sdk}} · 更新於 {{updated}}",
+    "rules": "活躍規則",
+    "rulesSub": "{{hard}} 硬 · {{soft}} 軟",
+    "reproducibility": "可復現性",
+    "reproducibilitySub": "每次執行都固定規則集 + SDK"
+  },
+  "entries": {
+    "section": "規則、文件與技能",
+    "updated": "更新於 {{updated}}"
+  },
+  "sheet": {
+    "close": "關閉條目",
+    "revisionAt": "修訂 @{{revision}}",
+    "scope": "範圍",
+    "updated": "更新於"
+  },
+  "badge": {
+    "kind": {
+      "rule": "規則",
+      "doc": "文件",
+      "skill": "技能"
+    },
+    "ruleKind": {
+      "hard": "硬",
+      "soft": "軟"
+    },
+    "pinned": "已固定",
+    "pinnedAt": "固定於 @ {{revision}}",
+    "delta": {
+      "improved": "改善",
+      "regressed": "退化",
+      "noChange": "無變化"
+    }
+  },
+  "eval": {
+    "section": "黃金任務",
+    "note": "規則編輯前 → 後",
+    "empty": "尚未針對該修訂執行過黃金任務",
+    "column": {
+      "task": "任務",
+      "before": "之前",
+      "after": "之後",
+      "delta": "差值"
+    }
+  },
+  "gate": {
+    "errorTitle": "門禁未載入",
+    "changeFailed": "更改失敗。",
+    "nothingMoved": "什麼都沒動 — 門禁保持原樣。",
+    "intro": "一次執行必須先通過客戶端自己的檢查才能落地。檢查存放在他們的倉庫裡 — 一個檔案，像其他一切一樣提交 — 因此本節負責開關門禁，並顯示每項檢查最近說了什麼。修改命令就是修改檔案；下面每一節都會準確說明它的檔案在哪裡。",
+    "emptyTitle": "這裡沒有專案設有門禁",
+    "emptyDescription": "本次會話的專案中沒有任何一個宣告客戶端自己的檢查。只要其中一個提交了包含檢查的檔案，門禁就會出現。",
+    "onToast": "門禁已開啟",
+    "onToastDescription": "{{name}} — 執行必須通過客戶端的檢查",
+    "offToast": "門禁已關閉",
+    "offToastDescription": "{{name}} — 執行不經客戶端檢查直接落地",
+    "summary": "<on/> / <total/> 個門禁開啟 · <checks/> 項檢查已宣告",
+    "summaryFailing": "<failing/> 項失敗",
+    "summaryNeverRan": "<never/> 項從未執行"
+  }
+}

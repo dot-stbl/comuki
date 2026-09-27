@@ -3,6 +3,8 @@
  * the product, by design. These six strings are the whole vocabulary; anything
  * that reads like "an admin" in copy resolves to one of them.
  */
+import { i18n } from "@/shared/i18n"
+
 export type Role =
   | "viewer"
   | "member"
@@ -196,17 +198,25 @@ export function rolesGranting(permission: Permission): Role[] {
  * greyed-out control: a disabled button that says nothing teaches the operator
  * that the product is broken. Naming the role that would work teaches them the
  * shape of the system instead, and tells them what to ask for.
+ *
+ * The sentence words resolve through the shared i18n instance
+ * (`dashboard-i18n` D7 — the entire output is display words); the role names
+ * themselves are wire spellings and stay verbatim.
  */
 export function needsLabel(permission: Permission, where?: string): string {
   const roles = rolesGranting(permission)
   if (roles.length === 0) {
-    return "not available"
+    return i18n.t("denial.unavailable", { ns: "common" })
   }
   const head = roles.slice(0, -1).join(", ")
   const tail = roles[roles.length - 1]
-  const list = head ? `${head} or ${tail}` : tail
+  const list = head
+    ? `${head} ${i18n.t("denial.or", { ns: "common" })} ${tail}`
+    : tail
   // Naming the project is the whole point once a list mixes them: the same
   // person is an approver on one and a viewer on the next, and "needs approver"
   // alone would read as a flat no rather than as a fact about this row.
-  return where ? `needs ${list} on ${where}` : `needs ${list}`
+  return where
+    ? i18n.t("denial.needsOn", { ns: "common", list, where })
+    : i18n.t("denial.needs", { ns: "common", list })
 }

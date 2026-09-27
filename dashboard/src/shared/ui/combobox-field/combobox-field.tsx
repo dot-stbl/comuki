@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react"
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Button as AriaButton,
   ComboBox as AriaComboBox,
@@ -141,6 +142,7 @@ export function ComboboxField({
   "data-test": dataTest,
 }: ComboboxFieldProps) {
   const filter = useFilter({ sensitivity: "base" })
+  const { t } = useTranslation("kit")
 
   return (
     <Field
@@ -207,7 +209,10 @@ export function ComboboxField({
           className={cn(styles.input, size === "sm" && styles.inputSm)}
           placeholder={placeholder}
         />
-        <AriaButton className={styles.trigger} aria-label="open list">
+        <AriaButton
+          className={styles.trigger}
+          aria-label={t("combobox.openList")}
+        >
           <ChevronDown className={styles.icon} aria-hidden="true" />
         </AriaButton>
         {error ? (

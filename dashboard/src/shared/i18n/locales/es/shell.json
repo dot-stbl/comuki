@@ -18,7 +18,8 @@
     "projects": "Proyectos",
     "identity": "Identidad",
     "compute": "Cómputo",
-    "models": "Modelos"
+    "models": "Modelos",
+    "sections": "secciones"
   },
   "crumb": {
     "platform": "plataforma",
@@ -36,7 +37,21 @@
     "onboard": "onboarding",
     "knowledge": "conocimiento",
     "models": "modelos",
-    "compute": "compute"
+    "compute": "compute",
+    "cost": "coste",
+    "settings": "ajustes",
+    "new": "nuevo",
+    "newUser": "nuevo usuario",
+    "grantRole": "conceder un rol",
+    "person": "persona",
+    "linkOidc": "vincular un sujeto oidc",
+    "project": "proyecto",
+    "source": "fuente",
+    "worker": "worker",
+    "run": "ejecución",
+    "newTicket": "nuevo ticket",
+    "newApiKey": "nueva clave de api",
+    "onboardRepo": "conectar un repositorio"
   },
   "topbar": {
     "home": "Comuki — inicio",
@@ -135,5 +150,35 @@
       "queue": "en la cola",
       "inbox": "en la bandeja"
     }
+  },
+  "route": {
+    "attention": "Turno",
+    "console": "Consola",
+    "onboard": "Conectar un repositorio",
+    "approvals": "Aprobaciones",
+    "compute": "Cómputo",
+    "cost": "Costo y fallos",
+    "identity": "Identidad",
+    "grantRole": "Conceder un rol",
+    "newApiKey": "Nueva clave de api",
+    "newUser": "Nuevo usuario",
+    "person": "Persona",
+    "linkOidc": "Vincular un sujeto oidc",
+    "knowledge": "Conocimiento",
+    "models": "Modelos",
+    "projects": "Proyectos",
+    "newProject": "Nuevo proyecto",
+    "project": "Proyecto",
+    "queue": "Cola y workers",
+    "worker": "Worker",
+    "liveRuns": "Ejecuciones en vivo",
+    "run": "Ejecución",
+    "settings": "Ajustes",
+    "sources": "Fuentes",
+    "connectSource": "Conectar una fuente",
+    "source": "Fuente",
+    "newTicket": "Nuevo ticket",
+    "tasks": "Tareas",
+    "newTask": "Nueva tarea"
   }
 }

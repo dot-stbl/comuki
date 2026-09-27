@@ -1,1 +1,201 @@
-{}
+{
+  "errors": {
+    "saveDidNotLand": "保存が届きませんでした。",
+    "stopDidNotApply": "ストップは適用されませんでした。"
+  },
+  "page": {
+    "title": "設定",
+    "summaryMock": "コントロールプレーンの構成",
+    "summaryReal": "プラットフォーム構成 — 読み取り専用、起動時に設定",
+    "errorTitle": "設定が読み込まれませんでした",
+    "retry": "再試行",
+    "tabsAria": "設定セクション"
+  },
+  "tabs": {
+    "apps": "アプリ",
+    "rules": "ルール",
+    "autonomy": "自律",
+    "routing": "ルーティング",
+    "budgets": "予算",
+    "keys": "キー",
+    "tracker": "トラッカー"
+  },
+  "toast": {
+    "routingSaved": "ルーティングを保存しました",
+    "routingSavedNote": "ロール → モデルのマップを更新（モック）",
+    "routingNotSaved": "ルーティングは保存されませんでした",
+    "budgetsSaved": "予算を保存しました",
+    "budgetsSavedNote": "上限を更新（モック）",
+    "budgetsNotSaved": "予算は保存されませんでした"
+  },
+  "apps": {
+    "section": "アプリ",
+    "note": "読み取り専用 · レジストリはクライアントの git で宣言されます",
+    "emptyFiltered": "現在のフィルタに一致するアプリはありません",
+    "empty": "レジストリはアプリを宣言していません",
+    "count": "{{count}} 件表示",
+    "column": {
+      "app": "アプリ",
+      "repo": "リポジトリ",
+      "stack": "スタック",
+      "envs": "環境",
+      "deploy": "デプロイ"
+    },
+    "filterPlaceholder": "アプリ、リポジトリ、スタックで絞り込み…",
+    "allTargets": "すべてのターゲット",
+    "nowhere": "どこにも"
+  },
+  "rules": {
+    "section": "スウォームルール",
+    "note": "読み取り専用 · ルールはクライアントの git にあり、コミットで変わります",
+    "conflicts": "競合なし · {{count}} 件のアクティブなルール · スコープは重なりません。",
+    "emptyFiltered": "現在のフィルタに一致するルールはありません",
+    "empty": "ルールセットは空です",
+    "count": "{{count}} 件表示",
+    "column": {
+      "rule": "ルール",
+      "scope": "スコープ",
+      "kind": "種別",
+      "version": "バージョン",
+      "description": "説明"
+    },
+    "filterPlaceholder": "ルール、スコープ、説明で絞り込み…",
+    "allScopes": "すべてのスコープ",
+    "allKinds": "すべての種別"
+  },
+  "autonomy": {
+    "section": "自律",
+    "note": "何が自動か · 何が人を必要とするか",
+    "emptyFiltered": "現在のフィルタに一致する変更クラスはありません",
+    "empty": "分類された変更クラスはありません",
+    "count": "{{count}} 件表示",
+    "column": {
+      "changeClass": "変更クラス",
+      "mode": "モード"
+    },
+    "filterPlaceholder": "変更クラスで絞り込み…",
+    "allModes": "すべてのモード"
+  },
+  "routing": {
+    "section": "モデルルーティング",
+    "note": "ロール → 物理モデル",
+    "emptyFiltered": "現在のフィルタに一致するロールはありません",
+    "empty": "ルーティングされたロールはありません",
+    "count": "{{count}} 件表示",
+    "column": {
+      "role": "ロール",
+      "model": "モデル",
+      "usage": "用途"
+    },
+    "editSection": "ロール → モデルのマップを編集",
+    "editNote": "リード / ワーカー / ジャッジ",
+    "field": {
+      "lead": "リード",
+      "worker": "ワーカー",
+      "judge": "ジャッジ"
+    },
+    "save": "ルーティングを保存",
+    "escalation": "エスカレーション方針 — ワーカーでの 2 回の失敗リトライはリードへエスカレートします。赤い型ゲートは、ピン留めされたリビジョン付きのデバッグエージェントへ行きます。"
+  },
+  "budgets": {
+    "readingSection": "プロキシ予算",
+    "readingNote": "スウォームが今日、グローバル上限に対して使った額",
+    "killSwitch": "キルスイッチ",
+    "killHint": "新しいクレイムをすべて硬停止 — すべてのアプリ、すべてのタスク。",
+    "pause": "スウォームを一時停止",
+    "pauseHint": "ソフト一時停止 — 実行中のワーカーは完了；新しいコンテナは起動しません。",
+    "stopFailureTail": "何も動いていません — ストップは元のままです。",
+    "killTitle": "キルスイッチを投入しますか？",
+    "killBody": "新しいクレイムは今すぐ停止します — すべてのアプリ、すべてのタスク — スイッチが戻されるまで停止し続けます。途中のワーカーは保持しているものを完了し、キューの何もキャンセルされません。",
+    "killConfirm": "新しいクレイムをブロック",
+    "killCancel": "クレイムを開いたままにする",
+    "capsSection": "予算上限",
+    "capsNote": "メーターが読むグローバル上限 · タスクごと・アプリごとがそれを細分化します",
+    "globalCap": "グローバル上限",
+    "globalCapHint": "上のメーターはこの上限に対して支出を測ります。",
+    "refinements": "細分化",
+    "perTask": "タスクごと",
+    "perApp": "アプリごと",
+    "save": "予算を保存",
+    "meter": {
+      "over": "上限超過",
+      "left": "残り {{left}}",
+      "stopped": "キルスイッチオン · 新しいクレイムはブロック中",
+      "atCap": "キルスイッチは上限で"
+    }
+  },
+  "keys": {
+    "section": "プロバイダーキー",
+    "note": "読み取り専用 · キーは env から、ローテーションはプロキシ内で実行",
+    "emptyFiltered": "現在のフィルタに一致するキーはありません",
+    "empty": "プロキシはプロバイダーキーを保持していません",
+    "count": "{{count}} 件表示",
+    "column": {
+      "provider": "プロバイダー",
+      "scope": "スコープ",
+      "rotation": "ローテーション",
+      "status": "状態"
+    },
+    "filterPlaceholder": "プロバイダー、スコープで絞り込み…",
+    "allStatuses": "すべての状態"
+  },
+  "tracker": {
+    "section": "インテークソース",
+    "notice": "接続されたトラッカーはチケットをバックログへ同期します · 手動インテークはどちらにしても開いています。",
+    "emptyTitle": "トラッカーは接続されていません",
+    "emptyDescription": "バックログへチケットを同期しているものはありません。手動インテークはどちらにしても開いています — トラッカーは二つ目のドアを追加するだけです。",
+    "connected": "接続済み",
+    "synced": "同期 {{when}}",
+    "sync": "同期",
+    "syncAria": "{{name}} を同期",
+    "syncedToast": "{{name}} を同期しました",
+    "syncedToastNote": "新しい issue をインポート（モック）",
+    "connect": "接続",
+    "connectAria": "{{name}} を接続",
+    "connectToast": "{{name}} を接続",
+    "connectToastNote": "OAuth フロー…（モック）"
+  },
+  "platform": {
+    "hint": "読み取り専用 — ここにあるすべての値は起動時に設定されます。変更は設定と再起動を経由します；このページは何も書き込みません。",
+    "on": "オン",
+    "off": "オフ",
+    "escalationOff": "オフ — ラチェットは無効です（{{would}} が適用されるはずでした）",
+    "orchestration": {
+      "section": "オーケストレーション",
+      "leaseTtl": "リース ttl",
+      "leaseTtlNote": "クレイム時に交付、ハートビートで延長",
+      "reapInterval": "リープ間隔",
+      "reapIntervalNote": "リースリーパーの掃引ケイデンス",
+      "reapGrace": "リープ猶予",
+      "reapGraceNote": "失効後、リーパーが動くまでのバッファ",
+      "maxAttempts": "最大試行",
+      "maxAttemptsNote": "停滞したアイテムが失敗するまでのクレイム数",
+      "escalationTimeout": "エスカレーションタイムアウト",
+      "escalationTimeoutNote": "ランが自動アーカイブまでエスカレート済みでいられる時間",
+      "escalationSweep": "エスカレーション掃引",
+      "escalationSweepNote": "ラチェット掃引ケイデンス"
+    },
+    "compute": {
+      "section": "コンピュート",
+      "provider": "プロバイダー",
+      "providerNote": "v1 が実行するコンピュート実装",
+      "workerImage": "ワーカーイメージ",
+      "workerImageNote": "本番では digest で固定",
+      "profilesRef": "profiles ref",
+      "profilesRefNote": "固定された profiles の git ref",
+      "minIdle": "最小アイドル",
+      "minIdleNote": "プロファイルごとのウォームアイドル下限",
+      "maxConcurrent": "最大同時",
+      "maxConcurrentNote": "プロジェクトごとの同時上限",
+      "idleTtl": "アイドル ttl",
+      "idleTtlNote": "ワーカーがリーパー候補になるまで",
+      "pollInterval": "ポーリング間隔",
+      "pollIntervalNote": "スーパーバイザのパス間"
+    },
+    "proxy": {
+      "section": "プロキシ",
+      "passthrough": "openai / anthropic passthrough",
+      "passthroughNote": "プロキシが合成されているかどうか"
+    }
+  }
+}

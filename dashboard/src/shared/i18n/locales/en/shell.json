@@ -18,7 +18,8 @@
     "projects": "Projects",
     "identity": "Identity",
     "compute": "Compute",
-    "models": "Models"
+    "models": "Models",
+    "sections": "Sections"
   },
   "crumb": {
     "platform": "platform",
@@ -36,7 +37,21 @@
     "onboard": "onboard",
     "knowledge": "knowledge",
     "models": "models",
-    "compute": "compute"
+    "compute": "compute",
+    "cost": "cost",
+    "settings": "settings",
+    "new": "new",
+    "newUser": "new user",
+    "grantRole": "grant a role",
+    "person": "person",
+    "linkOidc": "link an oidc subject",
+    "project": "project",
+    "source": "source",
+    "worker": "worker",
+    "run": "run",
+    "newTicket": "new ticket",
+    "newApiKey": "new api key",
+    "onboardRepo": "onboard a repository"
   },
   "topbar": {
     "home": "Comuki — home",
@@ -135,5 +150,35 @@
       "queue": "in the queue",
       "inbox": "in the inbox"
     }
+  },
+  "route": {
+    "attention": "Attention",
+    "console": "Console",
+    "onboard": "Onboard a repository",
+    "approvals": "Approvals",
+    "compute": "Compute",
+    "cost": "Cost & failures",
+    "identity": "Identity",
+    "grantRole": "Grant a role",
+    "newApiKey": "New api key",
+    "newUser": "New user",
+    "person": "Person",
+    "linkOidc": "Link an oidc subject",
+    "knowledge": "Knowledge",
+    "models": "Models",
+    "projects": "Projects",
+    "newProject": "New project",
+    "project": "Project",
+    "queue": "Queue & workers",
+    "worker": "Worker",
+    "liveRuns": "Live runs",
+    "run": "Run",
+    "settings": "Settings",
+    "sources": "Sources",
+    "connectSource": "Connect a source",
+    "source": "Source",
+    "newTicket": "New ticket",
+    "tasks": "Tasks",
+    "newTask": "New task"
   }
 }

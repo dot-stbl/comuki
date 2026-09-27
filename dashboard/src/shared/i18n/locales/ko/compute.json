@@ -1,0 +1,122 @@
+{
+  "errors": {
+    "changeFailed": "변경이 실패했습니다."
+  },
+  "page": {
+    "title": "컴퓨트",
+    "summary": "프로바이더 <providers/>개 · 워커 <workers/>개 가동 · <takes/>",
+    "summaryTakes": "<kind/>이(가) 새 시작을 받습니다",
+    "summaryNothing": "새 시작을 받는 것이 없습니다",
+    "summaryStranded": "<count/>개 유휴 — 아무것도 매치하지 않는 라벨에서",
+    "loading": "레지스트리 로딩 중",
+    "errorTitle": "컴퓨트를 로드할 수 없습니다",
+    "failureTail": "아무 것도 움직이지 않았습니다 — 레지스트리는 이전 상태입니다."
+  },
+  "providers": {
+    "section": "프로바이더",
+    "note": "개발용 Docker와 compose, 프로덕션용 Kubernetes — v1이 가진 두 개의 <code>IComputeProvider</code> 구현입니다. 하나가 새 시작을 받고, 나머지는 이미 내준 lease를 유지합니다.",
+    "emptyFiltered": "현재 필터에 맞는 프로바이더가 없습니다",
+    "empty": "등록된 컴퓨트 프로바이더가 없습니다",
+    "count": "{{count}}개 표시됨",
+    "column": {
+      "kind": "종류",
+      "endpoint": "엔드포인트",
+      "state": "상태",
+      "newStarts": "새 시작",
+      "pools": "풀",
+      "workers": "워커",
+      "allocatable": "배치 가능",
+      "note": "메모",
+      "actions": "작업"
+    },
+    "allKinds": "전체 종류",
+    "allStates": "전체 상태",
+    "filterPlaceholder": "엔드포인트, 메모 필터…",
+    "takingWork": "작업 받는 중",
+    "noAnswer": "응답 없음",
+    "handWork": "새 시작을 이 프로바이더에 넘기기",
+    "handWorkAria": "새 시작을 {{endpoint}}에 넘기기"
+  },
+  "pools": {
+    "section": "풀",
+    "note": "스케일링은 쿼터 인지에 프로바이더의 capacity api를 더합니다 — 모든 풀에는 서로 다른 소유자를 둔 두 개의 상한이 있습니다. <tag>binding</tag>으로 표시된 것이 다음 컨테이너를 거부하는 쪽이고, 다른 하나는 여유였던 양입니다.",
+    "empty": "구성된 풀이 없습니다"
+  },
+  "card": {
+    "on": "켜짐",
+    "unknown": "알 수 없음",
+    "noReading": "계기 없음",
+    "slotFree": "슬롯 여유",
+    "slotsFree": "슬롯 여유",
+    "trackQuota": "쿼터",
+    "trackAllocatable": "배치 가능",
+    "binding": "binding",
+    "noAnswer": "응답 없음",
+    "full": "가득",
+    "free": "{{room}} 여유",
+    "up": "가동",
+    "idle": "유휴",
+    "sentences": {
+      "noAnswer": "capacity api가 응답하지 않았습니다 — 이 풀의 상한을 읽을 수 없습니다",
+      "bothFull": "쿼터와 클러스터 모두 가득 — 여기서는 아무 것도 시작할 수 없습니다",
+      "both": "쿼터와 클러스터가 일치 — {{slots}}만큼 여유",
+      "quotaFull": "쿼터가 상한입니다 — 시작할 수 없고, 클러스터에는 아직 {{slots}} 여유",
+      "quota": "쿼터가 상한입니다 — {{slots}}만큼 여유, 클러스터에 {{spare}} 여유",
+      "clusterFull": "클러스터가 상한입니다 — 시작할 수 없고, 쿼터는 여전히 {{slots}} 허용",
+      "cluster": "클러스터가 상한입니다 — {{slots}}만큼 여유, 쿼터 아래 {{spare}} 남음"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — 태스크마다 생성",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "other": "{{count}}개 슬롯"
+    }
+  },
+  "versions": {
+    "section": "워커 버전",
+    "note": "워커는 이미지 다이제스트 <em>그리고</em> 프로필 git-ref로 라벨링됩니다. 어느 쪽을 바꿔도 새 시작에만 영향을 줍니다 — 다른 라벨의 유휴 워커는 항목에 매치되지 않습니다. 가득 찬 풀이 자라는 큐 옆에 앉아 있는 이유입니다.",
+    "emptyFiltered": "현재 필터에 맞는 라벨이 없습니다",
+    "empty": "가동 중인 워커가 없습니다",
+    "count": "{{count}}개 표시됨",
+    "countStranded": "{{count}}개 유휴 미매치 · ",
+    "column": {
+      "label": "워커 라벨",
+      "matching": "매칭",
+      "workers": "워커",
+      "idle": "유휴",
+      "oldestUp": "최장 가동",
+      "why": "이유",
+      "actions": "작업"
+    },
+    "filterPlaceholder": "다이제스트, 프로필 ref 필터…",
+    "allLabels": "전체 라벨",
+    "newStarts": "새 시작",
+    "neverMatched": "매치된 적 없음",
+    "strandedTitle": "아무것도 매치되지 않는 라벨에 {{count}}개 유휴 — 그들은 항목을 클레임하지 않습니다",
+    "retireTooltip": "이 라벨의 유휴 워커 은퇴",
+    "retireAria": "{{label}}의 유휴 워커 {{count}}개 은퇴",
+    "retireTitle": "이 라벨의 유휴 워커를 은퇴시킵니까?",
+    "retireBody": "{{label}} — 유휴 컨테이너 {{idle}}개가 철거됩니다. lease를 여전히 잡은 {{rest}}개는 자기 항목이 끝날 때까지 계속 돕니다.",
+    "retireConfirm": "유휴 은퇴",
+    "retireCancel": "그대로 둠",
+    "reason": {
+      "both": "이미지와 프로필 ref 모두 이동",
+      "image": "이미지에서 릴리스 뒤짐",
+      "profiles": "같은 이미지, 프로필 ref가 이동"
+    }
+  },
+  "boards": {
+    "section": "보드",
+    "note": "그라파나 보드들, 예전에 이것을 소유하던 화면에서 접어 들어온 것입니다. 새 탭에서 열리고 여기 임베드되지 않는 것은 의도입니다: 인프라 메트릭과 런 자체의 타임라인은 서로 다른 질문을 하는 사람들이 서로 다른 시계로 읽습니다. 둘 다 보여주는 화면은 운영자에게 런의 이야기를 메트릭 보드에서 찾도록 가르치고, 거기엔 절반만 있습니다. 런의 이야기는 <code>/runs</code>에 있습니다. 보드 하나가 모든 프로젝트를 한 번에 덮고, 정의는 플랫폼과 함께 버전 관리됩니다 — 목록 아래의 가이드가 아직 아무 것도 없는 설치를 연결하는 법을 말합니다.",
+    "loading": "보드 로딩 중",
+    "errorTitle": "보드를 로드할 수 없습니다"
+  },
+  "state": {
+    "active": "활성",
+    "draining": "드레이닝",
+    "standby": "대기",
+    "unreachable": "닿지 않음"
+  }
+}

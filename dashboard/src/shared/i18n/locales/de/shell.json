@@ -18,7 +18,8 @@
     "projects": "Projekte",
     "identity": "Identität",
     "compute": "Rechenkapazität",
-    "models": "Modelle"
+    "models": "Modelle",
+    "sections": "bereiche"
   },
   "crumb": {
     "platform": "plattform",
@@ -36,7 +37,21 @@
     "onboard": "onboarding",
     "knowledge": "wissen",
     "models": "modelle",
-    "compute": "compute"
+    "compute": "compute",
+    "cost": "Kosten",
+    "settings": "Einstellungen",
+    "new": "neu",
+    "newUser": "neuer benutzer",
+    "grantRole": "rolle vergeben",
+    "person": "person",
+    "linkOidc": "oidc-subjekt verknüpfen",
+    "project": "projekt",
+    "source": "quelle",
+    "worker": "worker",
+    "run": "lauf",
+    "newTicket": "neues ticket",
+    "newApiKey": "neuer api-schlüssel",
+    "onboardRepo": "repository anbinden"
   },
   "topbar": {
     "home": "Comuki — Startseite",
@@ -135,5 +150,35 @@
       "queue": "in der warteschlange",
       "inbox": "im eingang"
     }
+  },
+  "route": {
+    "attention": "Schicht",
+    "console": "Konsole",
+    "onboard": "Repository anbinden",
+    "approvals": "Freigaben",
+    "compute": "Rechenkapazität",
+    "cost": "Kosten & Fehler",
+    "identity": "Identität",
+    "grantRole": "Rolle vergeben",
+    "newApiKey": "Neuer API-Schlüssel",
+    "newUser": "Neuer Benutzer",
+    "person": "Person",
+    "linkOidc": "OIDC-Subject verknüpfen",
+    "knowledge": "Wissen",
+    "models": "Modelle",
+    "projects": "Projekte",
+    "newProject": "Neues Projekt",
+    "project": "Projekt",
+    "queue": "Warteschlange & Worker",
+    "worker": "Worker",
+    "liveRuns": "Live-Reihen",
+    "run": "Lauf",
+    "settings": "Einstellungen",
+    "sources": "Quellen",
+    "connectSource": "Quelle verbinden",
+    "source": "Quelle",
+    "newTicket": "Neues Ticket",
+    "tasks": "Aufgaben",
+    "newTask": "Neue Aufgabe"
   }
 }

@@ -1,1 +1,94 @@
-{}
+{
+  "page": {
+    "title": "Coût et échecs",
+    "errorTitle": "Le rapport ne s'est pas chargé",
+    "retry": "Réessayer",
+    "period": {
+      "day": "aujourd'hui",
+      "week": "cette semaine",
+      "month": "ce mois"
+    },
+    "periodEnd": {
+      "day": "fin de journée",
+      "week": "fin de semaine",
+      "month": "fin de mois"
+    },
+    "deltaVs": "{{pct}}% par rapport à {{period}}",
+    "mockMark": "instantané simulé · VITE_USE_MOCK"
+  },
+  "toggle": {
+    "aria": "Période"
+  },
+  "total": {
+    "label": "dépenses de {{period}}",
+    "noPrior": "pas encore de période précédente",
+    "vs": "par rapport à {{period}}",
+    "flat": "stable",
+    "burnNote": "<burn/> / jour en moyenne · <days/>",
+    "daysObserved": {
+      "one": "{{count}} jour observé",
+      "other": "{{count}} jours observés"
+    }
+  },
+  "forecast": {
+    "label": "Prévision {{period}}",
+    "sub": "{{pct}}% du plafond {{cap}} · rythme de dépense {{rate}}"
+  },
+  "budget": {
+    "label": "Avancement du budget",
+    "today": "aujourd'hui",
+    "month": "mois en cours",
+    "ofCap": "{{used}} sur {{cap}} de plafond"
+  },
+  "section": {
+    "byDay": "dépenses par jour",
+    "byDayNote": {
+      "one": "le dernier {{count}} jour",
+      "other": "les {{count}} derniers jours"
+    },
+    "byModel": "dépenses par modèle",
+    "byModelNote": "jetons",
+    "topProjects": "projets principaux",
+    "topProjectsNote": "cette période",
+    "byApp": "dépenses par appli",
+    "byAppNote": "dépenses",
+    "failures": "où les runs échouent",
+    "failuresNote": "où ça casse"
+  },
+  "column": {
+    "spend": "dépenses",
+    "tokens": "jetons",
+    "share": "part"
+  },
+  "table": {
+    "app": "appli",
+    "model": "modèle",
+    "project": "projet"
+  },
+  "byApp": {
+    "empty": "rien dépensé aujourd'hui"
+  },
+  "byModel": {
+    "empty": "aucune dépense de modèles sur la période",
+    "tokensTitle": "{{tokens}} jetons sur {{runs}} runs"
+  },
+  "topProjects": {
+    "empty": "aucune dépense de projets sur la période",
+    "ofCap": "sur {{cap}} de plafond",
+    "noCap": "sans plafond"
+  },
+  "byDay": {
+    "empty": "rien dépensé cette semaine",
+    "figure": {
+      "one": "<total/> sur le dernier {{count}} jour · <average/> par jour · le plus lourd <peak/> à <spend/>",
+      "other": "<total/> sur les {{count}} derniers jours · <average/> par jour · le plus lourd <peak/> à <spend/>"
+    },
+    "chartLabel": {
+      "one": "Dépenses par jour, dollars. {{total}} sur le dernier {{count}} jour, {{average}} par jour en moyenne ; le plus lourd {{peak}} à {{spend}}.",
+      "other": "Dépenses par jour, dollars. {{total}} sur les {{count}} derniers jours, {{average}} par jour en moyenne ; le plus lourd {{peak}} à {{spend}}."
+    }
+  },
+  "failuresBlock": {
+    "empty": "rien n'a échoué aujourd'hui"
+  }
+}

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { CreateProjectPage } from "@/domains/projects"
@@ -12,14 +13,16 @@ export const Route = createFileRoute("/projects/new")({
    viewer who guesses the URL meets the forbidden state with the roles that
    would work written on it — rather than a form whose only submit refuses. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   return (
     <RequirePermission
       permission="projects.create"
-      title="New project"
+      title={t("route.newProject")}
       crumbs={[
-        { label: "platform" },
-        { label: "projects", to: "/projects" },
-        { label: "new" },
+        { label: t("crumb.platform") },
+        { label: t("crumb.projects"), to: "/projects" },
+        { label: t("crumb.new") },
       ]}
     >
       <CreateProjectPage />

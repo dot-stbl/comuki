@@ -18,7 +18,8 @@
     "projects": "Projets",
     "identity": "Identité",
     "compute": "Calcul",
-    "models": "Modèles"
+    "models": "Modèles",
+    "sections": "sections"
   },
   "crumb": {
     "platform": "plateforme",
@@ -36,7 +37,21 @@
     "onboard": "intégration",
     "knowledge": "connaissances",
     "models": "modèles",
-    "compute": "compute"
+    "compute": "compute",
+    "cost": "coût",
+    "settings": "réglages",
+    "new": "nouveau",
+    "newUser": "nouvel utilisateur",
+    "grantRole": "attribuer un rôle",
+    "person": "personne",
+    "linkOidc": "lier un sujet oidc",
+    "project": "projet",
+    "source": "source",
+    "worker": "worker",
+    "run": "run",
+    "newTicket": "nouveau ticket",
+    "newApiKey": "nouvelle clé api",
+    "onboardRepo": "connecter un dépôt"
   },
   "topbar": {
     "home": "Comuki — accueil",
@@ -135,5 +150,35 @@
       "queue": "dans la file",
       "inbox": "dans la boîte"
     }
+  },
+  "route": {
+    "attention": "Garde",
+    "console": "Console",
+    "onboard": "Connecter un dépôt",
+    "approvals": "Approbations",
+    "compute": "Calcul",
+    "cost": "Coûts et échecs",
+    "identity": "Identité",
+    "grantRole": "Attribuer un rôle",
+    "newApiKey": "Nouvelle clé api",
+    "newUser": "Nouvel utilisateur",
+    "person": "Personne",
+    "linkOidc": "Lier un sujet oidc",
+    "knowledge": "Connaissances",
+    "models": "Modèles",
+    "projects": "Projets",
+    "newProject": "Nouveau projet",
+    "project": "Projet",
+    "queue": "File et workers",
+    "worker": "Worker",
+    "liveRuns": "Runs en direct",
+    "run": "Run",
+    "settings": "Réglages",
+    "sources": "Sources",
+    "connectSource": "Connecter une source",
+    "source": "Source",
+    "newTicket": "Nouveau ticket",
+    "tasks": "Tâches",
+    "newTask": "Nouvelle tâche"
   }
 }

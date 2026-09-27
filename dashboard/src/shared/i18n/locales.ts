@@ -27,6 +27,11 @@ export const LOCALES: readonly LocaleEntry[] = [
   { code: "pt-BR", endonym: "Português (Brasil)", quality: "draft" },
   { code: "zh-CN", endonym: "简体中文", quality: "draft" },
   { code: "ja", endonym: "日本語", quality: "draft" },
+  { code: "ko", endonym: "한국어", quality: "draft" },
+  { code: "it", endonym: "Italiano", quality: "draft" },
+  { code: "pl", endonym: "Polski", quality: "draft" },
+  { code: "tr", endonym: "Türkçe", quality: "draft" },
+  { code: "zh-TW", endonym: "中文（繁體）", quality: "draft" },
 ]
 
 /** The boot default and the fallback chain's terminus (`dashboard-i18n` D3). */

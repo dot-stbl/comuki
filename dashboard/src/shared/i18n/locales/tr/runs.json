@@ -1,0 +1,157 @@
+{
+  "status": {
+    "running": "çalışıyor",
+    "waiting": "bekliyor",
+    "queued": "kuyrukta",
+    "escalated": "eskalasyonda",
+    "failed": "başarısız",
+    "success": "başarılı",
+    "cancelled": "iptal edildi"
+  },
+  "registry": {
+    "title": "Canlı çalıştırmalar",
+    "summary": "<total/> çalıştırma · <running/> çalışıyor · <blocked/> insan bekliyor",
+    "errorTitle": "Çalıştırmalar yüklenemedi",
+    "anomaliesOnly": "Yalnızca anomalileri göster",
+    "count": {
+      "other": "{{count}} gösteriliyor"
+    },
+    "empty": {
+      "profile": "Bu profilde çalıştırma yok.",
+      "filtered": "Geçerli filtrelerle eşleşen çalıştırma yok.",
+      "none": "Henüz çalıştırma yok."
+    },
+    "unplannedTitle": "Henüz plan yok",
+    "unplannedDescription": "Bu çalıştırmalar kabul edildi ama beyin onları planlamadı. İlk plan iş öğesi edinince akış belirir.",
+    "expandFlow": "Akışı genişlet",
+    "collapseFlow": "Akışı topla",
+    "resizeBoard": "Akış panosunu yeniden boyutlandır",
+    "expandStrip": "Akış panosunu genişlet"
+  },
+  "notice": {
+    "fallback": "Karar verilemedi.",
+    "tail": "Hiçbir şey değişmedi — çalıştırma eskisi gibi geri geldi."
+  },
+  "cancelDialog": {
+    "title": "Bu çalıştırma iptal edilsin mi?",
+    "body": "{{title}} · {{where}} — kontainer yıkılır ve lease bırakılır. Zaten birleşmiş olan iş kalır.",
+    "confirm": "Çalıştırmayı iptal et",
+    "cancel": "Çalışmaya devam etsin"
+  },
+  "column": {
+    "status": "durum",
+    "run": "çalıştırma",
+    "project": "proje",
+    "app": "uygulama",
+    "task": "görev",
+    "profile": "profil",
+    "step": "adım",
+    "inStep": "adımda",
+    "cost": "maliyet",
+    "worker": "worker",
+    "actions": "eylemler",
+    "allStatuses": "tüm durumlar",
+    "allProjects": "tüm projeler",
+    "allApps": "tüm uygulamalar",
+    "allProfiles": "tüm profiller",
+    "filterPlaceholder": "çalıştırma, görev, adım filtrele…",
+    "waitingOnPlan": "plan bekliyor",
+    "approve": "Onayla",
+    "cancelRun": "Çalıştırmayı iptal et",
+    "approveRun": "{{title}} onayla",
+    "cancelTask": "{{title}} iptal et"
+  },
+  "detail": {
+    "fallbackTitle": "Çalıştırma {{runId}}",
+    "tok": "tok",
+    "errorTitle": "Bu çalıştırma yüklenemedi",
+    "notFoundTitle": "Bu id'ye ait çalıştırma yok",
+    "notFoundDescription": "Sürü, <id/> altında bir şey tutmuyor. Eski bir bağlantıdan gelen çalıştırma id'si buraya gelmenin olağan yoludur — bir adres, adlandırdığı çalıştırmadan uzun yaşar ve hâlâ uçuştakilerin yeri nöbet listesidir.",
+    "backToList": "Canlı çalıştırmalara dön",
+    "unplannedTitle": "Henüz planlanmadı",
+    "unplannedDescription": "Bu çalıştırma kabul edildi ve beyin onu henüz iş öğelerine bölmedi. Yanlış bir şey yok ve seni bekleyen bir şey yok — graf ve öğe inceleyicisi, plan ilk öğesini edindiği anda burada belirir.",
+    "unplannedHint": "{{status}} · iş öğesi yok · incelenecek bir şey yok",
+    "noInspectorTitle": "Bu öğenin ayrıntısı yok",
+    "noInspectorDescription": "Yukarıdaki plan tamamlanmış; bu öğenin henüz inceleyici kaydı yok. Başka bir öğe seçin ya da başladığında geri gelin.",
+    "resizeGraph": "Çalıştırma grafiğini yeniden boyutlandır"
+  },
+  "river": {
+    "group": "Profil akışı. Ok tuşları profiller arasında gezdirir.",
+    "cleared": "geçti",
+    "waitingOnHuman": "insan bekliyor",
+    "noWork": "iş yok",
+    "poolEntry": "{{count}} {{status}}",
+    "clearedProfile": {
+      "other": "{{count}} profilden geçti"
+    },
+    "mark": {
+      "other": "{{count}} insan bekliyor"
+    },
+    "pinched": {
+      "other": " {{count}} insan bekliyor — başka hiçbir profilden fazla."
+    },
+    "node": "{{profile}}: {{pool}}. {{cleared}}.{{mark}}"
+  },
+  "evidence": {
+    "title": "kanıt",
+    "empty": "henüz yayınlanmış ekran görüntüsü yok"
+  },
+  "anomaly": {
+    "badgeLabel": "{{multiplier}}× medyan",
+    "badgeTip": "Maliyet, bu projenin {{median}} medyanının {{multiplier}} katı — {{threshold}}× eşiğini aşıyor. Döküm için tıklayın.",
+    "badgeAria": "Maliyet anomalisi — {{label}}. Dökümü aç.",
+    "dialogTitle": "Maliyet sıçraması · çalıştırma {{runId}}",
+    "acknowledge": "Kabul et",
+    "cancelRun": "Çalıştırmayı iptal et",
+    "summary": "Özet",
+    "spend": "Harcama dökümü",
+    "why": "Neden işaretlendi",
+    "project": "proje",
+    "profile": "profil",
+    "status": "durum",
+    "cost": "maliyet",
+    "tokensInOut": "token (giriş / çıkış)",
+    "total": "(toplam {{total}})",
+    "reason": "<spent/> harcandı; bu, <project/> için <median/> medyan maliyetinin <multiplier/> katı.",
+    "rule": "Kural: maliyet > projenin medyan çalıştırma maliyetinin {{threshold}} katı.",
+    "openCost": "Maliyet sayfasını aç →"
+  },
+  "graph": {
+    "group": "Çalıştırma grafiği. Ok tuşları iş öğeleri arasında gezdirir.",
+    "empty": "Bu planda iş öğesi yok.",
+    "parallel": {
+      "other": "{{count}} paralel"
+    },
+    "here": "burada",
+    "dependsOnEarlier": {
+      "other": "{{count}} öncekinden bağımlı"
+    },
+    "blocked": "engellendi",
+    "standingHere": "çalıştırma burada duruyor.",
+    "blockedByFailure": "yukarıdaki bir arıza tarafından engellendi.",
+    "blockedByEscalation": "yukarıdaki bir eskalasyon tarafından engellendi.",
+    "longEdges": "bir sütundan fazla gerideki {{count}} öğeye bağımlı: {{named}}.",
+    "longEdgesPlural": "bir sütundan fazla gerideki {{count}} öğeye bağımlı: {{named}}."
+  },
+  "inspector": {
+    "itemOf": "öğe {{index}} / {{total}}",
+    "env": "env",
+    "tokens": "token",
+    "cost": "maliyet",
+    "started": "başladı",
+    "waitsOn": "beklediği",
+    "waitsOnLong": "bir sütundan fazla gerideki {{count}}",
+    "waitsOnNone": "Hiçbir şey — bu öğe planı başlatır.",
+    "distancePrevious": "önceki sütun",
+    "distanceBack": {
+      "other": "{{count}} sütun geride"
+    },
+    "dependencyAria": "{{label}}, {{profile}}, {{status}}, {{distance}} göster.",
+    "input": "girdi — onu ne besledi",
+    "log": "log",
+    "appendOnly": "append-only",
+    "gate": "doğrulama kapısı",
+    "output": "çıktı — ne üretti",
+    "outputNone": "Henüz bir şey yok."
+  }
+}

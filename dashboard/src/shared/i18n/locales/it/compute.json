@@ -1,0 +1,124 @@
+{
+  "errors": {
+    "changeFailed": "La modifica non è andata a buon fine."
+  },
+  "page": {
+    "title": "Compute",
+    "summary": "<providers/> provider · <workers/> worker su · <takes/>",
+    "summaryTakes": "<kind/> prende i nuovi avvii",
+    "summaryNothing": "nessuno prende i nuovi avvii",
+    "summaryStranded": "<count/> inattivi su un'etichetta che nessuno matcha",
+    "loading": "Caricamento del registro",
+    "errorTitle": "Impossibile caricare il compute",
+    "failureTail": "Niente si è mosso — il registro è tornato com'era."
+  },
+  "providers": {
+    "section": "Provider",
+    "note": "Docker per dev e compose, Kubernetes per prod — le due implementazioni <code>IComputeProvider</code> che ha la v1. Una prende i nuovi avvii; le altre tengono i lease che hanno già emesso.",
+    "emptyFiltered": "nessun provider matcha i filtri correnti",
+    "empty": "nessun provider di compute è registrato",
+    "count": "{{count}} mostrati",
+    "column": {
+      "kind": "tipo",
+      "endpoint": "endpoint",
+      "state": "stato",
+      "newStarts": "nuovi avvii",
+      "pools": "pool",
+      "workers": "worker",
+      "allocatable": "allocabile",
+      "note": "nota",
+      "actions": "azioni"
+    },
+    "allKinds": "tutti i tipi",
+    "allStates": "tutti gli stati",
+    "filterPlaceholder": "filtra endpoint, nota…",
+    "takingWork": "presa lavoro",
+    "noAnswer": "nessuna risposta",
+    "handWork": "Dai i nuovi avvii a questo provider",
+    "handWorkAria": "Dai i nuovi avvii a {{endpoint}}"
+  },
+  "pools": {
+    "section": "Pool",
+    "note": "Lo scaling è quota-aware più la capacity api del provider, quindi ogni pool ha due tetti con due proprietari diversi. Quello marcato <tag>binding</tag> è quello che rifiuta il prossimo container — l'altro è quanto gli restava libero.",
+    "empty": "nessun pool è configurato"
+  },
+  "card": {
+    "on": "on",
+    "unknown": "sconosciuto",
+    "noReading": "nessuna lettura",
+    "slotFree": "slot libero",
+    "slotsFree": "slot liberi",
+    "trackQuota": "quota",
+    "trackAllocatable": "allocabile",
+    "binding": "binding",
+    "noAnswer": "nessuna risposta",
+    "full": "pieno",
+    "free": "{{room}} liberi",
+    "up": "su",
+    "idle": "inattivi",
+    "sentences": {
+      "noAnswer": "la capacity api non ha risposto — nessun tetto leggibile per questo pool",
+      "bothFull": "quota e cluster sono entrambi pieni — qui non può partire niente",
+      "both": "quota e cluster sono d'accordo — posto per {{slots}}",
+      "quotaFull": "la quota è il tetto — niente può partire, e il cluster ha ancora {{slots}} liberi",
+      "quota": "la quota è il tetto — posto per {{slots}}, con {{spare}} liberi sul cluster",
+      "clusterFull": "il cluster è il tetto — niente può partire, e la quota consente ancora {{slots}}",
+      "cluster": "il cluster è il tetto — posto per {{slots}}, con {{spare}} rimasti sotto la quota"
+    },
+    "idleKnob": {
+      "perTask": "min idle 0 — create-per-task",
+      "min": "min idle {{min}}",
+      "range": "min idle {{min}} · max idle {{max}}"
+    },
+    "slots": {
+      "one": "{{count}} slot",
+      "many": "{{count}} slot",
+      "other": "{{count}} slot"
+    }
+  },
+  "versions": {
+    "section": "Versioni worker",
+    "note": "Un worker è etichettato dal digest dell'immagine <em>e</em> dal git-ref dei profili. Cambiare uno dei due tocca solo i nuovi avvii — un worker inattivo su qualsiasi altra etichetta non viene mai matchato a un item, ed è così che un pool pieno siede accanto a una coda che cresce.",
+    "emptyFiltered": "nessuna etichetta matcha i filtri correnti",
+    "empty": "nessun worker è su",
+    "count": "{{count}} mostrate",
+    "countStranded": "{{count}} inattivi mai matchati · ",
+    "column": {
+      "label": "etichetta worker",
+      "matching": "matching",
+      "workers": "worker",
+      "idle": "inattivi",
+      "oldestUp": "su da più tempo",
+      "why": "perché",
+      "actions": "azioni"
+    },
+    "filterPlaceholder": "filtra digest, ref dei profili…",
+    "allLabels": "tutte le etichette",
+    "newStarts": "nuovi avvii",
+    "neverMatched": "mai matchati",
+    "strandedTitle": "{{count}} inattivi su un'etichetta a cui niente è matchato — non claimmeranno un item",
+    "retireTooltip": "Ritira i worker inattivi su questa etichetta",
+    "retireAria": "Ritira {{count}} worker inattivi su {{label}}",
+    "retireTitle": "Ritirare i worker inattivi su questa etichetta?",
+    "retireBody": "{{label}} — {{idle}} container inattivi vengono smontati. I {{rest}} che tengono ancora un lease continuano finché il loro item non atterra.",
+    "retireConfirm": "Ritira inattivi",
+    "retireCancel": "Lasciali su",
+    "reason": {
+      "both": "immagine e ref dei profili sono entrambi migrati",
+      "image": "un release indietro sull'immagine",
+      "profiles": "stessa immagine, il ref dei profili è migrato"
+    }
+  },
+  "boards": {
+    "section": "Board",
+    "note": "Le board grafana, ripiegate dentro dalla schermata che una volta le possedeva. Si aprono in una nuova scheda e non sono incorporate qui apposta: le metriche d'infra e la timeline di una run si leggono su orologi diversi, da persone che fanno domande diverse, e una superficie che mostrasse entrambe insegnerebbe un operatore a cercare la storia di una run in una board di metriche, dove ne sta solo metà. La storia di una run sta su <code>/runs</code>. Una board copre ogni progetto insieme, e le definizioni sono versionate con la piattaforma — la guida sotto la lista dice come collegare un'installazione che ancora non ha niente dentro.",
+    "loading": "Caricamento delle board",
+    "errorTitle": "Impossibile caricare le board"
+  },
+  "state": {
+    "active": "attivo",
+    "draining": "in draining",
+    "standby": "standby",
+    "unreachable": "irraggiungibile"
+  }
+}

@@ -9,7 +9,10 @@ import {
   RouterProvider,
 } from "@tanstack/react-router"
 
-import type { ChatMessage as Message, ProposalDecision } from "@/domains/chat/model/types"
+import type {
+  ChatMessage as Message,
+  ProposalDecision,
+} from "@/domains/chat/model/types"
 import { PROJECTS_SEED, SESSION_USER_SEED } from "@/shared/api/mock"
 import { SessionProvider, type SessionUser } from "@/shared/session"
 

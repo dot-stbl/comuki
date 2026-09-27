@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { QueuePage } from "@/domains/queue"
@@ -55,6 +56,8 @@ export const Route = createFileRoute("/queue/")({
 })
 
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { q, w } = Route.useSearch()
   const navigate = useNavigate()
 
@@ -70,8 +73,11 @@ function RouteComponent() {
   return (
     <RequirePermission
       permission="queue.view"
-      title="Queue & workers"
-      crumbs={[{ label: "observe", to: "/runs" }, { label: "queue" }]}
+      title={t("route.queue")}
+      crumbs={[
+        { label: t("crumb.observe"), to: "/runs" },
+        { label: t("crumb.queue") },
+      ]}
     >
       <QueuePage
         search={q}

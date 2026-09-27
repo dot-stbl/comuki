@@ -1,1 +1,201 @@
-{}
+{
+  "errors": {
+    "saveDidNotLand": "L'enregistrement n'est pas passé.",
+    "stopDidNotApply": "Le stop ne s'est pas appliqué."
+  },
+  "page": {
+    "title": "Réglages",
+    "summaryMock": "configuration du plan de contrôle",
+    "summaryReal": "configuration de la plateforme — lecture seule, fixée au démarrage",
+    "errorTitle": "Les réglages ne se sont pas chargés",
+    "retry": "Réessayer",
+    "tabsAria": "Sections des réglages"
+  },
+  "tabs": {
+    "apps": "applis",
+    "rules": "règles",
+    "autonomy": "autonomie",
+    "routing": "routage",
+    "budgets": "budgets",
+    "keys": "clés",
+    "tracker": "trackers"
+  },
+  "toast": {
+    "routingSaved": "Routage enregistré",
+    "routingSavedNote": "carte rôle → modèle mise à jour (simulé)",
+    "routingNotSaved": "Routage non enregistré",
+    "budgetsSaved": "Budgets enregistrés",
+    "budgetsSavedNote": "plafonds mis à jour (simulé)",
+    "budgetsNotSaved": "Budgets non enregistrés"
+  },
+  "apps": {
+    "section": "Applis",
+    "note": "lecture seule · le registre est déclaré dans le git du client",
+    "emptyFiltered": "aucune appli ne passe les filtres actuels",
+    "empty": "le registre ne déclare aucune appli",
+    "count": "{{count}} affichées",
+    "column": {
+      "app": "appli",
+      "repo": "dépôt",
+      "stack": "stack",
+      "envs": "environnements",
+      "deploy": "déploiement"
+    },
+    "filterPlaceholder": "filtrer appli, dépôt, stack…",
+    "allTargets": "toutes les cibles",
+    "nowhere": "nulle part"
+  },
+  "rules": {
+    "section": "Règles de l'essaim",
+    "note": "lecture seule · les règles vivent dans le git du client et changent par commit",
+    "conflicts": "Aucun conflit · {{count}} règles actives · les portées ne se chevauchent pas.",
+    "emptyFiltered": "aucune règle ne passe les filtres actuels",
+    "empty": "l'ensemble de règles est vide",
+    "count": "{{count}} affichées",
+    "column": {
+      "rule": "règle",
+      "scope": "portée",
+      "kind": "genre",
+      "version": "version",
+      "description": "description"
+    },
+    "filterPlaceholder": "filtrer règle, portée, description…",
+    "allScopes": "toutes les portées",
+    "allKinds": "tous les genres"
+  },
+  "autonomy": {
+    "section": "Autonomie",
+    "note": "quoi est automatique · quoi exige une personne",
+    "emptyFiltered": "aucune classe de changement ne passe les filtres actuels",
+    "empty": "aucune classe de changement n'est classée",
+    "count": "{{count}} affichées",
+    "column": {
+      "changeClass": "classe de changement",
+      "mode": "mode"
+    },
+    "filterPlaceholder": "filtrer classe de changement…",
+    "allModes": "tous les modes"
+  },
+  "routing": {
+    "section": "Routage des modèles",
+    "note": "rôle → modèle physique",
+    "emptyFiltered": "aucun rôle ne passe les filtres actuels",
+    "empty": "aucun rôle n'est routé",
+    "count": "{{count}} affichés",
+    "column": {
+      "role": "rôle",
+      "model": "modèle",
+      "usage": "usage"
+    },
+    "editSection": "Modifier la carte rôle → modèle",
+    "editNote": "lead / worker / juge",
+    "field": {
+      "lead": "lead",
+      "worker": "worker",
+      "judge": "juge"
+    },
+    "save": "Enregistrer le routage",
+    "escalation": "Politique d'escalade — 2 rechecs de retry sur le worker escaladent vers le lead. Un gate de types rouge part vers un agent de debug avec une révision épinglée."
+  },
+  "budgets": {
+    "readingSection": "Budget du proxy",
+    "readingNote": "ce que l'essaim a dépensé aujourd'hui contre le plafond global",
+    "killSwitch": "Kill-switch",
+    "killHint": "Arrêt net de toute nouvelle réservation — chaque appli, chaque tâche.",
+    "pause": "Mettre l'essaim en pause",
+    "pauseHint": "Pause douce — les workers en cours finissent ; aucun nouveau conteneur ne démarre.",
+    "stopFailureTail": "Rien n'a bougé — les stops sont comme avant.",
+    "killTitle": "Lancer le kill-switch ?",
+    "killBody": "Les nouvelles réservations s'arrêtent maintenant — chaque appli, chaque tâche — et restent arrêtées jusqu'à ce que le switch soit remis. Les workers en plein pas finissent ce qu'ils tiennent ; rien en file n'est annulé.",
+    "killConfirm": "Bloquer les nouvelles réservations",
+    "killCancel": "Laisser les réservations ouvertes",
+    "capsSection": "Plafonds de budget",
+    "capsNote": "le plafond global que lit la jauge · par-tâche et par-appli l'affinent",
+    "globalCap": "plafond global",
+    "globalCapHint": "La jauge au-dessus mesure la dépense contre ce plafond.",
+    "refinements": "affinages",
+    "perTask": "par tâche",
+    "perApp": "par appli",
+    "save": "Enregistrer les budgets",
+    "meter": {
+      "over": "au-dessus du plafond",
+      "left": "{{left}} restant",
+      "stopped": "kill-switch activé · nouvelles réservations bloquées",
+      "atCap": "kill-switch au plafond"
+    }
+  },
+  "keys": {
+    "section": "Clés de fournisseurs",
+    "note": "lecture seule · les clés viennent d'env, la rotation tourne dans le proxy",
+    "emptyFiltered": "aucune clé ne passe les filtres actuels",
+    "empty": "le proxy ne détient aucune clé de fournisseur",
+    "count": "{{count}} affichées",
+    "column": {
+      "provider": "fournisseur",
+      "scope": "portée",
+      "rotation": "rotation",
+      "status": "état"
+    },
+    "filterPlaceholder": "filtrer fournisseur, portée…",
+    "allStatuses": "tous les états"
+  },
+  "tracker": {
+    "section": "Sources d'intake",
+    "notice": "Un tracker connecté synchronise ses tickets vers le backlog · l'intake manuel reste ouvert dans tous les cas.",
+    "emptyTitle": "Aucun tracker n'est branché",
+    "emptyDescription": "Rien ne synchronise de tickets vers le backlog. L'intake manuel reste ouvert dans tous les cas — un tracker n'ajoute qu'une deuxième porte.",
+    "connected": "connecté",
+    "synced": "synchronisé {{when}}",
+    "sync": "Synchroniser",
+    "syncAria": "Synchroniser {{name}}",
+    "syncedToast": "{{name}} synchronisé",
+    "syncedToastNote": "nouveaux tickets importés (simulé)",
+    "connect": "Connecter",
+    "connectAria": "Connecter {{name}}",
+    "connectToast": "Connecter {{name}}",
+    "connectToastNote": "flux OAuth… (simulé)"
+  },
+  "platform": {
+    "hint": "Lecture seule — chaque valeur ici est configurée au démarrage. Les changements passent par la configuration et un redémarrage ; rien sur cette page n'écrit.",
+    "on": "activé",
+    "off": "désactivé",
+    "escalationOff": "désactivé — le cliquet est désactivé ({{would}} s'appliquerait)",
+    "orchestration": {
+      "section": "orchestration",
+      "leaseTtl": "ttl du bail",
+      "leaseTtlNote": "délivré à la réservation, prolongé par heartbeat",
+      "reapInterval": "intervalle de fauche",
+      "reapIntervalNote": "cadence du passage du faucheur de baux",
+      "reapGrace": "grâce de fauche",
+      "reapGraceNote": "tampon après expiration avant que le faucheur n'agisse",
+      "maxAttempts": "tentatives max",
+      "maxAttemptsNote": "réservations avant qu'un élément bloqué échoue",
+      "escalationTimeout": "timeout d'escalade",
+      "escalationTimeoutNote": "combien de temps un run peut rester escaladé avant archivage auto",
+      "escalationSweep": "passage d'escalade",
+      "escalationSweepNote": "cadence du passage du cliquet"
+    },
+    "compute": {
+      "section": "compute",
+      "provider": "fournisseur",
+      "providerNote": "l'implémentation compute que v1 exécute",
+      "workerImage": "image du worker",
+      "workerImageNote": "épinglée par digest en production",
+      "profilesRef": "ref de profiles",
+      "profilesRefNote": "le git-ref de profiles épinglé",
+      "minIdle": "min idle",
+      "minIdleNote": "plancher d'inactivité chaude par profil",
+      "maxConcurrent": "concurrence max",
+      "maxConcurrentNote": "plafond de concurrence par projet",
+      "idleTtl": "ttl d'inactivité",
+      "idleTtlNote": "avant qu'un worker soit candidat au faucheur",
+      "pollInterval": "intervalle de sondage",
+      "pollIntervalNote": "entre les passes du superviseur"
+    },
+    "proxy": {
+      "section": "proxy",
+      "passthrough": "openai / anthropic passthrough",
+      "passthroughNote": "si le proxy est composé ou non"
+    }
+  }
+}

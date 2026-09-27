@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Réessayer"
-  },
-  "errors": {
-    "unknown": "Erreur inconnue"
-  },
   "page": {
     "title": "Console",
     "summary": "le même plan de contrôle que pilotent les écrans, atteint au clavier",
@@ -123,14 +117,26 @@
     },
     "words": {
       "run": {
-        "start": { "confirm": "Démarrer", "refuse": "Jeter" },
-        "stop": { "confirm": "Arrêter", "refuse": "Laisser tourner" }
+        "start": {
+          "confirm": "Démarrer",
+          "refuse": "Jeter"
+        },
+        "stop": {
+          "confirm": "Arrêter",
+          "refuse": "Laisser tourner"
+        }
       },
       "plan": {
-        "approve": { "confirm": "Approuver", "refuse": "Rejeter" }
+        "approve": {
+          "confirm": "Approuver",
+          "refuse": "Rejeter"
+        }
       },
       "settings": {
-        "debug": { "confirm": "Allumer", "refuse": "Laisser éteint" }
+        "debug": {
+          "confirm": "Allumer",
+          "refuse": "Laisser éteint"
+        }
       }
     },
     "inProject": "dans {{project}}",
@@ -148,12 +154,10 @@
   },
   "wizard": {
     "title": "Intégrer un dépôt",
-
     "running": "L'intégration est en cours.",
     "streamHead": "intégration",
     "stageWord": {
       "done": "fait",
-
       "running": "en cours",
       "queued": "en file"
     },

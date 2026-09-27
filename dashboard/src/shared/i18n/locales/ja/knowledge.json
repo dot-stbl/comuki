@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "再試行",
-    "close": "閉じる"
-  },
-  "errors": {
-    "unknown": "不明なエラー"
-  },
   "page": {
     "title": "ナレッジ",
     "summary": "ルールセット、リビジョン、評価ハーネス",

@@ -1,1 +1,119 @@
-{}
+{
+  "field": {
+    "required": "必填"
+  },
+  "formDialog": {
+    "cancel": "取消"
+  },
+  "dialog": {
+    "close": "关闭"
+  },
+  "copyButton": {
+    "copy": "复制",
+    "copied": "已复制"
+  },
+  "codeBlock": {
+    "wrap": "换行",
+    "showLess": "收起",
+    "showAll": {
+      "other": "显示全部 {{count}} 行"
+    }
+  },
+  "skeleton": {
+    "loading": "加载中"
+  },
+  "forbidden": {
+    "subject": "此视图",
+    "title": "{{subject}}对你的角色关闭",
+    "description": "{{needs}} — 请申请该角色，或切换到你已拥有它的项目。"
+  },
+  "searchField": {
+    "clear": "清除搜索"
+  },
+  "select": {
+    "any": "任意"
+  },
+  "combobox": {
+    "openList": "打开列表"
+  },
+  "datePicker": {
+    "openCalendar": "打开日历"
+  },
+  "splitPane": {
+    "resize": "调整大小"
+  },
+  "dataTable": {
+    "empty": "暂无行",
+    "noun": "行",
+    "selectColumn": "选择",
+    "selectAll": "选择所有{{noun}}",
+    "selectRow": "选择{{noun}} {{id}}",
+    "resizeColumn": "调整 {{label}} 列宽",
+    "resizeHint": "拖动调整列宽，双击重置"
+  },
+  "toolbar": {
+    "filters": "筛选",
+    "filtersLabel": "筛选",
+    "filtersActive": "筛选，{{count}} 个生效",
+    "clearFilters": "清除全部筛选",
+    "columns": "列",
+    "searchPlaceholder": "搜索{{label}}…",
+    "filterBy": "按 {{label}} 筛选",
+    "filterAll": "全部 {{label}}",
+    "filterPlaceholder": "筛选{{label}}…",
+    "clearFilterTitle": "清除 {{label}} 筛选",
+    "clearFilterLabel": "清除 {{label}} 筛选：{{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "回到面板",
+    "fillWindow": "铺满窗口",
+    "shrinkBack": "将 {{title}} 缩回面板",
+    "fillWith": "用 {{title}} 铺满窗口",
+    "resize": "调整 {{title}} 大小",
+    "closeHint": "关闭 — escape",
+    "close": "关闭 {{title}}"
+  },
+  "evidencePane": {
+    "closeHint": "关闭 — escape",
+    "close": "关闭证据",
+    "empty": "没有 {{type}} 的查看器 — 字节在上方的 url 处",
+    "unknownType": "未知",
+    "openNewTab": "在新标签页打开",
+    "openNewTabLabel": "在新标签页打开 {{filename}}"
+  },
+  "cron": {
+    "cadence": "周期",
+    "custom": "自定义…",
+    "customDescription": "选择分钟、小时、日、月和星期。",
+    "value": "值",
+    "any": "任意",
+    "everyDay": "每天",
+    "anyDay": "任意一天",
+    "part": {
+      "minute": "分钟",
+      "hour": "小时",
+      "day": "日",
+      "month": "月",
+      "weekday": "星期"
+    },
+    "weekday": {
+      "sun": "周日",
+      "mon": "周一",
+      "tue": "周二",
+      "wed": "周三",
+      "thu": "周四",
+      "fri": "周五",
+      "sat": "周六"
+    },
+    "preset": {
+      "hourly": "每小时",
+      "hourlyDescription": "每小时的整点。",
+      "daily": "每天 03:00",
+      "dailyDescription": "每天一次，在项目的安静时段。",
+      "weekly": "每周一",
+      "weeklyDescription": "每周一 03:00。",
+      "monthly": "每月 1 日",
+      "monthlyDescription": "每月第一天的 03:00。"
+    }
+  }
+}

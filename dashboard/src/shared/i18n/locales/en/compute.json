@@ -1,9 +1,5 @@
 {
-  "actions": {
-    "retry": "Retry"
-  },
   "errors": {
-    "unknown": "Unknown error",
     "changeFailed": "The change failed."
   },
   "page": {

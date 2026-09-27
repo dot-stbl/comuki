@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 
 import { ChoiceField } from "@/shared/ui/form/choice-field"
 import { Field } from "@/shared/ui/form/field"
@@ -7,44 +8,62 @@ import { Select } from "@/shared/ui/select"
 
 import styles from "./cron-field.module.css"
 
-const MINUTE_OPTIONS = [
-  { value: "*", label: "any" },
-  ...Array.from({ length: 60 }, (_, i) => ({
-    value: i.toString(),
-    label: i.toString(),
-  })),
-]
-const HOUR_OPTIONS = [
-  { value: "*", label: "any" },
-  ...Array.from({ length: 24 }, (_, i) => ({
-    value: i.toString(),
-    label: i.toString(),
-  })),
-]
-const DAY_OF_MONTH_OPTIONS = [
-  { value: "*", label: "every day" },
-  ...Array.from({ length: 31 }, (_, i) => ({
-    value: (i + 1).toString(),
-    label: (i + 1).toString(),
-  })),
-]
-const MONTH_OPTIONS = [
-  { value: "*", label: "any" },
-  ...Array.from({ length: 12 }, (_, i) => ({
-    value: (i + 1).toString(),
-    label: (i + 1).toString(),
-  })),
-]
-const DAY_OF_WEEK_OPTIONS = [
-  { value: "*", label: "any day" },
-  { value: "0", label: "Sun" },
-  { value: "1", label: "Mon" },
-  { value: "2", label: "Tue" },
-  { value: "3", label: "Wed" },
-  { value: "4", label: "Thu" },
-  { value: "5", label: "Fri" },
-  { value: "6", label: "Sat" },
-]
+/** The translator the cron words resolve through — see `data-table`'s note. */
+type CronTranslator = (key: string, options?: Record<string, unknown>) => string
+
+/** `*` plus 0…59. The numbers are wire values; only "any" is a word. */
+function minuteOptions(t: CronTranslator) {
+  return [
+    { value: "*", label: t("cron.any") },
+    ...Array.from({ length: 60 }, (_, i) => ({
+      value: i.toString(),
+      label: i.toString(),
+    })),
+  ]
+}
+
+function hourOptions(t: CronTranslator) {
+  return [
+    { value: "*", label: t("cron.any") },
+    ...Array.from({ length: 24 }, (_, i) => ({
+      value: i.toString(),
+      label: i.toString(),
+    })),
+  ]
+}
+
+function dayOfMonthOptions(t: CronTranslator) {
+  return [
+    { value: "*", label: t("cron.everyDay") },
+    ...Array.from({ length: 31 }, (_, i) => ({
+      value: (i + 1).toString(),
+      label: (i + 1).toString(),
+    })),
+  ]
+}
+
+function monthOptions(t: CronTranslator) {
+  return [
+    { value: "*", label: t("cron.any") },
+    ...Array.from({ length: 12 }, (_, i) => ({
+      value: (i + 1).toString(),
+      label: (i + 1).toString(),
+    })),
+  ]
+}
+
+/** Weekday keys in cron order — 0 is Sunday. */
+const WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const
+
+function dayOfWeekOptions(t: CronTranslator) {
+  return [
+    { value: "*", label: t("cron.anyDay") },
+    ...WEEKDAYS.map((day, index) => ({
+      value: index.toString(),
+      label: t(`cron.weekday.${day}`),
+    })),
+  ]
+}
 
 export interface CronFieldProps {
   id: string
@@ -124,32 +143,17 @@ export function CronField({
 
 interface CronPreset {
   value: string
-  label: string
-  description: string
 }
 
 const PRESETS: CronPreset[] = [
-  {
-    value: "0 * * * *",
-    label: "Hourly",
-    description: "Every hour, on the hour.",
-  },
-  {
-    value: "0 3 * * *",
-    label: "Daily at 03:00",
-    description: "Once a day, in the project's quiet window.",
-  },
-  {
-    value: "0 3 * * 1",
-    label: "Weekly Monday",
-    description: "Mondays at 03:00.",
-  },
-  {
-    value: "0 3 1 * *",
-    label: "Monthly 1st",
-    description: "First of the month at 03:00.",
-  },
+  { value: "0 * * * *" },
+  { value: "0 3 * * *" },
+  { value: "0 3 * * 1" },
+  { value: "0 3 1 * *" },
 ]
+
+/** Catalogue key per preset, in `PRESETS` order. */
+const PRESET_KEYS = ["hourly", "daily", "weekly", "monthly"] as const
 
 const CUSTOM_VALUE = "__custom"
 
@@ -173,6 +177,7 @@ function CronControl({
   const [mode, setMode] = useState<"preset" | "custom">(
     isPreset ? "preset" : "custom"
   )
+  const { t } = useTranslation("kit")
 
   // The preset row's checked-state is one of the four presets or `Custom…`
   // — whichever is in force. An empty wire and an off-preset value both
@@ -196,20 +201,20 @@ function CronControl({
     <div className={styles.stack} data-test={dataTest}>
       <ChoiceField
         name={`${id}-preset`}
-        label="cadence"
+        label={t("cron.cadence")}
         value={presetSelection}
         onValueChange={pickPreset}
         disabled={disabled}
         options={[
-          ...PRESETS.map((preset) => ({
+          ...PRESETS.map((preset, index) => ({
             value: preset.value,
-            label: preset.label,
-            description: preset.description,
+            label: t(`cron.preset.${PRESET_KEYS[index]}`),
+            description: t(`cron.preset.${PRESET_KEYS[index]}Description`),
           })),
           {
             value: CUSTOM_VALUE,
-            label: "Custom…",
-            description: "Pick the minute, hour, day, month, weekday.",
+            label: t("cron.custom"),
+            description: t("cron.customDescription"),
           },
         ]}
       />
@@ -241,6 +246,7 @@ function CustomCronEditor({
   // three views agree on first paint. The same wire `Daily at 03:00` writes.
   const parsed = useMemo(() => parseCron(value || DEFAULT_VALUE), [value])
   const [minute, hour, dayOfMonth, month, dayOfWeek] = parsed
+  const { t } = useTranslation("kit")
 
   function update(next: CronParts): void {
     onValueChange(next.join(" "))
@@ -254,9 +260,9 @@ function CustomCronEditor({
     >
       <CronSelect
         id={`${id}-minute`}
-        label="minute"
+        label={t("cron.part.minute")}
         value={minute}
-        options={MINUTE_OPTIONS}
+        options={minuteOptions(t)}
         disabled={disabled}
         onValueChange={(next) =>
           update([next, hour, dayOfMonth, month, dayOfWeek])
@@ -264,9 +270,9 @@ function CustomCronEditor({
       />
       <CronSelect
         id={`${id}-hour`}
-        label="hour"
+        label={t("cron.part.hour")}
         value={hour}
-        options={HOUR_OPTIONS}
+        options={hourOptions(t)}
         disabled={disabled}
         onValueChange={(next) =>
           update([minute, next, dayOfMonth, month, dayOfWeek])
@@ -274,17 +280,17 @@ function CustomCronEditor({
       />
       <CronSelect
         id={`${id}-day`}
-        label="day"
+        label={t("cron.part.day")}
         value={dayOfMonth}
-        options={DAY_OF_MONTH_OPTIONS}
+        options={dayOfMonthOptions(t)}
         disabled={disabled}
         onValueChange={(next) => update([minute, hour, next, month, dayOfWeek])}
       />
       <CronSelect
         id={`${id}-month`}
-        label="month"
+        label={t("cron.part.month")}
         value={month}
-        options={MONTH_OPTIONS}
+        options={monthOptions(t)}
         disabled={disabled}
         onValueChange={(next) =>
           update([minute, hour, dayOfMonth, next, dayOfWeek])
@@ -292,16 +298,16 @@ function CustomCronEditor({
       />
       <CronSelect
         id={`${id}-weekday`}
-        label="weekday"
+        label={t("cron.part.weekday")}
         value={dayOfWeek}
-        options={DAY_OF_WEEK_OPTIONS}
+        options={dayOfWeekOptions(t)}
         disabled={disabled}
         onValueChange={(next) =>
           update([minute, hour, dayOfMonth, month, next])
         }
       />
       <span className={styles.preview} data-test={`${id}-preview`}>
-        <span className={styles.previewLabel}>value</span>
+        <span className={styles.previewLabel}>{t("cron.value")}</span>
         <code className={styles.previewValue}>
           {/* The preview reads the parsed wire, not the raw `value` prop.
              A new schedule's wire is empty, the five selects key off

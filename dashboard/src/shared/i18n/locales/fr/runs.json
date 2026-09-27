@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Réessayer"
-  },
-  "errors": {
-    "unknown": "Erreur inconnue"
-  },
   "status": {
     "running": "en cours",
     "waiting": "en attente",

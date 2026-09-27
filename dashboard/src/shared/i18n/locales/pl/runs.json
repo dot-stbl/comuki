@@ -1,0 +1,178 @@
+{
+  "status": {
+    "running": "działa",
+    "waiting": "czeka",
+    "queued": "w kolejce",
+    "escalated": "eskalowane",
+    "failed": "nieudane",
+    "success": "udane",
+    "cancelled": "anulowane"
+  },
+  "registry": {
+    "title": "Uruchomienia na żywo",
+    "summary": "<total/> uruchomień · <running/> działa · <blocked/> czeka na człowieka",
+    "errorTitle": "Nie udało się załadować uruchomień",
+    "anomaliesOnly": "Pokaż tylko anomalie",
+    "count": {
+      "one": "wyświetlono {{count}}",
+      "few": "wyświetlono {{count}}",
+      "many": "wyświetlono {{count}}",
+      "other": "wyświetlono {{count}}"
+    },
+    "empty": {
+      "profile": "Brak uruchomień na tym profilu.",
+      "filtered": "Żadne uruchomienie nie pasuje do bieżących filtrów.",
+      "none": "Nie ma jeszcze uruchomień."
+    },
+    "unplannedTitle": "Nie ma jeszcze planów",
+    "unplannedDescription": "Te uruchomienia są przyjęte, ale mózg ich nie zaplanował. Przepływ pojawi się, gdy pierwszy plan dostanie elementy robocze.",
+    "expandFlow": "Rozwiń przepływ",
+    "collapseFlow": "Zwiń przepływ",
+    "resizeBoard": "Zmień rozmiar planszy przepływu",
+    "expandStrip": "Rozwiń planszę przepływu"
+  },
+  "notice": {
+    "fallback": "Decyzja nie udała się.",
+    "tail": "Nic się nie zmieniło — uruchomienie jest z powrotem takie, jakie było."
+  },
+  "cancelDialog": {
+    "title": "Anulować to uruchomienie?",
+    "body": "{{title}} · {{where}} — kontener jest zrywany, a lease zwalniany. Praca już scalona zostaje.",
+    "confirm": "Anuluj uruchomienie",
+    "cancel": "Niech działa"
+  },
+  "column": {
+    "status": "status",
+    "run": "uruchomienie",
+    "project": "projekt",
+    "app": "aplikacja",
+    "task": "zadanie",
+    "profile": "profil",
+    "step": "krok",
+    "inStep": "w kroku",
+    "cost": "koszt",
+    "worker": "worker",
+    "actions": "akcje",
+    "allStatuses": "wszystkie statusy",
+    "allProjects": "wszystkie projekty",
+    "allApps": "wszystkie aplikacje",
+    "allProfiles": "wszystkie profile",
+    "filterPlaceholder": "filtruj uruchomienie, zadanie, krok…",
+    "waitingOnPlan": "czeka na plan",
+    "approve": "Zatwierdź",
+    "cancelRun": "Anuluj uruchomienie",
+    "approveRun": "Zatwierdź {{title}}",
+    "cancelTask": "Anuluj {{title}}"
+  },
+  "detail": {
+    "fallbackTitle": "Uruchomienie {{runId}}",
+    "tok": "tok",
+    "errorTitle": "Nie udało się załadować tego uruchomienia",
+    "notFoundTitle": "Brak uruchomienia o tym id",
+    "notFoundDescription": "Rój nie trzyma nic pod <id/>. Id uruchomienia ze starego linku to zwykła droga do tego miejsca — adres przeżywa uruchomienie, które nazywał, a lista dyżurna jest tam, gdzie są te jeszcze w locie.",
+    "backToList": "Wróć do uruchomień na żywo",
+    "unplannedTitle": "Jeszcze niezaplanowane",
+    "unplannedDescription": "To uruchomienie jest przyjęte, a mózg nie rozłożył go jeszcze na elementy robocze. Nic nie jest zepsute i nic nie czeka na Ciebie — graf i inspektor elementu pojawią się tu, gdy tylko plan dostanie pierwszy element.",
+    "unplannedHint": "{{status}} · brak elementów roboczych · nie ma czego inspectować",
+    "noInspectorTitle": "Brak szczegółów tego elementu",
+    "noInspectorDescription": "Plan powyżej jest kompletny; ten element nie ma jeszcze wpisu inspektora. Wybierz inny element albo wróć, gdy się rozkręci.",
+    "resizeGraph": "Zmień rozmiar grafu uruchomienia"
+  },
+  "river": {
+    "group": "Przepływ profili. Strzałki przenoszą między profilami.",
+    "cleared": "oczyszczone",
+    "waitingOnHuman": "czeka na człowieka",
+    "noWork": "brak pracy",
+    "poolEntry": "{{count}} {{status}}",
+    "clearedProfile": {
+      "one": "{{count}} oczyszczał profil",
+      "few": "{{count}} oczyszczały profil",
+      "many": "{{count}} oczyszczało profil",
+      "other": "{{count}} oczyszczało profil"
+    },
+    "mark": {
+      "one": "{{count}} czeka na człowieka",
+      "few": "{{count}} czekają na człowieka",
+      "many": "{{count}} czeka na człowieka",
+      "other": "{{count}} czeka na człowieka"
+    },
+    "pinched": {
+      "one": " {{count}} czeka na człowieka, więcej niż na każdym innym profilu.",
+      "few": " {{count}} czekają na człowieka, więcej niż na każdym innym profilu.",
+      "many": " {{count}} czeka na człowieka, więcej niż na każdym innym profilu.",
+      "other": " {{count}} czeka na człowieka, więcej niż na każdym innym profilu."
+    },
+    "node": "{{profile}}: {{pool}}. {{cleared}}.{{mark}}"
+  },
+  "evidence": {
+    "title": "materiał",
+    "empty": "nie opublikowano jeszcze zrzutów"
+  },
+  "anomaly": {
+    "badgeLabel": "{{multiplier}}× mediany",
+    "badgeTip": "Koszt {{multiplier}}× od mediany tego projektu ({{median}}) — przekracza próg {{threshold}}×. Kliknij po rozbicie.",
+    "badgeAria": "Anomalia kosztu — {{label}}. Otwórz rozbicie.",
+    "dialogTitle": "Skok kosztu · uruchomienie {{runId}}",
+    "acknowledge": "Potwierdź",
+    "cancelRun": "Anuluj uruchomienie",
+    "summary": "Podsumowanie",
+    "spend": "Rozbicie wydatku",
+    "why": "Dlaczego oflagowane",
+    "project": "projekt",
+    "profile": "profil",
+    "status": "status",
+    "cost": "koszt",
+    "tokensInOut": "tokeny (we / wy)",
+    "total": "({{total}} łącznie)",
+    "reason": "Wydano <spent/>, czyli <multiplier/> mediany kosztu <median/> dla <project/>.",
+    "rule": "Reguła: koszt > {{threshold}}× mediany kosztu uruchomień projektu.",
+    "openCost": "Otwórz stronę kosztów →"
+  },
+  "graph": {
+    "group": "Graf uruchomienia. Strzałki przenoszą między elementami roboczymi.",
+    "empty": "Brak elementów roboczych w tym planie.",
+    "parallel": {
+      "one": "{{count}} równolegle",
+      "few": "{{count}} równolegle",
+      "many": "{{count}} równolegle",
+      "other": "{{count}} równolegle"
+    },
+    "here": "tu",
+    "dependsOnEarlier": {
+      "one": "zależy od {{count}} wcześniejszego",
+      "few": "zależy od {{count}} wcześniejszych",
+      "many": "zależy od {{count}} wcześniejszych",
+      "other": "zależy od {{count}} wcześniejszych"
+    },
+    "blocked": "zablokowany",
+    "standingHere": "uruchomienie stoi tutaj.",
+    "blockedByFailure": "zablokowany przez awarię wyżej.",
+    "blockedByEscalation": "zablokowany przez eskalację wyżej.",
+    "longEdges": "zależy od {{count}} elementu o więcej niż jedną kolumnę wstecz: {{named}}.",
+    "longEdgesPlural": "zależy od {{count}} elementów o więcej niż jedną kolumnę wstecz: {{named}}."
+  },
+  "inspector": {
+    "itemOf": "element {{index}} z {{total}}",
+    "env": "env",
+    "tokens": "tokeny",
+    "cost": "koszt",
+    "started": "start",
+    "waitsOn": "czeka na",
+    "waitsOnLong": "{{count}} o więcej niż jedną kolumnę wstecz",
+    "waitsOnNone": "Nic — ten element rozpoczyna plan.",
+    "distancePrevious": "poprzednia kolumna",
+    "distanceBack": {
+      "one": "{{count}} kolumnę wstecz",
+      "few": "{{count}} kolumny wstecz",
+      "many": "{{count}} kolumn wstecz",
+      "other": "{{count}} kolumn wstecz"
+    },
+    "dependencyAria": "Pokaż {{label}}, {{profile}}, {{status}}, {{distance}}.",
+    "input": "wejście — czym go zasilono",
+    "log": "log",
+    "appendOnly": "append-only",
+    "gate": "bramka weryfikacji",
+    "output": "wyjście — co wyprodukował",
+    "outputNone": "Jeszcze nic."
+  }
+}

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { CreateKeyPage } from "@/domains/identity"
@@ -13,14 +14,16 @@ export const Route = createFileRoute("/identity/keys/new")({
    location state, so reloading, bookmarking or sharing this address gives an
    empty form. `key-secret-dialog.tsx` carries the argument. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   return (
     <RequirePermission
       permission="identity.manage"
-      title="New api key"
+      title={t("route.newApiKey")}
       crumbs={[
-        { label: "platform" },
-        { label: "identity", to: "/identity" },
-        { label: "new api key" },
+        { label: t("crumb.platform") },
+        { label: t("crumb.identity"), to: "/identity" },
+        { label: t("crumb.newApiKey") },
       ]}
     >
       <CreateKeyPage />

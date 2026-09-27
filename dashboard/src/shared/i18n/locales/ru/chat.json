@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "повторить"
-  },
-  "errors": {
-    "unknown": "неизвестная ошибка"
-  },
   "page": {
     "title": "Консоль",
     "summary": "тот же control plane, которым управляют экраны — только на клавиатуре",
@@ -127,14 +121,26 @@
     },
     "words": {
       "run": {
-        "start": { "confirm": "Запустить", "refuse": "Отбросить" },
-        "stop": { "confirm": "Остановить", "refuse": "Оставить работать" }
+        "start": {
+          "confirm": "Запустить",
+          "refuse": "Отбросить"
+        },
+        "stop": {
+          "confirm": "Остановить",
+          "refuse": "Оставить работать"
+        }
       },
       "plan": {
-        "approve": { "confirm": "Утвердить", "refuse": "Отклонить" }
+        "approve": {
+          "confirm": "Утвердить",
+          "refuse": "Отклонить"
+        }
       },
       "settings": {
-        "debug": { "confirm": "Включить", "refuse": "Оставить выключенной" }
+        "debug": {
+          "confirm": "Включить",
+          "refuse": "Оставить выключенной"
+        }
       }
     },
     "inProject": "в {{project}}",
@@ -152,12 +158,10 @@
   },
   "wizard": {
     "title": "Подключение репозитория",
-
     "running": "Онбординг выполняется.",
     "streamHead": "онбординг",
     "stageWord": {
       "done": "готово",
-
       "running": "выполняется",
       "queued": "в очереди"
     },

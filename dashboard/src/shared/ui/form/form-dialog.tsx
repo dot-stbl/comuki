@@ -1,5 +1,6 @@
 import type { FormEvent, ReactNode } from "react"
 import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -62,7 +63,7 @@ export function FormDialog({
   description,
   children,
   submitLabel,
-  cancelLabel = "Cancel",
+  cancelLabel,
   busy = false,
   submitDisabled = false,
   denied,
@@ -72,6 +73,8 @@ export function FormDialog({
   onCancel,
   footer,
 }: FormDialogProps) {
+  const { t } = useTranslation("kit")
+  const cancel = cancelLabel ?? t("formDialog.cancel")
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (denied || busy || submitDisabled) {
@@ -112,7 +115,7 @@ export function FormDialog({
                     disabled={busy}
                     onClick={onCancel}
                   >
-                    {cancelLabel}
+                    {cancel}
                   </Button>
                   <Button
                     type="submit"

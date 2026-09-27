@@ -1,7 +1,4 @@
 {
-  "actions": {
-    "retry": "Reintentar"
-  },
   "registry": {
     "title": "Aprobaciones",
     "summary": {
@@ -9,9 +6,6 @@
       "other": "<count/> esperando decisión"
     },
     "errorTitle": "No se pudieron cargar las aprobaciones"
-  },
-  "errors": {
-    "unknown": "Error desconocido"
   },
   "decide": {
     "approvedToast": "Aprobado",

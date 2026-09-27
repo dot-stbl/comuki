@@ -1,0 +1,253 @@
+{
+  "page": {
+    "title": "Console",
+    "summary": "lo stesso control plane che guidano le schermate, battuto a macchina invece che cliccato",
+    "onboard": "Onboard di un repo"
+  },
+  "console": {
+    "sendFailure": "Il messaggio non è stato inviato",
+    "decisionFailure": "La decisione non è stata registrata",
+    "startFailure": "La conversazione non è iniziata",
+    "consoleErrorTitle": "La console non si è caricata",
+    "transcriptErrorTitle": "Il transcript non si è caricato",
+    "loading": "Caricamento della conversazione"
+  },
+  "sessions": {
+    "navLabel": "Conversazioni",
+    "head": "conversazioni",
+    "new": "Nuova conversazione",
+    "loading": "Caricamento delle conversazioni",
+    "emptyTitle": "Ancora nessuna conversazione",
+    "emptyDescription": "Aprine una col più sopra. Ogni conversazione resta qui per poterci tornare."
+  },
+  "thread": {
+    "emptyTitle": "Ancora niente di detto",
+    "emptyBody": "Questo è lo stesso control plane che guidano le schermate, raggiunto battendo. Chiedigli cosa sta facendo lo swarm, o parti con uno slash per vedere tutto quello che sa fare. Qualsiasi cosa cambierebbe qualcosa torna come proposta che premi — non agisce mai da solo.",
+    "logLabel": "Conversazione",
+    "jump": "salta all'ultimo",
+    "announceReplying": "l'assistente sta rispondendo",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "tu",
+    "comuki": "comuki",
+    "iteration": "iter {{iteration}}",
+    "blank": "questo turno è arrivato vuoto"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "pensiero",
+    "tokenWord": "token"
+  },
+  "memory": {
+    "label": "memoria",
+    "facts": {
+      "one": "{{count}} fatto",
+      "many": "{{count}} fatti",
+      "other": "{{count}} fatti"
+    }
+  },
+  "composer": {
+    "boxLabel": "Scrivi alla console",
+    "placeholder": "Chiedi, o parti con uno slash",
+    "commandsHead": "comandi",
+    "originFrom": "da {{project}}",
+    "seedAbout": "informazioni",
+    "seedDrop": "Butta il riferimento a {{id}}",
+    "scopeRunsIn": "gira in",
+    "scopePick": "scegli un progetto",
+    "scopeAria": "Progetto in cui gira {{command}}",
+    "sendTooltip": "Invia — enter",
+    "send": "Invia"
+  },
+  "scope": {
+    "needsProject": "{{command}} ha bisogno di un progetto",
+    "notAvailable": "non disponibile"
+  },
+  "command": {
+    "init": {
+      "description": "onboard di un repository: accesso git, compute, modelli, conoscenza"
+    },
+    "project": {
+      "description": "elenca i progetti in cui questo turno può agire"
+    },
+    "run": {
+      "description": "avvia una run da un ticket"
+    },
+    "status": {
+      "description": "cosa sta facendo lo swarm adesso"
+    },
+    "stop": {
+      "description": "ferma una run e smonta il suo container"
+    },
+    "plan": {
+      "description": "leggi il piano di una run, e decidi su di esso"
+    },
+    "debug": {
+      "description": "attiva il logging verboso dei worker per un'ora"
+    },
+    "help": {
+      "description": "cosa sa fare la console"
+    }
+  },
+  "panel": {
+    "label": "Pannello laterale della console",
+    "awaiting": "in attesa di una decisione",
+    "noProject": "nessun progetto",
+    "steps": {
+      "one": "{{count}} passo",
+      "many": "{{count}} passi",
+      "other": "{{count}} passi"
+    },
+    "quiet": "niente qui aspetta te",
+    "slashHelp": "aiuto slash"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "avvia una run",
+        "stop": "ferma una run"
+      },
+      "plan": {
+        "approve": "approva un piano"
+      },
+      "settings": {
+        "debug": "cambia un'impostazione live"
+      }
+    },
+    "words": {
+      "run": {
+        "start": {
+          "confirm": "Avvia",
+          "refuse": "Scarta"
+        },
+        "stop": {
+          "confirm": "Ferma",
+          "refuse": "Lascia girare"
+        }
+      },
+      "plan": {
+        "approve": {
+          "confirm": "Approva",
+          "refuse": "Rifiuta"
+        }
+      },
+      "settings": {
+        "debug": {
+          "confirm": "Accendi",
+          "refuse": "Lascia spento"
+        }
+      }
+    },
+    "inProject": "in {{project}}",
+    "decidedConfirmed": "confermato da una persona, e registrato dove sta ogni altra decisione",
+    "decidedRejected": "declinato da una persona, e registrato dove sta ogni altra decisione",
+    "needsProjectDenial": "serve un progetto in cui agire"
+  },
+  "handoff": {
+    "searchFor": "cerca in {{where}}"
+  },
+  "dock": {
+    "tooltip": "Console — {{chord}}",
+    "openAria": "Apri la console — {{chord}}",
+    "title": "Console"
+  },
+  "wizard": {
+    "title": "Onboard di un repository",
+    "running": "L'onboarding sta girando.",
+    "streamHead": "onboarding",
+    "stageWord": {
+      "done": "fatto",
+      "running": "in corso",
+      "queued": "in coda"
+    },
+    "doneNotice": "Il progetto è registrato. Il suo rule set, la sua immagine worker e i suoi endpoint sono ciò che lo swarm userà dalla prossima run.",
+    "backToConsole": "Torna alla console",
+    "start": "Avvia l'onboarding",
+    "continue": "Continua",
+    "back": "Indietro",
+    "cancel": "Annulla",
+    "confirmNotice": "Niente è ancora stato creato. Confermando si avvia la run di onboarding, e tutto ciò che fa è registrato dove sta ogni altra run.",
+    "guardTitle": "Uscire dalla procedura senza fare onboarding?",
+    "guardBody": "Il repository, gli endpoint dei modelli e il riferimento al secret che hai scritto non sono ancora salvati da nessuna parte. Uscendo da questa pagina li perdi.",
+    "guardConfirm": "Scarta",
+    "guardCancel": "Continua a modificare",
+    "step": {
+      "repo": {
+        "title": "Repository e accesso git",
+        "summary": "Dove sta il codice e cosa lo swarm può farci. È il passo che decide quale progetto sta configurando il resto della procedura."
+      },
+      "compute": {
+        "title": "Provider di compute",
+        "summary": "Dove vengono avviati i container worker, e il tetto su quanti ne girano insieme."
+      },
+      "models": {
+        "title": "Endpoint dei modelli",
+        "summary": "Un base url compatibile OpenAI o Anthropic per il lead e per i worker. I secret qui si nominano, non si scrivono."
+      },
+      "knowledge": {
+        "title": "Conoscenza",
+        "summary": "Se questo progetto tiene un rule set indicizzato, e cosa deve leggere il primo passaggio."
+      },
+      "confirm": {
+        "title": "Conferma",
+        "summary": "Cosa farà l'onboarding, nell'ordine in cui lo farà. Niente è ancora stato creato."
+      }
+    },
+    "stage": {
+      "clone": "clona il repository",
+      "rules": "leggi le regole e le skill del cliente",
+      "image": "scarica l'immagine worker",
+      "endpoints": "raggiungi gli endpoint dei modelli",
+      "knowledge": "semina l'indice di conoscenza",
+      "register": "registra il progetto con lo swarm"
+    },
+    "field": {
+      "project": "progetto",
+      "projectHint": "Solo i progetti in cui puoi collegare una sorgente vengono elencati.",
+      "pickProject": "scegli un progetto",
+      "remote": "git remote",
+      "branch": "branch di default",
+      "write": "può pushare branch",
+      "writeHint": "Off significa che lo swarm legge il repository e non apre niente.",
+      "provider": "provider",
+      "workers": "worker insieme",
+      "workersHint": "Il tetto di container che questo progetto può detenere.",
+      "lead": "endpoint del lead model",
+      "leadHint": "Compatibile OpenAI o Anthropic.",
+      "workerModel": "endpoint del worker model",
+      "workerPlaceholder": "lascia vuoto per usare l'endpoint del lead",
+      "secret": "riferimento al secret",
+      "secretHint": "Il nome del secret, non il secret. Le chiavi non vengono mai scritte in questo prodotto.",
+      "knowledge": "tieni un rule set indicizzato",
+      "knowledgeHint": "Lo scrive un docs worker. Qui non c'è un editor di documenti.",
+      "seed": "seme",
+      "seedHint": "Cosa legge il primo passaggio, come glob."
+    },
+    "error": {
+      "project": "scegli il progetto a cui appartiene questo repository",
+      "remote": "serve un git remote",
+      "branch": "serve un branch di default",
+      "workers": "un numero intero di worker, almeno uno",
+      "lead": "al lead model serve un base url",
+      "secret": "nomina il secret che contiene la chiave"
+    },
+    "review": {
+      "project": "progetto",
+      "remote": "remote",
+      "branch": "branch",
+      "pushAccess": "accesso in push",
+      "compute": "compute",
+      "workers": "worker",
+      "lead": "lead model",
+      "workerModel": "worker model",
+      "secret": "secret",
+      "knowledge": "conoscenza",
+      "on": "on",
+      "off": "off",
+      "sameAsLead": "come il lead"
+    }
+  }
+}

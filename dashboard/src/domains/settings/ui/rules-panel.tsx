@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 
 import type { SwarmRule } from "@/domains/settings/model/types"
 import {
@@ -36,6 +37,7 @@ export interface RulesPanelProps {
  * repository and change by commit.
  */
 export function RulesPanel({ rules }: RulesPanelProps) {
+  const { t } = useTranslation("settings")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
@@ -43,7 +45,7 @@ export function RulesPanel({ rules }: RulesPanelProps) {
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
 
   const scopes = useMemo(() => uniqueRuleScopes(rules), [rules])
-  const columns = useMemo(() => createRuleColumns(scopes), [scopes])
+  const columns = useMemo(() => createRuleColumns(scopes, t), [scopes, t])
   const rows = useMemo(
     () => applyDataFilters(rules, filters, columns),
     [rules, filters, columns]
@@ -53,12 +55,11 @@ export function RulesPanel({ rules }: RulesPanelProps) {
     <Section
       variant="screen"
       data-test="settings-rules"
-      title="Swarm rules"
-      note="read-only · rules live in the client's git and change by commit"
+      title={t("rules.section")}
+      note={t("rules.note")}
     >
       <Notice tone="ok" data-test="rules-conflicts">
-        No conflicts found · {rules.length} active rules · scopes don&apos;t
-        overlap.
+        {t("rules.conflicts", { count: rules.length })}
       </Notice>
 
       <div className={styles.toolbar}>
@@ -70,7 +71,7 @@ export function RulesPanel({ rules }: RulesPanelProps) {
           onColumnVisibilityChange={setColumnVisibility}
           trailing={
             <span className={tableStyles.count} data-test="rules-count">
-              {rows.length} shown
+              {t("rules.count", { count: rows.length })}
             </span>
           }
         />
@@ -89,8 +90,8 @@ export function RulesPanel({ rules }: RulesPanelProps) {
           onColumnSizingChange={setColumnSizing}
           emptyLabel={
             hasActiveFilters(filters)
-              ? "no rules match the current filters"
-              : "the rule set is empty"
+              ? t("rules.emptyFiltered")
+              : t("rules.empty")
           }
         />
       </div>

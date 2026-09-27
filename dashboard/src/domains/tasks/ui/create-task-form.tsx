@@ -126,10 +126,7 @@ export function CreateTaskForm({
           — the source row spreads its five providers, the ticket row puts
           project, app and priority on one line — and `FormMeasure` keeps the
           one-line fields readable. */}
-      <FormCard
-        label={t("create.sourceLabel")}
-        note={t("create.sourceNote")}
-      >
+      <FormCard label={t("create.sourceLabel")} note={t("create.sourceNote")}>
         <TaskSourceCards
           value={source}
           disabled={busy}
@@ -138,10 +135,7 @@ export function CreateTaskForm({
         />
       </FormCard>
 
-      <FormCard
-        label={t("create.ticketLabel")}
-        note={t("create.ticketNote")}
-      >
+      <FormCard label={t("create.ticketLabel")} note={t("create.ticketNote")}>
         <FormMeasure>
           <TextField
             id="task-title"
@@ -198,10 +192,7 @@ export function CreateTaskForm({
         </FormRow>
       </FormCard>
 
-      <FormCard
-        label={t("create.briefLabel")}
-        note={t("create.briefNote")}
-      >
+      <FormCard label={t("create.briefLabel")} note={t("create.briefNote")}>
         <FormMeasure>
           <TextareaField
             id="task-brief"

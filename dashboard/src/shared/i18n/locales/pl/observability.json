@@ -1,0 +1,20 @@
+{
+  "boards": {
+    "meta": "uid {{uid}} · definicja zaktualizowana {{updated}}",
+    "openAria": "Otwórz {{title}}",
+    "notImported": "jeszcze nie zaimportowane"
+  },
+  "connect": {
+    "where": "{{base}} · org {{org}} · pisane pod grafana {{version}}",
+    "noGrafana": "Dla tej platformy nie skonfigurowano żadnego grafana, więc żadna z tablic powyżej nie może się jeszcze otworzyć. Ich definicje wciąż istnieją — żyją w naszym repozytorium, nie w bazie — więc importowanie to jedyny krok stąd do działającej tablicy.",
+    "noBoards": "Grafana jest skonfigurowana i żadna z tablic nie została jeszcze do niej zaimportowana. Nic nie jest zepsute — definicje są w naszym repozytorium, a import poniżej to cała pozostała robota.",
+    "steps": {
+      "one": "Skieruj grafana na endpoint metryk platformy. Orkiestrator rozdaje metryki prometheus na własnym porcie; tablice oczekują, że datasource nazywa się <code>comuki</code>.",
+      "two": "Zaimportuj definicje tablic z <path/> w <repo/>. To zwykłe jsony dashboardów — są wersjonowane z platformą celowo, więc tablica i metryka, którą czyta, zmieniają się w jednym commicie.",
+      "three": "Zachowaj uidy, które deklarują definicje. Ta strona linkuje po uid, a tablica zaimportowana pod nowym to tablica, której ta strona nie znajdzie.",
+      "four": "Ustaw base url grafana w konfiguracji wdrożenia platformy. To on zamienia wpisy powyżej w linki."
+    },
+    "boardsLabel": "Definicje tablic",
+    "openGrafana": "Otwórz grafana"
+  }
+}

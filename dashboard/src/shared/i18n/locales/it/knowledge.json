@@ -1,0 +1,89 @@
+{
+  "page": {
+    "title": "Conoscenza",
+    "summary": "rule set, revisioni, harness di valutazione",
+    "tabsLabel": "Sezioni della conoscenza"
+  },
+  "tab": {
+    "library": "libreria",
+    "gate": "gate"
+  },
+  "load": {
+    "errorTitle": "La conoscenza non si è caricata"
+  },
+  "search": {
+    "label": "Filtra regole, doc e skill",
+    "placeholder": "Cerca regole, doc, skill…",
+    "errorTitle": "La ricerca non ha risposto",
+    "searching": "Cerco",
+    "emptyTitle": "Nessuna corrispondenza",
+    "emptySemantic": "Niente nella libreria è abbastanza vicino alla query.",
+    "emptyPlain": "Prova un'altra query su regole e doc pinnate.",
+    "sectionTitle": "corrispondenze semantiche",
+    "sectionNote": "primi {{count}} per similarità coseno",
+    "count": "{{shown}} di {{total}}"
+  },
+  "revision": {
+    "section": "revisione in vigore",
+    "current": "revisione corrente",
+    "sub": "{{sdk}} · aggiornata {{updated}}",
+    "rules": "regole attive",
+    "rulesSub": "{{hard}} hard · {{soft}} soft",
+    "reproducibility": "riproducibilità",
+    "reproducibilitySub": "ogni run pinna il rule set + l'SDK"
+  },
+  "entries": {
+    "section": "regole, doc e skill",
+    "updated": "aggiornata {{updated}}"
+  },
+  "sheet": {
+    "close": "Chiudi la voce",
+    "revisionAt": "revisione @{{revision}}",
+    "scope": "ambito",
+    "updated": "aggiornata"
+  },
+  "badge": {
+    "kind": {
+      "rule": "regola",
+      "doc": "doc",
+      "skill": "skill"
+    },
+    "ruleKind": {
+      "hard": "hard",
+      "soft": "soft"
+    },
+    "pinned": "pinnata",
+    "pinnedAt": "pinnata @ {{revision}}",
+    "delta": {
+      "improved": "migliorata",
+      "regressed": "peggiorata",
+      "noChange": "nessun cambiamento"
+    }
+  },
+  "eval": {
+    "section": "task golden",
+    "note": "prima → dopo sulle modifiche alle regole",
+    "empty": "nessun task golden è stato eseguito contro questa revisione",
+    "column": {
+      "task": "task",
+      "before": "prima",
+      "after": "dopo",
+      "delta": "delta"
+    }
+  },
+  "gate": {
+    "errorTitle": "Impossibile caricare il gate",
+    "changeFailed": "La modifica non è andata a buon fine.",
+    "nothingMoved": "Niente si è mosso — il gate è tornato com'era.",
+    "intro": "Una run deve superare i controlli del cliente prima di poter atterrare. I controlli stanno nel loro repository — un file, committato come tutto il resto — quindi questa sezione accende e spegne il gate e mostra cosa ha detto l'ultima volta ciascun controllo. Modificare un comando significa modificare il file; ogni sezione sotto dice esattamente dove sta il suo.",
+    "emptyTitle": "Nessun progetto ha un gate qui",
+    "emptyDescription": "Niente nei progetti di questa sessione dichiara i controlli del cliente. Un gate appare appena uno di loro committa il file che li contiene.",
+    "onToast": "Gate acceso",
+    "onToastDescription": "{{name}} — le run devono superare i controlli del cliente",
+    "offToast": "Gate spento",
+    "offToastDescription": "{{name}} — le run atterrano senza i controlli del cliente",
+    "summary": "<on/> di <total/> gate accesi · <checks/> controlli dichiarati",
+    "summaryFailing": "<failing/> in fallimento",
+    "summaryNeverRan": "<never/> mai eseguiti"
+  }
+}

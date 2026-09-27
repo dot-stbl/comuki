@@ -1,1 +1,90 @@
-{}
+{
+  "page": {
+    "title": "コストと失敗",
+    "errorTitle": "レポートが読み込まれませんでした",
+    "retry": "再試行",
+    "period": {
+      "day": "今日",
+      "week": "今週",
+      "month": "今月"
+    },
+    "periodEnd": {
+      "day": "日末",
+      "week": "週末",
+      "month": "月末"
+    },
+    "deltaVs": "{{period}}比 {{pct}}%",
+    "mockMark": "モックスナップショット · VITE_USE_MOCK"
+  },
+  "toggle": {
+    "aria": "期間"
+  },
+  "total": {
+    "label": "{{period}}の支出",
+    "noPrior": "前の期間はまだありません",
+    "vs": "{{period}}比",
+    "flat": "横ばい",
+    "burnNote": "<burn/> / 日（平均）· <days/>",
+    "daysObserved": {
+      "other": "{{count}} 日を観測"
+    }
+  },
+  "forecast": {
+    "label": "{{period}}の予測",
+    "sub": "上限 {{cap}} の {{pct}}% · 消費ペース {{rate}}"
+  },
+  "budget": {
+    "label": "予算の進捗",
+    "today": "今日",
+    "month": "月初から今日まで",
+    "ofCap": "上限 {{cap}} のうち {{used}}"
+  },
+  "section": {
+    "byDay": "日別の支出",
+    "byDayNote": {
+      "other": "過去 {{count}} 日"
+    },
+    "byModel": "モデル別の支出",
+    "byModelNote": "トークン",
+    "topProjects": "支出上位のプロジェクト",
+    "topProjectsNote": "この期間",
+    "byApp": "アプリ別の支出",
+    "byAppNote": "支出",
+    "failures": "ランが失敗する場所",
+    "failuresNote": "どこで壊れるか"
+  },
+  "column": {
+    "spend": "支出",
+    "tokens": "トークン",
+    "share": "割合"
+  },
+  "table": {
+    "app": "アプリ",
+    "model": "モデル",
+    "project": "プロジェクト"
+  },
+  "byApp": {
+    "empty": "今日の支出はありません"
+  },
+  "byModel": {
+    "empty": "この期間のモデル支出はありません",
+    "tokensTitle": "{{runs}} 件のランで {{tokens}} トークン"
+  },
+  "topProjects": {
+    "empty": "この期間のプロジェクト支出はありません",
+    "ofCap": "上限 {{cap}} のうち",
+    "noCap": "上限なし"
+  },
+  "byDay": {
+    "empty": "今週の支出はありません",
+    "figure": {
+      "other": "過去 {{count}} 日で <total/> · 1日 <average/> · 最大 <peak/> が <spend/>"
+    },
+    "chartLabel": {
+      "other": "日別の支出（ドル）。過去 {{count}} 日で {{total}}、平均 1日 {{average}}；最大 {{peak}} が {{spend}}。"
+    }
+  },
+  "failuresBlock": {
+    "empty": "今日の失敗はありません"
+  }
+}

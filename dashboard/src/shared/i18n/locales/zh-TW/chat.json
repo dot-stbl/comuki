@@ -1,0 +1,249 @@
+{
+  "page": {
+    "title": "控制台",
+    "summary": "與各螢幕驅動的是同一個控制面，只是改為鍵入",
+    "onboard": "接入倉庫"
+  },
+  "console": {
+    "sendFailure": "訊息未傳送",
+    "decisionFailure": "決定未記錄",
+    "startFailure": "會話未開始",
+    "consoleErrorTitle": "控制台未載入",
+    "transcriptErrorTitle": "對話記錄未載入",
+    "loading": "正在載入會話"
+  },
+  "sessions": {
+    "navLabel": "會話",
+    "head": "會話",
+    "new": "新會話",
+    "loading": "正在載入會話列表",
+    "emptyTitle": "還沒有會話",
+    "emptyDescription": "用上方的加號開始一個。每個會話都留在這裡，隨時可以回來。"
+  },
+  "thread": {
+    "emptyTitle": "還沒有說過話",
+    "emptyBody": "這是各螢幕驅動的同一個控制面，通過鍵入到達。問它蜂群在做什麼，或以斜槓開頭看看它能做的一切。任何會改變狀態的操作都會作為待你按下的提案返回——它從不自行行動。",
+    "logLabel": "會話",
+    "jump": "跳到最新",
+    "announceReplying": "助手正在回覆",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "你",
+    "comuki": "comuki",
+    "iteration": "迭代 {{iteration}}",
+    "blank": "這一輪到達時是空的"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "思考中",
+    "tokenWord": "tokens"
+  },
+  "memory": {
+    "label": "記憶",
+    "facts": {
+      "other": "{{count}} 條事實"
+    }
+  },
+  "composer": {
+    "boxLabel": "向控制台發訊息",
+    "placeholder": "提問，或以斜槓開頭",
+    "commandsHead": "命令",
+    "originFrom": "來自 {{project}}",
+    "seedAbout": "關於",
+    "seedDrop": "移除對 {{id}} 的引用",
+    "scopeRunsIn": "運行於",
+    "scopePick": "選擇專案",
+    "scopeAria": "{{command}} 執行所在的專案",
+    "sendTooltip": "傳送 — 回車",
+    "send": "傳送"
+  },
+  "scope": {
+    "needsProject": "{{command}} 需要一個專案",
+    "notAvailable": "不可用"
+  },
+  "command": {
+    "init": {
+      "description": "接入倉庫：git 訪問、算力、模型、知識"
+    },
+    "project": {
+      "description": "列出本次值班可以操作的專案"
+    },
+    "run": {
+      "description": "從工單啟動一次執行"
+    },
+    "status": {
+      "description": "蜂群現在正在做什麼"
+    },
+    "stop": {
+      "description": "停止一次執行並拆除其容器"
+    },
+    "plan": {
+      "description": "讀取某次執行的計劃並做出決定"
+    },
+    "debug": {
+      "description": "開啟一小時的 worker 詳細日誌"
+    },
+    "help": {
+      "description": "控制台能做什麼"
+    }
+  },
+  "panel": {
+    "label": "控制台側面板",
+    "awaiting": "等待決定",
+    "noProject": "無專案",
+    "steps": {
+      "other": "{{count}} 個步驟"
+    },
+    "quiet": "這裡沒有等著你的事",
+    "slashHelp": "斜槓命令幫助"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "啟動一次執行",
+        "stop": "停止一次執行"
+      },
+      "plan": {
+        "approve": "批准一個計劃"
+      },
+      "settings": {
+        "debug": "更改一項即時設定"
+      }
+    },
+    "words": {
+      "run": {
+        "start": {
+          "confirm": "啟動",
+          "refuse": "丟棄"
+        },
+        "stop": {
+          "confirm": "停止",
+          "refuse": "保持執行"
+        }
+      },
+      "plan": {
+        "approve": {
+          "confirm": "批准",
+          "refuse": "駁回"
+        }
+      },
+      "settings": {
+        "debug": {
+          "confirm": "開啟",
+          "refuse": "保持關閉"
+        }
+      }
+    },
+    "inProject": "在 {{project}}",
+    "decidedConfirmed": "已由人確認，並記錄在所有決定記錄的地方",
+    "decidedRejected": "已由人拒絕，並記錄在所有決定記錄的地方",
+    "needsProjectDenial": "需要一個可操作的專案"
+  },
+  "handoff": {
+    "searchFor": "在 {{where}} 中搜索"
+  },
+  "dock": {
+    "tooltip": "控制台 — {{chord}}",
+    "openAria": "開啟控制台 — {{chord}}",
+    "title": "控制台"
+  },
+  "wizard": {
+    "title": "接入倉庫",
+    "running": "接入正在進行。",
+    "streamHead": "接入",
+    "stageWord": {
+      "done": "完成",
+      "running": "進行中",
+      "queued": "排隊中"
+    },
+    "doneNotice": "專案已註冊。它的規則集、worker 映象和端點就是蜂群從下次執行起使用的內容。",
+    "backToConsole": "返回控制台",
+    "start": "開始接入",
+    "continue": "繼續",
+    "back": "上一步",
+    "cancel": "取消",
+    "confirmNotice": "尚未建立任何內容。確認後會啟動接入執行，它做的一切都記錄在其他執行記錄的地方。",
+    "guardTitle": "不接入就離開向導？",
+    "guardBody": "你輸入的倉庫、模型端點和金鑰引用還沒有儲存到任何地方。離開本頁將丟失它們。",
+    "guardConfirm": "丟棄",
+    "guardCancel": "繼續編輯",
+    "step": {
+      "repo": {
+        "title": "倉庫與 git 訪問",
+        "summary": "程式碼在哪裡，蜂群可以對它做什麼。這一步決定向導其餘部分配置哪個專案。"
+      },
+      "compute": {
+        "title": "算力提供方",
+        "summary": "worker 容器在哪裡啟動，以及同時執行數量的上限。"
+      },
+      "models": {
+        "title": "模型端點",
+        "summary": "為主模型和 worker 提供 OpenAI 或 Anthropic 相容的 base url。金鑰在這裡只被命名，絕不被輸入。"
+      },
+      "knowledge": {
+        "title": "知識",
+        "summary": "本專案是否保留索引化的規則集，以及首輪應讀取什麼。"
+      },
+      "confirm": {
+        "title": "確認",
+        "summary": "接入將按順序做什麼。尚未建立任何內容。"
+      }
+    },
+    "stage": {
+      "clone": "克隆倉庫",
+      "rules": "讀取客戶的規則與技能",
+      "image": "拉取 worker 映象",
+      "endpoints": "連通模型端點",
+      "knowledge": "填充知識索引",
+      "register": "向蜂群註冊專案"
+    },
+    "field": {
+      "project": "專案",
+      "projectHint": "只列出你可以連線來源的專案。",
+      "pickProject": "選擇專案",
+      "remote": "git remote",
+      "branch": "預設分支",
+      "write": "可以推送分支",
+      "writeHint": "關閉表示蜂群只讀取倉庫，不會開啟任何東西。",
+      "provider": "提供方",
+      "workers": "同時 worker 數",
+      "workersHint": "本專案可持有容器的上限。",
+      "lead": "主模型端點",
+      "leadHint": "相容 OpenAI 或 Anthropic。",
+      "workerModel": "worker 模型端點",
+      "workerPlaceholder": "留空以使用主模型端點",
+      "secret": "金鑰引用",
+      "secretHint": "是金鑰的名字，不是金鑰本身。金鑰永遠不會被輸入到這個產品裡。",
+      "knowledge": "保留索引化的規則集",
+      "knowledgeHint": "由 docs worker 寫入。這裡沒有文件編輯器。",
+      "seed": "種子",
+      "seedHint": "首輪讀取的內容，以 glob 表示。"
+    },
+    "error": {
+      "project": "選擇該倉庫所屬的專案",
+      "remote": "需要 git remote",
+      "branch": "需要預設分支",
+      "workers": "worker 數需為不小於一的整數",
+      "lead": "主模型需要 base url",
+      "secret": "說出儲存金鑰的 secret 的名字"
+    },
+    "review": {
+      "project": "專案",
+      "remote": "remote",
+      "branch": "分支",
+      "pushAccess": "推送許可權",
+      "compute": "算力",
+      "workers": "worker",
+      "lead": "主模型",
+      "workerModel": "worker 模型",
+      "secret": "金鑰",
+      "knowledge": "知識",
+      "on": "開",
+      "off": "關",
+      "sameAsLead": "與主模型相同"
+    }
+  }
+}

@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Erneut versuchen"
-  },
-  "errors": {
-    "unknown": "Unbekannter Fehler"
-  },
   "page": {
     "title": "Konsole",
     "summary": "dieselbe Steuerungsebene, die die Bildschirme bedienen — nur getippt",
@@ -123,14 +117,26 @@
     },
     "words": {
       "run": {
-        "start": { "confirm": "Starten", "refuse": "Verwerfen" },
-        "stop": { "confirm": "Stoppen", "refuse": "Laufen lassen" }
+        "start": {
+          "confirm": "Starten",
+          "refuse": "Verwerfen"
+        },
+        "stop": {
+          "confirm": "Stoppen",
+          "refuse": "Laufen lassen"
+        }
       },
       "plan": {
-        "approve": { "confirm": "Genehmigen", "refuse": "Ablehnen" }
+        "approve": {
+          "confirm": "Genehmigen",
+          "refuse": "Ablehnen"
+        }
       },
       "settings": {
-        "debug": { "confirm": "Einschalten", "refuse": "Aus lassen" }
+        "debug": {
+          "confirm": "Einschalten",
+          "refuse": "Aus lassen"
+        }
       }
     },
     "inProject": "in {{project}}",
@@ -148,12 +154,10 @@
   },
   "wizard": {
     "title": "Repository anbinden",
-
     "running": "Onboarding läuft.",
     "streamHead": "onboarding",
     "stageWord": {
       "done": "fertig",
-
       "running": "läuft",
       "queued": "in Warteschlange"
     },

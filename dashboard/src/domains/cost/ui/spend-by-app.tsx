@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import { spendAxis, spendShare } from "@/domains/cost/model/cost"
 import type { CostByApp } from "@/domains/cost/model/types"
 import { RankedTable, type RankedRow } from "@/domains/cost/ui/ranked-table"
@@ -6,9 +8,6 @@ export interface SpendByAppProps {
   rows: CostByApp[]
   className?: string
 }
-
-/** One column: the figure the ranking is by. */
-const COLUMNS = [{ label: "spend", strong: true }] as const
 
 /**
  * Where the day's money went, ranked.
@@ -24,6 +23,7 @@ const COLUMNS = [{ label: "spend", strong: true }] as const
  * their own scales cannot be compared, and comparing them is the whole task.
  */
 export function SpendByApp({ rows, className }: SpendByAppProps) {
+  const { t } = useTranslation("cost")
   const axis = spendAxis(rows)
 
   const ranked: RankedRow[] = rows.map((row) => ({
@@ -40,10 +40,10 @@ export function SpendByApp({ rows, className }: SpendByAppProps) {
 
   return (
     <RankedTable
-      label="app"
-      columns={COLUMNS}
+      label={t("table.app")}
+      columns={[{ label: t("column.spend"), strong: true }]}
       rows={ranked}
-      empty="nothing spent today"
+      empty={t("byApp.empty")}
       data-test="spend-by-app"
       rowTest="spend-by-app-row"
       emptyTest="spend-empty"

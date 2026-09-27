@@ -1,0 +1,90 @@
+{
+  "page": {
+    "title": "비용 & 실패",
+    "errorTitle": "리포트가 로드되지 않았습니다",
+    "retry": "재시도",
+    "period": {
+      "day": "오늘",
+      "week": "이번 주",
+      "month": "이번 달"
+    },
+    "periodEnd": {
+      "day": "하루 끝",
+      "week": "주 끝",
+      "month": "달 끝"
+    },
+    "deltaVs": "이전 {{period}} 대비 {{pct}}%",
+    "mockMark": "mock 스냅샷 · VITE_USE_MOCK"
+  },
+  "toggle": {
+    "aria": "기간"
+  },
+  "total": {
+    "label": "{{period}} 지출",
+    "noPrior": "아직 이전 기간이 없습니다",
+    "vs": "이전 {{period}} 대비",
+    "flat": "변동 없음",
+    "burnNote": "평균 <burn/> / 일 · <days/>",
+    "daysObserved": {
+      "other": "{{count}}일 관찰됨"
+    }
+  },
+  "forecast": {
+    "label": "{{period}} 전망",
+    "sub": "상한 {{cap}}의 {{pct}}% · 소진율 {{rate}}"
+  },
+  "budget": {
+    "label": "예산 진행",
+    "today": "오늘",
+    "month": "월누적",
+    "ofCap": "상한 {{cap}} 중 {{used}}"
+  },
+  "section": {
+    "byDay": "일별 지출",
+    "byDayNote": {
+      "other": "지난 {{count}}일"
+    },
+    "byModel": "모델별 지출",
+    "byModelNote": "토큰",
+    "topProjects": "상위 프로젝트",
+    "topProjectsNote": "이번 기간",
+    "byApp": "앱별 지출",
+    "byAppNote": "지출",
+    "failures": "런이 실패하는 곳",
+    "failuresNote": "부서지는 지점"
+  },
+  "column": {
+    "spend": "지출",
+    "tokens": "토큰",
+    "share": "비중"
+  },
+  "table": {
+    "app": "앱",
+    "model": "모델",
+    "project": "프로젝트"
+  },
+  "byApp": {
+    "empty": "오늘 지출 없음"
+  },
+  "byModel": {
+    "empty": "이번 기간 모델 지출 없음",
+    "tokensTitle": "{{runs}}개 런에 걸쳐 {{tokens}} 토큰"
+  },
+  "topProjects": {
+    "empty": "이번 기간 프로젝트 지출 없음",
+    "ofCap": "상한 {{cap}} 중",
+    "noCap": "상한 없음"
+  },
+  "byDay": {
+    "empty": "이번 주 지출 없음",
+    "figure": {
+      "other": "지난 {{count}}일 동안 <total/> · 하루 <average/> · 최고 <peak/> 시점 <spend/>"
+    },
+    "chartLabel": {
+      "other": "일별 지출, 달러. 지난 {{count}}일 동안 {{total}}, 평균 하루 {{average}}. 최고 {{peak}} 시점 {{spend}}."
+    }
+  },
+  "failuresBlock": {
+    "empty": "오늘 실패 없음"
+  }
+}

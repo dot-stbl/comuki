@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { AlertTriangle } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 import styles from "./form.module.css"
 import { fieldDescriptionId, fieldLabelId } from "./ids"
@@ -80,11 +81,12 @@ export interface FieldProps {
  * silently stops matching. This is a separator, not spacing.
  */
 function RequiredMark() {
+  const { t } = useTranslation("kit")
   return (
     <>
       {" "}
       <span className={styles.labelRequired} data-test="field-required">
-        required
+        {t("field.required")}
       </span>
     </>
   )

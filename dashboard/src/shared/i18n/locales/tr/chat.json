@@ -1,0 +1,249 @@
+{
+  "page": {
+    "title": "Konsol",
+    "summary": "ekranların sürdüğü aynı control plane — tıklanmak yerine yazılmak",
+    "onboard": "Depo tanıt"
+  },
+  "console": {
+    "sendFailure": "Mesaj gönderilmedi",
+    "decisionFailure": "Karar kaydedilmedi",
+    "startFailure": "Konuşma başlatılmadı",
+    "consoleErrorTitle": "Konsol yüklenmedi",
+    "transcriptErrorTitle": "Konuşma kaydı yüklenmedi",
+    "loading": "Konuşma yükleniyor"
+  },
+  "sessions": {
+    "navLabel": "Konuşmalar",
+    "head": "konuşmalar",
+    "new": "Yeni konuşma",
+    "loading": "Konuşmalar yükleniyor",
+    "emptyTitle": "Henüz konuşma yok",
+    "emptyDescription": "Yukarıdaki artıyla bir tane başlatın. Her konuşma geri dönmek için burada kalır."
+  },
+  "thread": {
+    "emptyTitle": "Henüz bir şey söylenmedi",
+    "emptyBody": "Bu, ekranların sürdüğü aynı control plane'e yazarak ulaşmak. Sürünün ne yaptığını sorun ya da neler yapabildiğini görmek için bir slash ile başlayın. Bir şeyi değiştirecek her şey, bastığınız bir öneri olarak döner — asla kendi başına davranmaz.",
+    "logLabel": "Konuşma",
+    "jump": "en yenisine atla",
+    "announceReplying": "asistan yanıtlıyor",
+    "announceThinking": "Comuki думает"
+  },
+  "message": {
+    "you": "sen",
+    "comuki": "comuki",
+    "iteration": "iter {{iteration}}",
+    "blank": "bu tur için içinde bir şey gelmedi"
+  },
+  "typing": {
+    "words": "Comuki думает"
+  },
+  "thinking": {
+    "label": "düşünüyor",
+    "tokenWord": "token"
+  },
+  "memory": {
+    "label": "hafıza",
+    "facts": {
+      "other": "{{count}} olgu"
+    }
+  },
+  "composer": {
+    "boxLabel": "Konsola mesaj yaz",
+    "placeholder": "Sorun ya da bir slash ile başlayın",
+    "commandsHead": "komutlar",
+    "originFrom": "{{project}} içinden",
+    "seedAbout": "hakkında",
+    "seedDrop": "{{id}} referansını bırak",
+    "scopeRunsIn": "şurada çalışır",
+    "scopePick": "bir proje seç",
+    "scopeAria": "{{command}} komutunun çalıştığı proje",
+    "sendTooltip": "Gönder — enter",
+    "send": "Gönder"
+  },
+  "scope": {
+    "needsProject": "{{command}} bir proje gerektiriyor",
+    "notAvailable": "kullanılamıyor"
+  },
+  "command": {
+    "init": {
+      "description": "bir depo tanıt: git erişimi, hesaplama, modeller, bilgi"
+    },
+    "project": {
+      "description": "bu nöbetin hareket edebileceği projeleri listele"
+    },
+    "run": {
+      "description": "bir işten çalıştırma başlat"
+    },
+    "status": {
+      "description": "sürü şu an ne yapıyor"
+    },
+    "stop": {
+      "description": "bir çalıştırmayı durdur ve kontainerını yık"
+    },
+    "plan": {
+      "description": "bir çalıştırmanın planını oku ve ona karar ver"
+    },
+    "debug": {
+      "description": "bir saat boyunca ayrıntılı worker loglarını aç"
+    },
+    "help": {
+      "description": "konsol ne yapabilir"
+    }
+  },
+  "panel": {
+    "label": "Konsol yan paneli",
+    "awaiting": "bir karar bekliyor",
+    "noProject": "proje yok",
+    "steps": {
+      "other": "{{count}} adım"
+    },
+    "quiet": "burada seni bekleyen bir şey yok",
+    "slashHelp": "slash yardımı"
+  },
+  "proposal": {
+    "act": {
+      "run": {
+        "start": "bir çalıştırma başlat",
+        "stop": "bir çalıştırmayı durdur"
+      },
+      "plan": {
+        "approve": "bir planı onayla"
+      },
+      "settings": {
+        "debug": "canlı bir ayarı değiştir"
+      }
+    },
+    "words": {
+      "run": {
+        "start": {
+          "confirm": "Başlat",
+          "refuse": "Vazgeç"
+        },
+        "stop": {
+          "confirm": "Durdur",
+          "refuse": "Çalışmaya devam etsin"
+        }
+      },
+      "plan": {
+        "approve": {
+          "confirm": "Onayla",
+          "refuse": "Reddet"
+        }
+      },
+      "settings": {
+        "debug": {
+          "confirm": "Aç",
+          "refuse": "Kapalı kalsın"
+        }
+      }
+    },
+    "inProject": "{{project}} içinde",
+    "decidedConfirmed": "bir insan tarafından onaylandı ve her kararın kaydedildiği yere kaydedildi",
+    "decidedRejected": "bir insan tarafından reddedildi ve her kararın kaydedildiği yere kaydedildi",
+    "needsProjectDenial": "hareket edeceği bir proje gerekiyor"
+  },
+  "handoff": {
+    "searchFor": "{{where}} içinde ara"
+  },
+  "dock": {
+    "tooltip": "Konsol — {{chord}}",
+    "openAria": "Konsolu aç — {{chord}}",
+    "title": "Konsol"
+  },
+  "wizard": {
+    "title": "Depo tanıt",
+    "running": "Onboarding sürüyor.",
+    "streamHead": "onboarding",
+    "stageWord": {
+      "done": "bitti",
+      "running": "çalışıyor",
+      "queued": "kuyrukta"
+    },
+    "doneNotice": "Proje kaydedildi. Kural seti, worker imajı ve uç noktaları, sürünün bir sonraki çalıştırmadan itibaren kullanacağı şeylerdir.",
+    "backToConsole": "Konsola dön",
+    "start": "Onboarding'i başlat",
+    "continue": "Devam",
+    "back": "Geri",
+    "cancel": "İptal",
+    "confirmNotice": "Henüz hiçbir şey yaratılmadı. Onaylamak onboarding çalıştırmasını başlatır ve yaptığının tamamı, her çalıştırmanın kaydedildiği yere kaydedilir.",
+    "guardTitle": "Onboarding yapmadan sihirbazdan çıkılsın mı?",
+    "guardBody": "Yazdığınız depo, model uç noktaları ve secret referansı henüz hiçbir yerde kayıtlı değil. Bu sayfadan ayrılmak onları düşürür.",
+    "guardConfirm": "Vazgeç",
+    "guardCancel": "Düzenlemeye devam et",
+    "step": {
+      "repo": {
+        "title": "Depo ve git erişimi",
+        "summary": "Kodun nerede durduğu ve sürünün ona ne yapabileceği. Sihirbazın geri kalanının hangi projeyi yapılandıracağına karar veren adım budur."
+      },
+      "compute": {
+        "title": "Hesaplama sağlayıcısı",
+        "summary": "Worker kontainerlarının nerede başlatıldığı ve aynı anda kaçının çalışabileceğine dair üst sınır."
+      },
+      "models": {
+        "title": "Model uç noktaları",
+        "summary": "Öncü model ve workerlar için openai ya da anthropic uyumlu bir base url. Secretlar burada adlandırılır, asla yazılmaz."
+      },
+      "knowledge": {
+        "title": "Bilgi",
+        "summary": "Bu proje indekslenmiş bir kural seti tutuyor mu ve ilk geçiş neyi okumalı."
+      },
+      "confirm": {
+        "title": "Onayla",
+        "summary": "Onboarding neyi, hangi sırayla yapacak. Henüz hiçbir şey yaratılmadı."
+      }
+    },
+    "stage": {
+      "clone": "depoyu klonla",
+      "rules": "istemcinin kurallarını ve skillerini oku",
+      "image": "worker imajını çek",
+      "endpoints": "model uç noktalarına ulaş",
+      "knowledge": "bilgi indeksini tohumla",
+      "register": "projeyi sürüye kaydet"
+    },
+    "field": {
+      "project": "proje",
+      "projectHint": "Yalnızca kaynak bağlayabileceğiniz projeler listelenir.",
+      "pickProject": "bir proje seç",
+      "remote": "git remote",
+      "branch": "varsayılan dal",
+      "write": "dal itebilir",
+      "writeHint": "Kapalıyken sürü depoyu okur ve hiçbir şey açmaz.",
+      "provider": "sağlayıcı",
+      "workers": "aynı anda worker",
+      "workersHint": "Bu projenin tutabileceği kontainer üst sınırı.",
+      "lead": "öncü model uç noktası",
+      "leadHint": "Openai ya da anthropic uyumlu.",
+      "workerModel": "worker model uç noktası",
+      "workerPlaceholder": "öncü uç noktasını kullanmak için boş bırakın",
+      "secret": "secret referansı",
+      "secretHint": "Secret'ın adı, secret'ın kendisi değil. Anahtarlar bu ürüne asla yazılmaz.",
+      "knowledge": "indekslenmiş kural seti tut",
+      "knowledgeHint": "Onu bir docs workerı yazar. Burada belge düzenleyici yoktur.",
+      "seed": "tohum",
+      "seedHint": "İlk geçişin ne okuyacağı, glob olarak."
+    },
+    "error": {
+      "project": "bu deponun ait olduğu projeyi seçin",
+      "remote": "bir git remote zorunlu",
+      "branch": "bir varsayılan dal zorunlu",
+      "workers": "worker sayısı tam sayı olmalı, en az bir",
+      "lead": "öncü modele bir base url gerekli",
+      "secret": "anahtarı tutan secret'ı adlandırın"
+    },
+    "review": {
+      "project": "proje",
+      "remote": "remote",
+      "branch": "dal",
+      "pushAccess": "push erişimi",
+      "compute": "hesaplama",
+      "workers": "workerlar",
+      "lead": "öncü model",
+      "workerModel": "worker modeli",
+      "secret": "secret",
+      "knowledge": "bilgi",
+      "on": "açık",
+      "off": "kapalı",
+      "sameAsLead": "öncüyle aynı"
+    }
+  }
+}

@@ -1,1 +1,201 @@
-{}
+{
+  "errors": {
+    "saveDidNotLand": "保存未生效。",
+    "stopDidNotApply": "停止未应用。"
+  },
+  "page": {
+    "title": "设置",
+    "summaryMock": "控制面配置",
+    "summaryReal": "平台配置 — 只读，启动时设定",
+    "errorTitle": "设置未加载",
+    "retry": "重试",
+    "tabsAria": "设置分区"
+  },
+  "tabs": {
+    "apps": "应用",
+    "rules": "规则",
+    "autonomy": "自治",
+    "routing": "路由",
+    "budgets": "预算",
+    "keys": "密钥",
+    "tracker": "追踪器"
+  },
+  "toast": {
+    "routingSaved": "路由已保存",
+    "routingSavedNote": "角色 → 模型映射已更新（模拟）",
+    "routingNotSaved": "路由未保存",
+    "budgetsSaved": "预算已保存",
+    "budgetsSavedNote": "上限已更新（模拟）",
+    "budgetsNotSaved": "预算未保存"
+  },
+  "apps": {
+    "section": "应用",
+    "note": "只读 · 注册表声明在客户端的 git 里",
+    "emptyFiltered": "没有应用匹配当前筛选",
+    "empty": "注册表未声明任何应用",
+    "count": "显示 {{count}} 个",
+    "column": {
+      "app": "应用",
+      "repo": "仓库",
+      "stack": "技术栈",
+      "envs": "环境",
+      "deploy": "部署"
+    },
+    "filterPlaceholder": "筛选应用、仓库、技术栈…",
+    "allTargets": "所有目标",
+    "nowhere": "无处"
+  },
+  "rules": {
+    "section": "群体规则",
+    "note": "只读 · 规则活在客户端的 git 里，随提交变更",
+    "conflicts": "未发现冲突 · {{count}} 条活跃规则 · 作用域不重叠。",
+    "emptyFiltered": "没有规则匹配当前筛选",
+    "empty": "规则集为空",
+    "count": "显示 {{count}} 条",
+    "column": {
+      "rule": "规则",
+      "scope": "作用域",
+      "kind": "类别",
+      "version": "版本",
+      "description": "描述"
+    },
+    "filterPlaceholder": "筛选规则、作用域、描述…",
+    "allScopes": "所有作用域",
+    "allKinds": "所有类别"
+  },
+  "autonomy": {
+    "section": "自治",
+    "note": "哪些自动 · 哪些需要人",
+    "emptyFiltered": "没有变更类别匹配当前筛选",
+    "empty": "没有变更类别被分类",
+    "count": "显示 {{count}} 条",
+    "column": {
+      "changeClass": "变更类别",
+      "mode": "模式"
+    },
+    "filterPlaceholder": "筛选变更类别…",
+    "allModes": "所有模式"
+  },
+  "routing": {
+    "section": "模型路由",
+    "note": "角色 → 物理模型",
+    "emptyFiltered": "没有角色匹配当前筛选",
+    "empty": "没有角色被路由",
+    "count": "显示 {{count}} 条",
+    "column": {
+      "role": "角色",
+      "model": "模型",
+      "usage": "用途"
+    },
+    "editSection": "编辑角色 → 模型映射",
+    "editNote": "主控 / 工作器 / 评审",
+    "field": {
+      "lead": "主控",
+      "worker": "工作器",
+      "judge": "评审"
+    },
+    "save": "保存路由",
+    "escalation": "升级策略 — 工作器上 2 次失败重试升级到主控。红色类型门进到带固定修订的调试代理。"
+  },
+  "budgets": {
+    "readingSection": "代理预算",
+    "readingNote": "群体今日对照全局上限的花费",
+    "killSwitch": "急停开关",
+    "killHint": "硬停所有新认领 — 每个应用、每个任务。",
+    "pause": "暂停群体",
+    "pauseHint": "软暂停 — 运行中的工作器跑完；不启动新容器。",
+    "stopFailureTail": "没有变化 — 停止开关维持原状。",
+    "killTitle": "拉下急停开关？",
+    "killBody": "新认领立即停止 — 每个应用、每个任务 — 并保持停止，直到开关被拨回。执行中的工作器会完成手头工作；队列中的内容不会被取消。",
+    "killConfirm": "阻断新认领",
+    "killCancel": "保留认领开放",
+    "capsSection": "预算上限",
+    "capsNote": "仪表读取的全局上限 · 每任务与每应用细化它",
+    "globalCap": "全局上限",
+    "globalCapHint": "上方仪表以该上限度量花费。",
+    "refinements": "细化项",
+    "perTask": "每任务",
+    "perApp": "每应用",
+    "save": "保存预算",
+    "meter": {
+      "over": "超上限",
+      "left": "剩 {{left}}",
+      "stopped": "急停开关开启 · 新认领被阻断",
+      "atCap": "急停开关在上限处"
+    }
+  },
+  "keys": {
+    "section": "提供商密钥",
+    "note": "只读 · 密钥来自环境变量，轮换在代理内运行",
+    "emptyFiltered": "没有密钥匹配当前筛选",
+    "empty": "代理未持有任何提供商密钥",
+    "count": "显示 {{count}} 条",
+    "column": {
+      "provider": "提供商",
+      "scope": "作用域",
+      "rotation": "轮换",
+      "status": "状态"
+    },
+    "filterPlaceholder": "筛选提供商、作用域…",
+    "allStatuses": "所有状态"
+  },
+  "tracker": {
+    "section": "接入来源",
+    "notice": "已连接的追踪器将工单同步进 backlog · 手动接入始终保持开放。",
+    "emptyTitle": "未接入任何追踪器",
+    "emptyDescription": "没有东西在向 backlog 同步工单。手动接入无论如何都开放 — 追踪器只是多开一扇门。",
+    "connected": "已连接",
+    "synced": "同步于 {{when}}",
+    "sync": "同步",
+    "syncAria": "同步 {{name}}",
+    "syncedToast": "已同步 {{name}}",
+    "syncedToastNote": "导入了新 issue（模拟）",
+    "connect": "连接",
+    "connectAria": "连接 {{name}}",
+    "connectToast": "连接 {{name}}",
+    "connectToastNote": "OAuth 流程…（模拟）"
+  },
+  "platform": {
+    "hint": "只读 — 这里的每个值都在启动时配置。变更需通过配置与重启；本页不写入任何内容。",
+    "on": "开",
+    "off": "关",
+    "escalationOff": "关 — 棘轮已禁用（将应用 {{would}}）",
+    "orchestration": {
+      "section": "编排",
+      "leaseTtl": "租约 ttl",
+      "leaseTtlNote": "认领时发放，靠心跳续期",
+      "reapInterval": "回收间隔",
+      "reapIntervalNote": "租约回收器的清扫节奏",
+      "reapGrace": "回收宽限",
+      "reapGraceNote": "过期后到回收器动手前的缓冲",
+      "maxAttempts": "最大尝试",
+      "maxAttemptsNote": "卡住条目失败前的认领数",
+      "escalationTimeout": "升级超时",
+      "escalationTimeoutNote": "一次运行最多可保持升级状态多久后自动归档",
+      "escalationSweep": "升级清扫",
+      "escalationSweepNote": "棘轮清扫节奏"
+    },
+    "compute": {
+      "section": "算力",
+      "provider": "提供商",
+      "providerNote": "v1 运行的算力实现",
+      "workerImage": "工作器镜像",
+      "workerImageNote": "生产环境按 digest 固定",
+      "profilesRef": "profiles ref",
+      "profilesRefNote": "固定的 profiles git ref",
+      "minIdle": "最小空闲",
+      "minIdleNote": "每配置文件的温空闲下限",
+      "maxConcurrent": "最大并发",
+      "maxConcurrentNote": "每项目并发上限",
+      "idleTtl": "空闲 ttl",
+      "idleTtlNote": "工作器成为回收候选之前",
+      "pollInterval": "轮询间隔",
+      "pollIntervalNote": "监管器两次巡检之间"
+    },
+    "proxy": {
+      "section": "代理",
+      "passthrough": "openai / anthropic passthrough",
+      "passthroughNote": "代理是否被组合进来"
+    }
+  }
+}

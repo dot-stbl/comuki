@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "再試行"
-  },
-  "errors": {
-    "unknown": "不明なエラー"
-  },
   "workStatus": {
     "queued": "キュー投入",
     "running": "実行中",

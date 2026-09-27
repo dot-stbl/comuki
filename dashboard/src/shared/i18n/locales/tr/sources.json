@@ -1,0 +1,287 @@
+{
+  "errors": {
+    "changeFailed": "Değişiklik başarısız oldu."
+  },
+  "state": {
+    "connected": "bağlı",
+    "error": "hata",
+    "disabled": "devre dışı"
+  },
+  "word": {
+    "never": "hiç"
+  },
+  "provider": {
+    "github": {
+      "label": "github",
+      "target": "depo",
+      "intakeNote": "issue'lar izlenen bir depodan gelir. buraya yazılan biri deponun damgasını taşır."
+    },
+    "gitlab": {
+      "label": "gitlab",
+      "target": "depo",
+      "intakeNote": "issue'lar izlenen bir depodan gelir. buraya yazılan biri deponun damgasını taşır."
+    },
+    "yandex-tracker": {
+      "label": "yandex tracker",
+      "target": "kuyruk anahtarı",
+      "intakeNote": "işler izlenen bir tracker kuyruğundan gelir. buraya yazılan biri kuyruğun damgasını taşır."
+    },
+    "jira": {
+      "label": "jira",
+      "target": "proje anahtarı",
+      "intakeNote": "işler izlenen bir panodan gelir. buraya yazılan biri panonun damgasını taşır."
+    },
+    "native": {
+      "label": "native",
+      "target": "ad",
+      "intakeNote": "burada yazılır, bir kişi tarafından — ürünün kendi kabuli, arkasında tracker olmadan."
+    }
+  },
+  "intakeNoteUnknown": "işler izlenen bir bağlantıdan gelir. buraya yazılan biri o sağlayıcının damgasını taşır.",
+  "auth": {
+    "pat": "personal access token",
+    "oauth": "oauth yetkilendirmesi",
+    "app-install": "uygulama kurulumu",
+    "none": "yok"
+  },
+  "authSecret": {
+    "pat": "access token",
+    "oauth": "oauth client secret",
+    "app-install": "uygulama özel anahtarı",
+    "other": "secret"
+  },
+  "nativeRefusal": "native kabul bağlantısı kesilemez — bir işi kabul etmenin ürünün kendi yoludur",
+  "admission": {
+    "watch": {
+      "label": "watch",
+      "description": "eşleşen bir iş bir çalıştırma başlatır. kimsenin onu alması gerekmez."
+    },
+    "inbox-only": {
+      "label": "inbox-only",
+      "description": "eşleşen bir iş kataloga düşer ve bir kişinin almasını bekler."
+    },
+    "both": {
+      "label": "ikisi de",
+      "description": "iş bir çalıştırma başlatır ve katalogda kalır; dolayısıyla çalıştırma, ona yol açan işten bulunabilir."
+    },
+    "nativeIntake": "native kabul",
+    "watchOff": "watch kapalı"
+  },
+  "host": {
+    "inPlatform": "platform içinde",
+    "cloud": "bulut"
+  },
+  "note": {
+    "refusedSilent": "sağlayıcı reddetti ve kullanışlı bir şey söylemedi.",
+    "filedHere": {
+      "other": "buraya {{count}} iş dosyalandı"
+    },
+    "turnedOff": "kapatıldı — son eşitleme {{when}}",
+    "watchOff": "watch kapalı — buradan hiçbir şey kabul edilmiyor",
+    "matchedNothing": "filtre son günde hiçbir şeyle eşleşmedi",
+    "lastSynced": "son eşitleme {{when}}"
+  },
+  "registry": {
+    "title": "Kaynaklar",
+    "errorTitle": "Kaynaklar yüklenemedi",
+    "connect": "Bir kaynak bağla",
+    "connectionsWord": "bağlantı",
+    "admittingWord": "iş kabul ediyor",
+    "errorWord": "hatalı",
+    "failureTail": "Hiçbir şey kıpırdamadı — liste eskisi gibi geri geldi.",
+    "sectionTitle": "Bağlantılar",
+    "sectionNote": "Platformdaki her kaynak, hangi projeyi beslerse beslesin. Bir bağlantı kimlik bilgisini taşır; onun <em>watch</em>'ı o kimlik bilgisinin neyi kabul etmeye yetkili olduğunu taşır — ayrı ayrı bozulurlar, ayrı ayrı okunurlar. Düzenleme proje başına verilir; dolayısıyla yönettiğiniz bir satır, yalnızca izlediğiniz bir satırın üstünde durur ve her biri hangisi olduğunu söyler. <code>native</code> her projededir ve bağlantısı kesilemez."
+  },
+  "connectionsPanel": {
+    "shown": {
+      "other": "{{count}} gösteriliyor"
+    },
+    "emptyFiltered": "Geçerli filtrelerle eşleşen bağlantı yok.",
+    "emptyNone": "Bağlı bir kaynak yok."
+  },
+  "disconnect": {
+    "title": "Bu kaynağın bağlantısı kesilsin mi?",
+    "body": "{{name}} · {{project}} — kimlik bilgisi düşürülür ve buradan artık hiçbir şey kabul edilmez. Zaten alınmış işler çalıştırmalarını tutar; yeniden bağlanmak yeni bir secret demektir.",
+    "confirm": "Bağlantıyı kes",
+    "keep": "Kalsın",
+    "toast": "Kaynağın bağlantısı kesildi"
+  },
+  "column": {
+    "state": "durum",
+    "source": "kaynak",
+    "provider": "sağlayıcı",
+    "project": "proje",
+    "instance": "örnek",
+    "account": "hesap",
+    "admission": "kabul",
+    "admitted": "kabul edilen",
+    "note": "ne oluyor",
+    "actions": "eylemler",
+    "allStates": "tüm durumlar",
+    "allProviders": "tüm sağlayıcılar",
+    "allProjects": "tüm projeler",
+    "allModes": "tüm modlar",
+    "filterPlaceholder": "kaynak, hesap, host filtrele…",
+    "newTicket": "Yeni iş",
+    "newTicketAria": "{{where}} üzerinde {{name}} içinde yeni iş",
+    "watchAndFilter": "Watch ve filtre",
+    "watchAndFilterAria": "{{name}} üzerindeki watch'ı düzenle",
+    "testConnection": "Bağlantıyı sına",
+    "testConnectionAria": "{{name}} bağlantısını sına",
+    "disconnect": "Bağlantıyı kes",
+    "disconnectAria": "{{name}} bağlantısını kes"
+  },
+  "connectPage": {
+    "title": "Bir kaynak bağla",
+    "crumbNew": "yeni",
+    "summary": "Bir bağlantı tek bir projeye aittir ve tek bir kimlik bilgisi taşır. Watch'ı kapalı gelir — iş kabul etmek, kaynağın kendi sayfasında verilen ayrı bir karardır.",
+    "refused": "Bağlantı reddedildi.",
+    "tail": "Hiçbir şey kaydedilmedi — aşağıdaki ayrıntılar tam yazdığınız gibi.",
+    "leaveTitle": "Kaynağı bağlamadan çıkılsın mı?",
+    "leaveBody": "Burada henüz kayıtlı bir şey yok ve yazdığınız kimlik bilgisi hiçbir yerde tutulmuyor — bu sayfadan ayrılmak onu düşürür, sonra bağlamak onu yeniden getirmek demektir.",
+    "discard": "Vazgeç",
+    "keep": "Düzenlemeye devam et",
+    "toast": "Kaynak bağlandı"
+  },
+  "connectForm": {
+    "providerCard": "sağlayıcı",
+    "providerCardNote": "bu bağlantının hangi tracker'ı izlediği ve kimin lehçesiyle konuştuğu.",
+    "providerHint": "native kabul burada değil: her projede zaten var ve bir kimlik bilgisini gösterecek bir şey yok.",
+    "connectionCard": "bağlantı",
+    "connectionCardNote": "hangi projeyi beslediği, örneğin nerede olduğu ve hangi kimlik bilgisinin ona ulaştığı.",
+    "projectLabel": "proje",
+    "projectHint": "bu kaynağın beslediği proje. Kaynak düzenleme proje başına verilir; dolayısıyla bu seçim, kaydın hesap verdiği şeydir.",
+    "settingsPreview": "Host bunu tek bir settings json olarak saklar:",
+    "probeProbing": "sağlayıcıya ulaşılıyor…",
+    "probePending": "kaydetmeden önce bağlantıyı sınayın — ulaşılamayan bir kaynak, birisi ona ihtiyaç duyana dek tam olarak sağlıklı biri gibi görünür.",
+    "credentialCard": "kimlik bilgisi",
+    "credentialCardNote": "kimlik bilgisini tutan host'taki env-var adı. Değeri host çözer — dashboard onu hiç görmez.",
+    "secretEnvLabel": "secret env var",
+    "secretEnvHint": "kimlik bilgisini tutan host'taki env var'ın adı. Host değeri sınama / webhook anında çözer — dashboard onu hiç görmez.",
+    "mockNotice": "Yalnızca mock modu: form, seed store'u sınamaya yetecek kadar uzun süre bir kimlik bilgisini harfiyen tutar. Gerçek mod host'taki env var'ı okur ve değeri hiç görmez.",
+    "mockSecretLabel": "kimlik bilgisi (yalnızca mock)",
+    "submit": "Bağlantıyı kaydet",
+    "testConnection": "Bağlantıyı sına"
+  },
+  "connectionFields": {
+    "baseUrlLabel": "base url",
+    "baseUrlHint": "yalnızca self-hosted. https, çünkü kimlik bilgisi bu hattı geçer.",
+    "accountLabel": "hesap",
+    "accountPlaceholder": "kimlik bilgisinin ait olduğu bot ya da uygulama",
+    "accountHint": "sonradan satırda gösterilir; dolayısıyla bayat bir kimlik bilgisi bir kişiye dek izlenebilir.",
+    "authKindLabel": "auth türü"
+  },
+  "authChoice": {
+    "hint": "{{provider}} öğesinin kabul ettiği ve başka hiçbir şey. Settings json'a harfiyen yazılır; asla kimlik bilgisi taşımaz."
+  },
+  "connectionForm": {
+    "cardLabel": "giriş yolu",
+    "cardNote": "örnek nerede, hangi kimlik bilgisi ona ulaşıyor ve onu tutan host'taki env-var.",
+    "secretEnvLabel": "secret env var",
+    "secretEnvHint": "host'taki env-var adı. Dashboard değeri hiç görmez; host sınama / webhook anında çözer.",
+    "probeProbing": "sağlayıcıya ulaşılıyor…",
+    "probePending": "kaydetmeden önce bağlantıyı sınayın — bir kaynağa nasıl ulaşılacağını değiştirmek, kimsenin mümkün olup olmadığını bilmediği bir şeyde yapılmaz.",
+    "testConnectionAria": "{{name}} bağlantısını sına",
+    "submit": "Bağlantıyı kaydet"
+  },
+  "watchForm": {
+    "cardLabel": "kabul",
+    "cardNote": "hiçbir şey kabul edilip edilmediği, hangi işlerin ve biri geldiğinde sıranın kime geçtiği.",
+    "watchLabel": "bu kaynağı izle",
+    "watchHint": "kapalıyken bağlantı kimlik doğrulamasını sürdürür ve içeri bir şey getirmeyi bırakır. Bağlantıyı kesmekle aynı şey değildir.",
+    "admissionModeLabel": "kabul modu",
+    "submit": "Watch'ı kaydet"
+  },
+  "filterField": {
+    "label": "filtre ifadesi",
+    "placeholder": "bu bağlantının görebildiği her şeyi kabul etmek için boş bırakın",
+    "hintsLabel": "{{kind}} işlerinde görülen alanlar",
+    "verbatim": "harfiyen saklanır ve ayrıştırılmaz — filtre dili henüz karara bağlanmadı; dolayısıyla bu metin, yazıldığı gibi connector'a verilir."
+  },
+  "statusPreview": {
+    "head": "{{provider}} öğesine geri yazılan durum",
+    "nativeNone": "native kabul, tracker'ın ta kendisidir. Bir çalıştırmanın durumu işin durumudur; dolayısıyla geri yazılacak bir yer yoktur.",
+    "unknownNone": "{{provider}} öğesine hiçbir şey geri yazılmıyor — bu build'de o sağlayıcı için eşleme yok; dolayısıyla çalıştırmanın durumu çalıştırmada kalır."
+  },
+  "detailPage": {
+    "titleFallback": "Kaynak",
+    "crumbFallback": "kaynak",
+    "errorTitle": "Bu kaynak yüklenemedi",
+    "notFoundTitle": "Bu id'ye ait bağlantı yok",
+    "notFoundBody": "Bu platformda bu id altında bağlı bir şey yok. Bağlantısı kesilmiş bir kaynak — burada ya da başka bir sekmede — bu adrese gelmenin olağan yoludur ve hâlâ var olanların yeri bağlantılar listesidir.",
+    "backToSources": "Kaynaklara dön",
+    "failureTail": "Hiçbir şey kıpırdamadı — bu sayfa eskisi gibi geri geldi.",
+    "factsTitle": "bu bağlantı nedir",
+    "factProvider": "sağlayıcı",
+    "factAuth": "auth",
+    "factInstance": "örnek",
+    "factAccount": "hesap",
+    "factCredential": "kimlik bilgisi",
+    "factLastSync": "son eşitleme",
+    "credentialEnvNote": "sınama / webhook anında host üzerinde çözülür. Dashboard değeri hiç görmez — değiştirmek, host'taki env var'ı değiştirmek ve bağlantının <code>secretEnvRef</code> alanını yamamak demektir.",
+    "credentialStoredNote": "yalnızca yazılabilir biçimde saklandı ve bir daha asla gösterilmez — bu sayfada değil, formda değil, api üzerinden de değil. Değiştirmek yeniden bağlanmak demektir.",
+    "credentialNoneNote": "native kabulün uzak ucu yoktur; dolayısıyla kimlik doğrulanacak bir şey yoktur.",
+    "none": "yok",
+    "never": "hiç",
+    "watchTitle": "watch ve filtre",
+    "noWatch": "Native kabulün watch'ı yoktur. İşler buraya bir filtre kabul ettiği için değil, biri dosyaladığı için gelir — dolayısıyla açılacak bir şey ve daraltılacak bir şey yoktur.",
+    "connectionTitle": "bağlantı",
+    "rotationTitle": "webhook secret",
+    "rotationBody": "Bir tıklama taze bir webhook secret üretir ve onu bir kez gösterir. Tracker'ın webhook ayarlarına kopyalayın — bu sayfa onu bir daha göstermez.",
+    "rotateButton": "Secret yenile",
+    "rotateAria": "{{name}} için webhook secret'ı yenile",
+    "rotateLabel": "Webhook secret'ı yenile",
+    "rotatedLabel": "yeni webhook secret — şimdi kopyalayın, bu panel bir gezinmeye dayanmaz",
+    "handoffsTitle": "bu nereye gidiyor",
+    "handoffFiled": "buraya dosyalanan işler. Diğer her şeyle birlikte katalogdadırlar — ",
+    "handoffAdmitted": "buradan kabul edilen işler. Diğer her şeyle birlikte katalogdadırlar — ",
+    "handoffCatalogTail": "katalog bu kaynağa daraltılmamıştır.",
+    "openCatalog": "kataloğu aç",
+    "handoffProject": "bu bağlantının beslediği proje. Kaynak düzenleme proje başına verilir; dolayısıyla bu sayfadaki her eylemin hesap verdiği şey budur.",
+    "openProject": "projeyi aç",
+    "handoffTicket": "doğrudan bu projenin kabulüne bir iş yazın. Bu bir yöneticinin değil bir üyenin eylemidir; dolayısıyla kendi ekranına ve kendi iznine sahiptir.",
+    "fileTicket": "bir iş dosyala",
+    "rotateTitle": "Bu kaynağın webhook secret'ı yenilensin mi?",
+    "rotateBody": "{{name}} · {{project}} — yeni bir secret üretilir ve bir kez gösterilir. Önceki secret ile imzanan webhooklar, yenisini tracker'a kopyalayana dek reddedilir.",
+    "rotateConfirm": "Yenile",
+    "rotateKeep": "Şimdikini koru",
+    "leaveTitle": "Kaydetmeden çıkılsın mı?",
+    "leaveBody": "Bu sayfada değiştirdiğiniz watch ve bağlantı ayrıntıları henüz kayıtlı değil. Ayrılmak onları düşürür ve kaynak tam eskisi gibi kalır.",
+    "discard": "Vazgeç",
+    "keep": "Düzenlemeye devam et",
+    "watchSavedToast": "Watch kaydedildi",
+    "connectionSavedToast": "Bağlantı kaydedildi",
+    "rotatedToast": "Webhook secret yenilendi",
+    "rotatedToastDescription": "{{name}} — yeni değeri tracker'a kopyalayın"
+  },
+  "ticketPage": {
+    "title": "{{project}} içinde yeni iş",
+    "titleFallback": "Yeni iş",
+    "crumb": "yeni iş",
+    "summary": "Native kabul ürünün kendisidir. Buraya yazılan bir işin arkasında tracker yoktur; dolayısıyla durumu çalıştırmanın durumudur ve geri eşitlenecek bir yeri yoktur.",
+    "errorTitle": "Bu kaynağa bakılamadı",
+    "notFoundTitle": "Bu id'ye ait bağlantı yok",
+    "notFoundBody": "Bu platformdaki hiçbir bağlantının id'si {{id}} değil. Bu sekme açık dururken bağlantısı kesilen bir kaynak, buraya gelmenin olağan yoludur.",
+    "backToSources": "Kaynaklara dön",
+    "refused": "İş reddedildi.",
+    "tail": "Hiçbir şey dosyalanmadı — yazdıklarınız hâlâ burada.",
+    "leaveTitle": "İşi dosyalamadan çıkılsın mı?",
+    "leaveBody": "Yazdığınız başlık, gövde ve etiketler henüz hiçbir yerde kayıtlı değil. Bu sayfadan ayrılmak onları düşürür ve kabullere hiçbir şey ulaşmaz.",
+    "discard": "Vazgeç",
+    "keep": "Düzenlemeye devam et",
+    "toast": "İş dosyalandı"
+  },
+  "ticketForm": {
+    "titleLabel": "başlık",
+    "titlePlaceholder": "sorun ne, tek satırda",
+    "bodyLabel": "gövde",
+    "bodyPlaceholder": "ne gördünüz ve nerede. Beyin, bir şey planlamadan önce bunu okur.",
+    "labelsLabel": "etiketler",
+    "labelsPlaceholder": "checkout-web, bug",
+    "labelsHint": "virgülle ayrılmış. Bunlar işin kendi etiketleridir — bir filtre ifadesi değil.",
+    "straightLabel": "doğrudan işe",
+    "straightHint": "kapalı, onu birinin almasına bırakır — ki bu, bir dakika sonraki aynı eylemdir.",
+    "submitStart": "Oluştur ve başlat",
+    "submit": "İş oluştur"
+  }
+}

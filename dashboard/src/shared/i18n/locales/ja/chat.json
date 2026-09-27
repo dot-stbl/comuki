@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "再試行"
-  },
-  "errors": {
-    "unknown": "不明なエラー"
-  },
   "page": {
     "title": "コンソール",
     "summary": "各画面が操作するのと同じコントロールプレーンを、入力で扱う",
@@ -121,14 +115,26 @@
     },
     "words": {
       "run": {
-        "start": { "confirm": "開始", "refuse": "破棄" },
-        "stop": { "confirm": "停止", "refuse": "実行させたままにする" }
+        "start": {
+          "confirm": "開始",
+          "refuse": "破棄"
+        },
+        "stop": {
+          "confirm": "停止",
+          "refuse": "実行させたままにする"
+        }
       },
       "plan": {
-        "approve": { "confirm": "承認", "refuse": "却下" }
+        "approve": {
+          "confirm": "承認",
+          "refuse": "却下"
+        }
       },
       "settings": {
-        "debug": { "confirm": "オンにする", "refuse": "オフのままにする" }
+        "debug": {
+          "confirm": "オンにする",
+          "refuse": "オフのままにする"
+        }
       }
     },
     "inProject": "{{project}} 内で",
@@ -146,12 +152,10 @@
   },
   "wizard": {
     "title": "リポジトリを組み込む",
-
     "running": "オンボーディングを実行中です。",
     "streamHead": "オンボーディング",
     "stageWord": {
       "done": "完了",
-
       "running": "実行中",
       "queued": "待機中"
     },

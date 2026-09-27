@@ -1,1 +1,32 @@
-{}
+{
+  "panel": {
+    "emptyFiltered": "No checks match the current filters.",
+    "empty": "No checks are declared.",
+    "switch": "run the gate on every run",
+    "sourceLead": "These commands are declared in this client's git and are read-only here. Changing one is a commit in their repository — that is what makes a run reproducible, so there is no editor on this screen by design.",
+    "readAt": "read {{when}}",
+    "openInGit": "Open in git",
+    "off": "The gate is off, so nothing below is run and no run is blocked by it. The file is still in git and the checks are still declared — turning this back on starts running them again from the next run.",
+    "emptyTitle": "No checks are declared",
+    "emptyDescription": "The gate is looking for <path/> in <repo/> at <ref/> and found nothing. Commit the file there and it is picked up on the next read — there is nowhere here to create one.",
+    "count": "{{count}} shown"
+  },
+  "column": {
+    "lastResult": "last result",
+    "anyResult": "any result",
+    "check": "check",
+    "filterPlaceholder": "filter check, command…",
+    "command": "command",
+    "declaredIn": "declared in",
+    "output": "output",
+    "neverReached": "no run has reached this check",
+    "when": "when",
+    "took": "took",
+    "run": "run"
+  },
+  "result": {
+    "failed": "failed",
+    "neverRan": "never ran",
+    "passed": "passed"
+  }
+}

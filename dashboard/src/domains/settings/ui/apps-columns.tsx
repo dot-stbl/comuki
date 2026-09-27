@@ -1,4 +1,6 @@
 import type { AppRegistryItem } from "@/domains/settings/model/types"
+import type { SettingsTranslator } from "@/domains/settings/model/translate"
+import { sharedSettingsT } from "@/domains/settings/model/translate"
 import type { DataColumn, DataFilterOption } from "@/shared/ui"
 
 import { EnvTags } from "./settings-badges"
@@ -25,14 +27,18 @@ export function uniqueDeployTargets(
  * grows a control, this takes the session the way `createUserColumns` does — a
  * `cell` is a plain function TanStack calls while it builds a row, so a hook
  * inside one is a hook called outside a render.
+ *
+ * Copy arrives as a `t` parameter for that same reason; the panel passes its
+ * hook-bound translator and tests fall back to the shared instance.
  */
 export function createAppColumns(
-  deployTargets: DataFilterOption[]
+  deployTargets: DataFilterOption[],
+  t: SettingsTranslator = sharedSettingsT
 ): DataColumn<AppRegistryItem>[] {
   return [
     {
       accessorKey: "name",
-      header: "app",
+      header: t("apps.column.app"),
       cell: ({ row }) => (
         <span className={styles.name} title={row.original.name}>
           {row.original.name}
@@ -43,7 +49,7 @@ export function createAppColumns(
         pinned: true,
         filter: {
           kind: "text",
-          placeholder: "filter app, repo, stack…",
+          placeholder: t("apps.filterPlaceholder"),
           match: (app, needle) =>
             `${app.name} ${app.repo} ${app.stack}`
               .toLowerCase()
@@ -53,7 +59,7 @@ export function createAppColumns(
     },
     {
       accessorKey: "repo",
-      header: "repo",
+      header: t("apps.column.repo"),
       cell: ({ row }) => (
         <span className={styles.value} title={row.original.repo}>
           {row.original.repo}
@@ -63,7 +69,7 @@ export function createAppColumns(
     },
     {
       accessorKey: "stack",
-      header: "stack",
+      header: t("apps.column.stack"),
       cell: ({ row }) => (
         <span className={styles.stack} title={row.original.stack}>
           {row.original.stack}
@@ -74,15 +80,15 @@ export function createAppColumns(
     {
       id: "envs",
       accessorFn: (app) => app.envs.join(" "),
-      header: "envs",
+      header: t("apps.column.envs"),
       // A set has no order worth sorting by, and the alphabet is not it.
       enableSorting: false,
       cell: ({ row }) => <EnvTags envs={row.original.envs} />,
-      meta: { width: 200, label: "envs" },
+      meta: { width: 200, label: t("apps.column.envs") },
     },
     {
       accessorKey: "deploy",
-      header: "deploy",
+      header: t("apps.column.deploy"),
       cell: ({ row }) => (
         <span className={styles.faint}>{row.original.deploy}</span>
       ),
@@ -90,7 +96,7 @@ export function createAppColumns(
         width: 120,
         filter: {
           kind: "select",
-          placeholder: "all targets",
+          placeholder: t("apps.allTargets"),
           options: deployTargets,
         },
       },

@@ -1,0 +1,90 @@
+{
+  "page": {
+    "title": "成本與失敗",
+    "errorTitle": "報表未載入",
+    "retry": "重試",
+    "period": {
+      "day": "今天",
+      "week": "本週",
+      "month": "本月"
+    },
+    "periodEnd": {
+      "day": "日末",
+      "week": "週末",
+      "month": "月末"
+    },
+    "deltaVs": "{{pct}}% 對比{{period}}",
+    "mockMark": "模擬快照 · VITE_USE_MOCK"
+  },
+  "toggle": {
+    "aria": "週期"
+  },
+  "total": {
+    "label": "{{period}}支出",
+    "noPrior": "尚無上一週期",
+    "vs": "對比{{period}}",
+    "flat": "持平",
+    "burnNote": "<burn/> / 天（平均）· <days/>",
+    "daysObserved": {
+      "other": "觀察到 {{count}} 天"
+    }
+  },
+  "forecast": {
+    "label": "預測{{period}}",
+    "sub": "{{cap}} 上限的 {{pct}}% · 消耗速率 {{rate}}"
+  },
+  "budget": {
+    "label": "預算進度",
+    "today": "今天",
+    "month": "月初至今",
+    "ofCap": "{{used}} / {{cap}} 上限"
+  },
+  "section": {
+    "byDay": "按天支出",
+    "byDayNote": {
+      "other": "最近 {{count}} 天"
+    },
+    "byModel": "按模型支出",
+    "byModelNote": "token",
+    "topProjects": "支出最高的專案",
+    "topProjectsNote": "本週期",
+    "byApp": "按應用支出",
+    "byAppNote": "支出",
+    "failures": "執行在哪裡失敗",
+    "failuresNote": "斷點在哪"
+  },
+  "column": {
+    "spend": "支出",
+    "tokens": "token",
+    "share": "佔比"
+  },
+  "table": {
+    "app": "應用",
+    "model": "模型",
+    "project": "專案"
+  },
+  "byApp": {
+    "empty": "今天沒有支出"
+  },
+  "byModel": {
+    "empty": "本週期沒有模型支出",
+    "tokensTitle": "{{runs}} 次執行消耗 {{tokens}} token"
+  },
+  "topProjects": {
+    "empty": "本週期沒有專案支出",
+    "ofCap": "上限 {{cap}}",
+    "noCap": "無上限"
+  },
+  "byDay": {
+    "empty": "本週沒有支出",
+    "figure": {
+      "other": "<total/> / 最近 {{count}} 天 · 每天 <average/> · 最高 <peak/> 為 <spend/>"
+    },
+    "chartLabel": {
+      "other": "按天支出，美元。最近 {{count}} 天共 {{total}}，平均每天 {{average}}；最高 {{peak}} 為 {{spend}}。"
+    }
+  },
+  "failuresBlock": {
+    "empty": "今天沒有失敗"
+  }
+}

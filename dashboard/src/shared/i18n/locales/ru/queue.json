@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "повторить"
-  },
-  "errors": {
-    "unknown": "неизвестная ошибка"
-  },
   "workStatus": {
     "queued": "в очереди",
     "running": "выполняется",

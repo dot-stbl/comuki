@@ -48,7 +48,9 @@ export function DepthBand({ days, className }: DepthBandProps) {
           i18nKey="depth.figure"
           components={{
             today: (
-              <span className={styles.figureValue}>{String(readings.today)}</span>
+              <span className={styles.figureValue}>
+                {String(readings.today)}
+              </span>
             ),
             week: (
               <span className={styles.figureValue}>

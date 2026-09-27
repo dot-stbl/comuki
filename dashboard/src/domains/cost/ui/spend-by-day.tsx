@@ -1,3 +1,5 @@
+import { Trans, useTranslation } from "react-i18next"
+
 import { cn } from "@/shared/lib/utils"
 import {
   spendDayAverage,
@@ -29,6 +31,7 @@ export interface SpendByDayProps {
  * the auth-svc migration — and does not need a colour to be found.
  */
 export function SpendByDay({ days, className }: SpendByDayProps) {
+  const { t } = useTranslation("cost")
   const total = spendWeekTotal(days)
   const average = spendDayAverage(days)
   const peak = spendPeakDay(days)
@@ -36,7 +39,7 @@ export function SpendByDay({ days, className }: SpendByDayProps) {
   if (days.length === 0 || peak === null || average === null) {
     return (
       <p className={cn(styles.empty, className)} data-test="spend-by-day">
-        nothing spent this week
+        {t("byDay.empty")}
       </p>
     )
   }
@@ -44,11 +47,29 @@ export function SpendByDay({ days, className }: SpendByDayProps) {
   return (
     <div className={cn(styles.band, className)} data-test="spend-by-day">
       <p className={styles.figure}>
-        <span className={styles.figureValue}>${total.toFixed(2)}</span> over the
-        last {days.length} days ·{" "}
-        <span className={styles.figureValue}>${average.toFixed(2)}</span> a day
-        · heaviest <span className={styles.figureValue}>{peak.label}</span> at{" "}
-        <span className={styles.figureValue}>${peak.spend.toFixed(2)}</span>
+        <Trans
+          ns="cost"
+          i18nKey="byDay.figure"
+          values={{ count: days.length }}
+          components={{
+            total: (
+              <span
+                className={styles.figureValue}
+              >{`$${total.toFixed(2)}`}</span>
+            ),
+            average: (
+              <span
+                className={styles.figureValue}
+              >{`$${average.toFixed(2)}`}</span>
+            ),
+            peak: <span className={styles.figureValue}>{peak.label}</span>,
+            spend: (
+              <span
+                className={styles.figureValue}
+              >{`$${peak.spend.toFixed(2)}`}</span>
+            ),
+          }}
+        />
       </p>
 
       <BarSeries
@@ -58,11 +79,13 @@ export function SpendByDay({ days, className }: SpendByDayProps) {
           label: day.label,
           segments: [{ value: day.spend }],
         }))}
-        label={`Spend by day, dollars. $${total.toFixed(2)} over the last ${
-          days.length
-        } days, $${average.toFixed(2)} a day on average; heaviest ${
-          peak.label
-        } at $${peak.spend.toFixed(2)}.`}
+        label={t("byDay.chartLabel", {
+          total: `$${total.toFixed(2)}`,
+          count: days.length,
+          average: `$${average.toFixed(2)}`,
+          peak: peak.label,
+          spend: `$${peak.spend.toFixed(2)}`,
+        })}
       />
     </div>
   )

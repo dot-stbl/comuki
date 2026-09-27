@@ -160,16 +160,19 @@ export function RunDetailPage({ runId }: RunDetailPageProps) {
           <ScreenState
             kind="error"
             title={t("detail.errorTitle")}
-            description={requestFailureMessage(error, t("errors.unknown"))}
+            description={requestFailureMessage(
+              error,
+              t("errors.unknown", { ns: "common" })
+            )}
             inset="none"
             className={styles.stateFill}
             data-test="run-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="run-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}
@@ -198,7 +201,9 @@ export function RunDetailPage({ runId }: RunDetailPageProps) {
               <Trans
                 ns="runs"
                 i18nKey="detail.notFoundDescription"
-                components={{ id: <code className={styles.missing}>{runId}</code> }}
+                components={{
+                  id: <code className={styles.missing}>{runId}</code>,
+                }}
               />
             }
             hint={runId}

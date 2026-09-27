@@ -1,0 +1,184 @@
+{
+  "locale": {
+    "label": "Lingua"
+  },
+  "nav": {
+    "intake": "Intake",
+    "observe": "Osserva",
+    "configure": "Configura",
+    "platform": "Piattaforma",
+    "inbox": "Inbox",
+    "liveRuns": "Run attivi",
+    "queue": "Coda",
+    "approvals": "Approvazioni",
+    "cost": "Costi",
+    "sources": "Sorgenti",
+    "knowledge": "Conoscenza",
+    "settings": "Impostazioni",
+    "projects": "Progetti",
+    "identity": "Identità",
+    "compute": "Compute",
+    "models": "Modelli",
+    "sections": "Sezioni"
+  },
+  "crumb": {
+    "platform": "piattaforma",
+    "projects": "progetti",
+    "attention": "attention",
+    "liveRuns": "run attivi",
+    "tasks": "task",
+    "queue": "coda",
+    "observe": "osserva",
+    "identity": "identità",
+    "sources": "sorgenti",
+    "approvals": "approvazioni",
+    "configure": "configura",
+    "console": "console",
+    "onboard": "onboard",
+    "knowledge": "conoscenza",
+    "models": "modelli",
+    "compute": "compute",
+    "cost": "costi",
+    "settings": "impostazioni",
+    "new": "nuovo",
+    "newUser": "nuovo utente",
+    "grantRole": "concedi un ruolo",
+    "person": "persona",
+    "linkOidc": "collega un subject oidc",
+    "project": "progetto",
+    "source": "sorgente",
+    "worker": "worker",
+    "run": "run",
+    "newTicket": "nuovo ticket",
+    "newApiKey": "nuova api key",
+    "onboardRepo": "onboard di un repository"
+  },
+  "topbar": {
+    "home": "Comuki — home",
+    "newRun": "Nuova run",
+    "github": "github",
+    "githubOpens": "Comuki su GitHub — si apre in una nuova scheda"
+  },
+  "page": {
+    "breadcrumb": "Briciola di navigazione",
+    "showRail": "Mostra la barra di navigazione",
+    "hideRail": "Nascondi la barra di navigazione",
+    "resizeRail": "Ridimensiona la barra di navigazione"
+  },
+  "account": {
+    "label": "Account",
+    "named": "Account — {{name}}",
+    "settings": "Impostazioni",
+    "apiKeys": "Chiavi API",
+    "profile": "Profilo",
+    "signOut": "Esci"
+  },
+  "appearance": {
+    "label": "Aspetto",
+    "current": "Aspetto — {{mode}}",
+    "light": "Chiaro",
+    "dark": "Scuro",
+    "system": "Sistema"
+  },
+  "palette": {
+    "label": "Tavolozza",
+    "current": "Tavolozza — {{name}}"
+  },
+  "live": {
+    "demo": "Demo",
+    "polling": "Polling",
+    "mockOnly": "Dati sintetici in uso — bun run dev:real per passare ai reali",
+    "mockAndDown": "Dati sintetici in uso, backend non raggiungibile",
+    "down": "Backend non raggiungibile — mostro l'ultimo stato noto",
+    "pollingDown": "Gli aggiornamenti live sono giù — questa schermata si aggiorna ogni {{seconds}}s invece"
+  },
+  "search": {
+    "open": "Cerca — {{chord}}",
+    "label": "Cerca in Comuki",
+    "placeholder": "incolla un id, o nomina una schermata…",
+    "results": "Risultati",
+    "empty": "qui non c'è nulla che risponda a quello",
+    "keys": {
+      "move": "↑↓ sposta",
+      "open": "enter apri",
+      "close": "esc chiudi"
+    },
+    "band": {
+      "resolved": "vai a",
+      "section": "sezioni",
+      "act": "azioni",
+      "handoff": "ricerca"
+    },
+    "kind": {
+      "run": "run",
+      "workItem": "item di lavoro",
+      "worker": "worker",
+      "approval": "approvazione",
+      "project": "progetto",
+      "app": "app",
+      "person": "persona",
+      "apiKey": "api key",
+      "image": "immagine",
+      "section": "sezione",
+      "act": "azione",
+      "search": "ricerca"
+    },
+    "act": {
+      "newTask": "Nuovo task",
+      "newTaskHint": "metti un ticket nel backlog",
+      "newProject": "Nuovo progetto",
+      "newProjectHint": "registra un progetto",
+      "newUser": "Nuovo utente",
+      "newUserHint": "invita una persona",
+      "newApiKey": "Nuova api key",
+      "newApiKeyHint": "emetti una chiave",
+      "grantRole": "Concedi un ruolo",
+      "grantRoleHint": "dai accesso a qualcuno"
+    },
+    "resolvedHint": {
+      "liveRuns": "nelle run attive",
+      "claimQueue": "nella coda di claim",
+      "workerPool": "nel pool di worker",
+      "approvals": "nelle approvazioni",
+      "image": "worker su questa immagine",
+      "apiKeys": "nelle api key",
+      "people": "nelle persone",
+      "app": "run su questa app"
+    },
+    "handoffHint": {
+      "runs": "nelle run attive",
+      "queue": "nella coda",
+      "inbox": "nell'inbox"
+    }
+  },
+  "route": {
+    "attention": "Attention",
+    "console": "Console",
+    "onboard": "Onboard di un repository",
+    "approvals": "Approvazioni",
+    "compute": "Compute",
+    "cost": "Costi e guasti",
+    "identity": "Identità",
+    "grantRole": "Concedi un ruolo",
+    "newApiKey": "Nuova api key",
+    "newUser": "Nuovo utente",
+    "person": "Persona",
+    "linkOidc": "Collega un subject oidc",
+    "knowledge": "Conoscenza",
+    "models": "Modelli",
+    "projects": "Progetti",
+    "newProject": "Nuovo progetto",
+    "project": "Progetto",
+    "queue": "Coda e worker",
+    "worker": "Worker",
+    "liveRuns": "Run attive",
+    "run": "Run",
+    "settings": "Impostazioni",
+    "sources": "Sorgenti",
+    "connectSource": "Collega una sorgente",
+    "source": "Sorgente",
+    "newTicket": "Nuovo ticket",
+    "tasks": "Task",
+    "newTask": "Nuovo task"
+  }
+}

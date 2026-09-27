@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { SourceDetailPage } from "@/domains/sources"
@@ -17,16 +18,18 @@ export const Route = createFileRoute("/sources/$sourceId/")({
    something this section does, so a stale tab is the ordinary way to arrive
    with one rather than an error worth a route guard. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { sourceId } = Route.useParams()
 
   return (
     <RequirePermission
       permission="sources.view"
-      title="Source"
+      title={t("route.source")}
       crumbs={[
-        { label: "configure" },
-        { label: "sources", to: "/sources" },
-        { label: "source" },
+        { label: t("crumb.configure") },
+        { label: t("crumb.sources"), to: "/sources" },
+        { label: t("crumb.source") },
       ]}
     >
       <SourceDetailPage sourceId={sourceId} />

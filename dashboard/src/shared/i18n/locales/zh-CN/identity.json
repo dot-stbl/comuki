@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "重试",
-    "cancel": "取消"
-  },
-  "errors": {
-    "unknown": "未知错误"
-  },
   "userStatus": {
     "active": "活跃",
     "invited": "已邀请",

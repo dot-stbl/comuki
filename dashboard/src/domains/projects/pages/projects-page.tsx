@@ -256,14 +256,17 @@ export function ProjectsPage({ focus }: ProjectsPageProps) {
           <ScreenState
             kind="error"
             title={t("registry.errorTitle")}
-            description={requestFailureMessage(error, t("errors.unknown"))}
+            description={requestFailureMessage(
+              error,
+              t("errors.unknown", { ns: "common" })
+            )}
             inset="gutter"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="projects-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}

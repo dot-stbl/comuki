@@ -1,9 +1,5 @@
 {
-  "actions": {
-    "retry": "Réessayer"
-  },
   "errors": {
-    "unknown": "Erreur inconnue",
     "changeFailed": "Le changement a échoué."
   },
   "page": {
@@ -63,7 +59,6 @@
     "sentences": {
       "noAnswer": "l'api de capacité n'a pas répondu — aucun plafond lisible pour ce pool",
       "bothFull": "quota et cluster sont tous deux pleins — rien ne peut démarrer ici",
-
       "both": "quota et cluster s'accordent — de la place pour {{slots}}",
       "quotaFull": "le quota est le plafond — rien ne peut démarrer, et le cluster a encore {{slots}} libres",
       "quota": "le quota est le plafond — de la place pour {{slots}}, avec {{spare}} libres sur le cluster",
@@ -108,7 +103,6 @@
     "retireConfirm": "Retirer les inactifs",
     "retireCancel": "Les laisser montés",
     "reason": {
-
       "both": "l'image et le profiles ref ont bougé tous les deux",
       "image": "un release de retard sur l'image",
       "profiles": "même image, le profiles ref a bougé"

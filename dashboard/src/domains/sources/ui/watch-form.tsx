@@ -169,7 +169,7 @@ export function WatchForm({
             setMode(watch.mode)
           }}
         >
-          {t("actions.cancel")}
+          {t("actions.cancel", { ns: "common" })}
         </Button>
       </FormActions>
     </FormLayout>

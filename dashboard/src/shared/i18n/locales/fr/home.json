@@ -1,10 +1,4 @@
 {
-  "errors": {
-    "unknown": "erreur inconnue"
-  },
-  "actions": {
-    "retry": "réessayer"
-  },
   "header": {
     "title": "Garde",
     "crumb": "garde",

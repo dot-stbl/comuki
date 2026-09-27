@@ -1,4 +1,6 @@
 import type { KeyStatus, ProviderKey } from "@/domains/settings/model/types"
+import type { SettingsTranslator } from "@/domains/settings/model/translate"
+import { sharedSettingsT } from "@/domains/settings/model/translate"
 import type { DataColumn } from "@/shared/ui"
 
 import { KeyStatusMark } from "./settings-badges"
@@ -17,12 +19,17 @@ const KEY_STATUSES: KeyStatus[] = ["ok", "warn"]
  * no permission for a cell to ask about. The status cell says the provider's
  * own sentence rather than the enum, because `budget 67%` is a reading and
  * `warn` is only a category.
+ *
+ * Copy arrives as a `t` parameter (`dashboard-i18n` D7), defaulting to the
+ * shared instance.
  */
-export function createProviderKeyColumns(): DataColumn<ProviderKey>[] {
+export function createProviderKeyColumns(
+  t: SettingsTranslator = sharedSettingsT
+): DataColumn<ProviderKey>[] {
   return [
     {
       accessorKey: "provider",
-      header: "provider",
+      header: t("keys.column.provider"),
       cell: ({ row }) => (
         <span className={styles.name} title={row.original.provider}>
           {row.original.provider}
@@ -33,7 +40,7 @@ export function createProviderKeyColumns(): DataColumn<ProviderKey>[] {
         pinned: true,
         filter: {
           kind: "text",
-          placeholder: "filter provider, scope…",
+          placeholder: t("keys.filterPlaceholder"),
           match: (key, needle) =>
             `${key.provider} ${key.scope}`
               .toLowerCase()
@@ -43,7 +50,7 @@ export function createProviderKeyColumns(): DataColumn<ProviderKey>[] {
     },
     {
       accessorKey: "scope",
-      header: "scope",
+      header: t("keys.column.scope"),
       cell: ({ row }) => (
         <span className={styles.note} title={row.original.scope}>
           {row.original.scope}
@@ -53,7 +60,7 @@ export function createProviderKeyColumns(): DataColumn<ProviderKey>[] {
     },
     {
       accessorKey: "rotation",
-      header: "rotation",
+      header: t("keys.column.rotation"),
       cell: ({ row }) => (
         <span className={styles.faint}>{row.original.rotation}</span>
       ),
@@ -61,7 +68,7 @@ export function createProviderKeyColumns(): DataColumn<ProviderKey>[] {
     },
     {
       accessorKey: "status",
-      header: "status",
+      header: t("keys.column.status"),
       cell: ({ row }) => (
         <KeyStatusMark
           status={row.original.status}
@@ -72,7 +79,7 @@ export function createProviderKeyColumns(): DataColumn<ProviderKey>[] {
         width: 148,
         filter: {
           kind: "select",
-          placeholder: "all statuses",
+          placeholder: t("keys.allStatuses"),
           options: KEY_STATUSES.map((status) => ({
             value: status,
             label: status,

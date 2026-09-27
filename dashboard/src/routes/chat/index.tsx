@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { ChatPage } from "@/domains/chat"
@@ -13,11 +14,13 @@ export const Route = createFileRoute("/chat/")({
    project a given command lands in is decided per command, on the composer's
    scope chip and on the proposal it produces. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   return (
     <RequirePermission
       permission="chat.use"
-      title="Console"
-      crumbs={[{ label: "console" }]}
+      title={t("route.console")}
+      crumbs={[{ label: t("crumb.console") }]}
     >
       <ChatPage />
     </RequirePermission>

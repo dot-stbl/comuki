@@ -1,1 +1,120 @@
-{}
+{
+  "field": {
+    "required": "required"
+  },
+  "formDialog": {
+    "cancel": "Cancel"
+  },
+  "dialog": {
+    "close": "Close"
+  },
+  "copyButton": {
+    "copy": "copy",
+    "copied": "copied"
+  },
+  "codeBlock": {
+    "wrap": "wrap",
+    "showLess": "show less",
+    "showAll": {
+      "one": "show all {{count}} line",
+      "other": "show all {{count}} lines"
+    }
+  },
+  "skeleton": {
+    "loading": "Loading"
+  },
+  "forbidden": {
+    "subject": "This view",
+    "title": "{{subject}} is closed to your roles",
+    "description": "{{needs}} — ask for the role, or switch to a project where you already hold it."
+  },
+  "searchField": {
+    "clear": "Clear search"
+  },
+  "select": {
+    "any": "any"
+  },
+  "combobox": {
+    "openList": "open list"
+  },
+  "datePicker": {
+    "openCalendar": "Open calendar"
+  },
+  "splitPane": {
+    "resize": "Resize"
+  },
+  "dataTable": {
+    "empty": "No rows",
+    "noun": "row",
+    "selectColumn": "Select",
+    "selectAll": "Select all {{noun}}s",
+    "selectRow": "Select {{noun}} {{id}}",
+    "resizeColumn": "Resize {{label}} column",
+    "resizeHint": "Drag to resize, double-click to reset"
+  },
+  "toolbar": {
+    "filters": "filters",
+    "filtersLabel": "Filters",
+    "filtersActive": "Filters, {{count}} active",
+    "clearFilters": "Clear all filters",
+    "columns": "Columns",
+    "searchPlaceholder": "search {{label}}…",
+    "filterBy": "Filter by {{label}}",
+    "filterAll": "all {{label}}",
+    "filterPlaceholder": "filter {{label}}…",
+    "clearFilterTitle": "Clear the {{label}} filter",
+    "clearFilterLabel": "Clear the {{label}} filter: {{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "Back to a panel",
+    "fillWindow": "Fill the window",
+    "shrinkBack": "Shrink {{title}} back to a panel",
+    "fillWith": "Fill the window with {{title}}",
+    "resize": "Resize {{title}}",
+    "closeHint": "Close — escape",
+    "close": "Close {{title}}"
+  },
+  "evidencePane": {
+    "closeHint": "Close — escape",
+    "close": "Close evidence",
+    "empty": "no viewer for {{type}} — bytes live at the URL above",
+    "unknownType": "unknown",
+    "openNewTab": "open in a new tab",
+    "openNewTabLabel": "Open {{filename}} in a new tab"
+  },
+  "cron": {
+    "cadence": "cadence",
+    "custom": "Custom…",
+    "customDescription": "Pick the minute, hour, day, month, weekday.",
+    "value": "value",
+    "any": "any",
+    "everyDay": "every day",
+    "anyDay": "any day",
+    "part": {
+      "minute": "minute",
+      "hour": "hour",
+      "day": "day",
+      "month": "month",
+      "weekday": "weekday"
+    },
+    "weekday": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "preset": {
+      "hourly": "Hourly",
+      "hourlyDescription": "Every hour, on the hour.",
+      "daily": "Daily at 03:00",
+      "dailyDescription": "Once a day, in the project's quiet window.",
+      "weekly": "Weekly Monday",
+      "weeklyDescription": "Mondays at 03:00.",
+      "monthly": "Monthly 1st",
+      "monthlyDescription": "First of the month at 03:00."
+    }
+  }
+}

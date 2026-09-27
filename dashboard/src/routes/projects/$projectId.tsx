@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { ProjectDetailPage } from "@/domains/projects"
@@ -19,16 +20,18 @@ export const Route = createFileRoute("/projects/$projectId")({
    in a story and in a test without the generated route tree standing behind
    it. `LinkOidcPage` is the precedent. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { projectId } = Route.useParams()
 
   return (
     <RequirePermission
       permission="projects.view"
-      title="Project"
+      title={t("route.project")}
       crumbs={[
-        { label: "platform" },
-        { label: "projects", to: "/projects" },
-        { label: "project" },
+        { label: t("crumb.platform") },
+        { label: t("crumb.projects"), to: "/projects" },
+        { label: t("crumb.project") },
       ]}
     >
       <ProjectDetailPage projectId={projectId} />

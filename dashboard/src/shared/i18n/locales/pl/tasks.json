@@ -1,0 +1,79 @@
+{
+  "status": {
+    "new": "nowe",
+    "queued": "w kolejce",
+    "planning": "planowanie"
+  },
+  "priority": {
+    "low": "niski",
+    "normal": "zwykły",
+    "high": "wysoki"
+  },
+  "registry": {
+    "title": "Zadania",
+    "summary": "<total/> w backlogu · <fresh/> nowych",
+    "newTask": "Nowe zadanie",
+    "count": {
+      "one": "wyświetlono {{count}}",
+      "few": "wyświetlono {{count}}",
+      "many": "wyświetlono {{count}}",
+      "other": "wyświetlono {{count}}"
+    },
+    "loading": "Ładowanie backlogu",
+    "errorTitle": "Backlog się nie załadował",
+    "empty": {
+      "filtered": "żadne zadanie nie pasuje do bieżących filtrów",
+      "none": "backlog jest pusty"
+    }
+  },
+  "dispatch": {
+    "toast": "Wysłane do orkiestratora",
+    "fallback": "Orkiestrator tego nie przyjął.",
+    "tail": "Nic nie weszło do kolejki — zgłoszenie wciąż leży w backlogu."
+  },
+  "column": {
+    "source": "źródło",
+    "task": "zadanie",
+    "evidence": "materiał",
+    "project": "projekt",
+    "app": "aplikacja",
+    "priority": "priorytet",
+    "status": "status",
+    "age": "wiek",
+    "action": "akcja",
+    "filterPlaceholder": "filtruj tytuł, id, aplikację…",
+    "allProjects": "wszystkie projekty",
+    "allApps": "wszystkie aplikacje",
+    "allPriority": "wszystkie priorytety",
+    "allStatus": "wszystkie statusy",
+    "dispatch": "Wyślij",
+    "dispatchTask": "Wyślij {{title}}"
+  },
+  "create": {
+    "title": "Nowe zadanie",
+    "crumb": "nowe",
+    "summary": "Jedno zgłoszenie przed rojem: skąd przyszło, do backlogu którego projektu trafi i jak pilne jest.",
+    "toastCreated": "Zadanie utworzone",
+    "failureTail": "Nic nie weszło do kolejki — to, co wpisałeś, jest dokładnie takie, jak je zostawiłeś.",
+    "guardTitle": "Wyjść bez tworzenia zadania?",
+    "guardBody": "Tytuł i brief, które wpisałeś, nie są jeszcze nigdzie zapisane. Opuszczenie tej strony je porzuca i nic nie trafia do przyjęć.",
+    "guardConfirm": "Porzuć",
+    "guardCancel": "Edytuj dalej",
+    "submit": "Utwórz i dodaj do kolejki",
+    "cancel": "Anuluj",
+    "sourceLabel": "źródło",
+    "sourceNote": "skąd przyszło zgłoszenie. każda karta poza native oczekuje połączenia pilnującego tego dostawcy — zgłoszenie zapisane tutaj notuje, skąd przyszło, ale nie składa go tam.",
+    "ticketLabel": "zgłoszenie",
+    "ticketNote": "co zrobić, gdzie trafi, jak pilne.",
+    "briefLabel": "brief",
+    "briefNote": "kontekst, kryteria akceptacji, linki — dla człowieka, który to podniesie, nie dla formularza.",
+    "titleLabel": "tytuł",
+    "titlePlaceholder": "co zrobić, w jednej linii",
+    "projectLabel": "projekt",
+    "appLabel": "aplikacja",
+    "briefPlaceholder": "kontekst, kryteria akceptacji, linki…"
+  },
+  "priorityField": {
+    "label": "priorytet"
+  }
+}

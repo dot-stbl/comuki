@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "cancel": "取消",
-    "retry": "重试"
-  },
-  "errors": {
-    "unknown": "未知错误"
-  },
   "registry": {
     "title": "项目",
     "summary": "<count/> 个项目 · <runs/> 个运行中 · 今日 <spend/>",

@@ -10,6 +10,8 @@ export interface PeriodToggleProps {
   value: PeriodOption
   onChange: (next: PeriodOption) => void
   options: ReadonlyArray<{ value: PeriodOption; label: string; note?: string }>
+  /** The group's accessible name — "Period" in the active locale. */
+  ariaLabel?: string
   className?: string
   /** Right-hand annotation — the dashboard ships "vs previous: -3%" here. */
   trailing?: ReactNode
@@ -30,6 +32,7 @@ export function PeriodToggle({
   value,
   onChange,
   options,
+  ariaLabel,
   className,
   trailing,
 }: PeriodToggleProps) {
@@ -37,7 +40,7 @@ export function PeriodToggle({
     <div
       className={cn(styles.toggle, className)}
       role="group"
-      aria-label="Period"
+      aria-label={ariaLabel}
       data-test="period-toggle"
     >
       {options.map((option) => {

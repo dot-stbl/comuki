@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
+import { useTranslation } from "react-i18next"
 
 import type { ModelRoute } from "@/domains/settings/model/types"
 import {
@@ -68,13 +69,14 @@ export function RoutingPanel({
   onSave,
   save,
 }: RoutingPanelProps) {
+  const { t } = useTranslation("settings")
   const [filters, setFilters] = useState<DataTableFilterValues>({})
   const [columnVisibility, setColumnVisibility] =
     useState<DataTableColumnVisibility>({})
   const [sorting, setSorting] = useState<DataTableSorting>([])
   const [columnSizing, setColumnSizing] = useState<DataTableColumnSizing>({})
 
-  const columns = useMemo(() => createRoutingColumns(), [])
+  const columns = useMemo(() => createRoutingColumns(t), [t])
   const rows = useMemo(
     () => applyDataFilters(routes, filters, columns),
     [routes, filters, columns]
@@ -106,8 +108,8 @@ export function RoutingPanel({
       <Section
         variant="screen"
         data-test="settings-routing"
-        title="Model routing"
-        note="role → physical model"
+        title={t("routing.section")}
+        note={t("routing.note")}
       >
         <div className={styles.toolbar}>
           <DataTableToolbar
@@ -118,7 +120,7 @@ export function RoutingPanel({
             onColumnVisibilityChange={setColumnVisibility}
             trailing={
               <span className={tableStyles.count} data-test="routing-count">
-                {rows.length} shown
+                {t("routing.count", { count: rows.length })}
               </span>
             }
           />
@@ -137,8 +139,8 @@ export function RoutingPanel({
             onColumnSizingChange={setColumnSizing}
             emptyLabel={
               hasActiveFilters(filters)
-                ? "no roles match the current filters"
-                : "no role is routed"
+                ? t("routing.emptyFiltered")
+                : t("routing.empty")
             }
           />
         </div>
@@ -147,8 +149,8 @@ export function RoutingPanel({
       <Section
         variant="screen"
         data-test="settings-routing-edit"
-        title="Edit role → model map"
-        note="leading / worker / judge"
+        title={t("routing.editSection")}
+        note={t("routing.editNote")}
       >
         <form
           className={styles.form}
@@ -168,7 +170,7 @@ export function RoutingPanel({
               render={({ field, fieldState }) => (
                 <ComboboxField
                   id="leadModel"
-                  label="lead"
+                  label={t("routing.field.lead")}
                   value={field.value}
                   onValueChange={field.onChange}
                   options={MODEL_OPTIONS}
@@ -184,7 +186,7 @@ export function RoutingPanel({
               render={({ field, fieldState }) => (
                 <ComboboxField
                   id="workerModel"
-                  label="worker"
+                  label={t("routing.field.worker")}
                   value={field.value}
                   onValueChange={field.onChange}
                   options={MODEL_OPTIONS}
@@ -200,7 +202,7 @@ export function RoutingPanel({
               render={({ field, fieldState }) => (
                 <ComboboxField
                   id="judgeModel"
-                  label="judge"
+                  label={t("routing.field.judge")}
                   value={field.value}
                   onValueChange={field.onChange}
                   options={MODEL_OPTIONS}
@@ -223,16 +225,13 @@ export function RoutingPanel({
               denied={save.denial}
               loading={busy}
             >
-              Save routing
+              {t("routing.save")}
             </Button>
           </div>
         </form>
       </Section>
 
-      <Notice data-test="routing-escalation">
-        Escalation policy — 2 failed retries on worker escalate to lead. A red
-        type gate goes to a debug agent with a pinned revision.
-      </Notice>
+      <Notice data-test="routing-escalation">{t("routing.escalation")}</Notice>
     </div>
   )
 }

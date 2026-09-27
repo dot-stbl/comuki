@@ -1,0 +1,201 @@
+{
+  "errors": {
+    "saveDidNotLand": "Il salvataggio non è atterrato.",
+    "stopDidNotApply": "Lo stop non si è applicato."
+  },
+  "page": {
+    "title": "Impostazioni",
+    "summaryMock": "configurazione del control plane",
+    "summaryReal": "configurazione della piattaforma — read-only, fissata all'avvio",
+    "errorTitle": "Le impostazioni non si sono caricate",
+    "retry": "Riprova",
+    "tabsAria": "Sezioni delle impostazioni"
+  },
+  "tabs": {
+    "apps": "app",
+    "rules": "regole",
+    "autonomy": "autonomia",
+    "routing": "routing",
+    "budgets": "budget",
+    "keys": "chiavi",
+    "tracker": "tracker"
+  },
+  "toast": {
+    "routingSaved": "Routing salvato",
+    "routingSavedNote": "mappa ruolo → modello aggiornata (mock)",
+    "routingNotSaved": "Routing non salvato",
+    "budgetsSaved": "Budget salvati",
+    "budgetsSavedNote": "cap aggiornati (mock)",
+    "budgetsNotSaved": "Budget non salvati"
+  },
+  "apps": {
+    "section": "App",
+    "note": "read-only · il registro è dichiarato nel git del cliente",
+    "emptyFiltered": "nessuna app matcha i filtri correnti",
+    "empty": "il registro non dichiara alcuna app",
+    "count": "{{count}} mostrate",
+    "column": {
+      "app": "app",
+      "repo": "repo",
+      "stack": "stack",
+      "envs": "ambienti",
+      "deploy": "deploy"
+    },
+    "filterPlaceholder": "filtra app, repo, stack…",
+    "allTargets": "tutti i target",
+    "nowhere": "da nessuna parte"
+  },
+  "rules": {
+    "section": "Regole dello swarm",
+    "note": "read-only · le regole stanno nel git del cliente e cambiano via commit",
+    "conflicts": "Nessun conflitto trovato · {{count}} regole attive · gli ambiti non si sovrappongono.",
+    "emptyFiltered": "nessuna regola matcha i filtri correnti",
+    "empty": "il rule set è vuoto",
+    "count": "{{count}} mostrate",
+    "column": {
+      "rule": "regola",
+      "scope": "ambito",
+      "kind": "tipo",
+      "version": "versione",
+      "description": "descrizione"
+    },
+    "filterPlaceholder": "filtra regola, ambito, descrizione…",
+    "allScopes": "tutti gli ambiti",
+    "allKinds": "tutti i tipi"
+  },
+  "autonomy": {
+    "section": "Autonomia",
+    "note": "cosa è automatico · cosa serve a una persona",
+    "emptyFiltered": "nessuna classe di modifica matcha i filtri correnti",
+    "empty": "nessuna classe di modifica è classificata",
+    "count": "{{count}} mostrate",
+    "column": {
+      "changeClass": "classe di modifica",
+      "mode": "modalità"
+    },
+    "filterPlaceholder": "filtra classe di modifica…",
+    "allModes": "tutte le modalità"
+  },
+  "routing": {
+    "section": "Routing dei modelli",
+    "note": "ruolo → modello fisico",
+    "emptyFiltered": "nessun ruolo matcha i filtri correnti",
+    "empty": "nessun ruolo è instradato",
+    "count": "{{count}} mostrati",
+    "column": {
+      "role": "ruolo",
+      "model": "modello",
+      "usage": "uso"
+    },
+    "editSection": "Modifica la mappa ruolo → modello",
+    "editNote": "lead / worker / judge",
+    "field": {
+      "lead": "lead",
+      "worker": "worker",
+      "judge": "judge"
+    },
+    "save": "Salva routing",
+    "escalation": "Policy di escalation — 2 retry falliti sul worker scalano al lead. Un gate di tipo rosso va a un debug agent con una revisione pinnata."
+  },
+  "budgets": {
+    "readingSection": "Budget del proxy",
+    "readingNote": "cosa lo swarm ha speso oggi contro il cap globale",
+    "killSwitch": "Kill-switch",
+    "killHint": "Fermi forzati tutti i nuovi claim — ogni app, ogni task.",
+    "pause": "Pausa swarm",
+    "pauseHint": "Pausa morbida — i worker in corso finiscono; nessun nuovo container parte.",
+    "stopFailureTail": "Niente si è mosso — gli stop sono come erano.",
+    "killTitle": "Tirare il kill-switch?",
+    "killBody": "I nuovi claim si fermmano ora — ogni app, ogni task — e restano fermi finché l'interruttore non torna off. I worker a metà passo finiscono ciò che tengono; niente in coda viene annullato.",
+    "killConfirm": "Blocca i nuovi claim",
+    "killCancel": "Lascia i claim aperti",
+    "capsSection": "Cap di budget",
+    "capsNote": "il cap globale che legge il contatore · per-task e per-app lo raffinano",
+    "globalCap": "cap globale",
+    "globalCapHint": "Il contatore sopra misura la spesa contro questo cap.",
+    "refinements": "raffinamenti",
+    "perTask": "per task",
+    "perApp": "per app",
+    "save": "Salva budget",
+    "meter": {
+      "over": "oltre il cap",
+      "left": "{{left}} rimasti",
+      "stopped": "kill-switch on · nuovi claim bloccati",
+      "atCap": "kill-switch al cap"
+    }
+  },
+  "keys": {
+    "section": "Chiavi dei provider",
+    "note": "read-only · le chiavi arrivano dall'env, la rotazione gira nel proxy",
+    "emptyFiltered": "nessuna chiave matcha i filtri correnti",
+    "empty": "il proxy non tiene alcuna chiave di provider",
+    "count": "{{count}} mostrate",
+    "column": {
+      "provider": "provider",
+      "scope": "ambito",
+      "rotation": "rotazione",
+      "status": "stato"
+    },
+    "filterPlaceholder": "filtra provider, ambito…",
+    "allStatuses": "tutti gli stati"
+  },
+  "tracker": {
+    "section": "Sorgenti di intake",
+    "notice": "Un tracker collegato sincronizza i suoi ticket nel backlog · l'intake manuale resta aperto in ogni caso.",
+    "emptyTitle": "Nessun tracker è collegato",
+    "emptyDescription": "Niente sta sincronizzando ticket nel backlog. L'intake manuale è aperto in ogni caso — un tracker aggiunge solo una seconda porta.",
+    "connected": "connesso",
+    "synced": "sincronizzato {{when}}",
+    "sync": "Sincronizza",
+    "syncAria": "Sincronizza {{name}}",
+    "syncedToast": "{{name}} sincronizzato",
+    "syncedToastNote": "importate nuove issue (mock)",
+    "connect": "Collega",
+    "connectAria": "Collega {{name}}",
+    "connectToast": "Collega {{name}}",
+    "connectToastNote": "Flusso OAuth… (mock)"
+  },
+  "platform": {
+    "hint": "Read-only — ogni valore qui è configurato all'avvio. I cambi passano da configurazione e riavvio; niente su questa pagina scrive.",
+    "on": "on",
+    "off": "off",
+    "escalationOff": "off — il torchio è disabilitato ({{would}} si applicherebbe)",
+    "orchestration": {
+      "section": "orchestrazione",
+      "leaseTtl": "lease ttl",
+      "leaseTtlNote": "concesso al claim, esteso dall'heartbeat",
+      "reapInterval": "intervallo di reap",
+      "reapIntervalNote": "cadenza dello sweep del reaper dei lease",
+      "reapGrace": "grazia di reap",
+      "reapGraceNote": "margine oltre la scadenza prima che il reaper agisca",
+      "maxAttempts": "tentativi massimi",
+      "maxAttemptsNote": "claim prima che un item in stallo fallisca",
+      "escalationTimeout": "timeout di escalation",
+      "escalationTimeoutNote": "quanto una run può stare escalata prima dell'archiviazione automatica",
+      "escalationSweep": "sweep di escalation",
+      "escalationSweepNote": "cadenza dello sweep del torchio"
+    },
+    "compute": {
+      "section": "compute",
+      "provider": "provider",
+      "providerNote": "l'implementazione di compute che gira in v1",
+      "workerImage": "immagine worker",
+      "workerImageNote": "pinnata per digest in produzione",
+      "profilesRef": "ref dei profili",
+      "profilesRefNote": "il git ref dei profili pinnato",
+      "minIdle": "min idle",
+      "minIdleNote": "pavimento warm-idle per profilo",
+      "maxConcurrent": "max simultanei",
+      "maxConcurrentNote": "tetto di concorrenza per progetto",
+      "idleTtl": "idle ttl",
+      "idleTtlNote": "prima che un worker sia candidato al reaper",
+      "pollInterval": "intervallo di poll",
+      "pollIntervalNote": "tra i passaggi del supervisore"
+    },
+    "proxy": {
+      "section": "proxy",
+      "passthrough": "passthrough openai / anthropic",
+      "passthroughNote": "se il proxy è composto o meno"
+    }
+  }
+}

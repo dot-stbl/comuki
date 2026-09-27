@@ -1,1 +1,32 @@
-{}
+{
+  "panel": {
+    "emptyFiltered": "Aucune vérification ne passe les filtres actuels.",
+    "empty": "Aucune vérification n'est déclarée.",
+    "switch": "lancer le gate à chaque run",
+    "sourceLead": "Ces commandes sont déclarées dans le git de ce client et sont en lecture seule ici. En changer une est un commit dans leur dépôt — c'est exactement ce qui rend un run reproductible, donc il n'y a volontairement pas d'éditeur sur cet écran.",
+    "readAt": "lu {{when}}",
+    "openInGit": "Ouvrir dans git",
+    "off": "Le gate est éteint, donc rien ci-dessous ne s'exécute et aucun run n'est bloqué par lui. Le fichier est toujours dans git et les vérifications toujours déclarées — le réactiver recommence à les exécuter dès le prochain run.",
+    "emptyTitle": "Aucune vérification n'est déclarée",
+    "emptyDescription": "Le gate cherche <path/> dans <repo/> sur <ref/> et ne trouve rien. Commitez le fichier là-bas et il sera pris à la prochaine lecture — il n'y a nulle part ici pour en créer une.",
+    "count": "{{count}} affichées"
+  },
+  "column": {
+    "lastResult": "dernier résultat",
+    "anyResult": "n'importe quel résultat",
+    "check": "vérification",
+    "filterPlaceholder": "filtrer vérification, commande…",
+    "command": "commande",
+    "declaredIn": "déclarée dans",
+    "output": "sortie",
+    "neverReached": "aucun run n'a atteint cette vérification",
+    "when": "quand",
+    "took": "a pris",
+    "run": "run"
+  },
+  "result": {
+    "failed": "échoué",
+    "neverRan": "jamais exécutée",
+    "passed": "réussi"
+  }
+}

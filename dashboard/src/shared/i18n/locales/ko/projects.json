@@ -1,0 +1,164 @@
+{
+  "registry": {
+    "title": "프로젝트",
+    "summary": "<count/>개 프로젝트 · <runs/>개 런 진행 중 · 오늘 <spend/>",
+    "errorTitle": "레지스트리가 로드되지 않았습니다",
+    "newProject": "새 프로젝트",
+    "filterByTag": "태그로 필터",
+    "count": {
+      "other": "{{count}}개 표시됨"
+    },
+    "empty": {
+      "filtered": "현재 필터에 맞는 프로젝트가 없습니다",
+      "none": "아직 프로젝트가 없습니다"
+    }
+  },
+  "column": {
+    "slug": "slug",
+    "name": "이름",
+    "tags": "태그",
+    "inFlight": "진행 중",
+    "runs": "런",
+    "costToday": "오늘 비용",
+    "profiles": "프로필",
+    "created": "생성일",
+    "slugFilterPlaceholder": "slug, 이름, 리포지토리 필터…"
+  },
+  "identity": {
+    "icon": "아이콘",
+    "accentColour": "강조색",
+    "tags": "태그",
+    "repo": "git 프로필 리포지토리",
+    "iconPlaceholder": "🛰️ 또는 https://example.com/mark.png",
+    "platformDefaults": "플랫폼 기본값"
+  },
+  "mark": {
+    "stored": "저장된 아이콘",
+    "neutral": "프로젝트 마크",
+    "brand": "{{brand}} 마크"
+  },
+  "slug": {
+    "error": {
+      "required": "slug가 필요합니다",
+      "spaces": "공백 불가 — 하이픈을 사용하세요",
+      "lowercase": "slug는 소문자입니다",
+      "min": "최소 {{min}}자",
+      "max": "최대 {{max}}자",
+      "edges": "문자나 숫자로 시작하고 끝나야 합니다",
+      "pattern": "문자, 숫자, 단일 하이픈만 가능",
+      "taken": "그 slug는 이미 사용 중입니다"
+    }
+  },
+  "form": {
+    "nameLabel": "이름",
+    "slugLabel": "slug",
+    "namePlaceholder": "이 프로젝트가 무엇인지 몇 단어로",
+    "slugPlaceholder": "소문자, 하이픈, 공백 없음",
+    "slugHint": "제품의 모든 목록에서 열로 표시됩니다. 소문자, 숫자, 하이픈.",
+    "repoPlaceholder": "git@github.com:org/worker-profiles.git",
+    "repoHint": "선택 사항. 이 프로젝트의 워커 프로필을 작성하는 곳 — 비워 두면 플랫폼 기본값으로 실행됩니다.",
+    "iconHint": "선택 사항. 이모지 하나 또는 이미지 URL, slug 옆에 표시됩니다. 없으면 마크는 리포지토리 호스트에서 옵니다.",
+    "colorClear": "색 없음",
+    "colorHint": "선택 사항. 마크 옆 점을 칠하고 태그를 물들입니다 — 인터페이스는 절대 물들이지 않습니다.",
+    "tagsHint": "선택 사항. 이 프로젝트가 무엇인지 — Enter나 쉼표로 추가, Backspace로 마지막 항목 제거.",
+    "submit": "프로젝트 생성"
+  },
+  "tagEntry": {
+    "placeholder": "web, billing…",
+    "remove": "태그 {{tag}} 제거"
+  },
+  "create": {
+    "title": "새 프로젝트",
+    "crumb": "신규",
+    "summary": "프로젝트는 자신의 앱, 런, 예산을 소유합니다. slug는 다른 모든 곳에서 알려지는 이름입니다.",
+    "toastCreated": "프로젝트 생성됨",
+    "failureFallback": "프로젝트가 생성되지 않았습니다.",
+    "failureTail": "생성된 것은 없습니다 — 입력한 내용은 그대로 남아 있습니다.",
+    "guardTitle": "프로젝트를 만들지 않고 나갑니까?",
+    "guardBody": "입력한 이름, slug, 리포지토리는 아직 어디에도 저장되지 않았습니다. 이 페이지를 떠나면 버려집니다.",
+    "guardConfirm": "버리기",
+    "guardCancel": "계속 편집"
+  },
+  "detail": {
+    "fallbackTitle": "프로젝트",
+    "crumbFallback": "프로젝트",
+    "summary": "<slug/> · <created/>에 생성",
+    "notFoundTitle": "그 id의 프로젝트가 없습니다",
+    "notFoundDescription": "레지스트리에 <id/> 아래 아무것도 없습니다. 오래된 링크의 프로젝트 id로 여기 오는 것이 보통입니다 — 주소는 그것이 가리키던 프로젝트보다 오래 살아남고, 아직 존재하는 것들은 레지스트리에 있습니다.",
+    "notFoundBack": "프로젝트로 돌아가기",
+    "factsSection": "프로젝트 자체",
+    "editIdentity": "아이덴티티 편집",
+    "editIdentityFailure": "아이덴티티가 저장되지 않았습니다.",
+    "rolesSection": "이 프로젝트의 역할",
+    "rolesForbiddenSubject": "이 프로젝트의 역할",
+    "rolesHeld": {
+      "other": "{{count}}개 보유"
+    },
+    "fact": {
+      "slug": "slug",
+      "name": "이름",
+      "mark": "마크",
+      "created": "생성일",
+      "iconAbsent": "저장됨 없음",
+      "colourAbsent": "설정 안 됨",
+      "tagsAbsent": "아직 없음"
+    },
+    "rolesEmpty": "이 프로젝트에 역할을 가진 사람이 없습니다. 접근 가능한 사람은 모두 플랫폼 부여를 통해 접근합니다 — 플랫폼 부여는 어디서나 유효하고 여기 나열되지 않습니다.",
+    "rolesAll": "이 프로젝트의 모든 할당",
+    "rolesGrant": "역할 부여"
+  },
+  "editor": {
+    "iconHint": "이모지 하나 또는 이미지 URL. 비워 두면 현재 마크를 유지합니다.",
+    "colorClear": "저장된 색 유지",
+    "colorHint": "마크 옆 점을 칠하고 태그를 물들입니다 — 인터페이스는 절대 물들이지 않습니다.",
+    "tagsHint": "이 프로젝트가 무엇인지. 빈 목록을 저장하면 태그가 지워집니다.",
+    "save": "아이덴티티 저장"
+  },
+  "handoff": {
+    "section": "이 프로젝트의 작업이 있는 곳",
+    "counting": "집계 중",
+    "runsWhat": "라이브 런",
+    "runsCount": "<total/>개 중 <count/>개 진행 중",
+    "runsNote": "이 프로젝트로 좁힌 당직 목록 열기",
+    "queueWhat": "큐 & 워커",
+    "queueCount": "<items/>개 작업 항목 · <workers/>개 워커 가동",
+    "queueNote": "이 프로젝트로 좁힌 클레임 큐 열기",
+    "sourcesWhat": "소스",
+    "sourcesCount": "<count/>개 연결",
+    "sourcesNote": "이 프로젝트로 좁힌 인테이크 열기",
+    "costWhat": "비용 & 실패",
+    "costToday": "오늘 <spend/>",
+    "costNothing": "<dash/> 귀속된 것 없음",
+    "costNote": "수치는 이 프로젝트의 것 — 그 뒤의 리포트는 플랫폼의 것입니다"
+  },
+  "jobs": {
+    "section": "예약된 잡",
+    "unknown": "알 수 없음",
+    "counting": "집계 중",
+    "loading": "예약된 잡 로딩 중",
+    "errorTitle": "스케줄이 로드되지 않았습니다",
+    "statusEnabled": "활성",
+    "statusPaused": "일시정지",
+    "pause": "스케줄 일시정지",
+    "resume": "스케줄 재개",
+    "delete": "스케줄 삭제",
+    "emptyTitle": "시계에 따라 도는 것은 없습니다",
+    "emptyDescription": "이 프로젝트에서 스케줄이 자체적으로 작업을 시작하는 일은 없습니다. 여기서 도는 모든 것은 사람이 접수되거나 디스패치되었습니다.",
+    "create": "잡 예약",
+    "dialogDescription": "플랫폼이 이 프로젝트에 스스로 기록하는 cron 항목 — 브리프가 티켓이 되고, 프로필이 첫 단계가 됩니다.",
+    "dialogSubmit": "예약",
+    "cronLabel": "cron",
+    "cronHint": "다섯 필드 cron, 프로젝트 자체의 타임존 정책을 따릅니다. 프리셋을 고르거나 와이어를 직접 작성하세요.",
+    "profileLabel": "프로필 키",
+    "profilePlaceholder": "구현자",
+    "profileHint": "런이 시작하는 작업 항목 프로필 — 카탈로그는 클라이언트의 git에 있습니다.",
+    "briefLabel": "브리프 json",
+    "briefHint": "그대로 저장됩니다. 이 박스와 호스트 사이의 그 무엇도 건드리지 않습니다.",
+    "deleteTitle": "이 스케줄을 삭제합니까?",
+    "deleteBody": "<profile/>용 <cron/>의 발동이 멈추고 제거됩니다. 그것 때문에 이미 돌고 있는 작업은 건드리지 않습니다.",
+    "deleteCancel": "유지",
+    "configured": {
+      "other": "{{count}}개 구성됨"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "panel": {
+    "emptyFiltered": "Nessun controllo matcha i filtri correnti.",
+    "empty": "Nessun controllo è dichiarato.",
+    "switch": "esegui il gate su ogni run",
+    "sourceLead": "Questi comandi sono dichiarati nel git di questo cliente e qui sono read-only. Cambiarne uno è un commit nel loro repository — è ciò che rende una run riproducibile, quindi non c'è editor in questa schermata per scelta.",
+    "readAt": "letto {{when}}",
+    "openInGit": "Apri nel git",
+    "off": "Il gate è spento, quindi niente sotto viene eseguito e nessuna run ne è bloccata. Il file sta ancora nel git e i controlli sono ancora dichiarati — riaccenderlo li rimette in esecuzione dalla prossima run.",
+    "emptyTitle": "Nessun controllo è dichiarato",
+    "emptyDescription": "Il gate sta cercando <path/> in <repo/> a <ref/> e non ha trovato niente. Committa il file lì e viene raccolto alla prossima lettura — qui non c'è dove crearne uno.",
+    "count": "{{count}} mostrati"
+  },
+  "column": {
+    "lastResult": "ultimo risultato",
+    "anyResult": "qualsiasi risultato",
+    "check": "controllo",
+    "filterPlaceholder": "filtra controllo, comando…",
+    "command": "comando",
+    "declaredIn": "dichiarato in",
+    "output": "output",
+    "neverReached": "nessuna run ha raggiunto questo controllo",
+    "when": "quando",
+    "took": "impiegato",
+    "run": "run"
+  },
+  "result": {
+    "failed": "fallito",
+    "neverRan": "mai eseguito",
+    "passed": "passato"
+  }
+}

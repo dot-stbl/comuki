@@ -362,16 +362,19 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
           <ScreenState
             kind="error"
             title={t("registry.errorTitle")}
-            description={requestFailureMessage(error, t("errors.unknown"))}
+            description={requestFailureMessage(
+              error,
+              t("errors.unknown", { ns: "common" })
+            )}
             /* `none`: the screen's own body already pays for its room, the
                way the record and the hand-offs below do. */
             inset="none"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="project-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}

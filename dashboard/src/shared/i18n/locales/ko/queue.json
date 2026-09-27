@@ -1,0 +1,160 @@
+{
+  "workStatus": {
+    "queued": "큐 대기",
+    "running": "실행 중",
+    "blocked": "차단됨",
+    "failed": "실패",
+    "cancelled": "취소됨",
+    "succeeded": "성공"
+  },
+  "workerState": {
+    "busy": "바쁨",
+    "idle": "유휴",
+    "draining": "드레이닝",
+    "offline": "오프라인"
+  },
+  "registry": {
+    "title": "큐 & 워커",
+    "summary": "<queued/>개 대기 · <stalled/>개 5분 넘게 미클레임 · 워커 <total/>개, <idle/>개 유휴 · <lost/>개 하트비트 없음",
+    "errorTitle": "큐를 로드할 수 없습니다",
+    "loading": "큐 로딩 중",
+    "expandPool": "풀 펼치기",
+    "collapsePool": "풀 접기",
+    "resizePool": "워커 풀 크기 조절"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "이 프로필에 대기 중인 것 없음",
+      "filtered": "현재 필터에 맞는 작업 항목이 없습니다",
+      "none": "큐가 비어 있습니다"
+    },
+    "shown": {
+      "other": "{{count}}개 표시됨"
+    },
+    "waitingTooLong": {
+      "other": "{{count}}개가 오래 대기 중 · "
+    }
+  },
+  "queueColumn": {
+    "status": "상태",
+    "item": "항목",
+    "run": "런",
+    "project": "프로젝트",
+    "profile": "프로필",
+    "step": "단계",
+    "claimedBy": "클레임 주체",
+    "age": "경과",
+    "allStatuses": "전체 상태",
+    "allProjects": "전체 프로젝트",
+    "allProfiles": "전체 프로필",
+    "filterPlaceholder": "항목, 런, 단계 필터…"
+  },
+  "ageMeter": {
+    "stalled": "{{limit}} 넘게 대기 — 이 프로필의 워커가 클레임하지 않았습니다"
+  },
+  "lease": {
+    "noHeartbeat": "하트비트 없음 — lease가 만료되고 항목이 재큐됩니다",
+    "lostHeartbeat": "{{quiet}} 동안 하트비트 없음 — lease가 만료되고 항목이 재큐됩니다"
+  },
+  "depth": {
+    "label": "일별 큐 깊이",
+    "figure": "지금 <today/>개 대기 · 이번 주 <week/>까지 흐름",
+    "deepest": " · 오늘이 주 중 가장 깊음",
+    "chartLabel": "일별 큐 깊이, 클레임을 기다리는 항목. 오늘 {{today}}개 대기; 주는 {{weekMin}}~{{weekMax}}.",
+    "chartLabelDeepest": "일별 큐 깊이, 클레임을 기다리는 항목. 오늘 {{today}}개 대기 — {{weekMin}}~{{weekMax}}를 흐른 주 중 가장 깊은 날."
+  },
+  "poolStrip": {
+    "expandEmpty": "풀 펼치기. 가동 중인 워커가 없습니다.",
+    "expand": "풀 펼치기. 워커 {{total}}개: {{busy}}개 바쁨, {{draining}}개 드레이닝, {{idle}}개 유휴."
+  },
+  "workerColumn": {
+    "state": "상태",
+    "worker": "워커",
+    "project": "프로젝트",
+    "profile": "프로필",
+    "currentWork": "현재 작업",
+    "compute": "컴퓨트",
+    "handle": "핸들",
+    "image": "이미지",
+    "lease": "lease",
+    "up": "가동",
+    "actions": "작업",
+    "idle": "유휴",
+    "allStates": "전체 상태",
+    "allProjects": "전체 프로젝트",
+    "allProfiles": "전체 프로필",
+    "allProviders": "전체 프로바이더",
+    "filterPlaceholder": "워커, 핸들, 이미지 필터…",
+    "drain": "드레인",
+    "forceStop": "강제 중지",
+    "drainWorker": "{{id}} 드레인",
+    "forceStopWorker": "{{id}} 강제 중지"
+  },
+  "workersPanel": {
+    "count": "워커 {{shown}} / {{total}}",
+    "fallback": "풀이 받아들이지 않았습니다.",
+    "tail": "아무 것도 바뀌지 않았습니다 — 워커는 이전 상태입니다.",
+    "stopTitle": "이 워커를 강제 중지합니까?",
+    "stopIdle": "{{id}}이(가) 유휴입니다. 컨테이너는 지금 철거되며, 작업이 생기면 스케일이 다른 워커를 올립니다.",
+    "stopBusy": "{{id}}이(가) 런 {{runId}}에서 \"{{label}}\"을(를) 잡고 있습니다. 컨테이너는 지금 철거되고, lease는 해제되며, 항목은 다른 워커가 클레임하도록 큐로 돌아갑니다.",
+    "stopConfirm": "강제 중지",
+    "stopCancel": "계속 실행"
+  },
+  "workerEmpty": {
+    "clearFilters": "필터 지우기",
+    "filteredTitle": "필터에 맞는 워커가 없습니다",
+    "filteredDescription": {
+      "other": "풀은 살아 있습니다 — 워커 <pool/>개{{where}}가 돌고 있을 뿐, 이것들이 아닙니다."
+    },
+    "backlogTitle": "아직 워커가 없습니다",
+    "backlogDescription": {
+      "other": "min idle = <zero/>{{where}} — 작업이 있을 때까지 풀은 비어 있게 됩니다. 지금은 있습니다: <backlog/>개 항목이 클레임 없이 대기 중입니다. 스케일이 그것들을 잡을 워커를 올립니다."
+    },
+    "atRestTitle": "워커가 없고, 필요하지도 않습니다",
+    "atRestDescription": "min idle = <zero/>{{where}}이고 대기 중인 것이 없습니다. 빈 풀은 여기서는 장애가 아니라 설정된 휴식 상태입니다 — 컨테이너는 태스크마다 만들어지고 끝나면 철거됩니다.",
+    "underTargetTitle": "풀이 목표에 못 미칩니다",
+    "underTargetDescription": {
+      "other": "min idle = <minIdle/>{{where}}인데 가동 중인 워커가 없습니다. 이것은 휴식 상태가 아닙니다: 컴퓨트가 올리지 않고 있고, <backlog/>개 항목은 그때까지 기다립니다."
+    },
+    "onProject": " — {{project}}"
+  },
+  "worker": {
+    "loading": "워커 로딩 중",
+    "errorTitle": "풀을 로드할 수 없습니다",
+    "fallback": "풀이 받아들이지 않았습니다.",
+    "tail": "아무 것도 바뀌지 않았습니다 — 워커는 이전 상태입니다.",
+    "live": "라이브",
+    "container": "컨테이너",
+    "currentWork": "현재 작업",
+    "leaseLeft": "lease 남음",
+    "leaseNone": "클레임한 것이 없어 지킬 lease도 없습니다",
+    "sinceHeartbeat": "하트비트 이후",
+    "heartbeatStale": "{{limit}} 넘어 신호 없음",
+    "up": "가동",
+    "upNote": "컨테이너가 올라온 이후",
+    "compute": "컴퓨트",
+    "handle": "핸들",
+    "image": "이미지",
+    "imageNote": "이 이미지의 모든 컨테이너",
+    "profile": "프로필",
+    "profileNote": "클레임이 맞춰지는 축",
+    "project": "프로젝트",
+    "workNote": "큐가 이 페이로드로 보내지 않은 항목을 잡고 있습니다.",
+    "idle": "유휴",
+    "idleNote": "아무 것도 잡지 않고, 프로필에 맞는 다음 항목을 클레임할 준비가 되어 있습니다.",
+    "tornDownTitle": "이 컨테이너는 사라졌습니다",
+    "tornDownDescription": "이 페이지가 열려 있는 동안 <id/>이(가) 철거되었습니다. 멈춘 컨테이너는 보관되지 않습니다 — 돌아갈 기록이 없고, 그래야 하는 것입니다. 워커는 눈앞의 작업을 위해 올라오고 그것이 끝나거나 누군가 멈추면 제거됩니다. 이것은 실패가 아니라 풀이 설정대로 움직이는 것입니다.",
+    "tornDownHolding": "<label/>을(를) 잡고 있었습니다. 그 작업은 사라지지 않았습니다: lease가 해제되고 항목은 다른 워커가 클레임하도록 큐로 돌아갔습니다.",
+    "tornDownIdle": "사라질 때 유휴였습니다. 아무 것도 잡지 않았고 큐로 돌아간 것도 없습니다.",
+    "tornDownItem": "{{id}}",
+    "poolLink": "큐 & 워커",
+    "notFoundTitle": "<id/>라는 워커가 없습니다",
+    "notFoundDescription": "풀에 그 id로 응답하는 것이 없습니다. 워커는 휘발성입니다 — 하나의 작업을 위해 올라오고 그 후 제거됩니다. 그래서 어제 로그의 id, 오래된 북마크, 꼬리를 잃은 링크 모두 여기 도착하고, 그 어느 것도 잘못됐다는 뜻이 아닙니다.",
+    "notFoundLook": "풀에서 {{id}} 찾기",
+    "stopTitle": "이 워커를 강제 중지합니까?",
+    "stopIdle": "<id/>이(가) 유휴입니다. 컨테이너는 지금 철거되며, 작업이 생기면 스케일이 다른 워커를 올립니다.",
+    "stopBusy": "<id/>이(가) 런 <run/>에서 <label/>을(를) 잡고 있습니다. 컨테이너는 지금 철거되고, lease는 해제되며, 항목은 다른 워커가 클레임하도록 큐로 돌아갑니다.",
+    "stopConfirm": "강제 중지",
+    "stopCancel": "계속 실행"
+  }
+}

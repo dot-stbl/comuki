@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "cancel": "Cancel",
-    "retry": "Retry"
-  },
-  "errors": {
-    "unknown": "Unknown error"
-  },
   "registry": {
     "title": "Projects",
     "summary": "<count/> projects · <runs/> runs in flight · <spend/> today",

@@ -1,1 +1,20 @@
-{}
+{
+  "boards": {
+    "meta": "uid {{uid}} · Definition aktualisiert {{updated}}",
+    "openAria": "{{title}} öffnen",
+    "notImported": "noch nicht importiert"
+  },
+  "connect": {
+    "where": "{{base}} · Org {{org}} · geschrieben gegen grafana {{version}}",
+    "noGrafana": "Für diese Plattform ist kein Grafana konfiguriert, daher kann keines der Boards oben geöffnet werden. Ihre Definitionen existieren trotzdem — sie leben in unserem Repository, nicht in einer Datenbank —,also ist der Import der einzige Schritt zwischen hier und einem funktionierenden Board.",
+    "noBoards": "Grafana ist konfiguriert, aber noch keines der Boards wurde hineinimportiert. Nichts ist kaputt — die Definitionen liegen in unserem Repository, und der Import unten ist die ganze verbleibende Arbeit.",
+    "steps": {
+      "one": "Richten Sie ein Grafana auf den Metrik-Endpunkt der Plattform. Der Orchestrator dient prometheus-Metriken auf seinem eigenen Port aus; die Boards erwarten, dass diese Datasource <code>comuki</code> heißt.",
+      "two": "Importieren Sie die Board-Definitionen aus <path/> in <repo/>. Es ist gewöhnliches Dashboard-JSON — es wird absichtlich mit der Plattform versioniert, damit ein Board und die Metrik, die es liest, in einem Commit ändern.",
+      "three": "Behalten Sie die uids, die die Definitionen deklarieren. Diese Seite verlinkt per uid, und ein Board, das unter einer neuen importiert wurde, ist ein Board, das diese Seite nicht finden kann.",
+      "four": "Setzen Sie die Grafana-Base-URL in der Deployment-Konfiguration der Plattform. Sie ist es, die die Einträge oben in Links verwandelt."
+    },
+    "boardsLabel": "Board-Definitionen",
+    "openGrafana": "Grafana öffnen"
+  }
+}

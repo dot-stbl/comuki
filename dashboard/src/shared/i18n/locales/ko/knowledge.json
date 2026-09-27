@@ -1,0 +1,89 @@
+{
+  "page": {
+    "title": "지식",
+    "summary": "규칙 세트, 리비전, 평가 하네스",
+    "tabsLabel": "지식 섹션"
+  },
+  "tab": {
+    "library": "라이브러리",
+    "gate": "게이트"
+  },
+  "load": {
+    "errorTitle": "지식이 로드되지 않았습니다"
+  },
+  "search": {
+    "label": "규칙, 문서, 스킬 필터",
+    "placeholder": "규칙, 문서, 스킬 검색…",
+    "errorTitle": "검색이 응답하지 않았습니다",
+    "searching": "검색 중",
+    "emptyTitle": "일치 없음",
+    "emptySemantic": "라이브러리에 질의와 충분히 가까운 것이 없습니다.",
+    "emptyPlain": "고정된 규칙과 문서에 다른 질의를 해보세요.",
+    "sectionTitle": "시맨틱 일치",
+    "sectionNote": "코사인 유사도 상위 {{count}}개",
+    "count": "{{total}} 중 {{shown}}"
+  },
+  "revision": {
+    "section": "시행 중인 리비전",
+    "current": "현재 리비전",
+    "sub": "{{sdk}} · {{updated}}에 갱신",
+    "rules": "활성 규칙",
+    "rulesSub": "하드 {{hard}}개 · 소프트 {{soft}}개",
+    "reproducibility": "재현성",
+    "reproducibilitySub": "모든 런은 규칙 세트 + SDK를 고정합니다"
+  },
+  "entries": {
+    "section": "규칙, 문서, 스킬",
+    "updated": "{{updated}}에 갱신"
+  },
+  "sheet": {
+    "close": "항목 닫기",
+    "revisionAt": "리비전 @{{revision}}",
+    "scope": "범위",
+    "updated": "갱신"
+  },
+  "badge": {
+    "kind": {
+      "rule": "규칙",
+      "doc": "문서",
+      "skill": "스킬"
+    },
+    "ruleKind": {
+      "hard": "하드",
+      "soft": "소프트"
+    },
+    "pinned": "고정됨",
+    "pinnedAt": "@ {{revision}}에 고정",
+    "delta": {
+      "improved": "개선",
+      "regressed": "퇴보",
+      "noChange": "변화 없음"
+    }
+  },
+  "eval": {
+    "section": "골든 태스크",
+    "note": "규칙 편집의 전 → 후",
+    "empty": "이 리비전으로 골든 태스크가 실행된 적 없습니다",
+    "column": {
+      "task": "태스크",
+      "before": "전",
+      "after": "후",
+      "delta": "델타"
+    }
+  },
+  "gate": {
+    "errorTitle": "게이트를 로드할 수 없습니다",
+    "changeFailed": "변경이 실패했습니다.",
+    "nothingMoved": "아무 것도 움직이지 않았습니다 — 게이트는 이전 상태입니다.",
+    "intro": "런은 착륙하기 전에 클라이언트 자신의 검사를 통과해야 합니다. 검사는 그들의 리포지토리에 삽니다 — 다른 무엇과 같이 커밋되는 하나의 파일입니다. 그래서 이 섹션은 게이트를 켜고 끄고, 각 검사가 마지막에 무엇이라 말했는지 보여줍니다. 커맨드를 편집하는 것은 파일을 편집하는 일입니다. 아래 모든 섹션은 자기 파일이 어디 있는지 정확히 말합니다.",
+    "emptyTitle": "여기 게이트를 가진 프로젝트가 없습니다",
+    "emptyDescription": "이 세션의 프로젝트 어디에서도 클라이언트 자신의 검사를 선언하지 않았습니다. 그것들을 담은 파일을 커밋하는 순간 게이트가 나타납니다.",
+    "onToast": "게이트 켜짐",
+    "onToastDescription": "{{name}} — 런은 클라이언트의 검사를 통과해야 합니다",
+    "offToast": "게이트 꺼짐",
+    "offToastDescription": "{{name}} — 런은 클라이언트의 검사 없이 착륙합니다",
+    "summary": "게이트 <total/>개 중 <on/>개 켜짐 · 검사 <checks/>개 선언됨",
+    "summaryFailing": "<failing/>개 실패",
+    "summaryNeverRan": "<never/>개 미실행"
+  }
+}

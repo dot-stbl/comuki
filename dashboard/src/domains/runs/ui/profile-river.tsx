@@ -69,7 +69,11 @@ function narrowsAt(flow: ProfileFlow, index: number): boolean {
  */
 function composition(node: ProfileFlowNode, t: RunsTranslator): string[] {
   return SEGMENT_ORDER.filter((status) => node.poolByStatus[status] > 0).map(
-    (status) => t("river.poolEntry", { count: node.poolByStatus[status], status: t(`status.${status}`) })
+    (status) =>
+      t("river.poolEntry", {
+        count: node.poolByStatus[status],
+        status: t(`status.${status}`),
+      })
   )
 }
 

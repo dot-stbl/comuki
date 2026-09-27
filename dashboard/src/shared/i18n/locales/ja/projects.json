@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "cancel": "キャンセル",
-    "retry": "再試行"
-  },
-  "errors": {
-    "unknown": "不明なエラー"
-  },
   "registry": {
     "title": "プロジェクト",
     "summary": "<count/> プロジェクト · 実行中 <runs/> 件 · 本日 <spend/>",

@@ -102,7 +102,7 @@ export function useUserDisabledAct(): UserDisabledAct {
       title: t("disable.title"),
       body: asking ? t("disable.body", { email: asking.email }) : "",
       confirmLabel: t("disable.confirm"),
-      cancelLabel: t("actions.cancel"),
+      cancelLabel: t("actions.cancel", { ns: "common" }),
       onCancel: () => setAsking(null),
       onConfirm: confirm,
     },

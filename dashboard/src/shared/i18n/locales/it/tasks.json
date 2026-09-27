@@ -1,0 +1,78 @@
+{
+  "status": {
+    "new": "nuovo",
+    "queued": "in coda",
+    "planning": "pianificazione"
+  },
+  "priority": {
+    "low": "bassa",
+    "normal": "normale",
+    "high": "alta"
+  },
+  "registry": {
+    "title": "Task",
+    "summary": "<total/> in backlog · <fresh/> nuovi",
+    "newTask": "Nuovo task",
+    "count": {
+      "one": "{{count}} mostrato",
+      "many": "{{count}} mostrati",
+      "other": "{{count}} mostrati"
+    },
+    "loading": "Caricamento del backlog",
+    "errorTitle": "Il backlog non si è caricato",
+    "empty": {
+      "filtered": "nessun task matcha i filtri correnti",
+      "none": "il backlog è vuoto"
+    }
+  },
+  "dispatch": {
+    "toast": "Spedito all'orchestrator",
+    "fallback": "L'orchestrator non l'ha preso.",
+    "tail": "Niente è stato messo in coda — il ticket è ancora nel backlog."
+  },
+  "column": {
+    "source": "sorgente",
+    "task": "task",
+    "evidence": "evidenze",
+    "project": "progetto",
+    "app": "app",
+    "priority": "priorità",
+    "status": "stato",
+    "age": "età",
+    "action": "azione",
+    "filterPlaceholder": "filtra titolo, id, app…",
+    "allProjects": "tutti i progetti",
+    "allApps": "tutte le app",
+    "allPriority": "tutte le priorità",
+    "allStatus": "tutti gli stati",
+    "dispatch": "Spedisci",
+    "dispatchTask": "Spedisci {{title}}"
+  },
+  "create": {
+    "title": "Nuovo task",
+    "crumb": "nuovo",
+    "summary": "Un ticket davanti allo swarm: da dove arriva, in quale backlog di progetto atterra e quanto è urgente.",
+    "toastCreated": "Task creato",
+    "failureTail": "Niente è stato messo in coda — quello che hai scritto è esattamente come l'hai lasciato.",
+    "guardTitle": "Uscire senza creare il task?",
+    "guardBody": "Il titolo e il brief che hai scritto non sono ancora salvati da nessuna parte. Uscendo da questa pagina li perdi, e niente raggiunge l'intake.",
+    "guardConfirm": "Scarta",
+    "guardCancel": "Continua a modificare",
+    "submit": "Crea e metti in coda",
+    "cancel": "Annulla",
+    "sourceLabel": "sorgente",
+    "sourceNote": "da dove arriva il ticket. ogni scheda tranne la native si aspetta una connessione che osservi quel provider — scrivere un ticket qui registra da dove viene, non ne deposita uno là.",
+    "ticketLabel": "il ticket",
+    "ticketNote": "cosa fare, dove atterra, quanto è urgente.",
+    "briefLabel": "brief",
+    "briefNote": "contesto, criteri di accettazione, link — per chi lo prenderà in carico, non per il form.",
+    "titleLabel": "titolo",
+    "titlePlaceholder": "cosa fare, in una riga",
+    "projectLabel": "progetto",
+    "appLabel": "app",
+    "briefPlaceholder": "contesto, criteri di accettazione, link…"
+  },
+  "priorityField": {
+    "label": "priorità"
+  }
+}

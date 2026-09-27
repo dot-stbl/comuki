@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import type { CostBudget, CostHeat } from "@/domains/cost/model/cost"
 import { budgetHeat } from "@/domains/cost/model/cost"
 import { CostStat } from "@/domains/cost/ui/cost-stat"
@@ -39,6 +41,7 @@ export function BudgetProgress({
   monthCap,
   className,
 }: BudgetProgressProps) {
+  const { t } = useTranslation("cost")
   const todayBudget: CostBudget = { used: todayBurn, cap: todayCap }
   const heat: CostHeat = budgetHeat(todayBudget)
   const todayShare = todayCap > 0 ? todayBurn / todayCap : 1
@@ -47,7 +50,7 @@ export function BudgetProgress({
   return (
     <CostStat
       name="budget"
-      label="Budget progress"
+      label={t("budget.label")}
       prefix="$"
       value={todayBurn.toFixed(0)}
       /* The cap is the context the figure is read against, not a second
@@ -58,16 +61,22 @@ export function BudgetProgress({
       sub={
         <>
           <span className={styles.line}>
-            <span className={styles.key}>today</span>{" "}
+            <span className={styles.key}>{t("budget.today")}</span>{" "}
             <span className={styles.value}>
-              ${todayBurn.toFixed(0)} of ${todayCap.toFixed(0)} cap
+              {t("budget.ofCap", {
+                used: `$${todayBurn.toFixed(0)}`,
+                cap: `$${todayCap.toFixed(0)}`,
+              })}
               {todayCap > 0 ? ` · ${Math.round(todayShare * 100)}%` : ""}
             </span>
           </span>
           <span className={styles.line}>
-            <span className={styles.key}>month-to-date</span>{" "}
+            <span className={styles.key}>{t("budget.month")}</span>{" "}
             <span className={styles.value}>
-              ${monthToDate.toFixed(0)} of ${monthCap.toFixed(0)} cap
+              {t("budget.ofCap", {
+                used: `$${monthToDate.toFixed(0)}`,
+                cap: `$${monthCap.toFixed(0)}`,
+              })}
               {monthCap > 0 ? ` · ${Math.round(monthShare * 100)}%` : ""}
             </span>
           </span>

@@ -1,1 +1,201 @@
-{}
+{
+  "errors": {
+    "saveDidNotLand": "El guardado no llegó.",
+    "stopDidNotApply": "El stop no se aplicó."
+  },
+  "page": {
+    "title": "Ajustes",
+    "summaryMock": "configuración del plano de control",
+    "summaryReal": "configuración de la plataforma — solo lectura, fijada al arrancar",
+    "errorTitle": "Los ajustes no cargaron",
+    "retry": "Reintentar",
+    "tabsAria": "Secciones de ajustes"
+  },
+  "tabs": {
+    "apps": "apps",
+    "rules": "reglas",
+    "autonomy": "autonomía",
+    "routing": "enrutado",
+    "budgets": "presupuestos",
+    "keys": "claves",
+    "tracker": "trackers"
+  },
+  "toast": {
+    "routingSaved": "Enrutado guardado",
+    "routingSavedNote": "mapa rol → modelo actualizado (simulado)",
+    "routingNotSaved": "Enrutado no guardado",
+    "budgetsSaved": "Presupuestos guardados",
+    "budgetsSavedNote": "topes actualizados (simulado)",
+    "budgetsNotSaved": "Presupuestos no guardados"
+  },
+  "apps": {
+    "section": "Apps",
+    "note": "solo lectura · el registro se declara en el git del cliente",
+    "emptyFiltered": "ninguna app pasa los filtros actuales",
+    "empty": "el registro no declara ninguna app",
+    "count": "{{count}} mostradas",
+    "column": {
+      "app": "app",
+      "repo": "repo",
+      "stack": "stack",
+      "envs": "entornos",
+      "deploy": "despliegue"
+    },
+    "filterPlaceholder": "filtrar app, repo, stack…",
+    "allTargets": "todos los destinos",
+    "nowhere": "a ninguno"
+  },
+  "rules": {
+    "section": "Reglas del enjambre",
+    "note": "solo lectura · las reglas viven en el git del cliente y cambian por commit",
+    "conflicts": "Sin conflictos · {{count}} reglas activas · los ámbitos no se solapan.",
+    "emptyFiltered": "ninguna regla pasa los filtros actuales",
+    "empty": "el conjunto de reglas está vacío",
+    "count": "{{count}} mostradas",
+    "column": {
+      "rule": "regla",
+      "scope": "ámbito",
+      "kind": "tipo",
+      "version": "versión",
+      "description": "descripción"
+    },
+    "filterPlaceholder": "filtrar regla, ámbito, descripción…",
+    "allScopes": "todos los ámbitos",
+    "allKinds": "todos los tipos"
+  },
+  "autonomy": {
+    "section": "Autonomía",
+    "note": "qué es automático · qué necesita una persona",
+    "emptyFiltered": "ninguna clase de cambio pasa los filtros actuales",
+    "empty": "ninguna clase de cambio está clasificada",
+    "count": "{{count}} mostradas",
+    "column": {
+      "changeClass": "clase de cambio",
+      "mode": "modo"
+    },
+    "filterPlaceholder": "filtrar clase de cambio…",
+    "allModes": "todos los modos"
+  },
+  "routing": {
+    "section": "Enrutado de modelos",
+    "note": "rol → modelo físico",
+    "emptyFiltered": "ningún rol pasa los filtros actuales",
+    "empty": "ningún rol está enrutado",
+    "count": "{{count}} mostrados",
+    "column": {
+      "role": "rol",
+      "model": "modelo",
+      "usage": "uso"
+    },
+    "editSection": "Editar el mapa rol → modelo",
+    "editNote": "líder / worker / juez",
+    "field": {
+      "lead": "líder",
+      "worker": "worker",
+      "judge": "juez"
+    },
+    "save": "Guardar enrutado",
+    "escalation": "Política de escalado — 2 reintentos fallidos en el worker escalan al líder. Una compuerta de tipos en rojo va a un agente de depuración con una revisión fijada."
+  },
+  "budgets": {
+    "readingSection": "Presupuesto del proxy",
+    "readingNote": "lo que el enjambre ha gastado hoy contra el tope global",
+    "killSwitch": "Kill-switch",
+    "killHint": "Parada dura de todos los claims nuevos — cada app, cada tarea.",
+    "pause": "Pausar el enjambre",
+    "pauseHint": "Pausa suave — los workers en marcha terminan; no arranca ningún contenedor nuevo.",
+    "stopFailureTail": "Nada se movió — los stops quedaron como estaban.",
+    "killTitle": "¿Lanzar el kill-switch?",
+    "killBody": "Los claims nuevos se detienen ahora — cada app, cada tarea — y siguen detenidos hasta que el switch se vuelva a apagar. Los workers a mitad de paso terminan lo que sostienen; nada en cola se cancela.",
+    "killConfirm": "Bloquear claims nuevos",
+    "killCancel": "Dejar los claims abiertos",
+    "capsSection": "Topes de presupuesto",
+    "capsNote": "el tope global que lee el medidor · por-tarea y por-app lo refinan",
+    "globalCap": "tope global",
+    "globalCapHint": "El medidor de arriba mide el gasto contra este tope.",
+    "refinements": "refinamientos",
+    "perTask": "por tarea",
+    "perApp": "por app",
+    "save": "Guardar presupuestos",
+    "meter": {
+      "over": "sobre el tope",
+      "left": "quedan {{left}}",
+      "stopped": "kill-switch activado · claims nuevos bloqueados",
+      "atCap": "kill-switch en el tope"
+    }
+  },
+  "keys": {
+    "section": "Claves de proveedores",
+    "note": "solo lectura · las claves vienen de env, la rotación corre en el proxy",
+    "emptyFiltered": "ninguna clave pasa los filtros actuales",
+    "empty": "el proxy no guarda ninguna clave de proveedor",
+    "count": "{{count}} mostradas",
+    "column": {
+      "provider": "proveedor",
+      "scope": "ámbito",
+      "rotation": "rotación",
+      "status": "estado"
+    },
+    "filterPlaceholder": "filtrar proveedor, ámbito…",
+    "allStatuses": "todos los estados"
+  },
+  "tracker": {
+    "section": "Fuentes de intake",
+    "notice": "Un tracker conectado sincroniza sus tickets al backlog · el intake manual queda abierto en cualquier caso.",
+    "emptyTitle": "Ningún tracker está conectado",
+    "emptyDescription": "Nada está sincronizando tickets al backlog. El intake manual queda abierto en cualquier caso — un tracker solo añade una segunda puerta.",
+    "connected": "conectado",
+    "synced": "sincronizado {{when}}",
+    "sync": "Sincronizar",
+    "syncAria": "Sincronizar {{name}}",
+    "syncedToast": "{{name}} sincronizado",
+    "syncedToastNote": "nuevos issues importados (simulado)",
+    "connect": "Conectar",
+    "connectAria": "Conectar {{name}}",
+    "connectToast": "Conectar {{name}}",
+    "connectToastNote": "flujo OAuth… (simulado)"
+  },
+  "platform": {
+    "hint": "Solo lectura — cada valor aquí se configura al arrancar. Los cambios pasan por configuración y un reinicio; nada en esta página escribe.",
+    "on": "sí",
+    "off": "no",
+    "escalationOff": "apagado — el trinquete está deshabilitado (se aplicaría {{would}})",
+    "orchestration": {
+      "section": "orquestación",
+      "leaseTtl": "ttl del lease",
+      "leaseTtlNote": "entregado al reclamar, extendido por latido",
+      "reapInterval": "intervalo de siega",
+      "reapIntervalNote": "cadencia del barrido del segador de leases",
+      "reapGrace": "gracia de siega",
+      "reapGraceNote": "margen tras expirar antes de que actúe el segador",
+      "maxAttempts": "intentos máx.",
+      "maxAttemptsNote": "claims antes de que un elemento atascado falle",
+      "escalationTimeout": "timeout de escalado",
+      "escalationTimeoutNote": "cuánto puede permanecer escalado un run antes del autoarchivo",
+      "escalationSweep": "barrido de escalado",
+      "escalationSweepNote": "cadencia del barrido del trinquete"
+    },
+    "compute": {
+      "section": "cómputo",
+      "provider": "proveedor",
+      "providerNote": "la implementación de cómputo que v1 ejecuta",
+      "workerImage": "imagen del worker",
+      "workerImageNote": "fijada por digest en producción",
+      "profilesRef": "ref de profiles",
+      "profilesRefNote": "el git-ref de profiles fijado",
+      "minIdle": "min idle",
+      "minIdleNote": "piso de reposo caliente por perfil",
+      "maxConcurrent": "concurrencia máx.",
+      "maxConcurrentNote": "tope de concurrencia por proyecto",
+      "idleTtl": "ttl de reposo",
+      "idleTtlNote": "antes de que un worker sea candidato del segador",
+      "pollInterval": "intervalo de sondeo",
+      "pollIntervalNote": "entre pasadas del supervisor"
+    },
+    "proxy": {
+      "section": "proxy",
+      "passthrough": "openai / anthropic passthrough",
+      "passthroughNote": "si el proxy está compuesto o no"
+    }
+  }
+}

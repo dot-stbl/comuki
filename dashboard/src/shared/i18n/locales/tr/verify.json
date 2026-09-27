@@ -1,0 +1,32 @@
+{
+  "panel": {
+    "emptyFiltered": "Geçerli filtrelerle eşleşen kontrol yok.",
+    "empty": "Bildirilmiş kontrol yok.",
+    "switch": "kapıyı her çalıştırmada koş",
+    "sourceLead": "Bu komutlar bu istemcinin git'inde bildirilir ve burada salt okunurdur. Birini değiştirmek onların deposunda bir commit'tir — bir çalıştırmayı tekrarlanabilir yapan da budur; dolayısıyla bu ekranda tasarımdan ötürü bir düzenleyici yoktur.",
+    "readAt": "{{when}} tarihinde okundu",
+    "openInGit": "Git'te aç",
+    "off": "Kapı kapalı; dolayısıyla aşağıdaki hiçbir şey koşmaz ve hiçbir çalıştırma onun tarafından engellenmez. Dosya hâlâ git'te ve kontroller hâlâ bildirili — geri açmak, onları bir sonraki çalıştırmadan itibaren yeniden koşmayı başlatır.",
+    "emptyTitle": "Bildirilmiş kontrol yok",
+    "emptyDescription": "Kapı, <repo/> içinde <ref/> ile <path/> yolunu arıyor ve bir şey bulamadı. Dosyayı oraya commit'leyin; bir sonraki okumada devralınır — burada bir tane yaratılacak yer yoktur.",
+    "count": "{{count}} gösteriliyor"
+  },
+  "column": {
+    "lastResult": "son sonuç",
+    "anyResult": "herhangi bir sonuç",
+    "check": "kontrol",
+    "filterPlaceholder": "kontrol, komut filtrele…",
+    "command": "komut",
+    "declaredIn": "bildirildiği yer",
+    "output": "çıktı",
+    "neverReached": "hiçbir çalıştırma bu kontrole ulaşmadı",
+    "when": "ne zaman",
+    "took": "sürdü",
+    "run": "çalıştırma"
+  },
+  "result": {
+    "failed": "başarısız",
+    "neverRan": "hiç koşmadı",
+    "passed": "geçti"
+  }
+}

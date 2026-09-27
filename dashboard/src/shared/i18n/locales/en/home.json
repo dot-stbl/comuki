@@ -1,10 +1,4 @@
 {
-  "errors": {
-    "unknown": "Unknown error"
-  },
-  "actions": {
-    "retry": "Retry"
-  },
   "header": {
     "title": "Attention",
     "crumb": "attention",

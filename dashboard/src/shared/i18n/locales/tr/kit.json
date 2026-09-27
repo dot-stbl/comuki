@@ -1,0 +1,119 @@
+{
+  "field": {
+    "required": "zorunlu"
+  },
+  "formDialog": {
+    "cancel": "İptal"
+  },
+  "dialog": {
+    "close": "Kapat"
+  },
+  "copyButton": {
+    "copy": "kopyala",
+    "copied": "kopyalandı"
+  },
+  "codeBlock": {
+    "wrap": "sarma",
+    "showLess": "daha az göster",
+    "showAll": {
+      "other": "tüm {{count}} satırı göster"
+    }
+  },
+  "skeleton": {
+    "loading": "Yükleniyor"
+  },
+  "forbidden": {
+    "subject": "Bu görünüm",
+    "title": "{{subject}}, rollerinize kapalı",
+    "description": "{{needs}} — rolü isteyin ya da bu role zaten sahip olduğunuz bir projeye geçin."
+  },
+  "searchField": {
+    "clear": "Aramayı temizle"
+  },
+  "select": {
+    "any": "herhangi"
+  },
+  "combobox": {
+    "openList": "listeyi aç"
+  },
+  "datePicker": {
+    "openCalendar": "Takvimi aç"
+  },
+  "splitPane": {
+    "resize": "Yeniden boyutlandır"
+  },
+  "dataTable": {
+    "empty": "Satır yok",
+    "noun": "satır",
+    "selectColumn": "Seç",
+    "selectAll": "tüm {{noun}} satırlarını seç",
+    "selectRow": "{{noun}} {{id}} seç",
+    "resizeColumn": "{{label}} sütununu yeniden boyutlandır",
+    "resizeHint": "Yeniden boyutlandırmak için sürükleyin, sıfırlamak için çift tıklayın"
+  },
+  "toolbar": {
+    "filters": "filtreler",
+    "filtersLabel": "Filtreler",
+    "filtersActive": "Filtreler, {{count}} etkin",
+    "clearFilters": "Tüm filtreleri temizle",
+    "columns": "Sütunlar",
+    "searchPlaceholder": "{{label}} ara…",
+    "filterBy": "{{label}} ölçütüne göre filtrele",
+    "filterAll": "tüm {{label}}",
+    "filterPlaceholder": "{{label}} filtrele…",
+    "clearFilterTitle": "{{label}} filtresini temizle",
+    "clearFilterLabel": "{{label}} filtresini temizle: {{value}}"
+  },
+  "bottomSheet": {
+    "backToPanel": "Panele geri dön",
+    "fillWindow": "Pencereyi doldur",
+    "shrinkBack": "{{title}} ögesini panele geri küçült",
+    "fillWith": "Pencereyi {{title}} ile doldur",
+    "resize": "{{title}} boyutlandır",
+    "closeHint": "Kapat — escape",
+    "close": "{{title}} kapat"
+  },
+  "evidencePane": {
+    "closeHint": "Kapat — escape",
+    "close": "Kanıtı kapat",
+    "empty": "{{type}} için görüntüleyici yok — baytlar yukarıdaki url'de durur",
+    "unknownType": "bilinmeyen",
+    "openNewTab": "yeni sekmede aç",
+    "openNewTabLabel": "{{filename}} dosyasını yeni sekmede aç"
+  },
+  "cron": {
+    "cadence": "tekrar",
+    "custom": "Özel…",
+    "customDescription": "Dakikayı, saati, günü, ayı, hafta gününü seçin.",
+    "value": "değer",
+    "any": "herhangi",
+    "everyDay": "her gün",
+    "anyDay": "herhangi bir gün",
+    "part": {
+      "minute": "dakika",
+      "hour": "saat",
+      "day": "gün",
+      "month": "ay",
+      "weekday": "hafta günü"
+    },
+    "weekday": {
+      "sun": "Paz",
+      "mon": "Pzt",
+      "tue": "Sal",
+      "wed": "Çar",
+      "thu": "Per",
+      "fri": "Cum",
+      "sat": "Cmt"
+    },
+    "preset": {
+      "hourly": "Saatlik",
+      "hourlyDescription": "Her saat, tam saatte.",
+      "daily": "Her gün 03:00",
+      "dailyDescription": "Günde bir kez, projenin sessiz penceresinde.",
+      "weekly": "Haftalık pazartesi",
+      "weeklyDescription": "Pazartesileri 03:00.",
+      "monthly": "Aylık 1'inde",
+      "monthlyDescription": "Ayın birinci günü 03:00."
+    }
+  }
+}

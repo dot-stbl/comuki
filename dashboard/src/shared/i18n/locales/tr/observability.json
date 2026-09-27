@@ -1,0 +1,20 @@
+{
+  "boards": {
+    "meta": "uid {{uid}} · tanım güncellendi {{updated}}",
+    "openAria": "{{title}} aç",
+    "notImported": "henüz içe aktarılmadı"
+  },
+  "connect": {
+    "where": "{{base}} · org {{org}} · grafana {{version}} sürümüne karşı yazıldı",
+    "noGrafana": "Bu platform için yapılandırılmış bir grafana yok; dolayısıyla yukarıdaki panolardan hiçbiri henüz açılamaz. Tanımları hâlâ var — bizim depoda yaşarlar, bir veritabanında değil — dolayısıyla içe aktarmak, buradan çalışan bir panoya giden tek adımdır.",
+    "noBoards": "Grafana yapılandırılmış ve panolardan hiçbiri henüz içine aktarılmamış. Bozuk bir şey yok — tanımlar bizim depoda ve aşağıdaki içe aktarma, geriye kalan işin tamamıdır.",
+    "steps": {
+      "one": "Bir grafana'yı platformun metrik uç noktasına yönlendirin. Orkestratör prometheus metriklerini kendi portunda sunar; panolar o veri kaynağının <code>comuki</code> adını taşımasını bekler.",
+      "two": "Pano tanımlarını <repo/> içindeki <path/> yolundan içe aktarın. Bunlar sıradan dashboard json'larıdır — bir pano ve okuduğu metrik bilinçli olarak tek bir commit'te değişsin diye platformla birlikte sürümlenirler.",
+      "three": "Tanımların bildirdiği uid'leri koruyun. Bu sayfa uid ile bağlar; yeni bir uid altında içe aktarılan bir pano, bu sayfanın bulamayacağı bir panodur.",
+      "four": "Platformun dağıtım yapılandırmasında grafana base url'sini ayarlayın. Yukarıdaki girdileri bağlantıya çeviren odur."
+    },
+    "boardsLabel": "Pano tanımları",
+    "openGrafana": "Grafana'yı aç"
+  }
+}

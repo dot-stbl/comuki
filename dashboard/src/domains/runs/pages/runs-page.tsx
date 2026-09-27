@@ -338,7 +338,9 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
                   </span>
                 ),
                 blocked: (
-                  <span className={styles.warn}>{String(flow.blockedTotal)}</span>
+                  <span className={styles.warn}>
+                    {String(flow.blockedTotal)}
+                  </span>
                 ),
               }}
             />
@@ -433,15 +435,18 @@ export function RunsPage({ search, onSearchChange }: RunsPageProps = {}) {
           <ScreenState
             kind="error"
             title={t("registry.errorTitle")}
-            description={requestFailureMessage(error, t("errors.unknown"))}
+            description={requestFailureMessage(
+              error,
+              t("errors.unknown", { ns: "common" })
+            )}
             inset="gutter"
             data-test="runs-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="runs-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}

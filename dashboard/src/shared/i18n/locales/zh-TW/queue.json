@@ -1,0 +1,160 @@
+{
+  "workStatus": {
+    "queued": "排隊中",
+    "running": "執行中",
+    "blocked": "已阻塞",
+    "failed": "失敗",
+    "cancelled": "已取消",
+    "succeeded": "已成功"
+  },
+  "workerState": {
+    "busy": "忙碌",
+    "idle": "空閒",
+    "draining": "排空中",
+    "offline": "離線"
+  },
+  "registry": {
+    "title": "佇列與 worker",
+    "summary": "<queued/> 個排隊 · <stalled/> 個超過五分鐘無人認領 · <total/> 個 worker，<idle/> 個空閒 · <lost/> 個無心跳",
+    "errorTitle": "佇列未能載入",
+    "loading": "正在載入佇列",
+    "expandPool": "展開池",
+    "collapsePool": "摺疊池",
+    "resizePool": "調整 worker 池大小"
+  },
+  "queuePanel": {
+    "empty": {
+      "profile": "該配置下佇列沒有內容",
+      "filtered": "沒有工作項匹配當前篩選",
+      "none": "佇列為空"
+    },
+    "shown": {
+      "other": "已顯示 {{count}} 條"
+    },
+    "waitingTooLong": {
+      "other": "{{count}} 個等待過久 · "
+    }
+  },
+  "queueColumn": {
+    "status": "狀態",
+    "item": "項",
+    "run": "執行",
+    "project": "專案",
+    "profile": "配置",
+    "step": "步驟",
+    "claimedBy": "認領者",
+    "age": "年齡",
+    "allStatuses": "所有狀態",
+    "allProjects": "所有專案",
+    "allProfiles": "所有配置",
+    "filterPlaceholder": "篩選項、執行、步驟…"
+  },
+  "ageMeter": {
+    "stalled": "排隊超過 {{limit}} — 該配置下沒有 worker 認領它"
+  },
+  "lease": {
+    "noHeartbeat": "無心跳讀數 — 租約到期後該項將重新入隊",
+    "lostHeartbeat": "無心跳已 {{quiet}} — 租約到期後該項將重新入隊"
+  },
+  "depth": {
+    "label": "按天佇列深度",
+    "figure": "<today/> 個當前排隊 · 本週為 <week/>",
+    "deepest": " · 今天是本週最深的一天",
+    "chartLabel": "按天佇列深度，等待認領的項。今天 {{today}} 個排隊；本週從 {{weekMin}} 到 {{weekMax}}。",
+    "chartLabelDeepest": "按天佇列深度，等待認領的項。今天 {{today}} 個排隊 — 是從 {{weekMin}} 到 {{weekMax}} 的一週裡最深的一天。"
+  },
+  "poolStrip": {
+    "expandEmpty": "展開池。沒有 worker 線上。",
+    "expand": "展開池。{{total}} 個 worker：{{busy}} 個忙碌，{{draining}} 個排空，{{idle}} 個空閒。"
+  },
+  "workerColumn": {
+    "state": "狀態",
+    "worker": "worker",
+    "project": "專案",
+    "profile": "配置",
+    "currentWork": "當前工作",
+    "compute": "算力",
+    "handle": "控制代碼",
+    "image": "映象",
+    "lease": "租約",
+    "up": "線上",
+    "actions": "操作",
+    "idle": "空閒",
+    "allStates": "所有狀態",
+    "allProjects": "所有專案",
+    "allProfiles": "所有配置",
+    "allProviders": "所有提供方",
+    "filterPlaceholder": "篩選 worker、控制代碼、映象…",
+    "drain": "排空",
+    "forceStop": "強制停止",
+    "drainWorker": "排空 {{id}}",
+    "forceStopWorker": "強制停止 {{id}}"
+  },
+  "workersPanel": {
+    "count": "{{shown}} / {{total}} 個 worker",
+    "fallback": "池沒有接受。",
+    "tail": "沒有任何改變 — worker 原樣。",
+    "stopTitle": "強制停止這個 worker？",
+    "stopIdle": "{{id}} 空閒。容器現在被銷燬，等有工作時 scale 會再拉起一個。",
+    "stopBusy": "{{id}} 正在執行 {{runId}} 上的「{{label}}」。容器現在被銷燬，租約被釋放，該項回到佇列由其他 worker 認領。",
+    "stopConfirm": "強制停止",
+    "stopCancel": "繼續執行"
+  },
+  "workerEmpty": {
+    "clearFilters": "清除篩選",
+    "filteredTitle": "沒有 worker 匹配篩選",
+    "filteredDescription": {
+      "other": "池線上 — <pool/> 個 worker{{where}} 在執行，只是不是這些。"
+    },
+    "backlogTitle": "還沒有 worker",
+    "backlogDescription": {
+      "other": "min idle = <zero/>{{where}}，所以池在出現工作前保持為空。現在有了：<backlog/> 個項排隊且無人認領。scale 會拉起一個 worker 來取。"
+    },
+    "atRestTitle": "沒有 worker — 也不需要",
+    "atRestDescription": "min idle = <zero/>{{where}} 且佇列沒有內容。空池是這裡配置的靜止狀態，不是故障 — 容器按任務建立、任務完成後銷燬。",
+    "underTargetTitle": "池低於目標",
+    "underTargetDescription": {
+      "other": "min idle = <minIdle/>{{where}} 且沒有 worker 線上。這不是靜止狀態：算力沒有拉起它們，<backlog/> 個項將一直等到它拉起。"
+    },
+    "onProject": " 於 {{project}}"
+  },
+  "worker": {
+    "loading": "正在載入 worker",
+    "errorTitle": "池未能載入",
+    "fallback": "池沒有接受。",
+    "tail": "沒有任何改變 — worker 原樣。",
+    "live": "即時",
+    "container": "容器",
+    "currentWork": "當前工作",
+    "leaseLeft": "剩餘租約",
+    "leaseNone": "未認領任何項，無租約需要守護",
+    "sinceHeartbeat": "距上次心跳",
+    "heartbeatStale": "超過 {{limit}} 即過期",
+    "up": "線上",
+    "upNote": "自容器上線起",
+    "compute": "算力",
+    "handle": "控制代碼",
+    "image": "映象",
+    "imageNote": "該映象上的所有容器",
+    "profile": "配置",
+    "profileNote": "認領匹配所依據的軸",
+    "project": "專案",
+    "workNote": "持有佇列未隨該載荷發來的項。",
+    "idle": "空閒",
+    "idleNote": "不持有任何項，可認領下一個匹配其配置的項。",
+    "tornDownTitle": "這個容器已不在",
+    "tornDownDescription": "<id/> 在此頁開啟期間被銷燬。停止的容器不會被保留 — 沒有可以回去的記錄，本也不該有。worker 為眼前的工作而拉起，工作完成或有人停止它們後即被移除；這是池按其配置行事，不是故障。",
+    "tornDownHolding": "它持有 <label/>。那份工作沒有隨之消失：租約已釋放，該項回到佇列由其他 worker 認領。",
+    "tornDownIdle": "它離開時是空閒的 — 未持有任何項，也沒有任何東西回到佇列。",
+    "tornDownItem": "{{id}}",
+    "poolLink": "佇列與 worker",
+    "notFoundTitle": "沒有名為 <id/> 的 worker",
+    "notFoundDescription": "池中沒有響應這個 id 的內容。worker 是短暫的 — 一個為一段工作拉起、之後即被移除 — 所以昨天日誌裡的 id、舊書籤或丟了尾巴的連結都會落到這裡，而且這些都不意味著出了問題。",
+    "notFoundLook": "在池中查詢 {{id}}",
+    "stopTitle": "強制停止這個 worker？",
+    "stopIdle": "<id/> 空閒。容器現在被銷燬，等有工作時 scale 會再拉起一個。",
+    "stopBusy": "<id/> 正在執行 <run/> 上的 <label/>。容器現在被銷燬，租約被釋放，該項回到佇列由其他 worker 認領。",
+    "stopConfirm": "強制停止",
+    "stopCancel": "繼續執行"
+  }
+}

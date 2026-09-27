@@ -1,0 +1,201 @@
+{
+  "errors": {
+    "saveDidNotLand": "Zapis nie wylądował.",
+    "stopDidNotApply": "Zatrzymanie nie weszło w życie."
+  },
+  "page": {
+    "title": "Ustawienia",
+    "summaryMock": "konfiguracja control plane",
+    "summaryReal": "konfiguracja platformy — tylko do odczytu, ustawiana przy starcie",
+    "errorTitle": "Ustawienia się nie załadowały",
+    "retry": "Ponów",
+    "tabsAria": "Sekcje ustawień"
+  },
+  "tabs": {
+    "apps": "aplikacje",
+    "rules": "reguły",
+    "autonomy": "autonomia",
+    "routing": "routing",
+    "budgets": "budżety",
+    "keys": "klucze",
+    "tracker": "tracker"
+  },
+  "toast": {
+    "routingSaved": "Routing zapisany",
+    "routingSavedNote": "mapa rola → model zaktualizowana (mock)",
+    "routingNotSaved": "Routing nie zapisany",
+    "budgetsSaved": "Budżety zapisane",
+    "budgetsSavedNote": "limity zaktualizowane (mock)",
+    "budgetsNotSaved": "Budżety nie zapisane"
+  },
+  "apps": {
+    "section": "Aplikacje",
+    "note": "tylko do odczytu · rejestr jest zadeklarowany w gicie klienta",
+    "emptyFiltered": "żadna aplikacja nie pasuje do bieżących filtrów",
+    "empty": "rejestr nie deklaruje żadnej aplikacji",
+    "count": "{{count}} widocznych",
+    "column": {
+      "app": "aplikacja",
+      "repo": "repo",
+      "stack": "stack",
+      "envs": "env",
+      "deploy": "deploy"
+    },
+    "filterPlaceholder": "filtruj aplikację, repo, stack…",
+    "allTargets": "wszystkie cele",
+    "nowhere": "nigdzie"
+  },
+  "rules": {
+    "section": "Reguły roju",
+    "note": "tylko do odczytu · reguły żyją w gicie klienta i zmieniają się przez commit",
+    "conflicts": "Brak konfliktów · {{count}} aktywnych reguł · zakresy się nie nakładają.",
+    "emptyFiltered": "żadna reguła nie pasuje do bieżących filtrów",
+    "empty": "zestaw reguł jest pusty",
+    "count": "{{count}} widocznych",
+    "column": {
+      "rule": "reguła",
+      "scope": "zakres",
+      "kind": "rodzaj",
+      "version": "wersja",
+      "description": "opis"
+    },
+    "filterPlaceholder": "filtruj regułę, zakres, opis…",
+    "allScopes": "wszystkie zakresy",
+    "allKinds": "wszystkie rodzaje"
+  },
+  "autonomy": {
+    "section": "Autonomia",
+    "note": "co samo · co wymaga człowieka",
+    "emptyFiltered": "żadna klasa zmian nie pasuje do bieżących filtrów",
+    "empty": "żadna klasa zmian nie jest sklasyfikowana",
+    "count": "{{count}} widocznych",
+    "column": {
+      "changeClass": "klasa zmiany",
+      "mode": "tryb"
+    },
+    "filterPlaceholder": "filtruj klasę zmiany…",
+    "allModes": "wszystkie tryby"
+  },
+  "routing": {
+    "section": "Routing modeli",
+    "note": "rola → model fizyczny",
+    "emptyFiltered": "żadna rola nie pasuje do bieżących filtrów",
+    "empty": "żadna rola nie jest zmapowana",
+    "count": "{{count}} widocznych",
+    "column": {
+      "role": "rola",
+      "model": "model",
+      "usage": "użycie"
+    },
+    "editSection": "Edytuj mapę rola → model",
+    "editNote": "prowadzący / worker / sędzia",
+    "field": {
+      "lead": "prowadzący",
+      "worker": "worker",
+      "judge": "sędzia"
+    },
+    "save": "Zapisz routing",
+    "escalation": "Polityka eskalacji — 2 nieudane retry na workerze eskalują do prowadzącego. Czerwona bramka typowa idzie do agenta debug z przypiętą rewizją."
+  },
+  "budgets": {
+    "readingSection": "Budżet proxy",
+    "readingNote": "co rój wydał dziś wobec limitu globalnego",
+    "killSwitch": "Kill-switch",
+    "killHint": "Twardy stop wszystkich nowych pobrań — każda aplikacja, każde zadanie.",
+    "pause": "Wstrzymaj rój",
+    "pauseHint": "Miękka pauza — działające workery kończą; żadne nowe kontenery nie startują.",
+    "stopFailureTail": "Nic się nie ruszyło — zatrzymania są takie, jakie były.",
+    "killTitle": "Rzucić kill-switch?",
+    "killBody": "Nowe pobrania stają teraz — każda aplikacja, każde zadanie — i stoją, dopóki przełącznik nie zostanie wyłączony z powrotem. Workery w kroku kończą to, co trzymają; nic w kolejce nie jest anulowane.",
+    "killConfirm": "Zablokuj nowe pobrania",
+    "killCancel": "Zostaw pobrania otwarte",
+    "capsSection": "Limity budżetu",
+    "capsNote": "limit globalny, który czyta licznik · per-zadanie i per-aplikacja go doprecyzowują",
+    "globalCap": "limit globalny",
+    "globalCapHint": "Licznik powyżej mierzy wydatek wobec tego limitu.",
+    "refinements": "doprecyzowania",
+    "perTask": "na zadanie",
+    "perApp": "na aplikację",
+    "save": "Zapisz budżety",
+    "meter": {
+      "over": "ponad limit",
+      "left": "{{left}} zostało",
+      "stopped": "kill-switch wł. · nowe pobrania zablokowane",
+      "atCap": "kill-switch przy limicie"
+    }
+  },
+  "keys": {
+    "section": "Klucze dostawców",
+    "note": "tylko do odczytu · klucze idą z env, rotacja biega w proxy",
+    "emptyFiltered": "żaden klucz nie pasuje do bieżących filtrów",
+    "empty": "proxy nie trzyma żadnego klucza dostawcy",
+    "count": "{{count}} widocznych",
+    "column": {
+      "provider": "dostawca",
+      "scope": "zakres",
+      "rotation": "rotacja",
+      "status": "status"
+    },
+    "filterPlaceholder": "filtruj dostawcę, zakres…",
+    "allStatuses": "wszystkie statusy"
+  },
+  "tracker": {
+    "section": "Źródła przyjęć",
+    "notice": "Podłączony tracker synchronizuje swoje zgłoszenia do backlogu · ręczne przyjęcia są i tak otwarte.",
+    "emptyTitle": "Żaden tracker nie jest podłączony",
+    "emptyDescription": "Nic nie synchronizuje zgłoszeń do backlogu. Ręczne przyjęcia są i tak otwarte — tracker dodaje tylko drugie drzwi.",
+    "connected": "połączony",
+    "synced": "zsynchronizowano {{when}}",
+    "sync": "Synchronizuj",
+    "syncAria": "Synchronizuj {{name}}",
+    "syncedToast": "Zsynchronizowano {{name}}",
+    "syncedToastNote": "zaimportowano nowe issues (mock)",
+    "connect": "Podłącz",
+    "connectAria": "Podłącz {{name}}",
+    "connectToast": "Podłącz {{name}}",
+    "connectToastNote": "Przepływ OAuth… (mock)"
+  },
+  "platform": {
+    "hint": "Tylko do odczytu — każda wartość tutaj jest skonfigurowana przy starcie. Zmiany idą przez konfigurację i restart; nic na tej stronie nie zapisuje.",
+    "on": "wł.",
+    "off": "wył.",
+    "escalationOff": "wył. — zapadka jest wyłączona (zastosowałoby się {{would}})",
+    "orchestration": {
+      "section": "orkiestracja",
+      "leaseTtl": "lease ttl",
+      "leaseTtlNote": "wydawany przy pobraniu, przedłużany pulsem",
+      "reapInterval": "interwał repera",
+      "reapIntervalNote": "rytm przeglądu repera lease'ów",
+      "reapGrace": "grace repera",
+      "reapGraceNote": "bufor po wygaśnięciu, zanim reaper zadziała",
+      "maxAttempts": "maks. prób",
+      "maxAttemptsNote": "pobrania, zanim zastygły element zaliczy awarię",
+      "escalationTimeout": "timeout eskalacji",
+      "escalationTimeoutNote": "jak długo uruchomienie może stać eskalowane przed auto-archiwizacją",
+      "escalationSweep": "przegląd eskalacji",
+      "escalationSweepNote": "rytm przeglądu zapadki"
+    },
+    "compute": {
+      "section": "obliczenia",
+      "provider": "dostawca",
+      "providerNote": "implementacja obliczeń, na której biega v1",
+      "workerImage": "obraz workera",
+      "workerImageNote": "przypięty dygestem na produkcji",
+      "profilesRef": "ref profili",
+      "profilesRefNote": "przypięty git-ref profili",
+      "minIdle": "min idle",
+      "minIdleNote": "podłoga ciepłej bezczynności per profil",
+      "maxConcurrent": "maks. równolegle",
+      "maxConcurrentNote": "sufit współbieżności per projekt",
+      "idleTtl": "idle ttl",
+      "idleTtlNote": "zanim worker stanie się kandydatem repera",
+      "pollInterval": "interwał pollowania",
+      "pollIntervalNote": "między przejściami supervisora"
+    },
+    "proxy": {
+      "section": "proxy",
+      "passthrough": "passthrough openai / anthropic",
+      "passthroughNote": "czy proxy w ogóle jest składane"
+    }
+  }
+}

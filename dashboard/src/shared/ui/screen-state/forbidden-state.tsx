@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 
 import { ScreenState } from "./screen-state"
 
@@ -40,16 +41,19 @@ export interface ForbiddenStateProps {
  */
 export function ForbiddenState({
   needs,
-  subject = "This view",
+  subject,
   children,
   className,
 }: ForbiddenStateProps) {
+  const { t } = useTranslation("kit")
   return (
     <ScreenState
       kind="forbidden"
       inset="gutter"
-      title={`${subject} is closed to your roles`}
-      description={`${needs} — ask for the role, or switch to a project where you already hold it.`}
+      title={t("forbidden.title", {
+        subject: subject ?? t("forbidden.subject"),
+      })}
+      description={t("forbidden.description", { needs })}
       className={className}
       data-test="forbidden-state"
     >

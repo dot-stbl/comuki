@@ -1,0 +1,91 @@
+{
+  "header": {
+    "title": "Attention",
+    "crumb": "attention",
+    "summary": {
+      "one": "<owed/> ti serve · <running/> in esecuzione · <total/> run",
+      "many": "<owed/> ti servono · <running/> in esecuzione · <total/> run",
+      "other": "<owed/> ti servono · <running/> in esecuzione · <total/> run"
+    },
+    "errorTitle": "Impossibile caricare il turno",
+    "errorTail": "{{detail}} — finché non carica, niente su questa schermata può dirsi affidabile sul fatto che una decisione sia dovuta."
+  },
+  "notice": {
+    "fallback": "La decisione non è andata a buon fine.",
+    "tail": "{{detail}} Niente è cambiato — la run è tornata com'era."
+  },
+  "verdict": {
+    "clear": "Niente ti serve",
+    "owed": {
+      "one": "run ha bisogno di una decisione",
+      "many": "run hanno bisogno di una decisione",
+      "other": "run hanno bisogno di una decisione"
+    },
+    "swarmEmpty": "Lo swarm è vuoto — niente in coda, niente in volo.",
+    "moving": "<running/> in esecuzione · <queued/> in coda — lo swarm procede da solo."
+  },
+  "attention": {
+    "section": "Ti serve",
+    "column": {
+      "run": "run",
+      "project": "progetto",
+      "task": "task",
+      "step": "passo",
+      "inStep": "al passo"
+    },
+    "status": {
+      "escalated": "escalata",
+      "failed": "fallita",
+      "waiting": "in attesa"
+    },
+    "reason": {
+      "escalated": "salita oltre lo swarm fino a una persona",
+      "failed": "fermatasi a un gate di verifica",
+      "waiting": "in attesa di una persona"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "Approva",
+    "stop": "Ferma",
+    "open": "Apri",
+    "approveRun": "Approva {{title}}",
+    "stopRun": "Ferma {{title}}",
+    "openRun": "Apri {{title}}",
+    "more": "e altre {{count}} — apri le run attive"
+  },
+  "list": {
+    "waitingOnPlan": "in attesa di un piano",
+    "timeInStep": "tempo al passo"
+  },
+  "running": {
+    "section": "In esecuzione ora",
+    "note": "{{running}} in volo · {{queued}} in coda",
+    "empty": "Niente è in volo.",
+    "more": "altre {{count}} in volo — apri le run attive"
+  },
+  "outcomes": {
+    "loading": "Caricamento degli esiti della settimana",
+    "failed": "La settimana dietro questo turno non si è caricata, quindi non c'è storia da confrontare. Nient'altro su questa schermata dipende da essa — ciò che è in volo sotto è la lettura dal vivo.",
+    "reading": "<today/> concluse oggi finora · <week/> questa settimana · <failed/> fallite",
+    "chartLabel": "Esiti delle run per giorno. {{today}} concluse oggi finora, {{week}} questa settimana, {{failed}} di esse fallite.",
+    "status": {
+      "success": "successo",
+      "failed": "fallita",
+      "escalated": "escalata"
+    }
+  },
+  "shortcuts": {
+    "section": "Scorciatoie",
+    "newRun": "Nuova run",
+    "newRunNote": "prendi un ticket dall'inbox",
+    "liveRuns": "Run attive",
+    "liveRunsNote": "tutto lo swarm, con la board del flusso e i filtri",
+    "approvals": "Approvazioni",
+    "approvalsNote": "piani in coda per una decisione"
+  },
+  "stopDialog": {
+    "title": "Fermare questa run?",
+    "body": "{{title}} — il container viene smontato e il lease rilasciato. Il lavoro già mergiato resta.",
+    "confirm": "Ferma run",
+    "cancel": "Lascia in esecuzione"
+  }
+}

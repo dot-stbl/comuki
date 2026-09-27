@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react"
 import { Tab, TabList, TabPanel, Tabs } from "react-aria-components"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { AppShell } from "@/app/layout/app-shell"
@@ -48,18 +49,17 @@ const SKELETON_WIDTHS = ["48%", "72%", "56%", "84%", "42%"]
 
 interface SectionMeta {
   id: SettingsTab
-  label: string
   icon: ComponentType<{ className?: string }>
 }
 
 const SECTIONS: SectionMeta[] = [
-  { id: "apps", label: "apps", icon: Box },
-  { id: "rules", label: "rules", icon: CheckCheck },
-  { id: "autonomy", label: "autonomy", icon: SlidersHorizontal },
-  { id: "routing", label: "routing", icon: Cpu },
-  { id: "budgets", label: "budgets", icon: ShieldAlert },
-  { id: "keys", label: "keys", icon: Database },
-  { id: "tracker", label: "tracker", icon: GitBranch },
+  { id: "apps", icon: Box },
+  { id: "rules", icon: CheckCheck },
+  { id: "autonomy", icon: SlidersHorizontal },
+  { id: "routing", icon: Cpu },
+  { id: "budgets", icon: ShieldAlert },
+  { id: "keys", icon: Database },
+  { id: "tracker", icon: GitBranch },
 ]
 
 function applyRouting(
@@ -120,6 +120,8 @@ export interface SettingsPageProps {
  * them. The panels whose source is git have nothing to gate.
  */
 export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
+  const { t } = useTranslation("settings")
+  const { t: tShell } = useTranslation("shell")
   /* Two settings screens, one route. Real mode serves the host's read-only
      platform snapshot — lease policy, escalation ratchet, compute scale, the
      proxy switch — and nothing else: the seven-section control plane below
@@ -152,7 +154,7 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
   // emergency brake that lies about its own state is the one control on this
   // screen that must not.
   const stopFailure = stop.error
-    ? requestFailureMessage(stop.error, "The stop did not apply.")
+    ? requestFailureMessage(stop.error, t("errors.stopDidNotApply"))
     : null
 
   const onSaveRouting = (values: RoutingFormValues) => {
@@ -166,17 +168,17 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
       },
       {
         onSuccess: () => {
-          toast.success("Routing saved", {
-            description: "role → model map updated (mock)",
+          toast.success(t("toast.routingSaved"), {
+            description: t("toast.routingSavedNote"),
           })
         },
         // A save that failed used to do nothing but stop the button spinning,
         // which from across a desk is what a save that worked looks like.
         onError: (failure) => {
-          toast.error("Routing not saved", {
+          toast.error(t("toast.routingNotSaved"), {
             description: requestFailureMessage(
               failure,
-              "The save did not land."
+              t("errors.saveDidNotLand")
             ),
           })
         },
@@ -195,15 +197,15 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
       },
       {
         onSuccess: () => {
-          toast.success("Budgets saved", {
-            description: "caps updated (mock)",
+          toast.success(t("toast.budgetsSaved"), {
+            description: t("toast.budgetsSavedNote"),
           })
         },
         onError: (failure) => {
-          toast.error("Budgets not saved", {
+          toast.error(t("toast.budgetsNotSaved"), {
             description: requestFailureMessage(
               failure,
-              "The save did not land."
+              t("errors.saveDidNotLand")
             ),
           })
         },
@@ -216,13 +218,9 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
       padded={false}
       header={
         <PageHeader
-          breadcrumbs={[{ label: "settings" }]}
-          title="Settings"
-          summary={
-            env.useMock
-              ? "control plane configuration"
-              : "platform configuration — read-only, set at boot"
-          }
+          breadcrumbs={[{ label: tShell("crumb.settings") }]}
+          title={t("page.title")}
+          summary={env.useMock ? t("page.summaryMock") : t("page.summaryReal")}
         />
       }
     >
@@ -238,15 +236,18 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
         {isError ? (
           <ScreenState
             kind="error"
-            title="Settings did not load"
-            description={requestFailureMessage(error, "Unknown error")}
+            title={t("page.errorTitle")}
+            description={requestFailureMessage(
+              error,
+              t("errors.unknown", { ns: "common" })
+            )}
             inset="page"
             action={
-              <Tooltip content="Retry">
+              <Tooltip content={t("page.retry")}>
                 <Button
                   size="icon-sm"
                   data-test="settings-retry"
-                  aria-label="Retry"
+                  aria-label={t("page.retry")}
                   onClick={() => {
                     void refetch()
                   }}
@@ -279,7 +280,7 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
               }
             }}
           >
-            <TabList aria-label="Settings sections" className={styles.tabList}>
+            <TabList aria-label={t("page.tabsAria")} className={styles.tabList}>
               {SECTIONS.map((section) => {
                 const Icon = section.icon
                 return (
@@ -293,7 +294,7 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
                         sections of bare icons is a rebus, and this strip is
                         navigation rather than a row of acts. */}
                     <Icon className={styles.tabIcon} aria-hidden="true" />
-                    {section.label}
+                    {t(`tabs.${section.id}`)}
                   </Tab>
                 )
               })}

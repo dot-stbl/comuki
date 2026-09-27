@@ -131,14 +131,17 @@ export function IdentityPage({ tab, focus, onTabChange }: IdentityPageProps) {
                message — `requestFailureMessage` falls back to the latter when
                there is no problem body, so nothing is lost and a sentence is
                gained. */
-            description={requestFailureMessage(error, t("errors.unknown"))}
+            description={requestFailureMessage(
+              error,
+              t("errors.unknown", { ns: "common" })
+            )}
             data-test="identity-error"
             action={
-              <Tooltip content={t("actions.retry")}>
+              <Tooltip content={t("actions.retry", { ns: "common" })}>
                 <Button
                   size="icon-sm"
                   data-test="identity-retry"
-                  aria-label={t("actions.retry")}
+                  aria-label={t("actions.retry", { ns: "common" })}
                   onClick={() => {
                     void refetch()
                   }}

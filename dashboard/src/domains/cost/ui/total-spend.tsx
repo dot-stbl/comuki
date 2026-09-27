@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useTranslation } from "react-i18next"
 
 import { periodDelta } from "@/domains/cost/model/cost"
 import { CostStat } from "@/domains/cost/ui/cost-stat"
@@ -42,12 +43,13 @@ export function TotalSpend({
   burnNote,
   className,
 }: TotalSpendProps) {
+  const { t } = useTranslation("cost")
   const delta = periodDelta(total, previousTotal)
 
   return (
     <CostStat
       name="total"
-      label={`${periodLabel} spend`}
+      label={t("total.label", { period: periodLabel })}
       prefix="$"
       value={total.toFixed(2)}
       sub={burnNote}
@@ -55,27 +57,33 @@ export function TotalSpend({
     >
       <p className={styles.delta}>
         {delta === null ? (
-          <span className={styles.deltaDash}>no prior period yet</span>
+          <span className={styles.deltaDash}>{t("total.noPrior")}</span>
         ) : delta > 0 ? (
           <>
             <span className={styles.deltaUp} data-test="total-spend-delta">
               ▲ {(delta * 100).toFixed(0)}%
             </span>
-            <span className={styles.deltaLabel}>vs previous {periodLabel}</span>
+            <span className={styles.deltaLabel}>
+              {t("total.vs", { period: periodLabel })}
+            </span>
           </>
         ) : delta < 0 ? (
           <>
             <span className={styles.deltaDown} data-test="total-spend-delta">
               ▼ {Math.abs(delta * 100).toFixed(0)}%
             </span>
-            <span className={styles.deltaLabel}>vs previous {periodLabel}</span>
+            <span className={styles.deltaLabel}>
+              {t("total.vs", { period: periodLabel })}
+            </span>
           </>
         ) : (
           <>
             <span className={styles.deltaFlat} data-test="total-spend-delta">
-              ◆ flat
+              ◆ {t("total.flat")}
             </span>
-            <span className={styles.deltaLabel}>vs previous {periodLabel}</span>
+            <span className={styles.deltaLabel}>
+              {t("total.vs", { period: periodLabel })}
+            </span>
           </>
         )}
       </p>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { ConnectSourcePage } from "@/domains/sources"
@@ -17,14 +18,16 @@ export const Route = createFileRoute("/sources/new")({
    project that would open it, and the page asks the same question again before
    it mutates anything. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   return (
     <RequirePermission
       permission="sources.view"
-      title="Connect a source"
+      title={t("route.connectSource")}
       crumbs={[
-        { label: "configure" },
-        { label: "sources", to: "/sources" },
-        { label: "new" },
+        { label: t("crumb.configure") },
+        { label: t("crumb.sources"), to: "/sources" },
+        { label: t("crumb.new") },
       ]}
     >
       <ConnectSourcePage />

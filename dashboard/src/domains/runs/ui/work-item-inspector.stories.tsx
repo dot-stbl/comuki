@@ -13,7 +13,10 @@ const run = toRunSummary(seed)
 const items = orderedItems(run.workItems)
 const graph = planGraph(items)
 
-function panelFor(itemId: string, onSelect: (itemId: string) => void = () => {}) {
+function panelFor(
+  itemId: string,
+  onSelect: (itemId: string) => void = () => {}
+) {
   const item = items.find((entry) => entry.id === itemId) ?? items[0]
   return (
     <div style={{ height: "34rem" }}>

@@ -1,0 +1,87 @@
+{
+  "header": {
+    "title": "어텐션",
+    "crumb": "어텐션",
+    "summary": {
+      "other": "<owed/>개가 당신을 필요로 함 · <running/>개 실행 중 · 런 <total/>개"
+    },
+    "errorTitle": "시프트를 로드할 수 없습니다",
+    "errorTail": "{{detail}} — 로드될 때까지 이 화면의 어느 것도 결정이 빚져 있는지 말할 수 없습니다."
+  },
+  "notice": {
+    "fallback": "결정이 실패했습니다.",
+    "tail": "{{detail}} 아무 것도 바뀌지 않았습니다 — 런은 이전 상태입니다."
+  },
+  "verdict": {
+    "clear": "당신이 필요한 것은 없습니다",
+    "owed": {
+      "other": "개 런이 결정을 기다립니다"
+    },
+    "swarmEmpty": "스웜이 비었습니다 — 대기 중도, 진행 중도 없습니다.",
+    "moving": "<running/>개 실행 중 · <queued/>개 대기 — 스웜이 스스로 움직이고 있습니다."
+  },
+  "attention": {
+    "section": "당신이 필요",
+    "column": {
+      "run": "런",
+      "project": "프로젝트",
+      "task": "태스크",
+      "step": "단계",
+      "inStep": "단계 중"
+    },
+    "status": {
+      "escalated": "에스컬레이션",
+      "failed": "실패",
+      "waiting": "대기"
+    },
+    "reason": {
+      "escalated": "스웜을 넘어 사람에게 올라옴",
+      "failed": "검증 게이트에서 멈춤",
+      "waiting": "사람 대기 중"
+    },
+    "groupLabel": "{{count}} {{status}} — {{reason}}",
+    "approve": "승인",
+    "stop": "중지",
+    "open": "열기",
+    "approveRun": "{{title}} 승인",
+    "stopRun": "{{title}} 중지",
+    "openRun": "{{title}} 열기",
+    "more": "외 {{count}}개 — 라이브 런 열기"
+  },
+  "list": {
+    "waitingOnPlan": "플랜 대기 중",
+    "timeInStep": "단계 내 시간"
+  },
+  "running": {
+    "section": "지금 실행 중",
+    "note": "진행 중 {{running}}개 · 대기 {{queued}}개",
+    "empty": "진행 중인 것이 없습니다.",
+    "more": "외 {{count}}개 진행 중 — 라이브 런 열기"
+  },
+  "outcomes": {
+    "loading": "이번 주 결과 로딩 중",
+    "failed": "이 시프트 뒤의 주가 로드되지 않아 비교할 역사가 없습니다. 이 화면의 다른 것은 이것에 의존하지 않습니다 — 아래 진행 중인 것이 살아있는 계기입니다.",
+    "reading": "오늘 <today/>개 마감 · 이번 주 <week/>개 · <failed/>개 실패",
+    "chartLabel": "일별 런 결과. 오늘 {{today}}개 마감, 이번 주 {{week}}개, 그중 {{failed}}개 실패.",
+    "status": {
+      "success": "성공",
+      "failed": "실패",
+      "escalated": "에스컬레이션"
+    }
+  },
+  "shortcuts": {
+    "section": "바로가기",
+    "newRun": "새 런",
+    "newRunNote": "수신함에서 티켓 가져가기",
+    "liveRuns": "라이브 런",
+    "liveRunsNote": "흐름 보드와 필터를 갖춘 스웜 전체",
+    "approvals": "승인",
+    "approvalsNote": "결정을 기다리는 플랜들"
+  },
+  "stopDialog": {
+    "title": "이 런을 멈춥니까?",
+    "body": "{{title}} — 컨테이너가 철거되고 lease가 해제됩니다. 이미 병합된 작업은 남습니다.",
+    "confirm": "런 중지",
+    "cancel": "계속 실행"
+  }
+}

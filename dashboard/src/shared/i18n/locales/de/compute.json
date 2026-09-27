@@ -1,9 +1,5 @@
 {
-  "actions": {
-    "retry": "Erneut versuchen"
-  },
   "errors": {
-    "unknown": "Unbekannter Fehler",
     "changeFailed": "Die Änderung ist fehlgeschlagen."
   },
   "page": {
@@ -63,7 +59,6 @@
     "sentences": {
       "noAnswer": "Capacity-API hat nicht geantwortet — für diesen Pool ist keine Obergrenze lesbar",
       "bothFull": "Quota und Cluster sind beide voll — hier kann nichts starten",
-
       "both": "Quota und Cluster stimmen überein — Platz für {{slots}}",
       "quotaFull": "die Quota ist die Obergrenze — nichts kann starten, und dem Cluster bleiben {{slots}} frei",
       "quota": "die Quota ist die Obergrenze — Platz für {{slots}}, mit {{spare}} frei auf dem Cluster",
@@ -108,7 +103,6 @@
     "retireConfirm": "Untätige abbaauen",
     "retireCancel": "Oben lassen",
     "reason": {
-
       "both": "Image und Profiles-Ref haben sich beide bewegt",
       "image": "ein Release hinter dem Image",
       "profiles": "gleiches Image, der Profiles-Ref hat sich bewegt"

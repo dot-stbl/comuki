@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { CostPage } from "@/domains/cost"
@@ -8,11 +9,16 @@ export const Route = createFileRoute("/cost")({
 })
 
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   return (
     <RequirePermission
       permission="cost.view"
-      title="Cost & failures"
-      crumbs={[{ label: "observe", to: "/runs" }, { label: "cost" }]}
+      title={t("route.cost")}
+      crumbs={[
+        { label: t("crumb.observe"), to: "/runs" },
+        { label: t("crumb.cost") },
+      ]}
     >
       <CostPage />
     </RequirePermission>

@@ -7,7 +7,13 @@ import { TRIAGE_RANK } from "@/domains/runs/model/profile-flow"
 import type { RunStatus, RunSummary } from "@/domains/runs/model/types"
 import { currentLabel, currentProfile } from "@/domains/runs/model/work-items"
 import { AnomalyBadge } from "@/domains/runs/ui/anomaly-badge"
-import { can, needsLabel, projectOf, type ProjectRef, type Session } from "@/shared/session"
+import {
+  can,
+  needsLabel,
+  projectOf,
+  type ProjectRef,
+  type Session,
+} from "@/shared/session"
 import { i18n } from "@/shared/i18n"
 import {
   Button,

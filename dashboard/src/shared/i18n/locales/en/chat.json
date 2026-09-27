@@ -1,10 +1,4 @@
 {
-  "actions": {
-    "retry": "Retry"
-  },
-  "errors": {
-    "unknown": "Unknown error"
-  },
   "page": {
     "title": "Console",
     "summary": "the same control plane the screens drive, typed at instead of clicked",
@@ -123,14 +117,26 @@
     },
     "words": {
       "run": {
-        "start": { "confirm": "Start", "refuse": "Discard" },
-        "stop": { "confirm": "Stop", "refuse": "Leave running" }
+        "start": {
+          "confirm": "Start",
+          "refuse": "Discard"
+        },
+        "stop": {
+          "confirm": "Stop",
+          "refuse": "Leave running"
+        }
       },
       "plan": {
-        "approve": { "confirm": "Approve", "refuse": "Reject" }
+        "approve": {
+          "confirm": "Approve",
+          "refuse": "Reject"
+        }
       },
       "settings": {
-        "debug": { "confirm": "Turn on", "refuse": "Leave off" }
+        "debug": {
+          "confirm": "Turn on",
+          "refuse": "Leave off"
+        }
       }
     },
     "inProject": "in {{project}}",
@@ -148,13 +154,10 @@
   },
   "wizard": {
     "title": "Onboard a repository",
-    "title": "Onboard a repository",
-
     "running": "Onboarding is running.",
     "streamHead": "onboarding",
     "stageWord": {
       "done": "done",
-
       "running": "running",
       "queued": "queued"
     },

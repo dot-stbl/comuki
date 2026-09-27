@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
+import { i18n, loadLocale } from "@/shared/i18n"
 import type { VerifyCommand, VerifyProject } from "@/domains/verify/model/types"
 import { VerifyProjectPanel } from "@/domains/verify/ui/verify-project-panel"
 
@@ -351,5 +352,29 @@ describe("the last-result column orders by triage, not by spelling", () => {
         (node) => node.getAttribute("data-outcome")
       )
     ).toEqual(["failed", "never", "passed"])
+  })
+})
+
+describe("the gate in russian", () => {
+  it("says the three readings in russian words", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    try {
+      await mount()
+
+      const badges = [
+        ...document.querySelectorAll('[data-test="verify-result"]'),
+      ].map((node) => node.textContent)
+      // The word is in the badge itself, not carried by colour alone.
+      expect(badges).toContain("прошла")
+      expect(badges).toContain("упала")
+      expect(badges).toContain("не запускалась")
+      expect(
+        screen.getByText("ни один ран не доходил до этой проверки")
+      ).toBeTruthy()
+    } finally {
+      await i18n.changeLanguage("en")
+    }
   })
 })

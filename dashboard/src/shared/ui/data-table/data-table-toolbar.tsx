@@ -13,6 +13,7 @@ import {
   DialogTrigger,
   Popover,
 } from "react-aria-components"
+import { useTranslation } from "react-i18next"
 
 import { cn } from "@/shared/lib/utils"
 
@@ -135,6 +136,7 @@ export function DataTableToolbar<TData extends RowData>({
   trailing,
   className,
 }: DataTableToolbarProps<TData>) {
+  const { t } = useTranslation("kit")
   const specs = dataFilterSpecs(columns)
   // First `text` filter declared wins the row. See the note above.
   const searchIndex = specs.findIndex((spec) => spec.filter.kind === "text")
@@ -183,8 +185,11 @@ export function DataTableToolbar<TData extends RowData>({
             onValueChange={(next) => {
               update(search.id, next)
             }}
-            placeholder={search.filter.placeholder ?? `search ${search.label}…`}
-            aria-label={`Filter by ${search.label}`}
+            placeholder={
+              search.filter.placeholder ??
+              t("toolbar.searchPlaceholder", { label: search.label })
+            }
+            aria-label={t("toolbar.filterBy", { label: search.label })}
             data-test="data-table-search"
           />
         ) : null}
@@ -263,16 +268,21 @@ function FilterSheet<TData extends RowData>({
   onChange,
   onReset,
 }: FilterSheetProps<TData>) {
+  const { t } = useTranslation("kit")
   return (
     <DialogTrigger>
       <AriaButton
         className={styles.sheetTrigger}
         data-test="data-table-filters"
         data-active={count === 0 ? undefined : ""}
-        aria-label={count === 0 ? "Filters" : `Filters, ${count} active`}
+        aria-label={
+          count === 0
+            ? t("toolbar.filtersLabel")
+            : t("toolbar.filtersActive", { count })
+        }
       >
         <Filter className={styles.icon} aria-hidden="true" />
-        <span>filters</span>
+        <span>{t("toolbar.filters")}</span>
         {count > 0 ? (
           <span className={styles.count} aria-hidden="true">
             {count}
@@ -297,7 +307,7 @@ function FilterSheet<TData extends RowData>({
           } as CSSProperties
         }
       >
-        <Dialog className={styles.sheet} aria-label="Filters">
+        <Dialog className={styles.sheet} aria-label={t("toolbar.filtersLabel")}>
           <div className={styles.fields}>
             {specs.map((spec) => (
               <SheetField
@@ -312,12 +322,12 @@ function FilterSheet<TData extends RowData>({
           </div>
           {resettable ? (
             <div className={styles.sheetFoot}>
-              <Tooltip content="Clear all filters">
+              <Tooltip content={t("toolbar.clearFilters")}>
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   data-test="data-table-reset-filters"
-                  aria-label="Clear all filters"
+                  aria-label={t("toolbar.clearFilters")}
                   onClick={onReset}
                 >
                   <FilterX aria-hidden="true" />
@@ -344,6 +354,7 @@ function SheetField<TData extends RowData>({
   value,
   onChange,
 }: SheetFieldProps<TData>) {
+  const { t } = useTranslation("kit")
   const inputId = useId()
   const labelId = `${inputId}-label`
 
@@ -367,7 +378,10 @@ function SheetField<TData extends RowData>({
           onValueChange={onChange}
           options={spec.filter.options}
           placeholder={
-            spec.filter.placeholder ?? `all ${spec.label.toLowerCase()}`
+            spec.filter.placeholder ??
+            t("toolbar.filterAll", {
+              label: spec.label.toLowerCase(),
+            })
           }
           active={value !== ""}
           aria-labelledby={labelId}
@@ -388,7 +402,10 @@ function SheetField<TData extends RowData>({
         className={styles.input}
         data-test={`data-table-filter-${spec.id}`}
         data-active={value === "" ? undefined : ""}
-        placeholder={spec.filter.placeholder ?? `filter ${spec.label}…`}
+        placeholder={
+          spec.filter.placeholder ??
+          t("toolbar.filterPlaceholder", { label: spec.label })
+        }
         value={value}
         onChange={(event) => {
           onChange(event.target.value)
@@ -420,14 +437,18 @@ function FilterChip<TData extends RowData>({
   value,
   onRemove,
 }: FilterChipProps<TData>) {
+  const { t } = useTranslation("kit")
   const text = valueLabel(spec.filter, value)
   return (
     <button
       type="button"
       className={styles.chip}
       data-test={`data-table-chip-${spec.id}`}
-      title={`Clear the ${spec.label} filter`}
-      aria-label={`Clear the ${spec.label} filter: ${text}`}
+      title={t("toolbar.clearFilterTitle", { label: spec.label })}
+      aria-label={t("toolbar.clearFilterLabel", {
+        label: spec.label,
+        value: text,
+      })}
       onClick={onRemove}
     >
       <span className={styles.chipText}>{text}</span>
@@ -456,6 +477,7 @@ function ColumnManager<TData extends RowData>({
   visibility,
   onChange,
 }: ColumnManagerProps<TData>) {
+  const { t } = useTranslation("kit")
   const entries = columns.map((column, index) => ({
     id: dataColumnId(column),
     label: dataColumnLabel(column),
@@ -470,7 +492,7 @@ function ColumnManager<TData extends RowData>({
       <AriaButton
         className={styles.columnsTrigger}
         data-test="data-table-columns"
-        aria-label="Columns"
+        aria-label={t("toolbar.columns")}
       >
         <SlidersHorizontal className={styles.icon} aria-hidden="true" />
         {hiddenCount > 0 ? (
@@ -478,8 +500,8 @@ function ColumnManager<TData extends RowData>({
         ) : null}
       </AriaButton>
       <Popover className={styles.popover} placement="bottom end">
-        <Dialog className={styles.dialog} aria-label="Columns">
-          <p className={styles.dialogTitle}>Columns</p>
+        <Dialog className={styles.dialog} aria-label={t("toolbar.columns")}>
+          <p className={styles.dialogTitle}>{t("toolbar.columns")}</p>
           {entries.map((entry) => (
             <label key={entry.id} className={styles.columnRow}>
               <input

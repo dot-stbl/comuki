@@ -1,11 +1,4 @@
 {
-  "actions": {
-    "retry": "Reintentar",
-    "close": "Cerrar"
-  },
-  "errors": {
-    "unknown": "Error desconocido"
-  },
   "page": {
     "title": "Conocimiento",
     "summary": "conjunto de reglas, revisiones, banco de evaluación",

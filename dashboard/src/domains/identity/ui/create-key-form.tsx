@@ -160,7 +160,7 @@ export function CreateKeyForm({
           disabled={busy}
           onClick={onCancel}
         >
-          {t("actions.cancel")}
+          {t("actions.cancel", { ns: "common" })}
         </Button>
       </FormActions>
     </FormLayout>

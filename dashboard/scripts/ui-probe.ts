@@ -30,7 +30,12 @@ import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, writeFileSync } from "node:fs"
 import { join, relative, resolve } from "node:path"
 
-import { chromium, type Browser, type ConsoleMessage, type Page } from "@playwright/test"
+import {
+  chromium,
+  type Browser,
+  type ConsoleMessage,
+  type Page,
+} from "@playwright/test"
 import { getViolations, injectAxe } from "axe-playwright"
 
 import {
@@ -49,8 +54,15 @@ import {
   writeReport,
   type RenderResult,
 } from "./lib/ui-probe-report"
-import { startStaticServer, StaticServerBindError, type StaticServerHandle } from "./lib/static-server"
-import { installStoryReadySignal, waitForStoryReady } from "./lib/storybook-ready-signal"
+import {
+  startStaticServer,
+  StaticServerBindError,
+  type StaticServerHandle,
+} from "./lib/static-server"
+import {
+  installStoryReadySignal,
+  waitForStoryReady,
+} from "./lib/storybook-ready-signal"
 
 const ROOT = process.cwd()
 const STORYBOOK_STATIC_DIR = resolve(ROOT, "storybook-static")
@@ -99,8 +111,13 @@ function usage(): string {
 }
 
 function runBuildStorybook(): void {
-  console.log("[ui:probe] building static storybook (bun run build-storybook)...")
-  const result = spawnSync("bun", ["run", "build-storybook"], { stdio: "inherit", cwd: ROOT })
+  console.log(
+    "[ui:probe] building static storybook (bun run build-storybook)..."
+  )
+  const result = spawnSync("bun", ["run", "build-storybook"], {
+    stdio: "inherit",
+    cwd: ROOT,
+  })
   if (result.error) {
     throw result.error
   }
@@ -111,12 +128,18 @@ function runBuildStorybook(): void {
 
 function runBuildDashboard(): void {
   console.log("[ui:probe] building dashboard (bunx vite build --mode mock)...")
-  const result = spawnSync("bunx", ["vite", "build", "--mode", "mock"], { stdio: "inherit", cwd: ROOT })
+  const result = spawnSync("bunx", ["vite", "build", "--mode", "mock"], {
+    stdio: "inherit",
+    cwd: ROOT,
+  })
   if (result.error) {
     throw result.error
   }
   if (result.status !== 0) {
-    throw new BuildFailedError("bunx vite build --mode mock", result.status ?? -1)
+    throw new BuildFailedError(
+      "bunx vite build --mode mock",
+      result.status ?? -1
+    )
   }
 }
 
@@ -133,7 +156,10 @@ function candidatePorts(explicit: number | null): readonly number[] {
   return ports
 }
 
-async function bindServer(root: string, explicitPort: number | null): Promise<StaticServerHandle> {
+async function bindServer(
+  root: string,
+  explicitPort: number | null
+): Promise<StaticServerHandle> {
   for (const port of candidatePorts(explicitPort)) {
     try {
       return await startStaticServer(root, port)
@@ -207,7 +233,9 @@ async function captureRender(
     consoleLog.push({
       type: msg.type(),
       text: msg.text(),
-      location: location.url ? `${location.url}:${location.lineNumber}:${location.columnNumber}` : null,
+      location: location.url
+        ? `${location.url}:${location.lineNumber}:${location.columnNumber}`
+        : null,
     })
   }
   const onPageError = (error: Error): void => {
@@ -241,7 +269,10 @@ async function captureRender(
     if (options.mode === "story") {
       await installStoryReadySignal(page)
       const url = `${serverUrl}/iframe.html?id=${encodeURIComponent(options.target)}&viewMode=story`
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: RENDER_READY_TIMEOUT_MS })
+      await page.goto(url, {
+        waitUntil: "domcontentloaded",
+        timeout: RENDER_READY_TIMEOUT_MS,
+      })
       const ready = await waitForStoryReady(page, RENDER_READY_TIMEOUT_MS)
       renderError = ready.error
       if (renderError === null) {
@@ -251,7 +282,10 @@ async function captureRender(
       await setDashboardTheme(page, theme)
       const url = `${serverUrl}${options.target}`
       try {
-        await page.goto(url, { waitUntil: "networkidle", timeout: RENDER_READY_TIMEOUT_MS })
+        await page.goto(url, {
+          waitUntil: "networkidle",
+          timeout: RENDER_READY_TIMEOUT_MS,
+        })
       } catch (error) {
         renderError = error instanceof Error ? error.message : String(error)
       }
@@ -263,7 +297,11 @@ async function captureRender(
   // Capture whatever is on screen even after a render error — a half-broken
   // page is exactly what an agent debugging a regression wants to see.
   try {
-    await page.screenshot({ path: artifacts.screenshot, fullPage: true, animations: "disabled" })
+    await page.screenshot({
+      path: artifacts.screenshot,
+      fullPage: true,
+      animations: "disabled",
+    })
   } catch {
     // page may already be closed/crashed — leave no screenshot file.
   }
@@ -289,7 +327,10 @@ async function captureRender(
     await injectAxe(page)
     const violations = await getViolations(page)
     axeViolationCount = violations.length
-    writeFileSync(artifacts.axeViolations, `${JSON.stringify(violations, null, 2)}\n`)
+    writeFileSync(
+      artifacts.axeViolations,
+      `${JSON.stringify(violations, null, 2)}\n`
+    )
   } catch (error) {
     writeFileSync(
       artifacts.axeViolations,
@@ -305,7 +346,9 @@ async function captureRender(
   page.off("console", onConsole)
   page.off("pageerror", onPageError)
 
-  const consoleErrorCount = consoleLog.filter((entry) => entry.type === "error").length
+  const consoleErrorCount = consoleLog.filter(
+    (entry) => entry.type === "error"
+  ).length
   const result: Omit<RenderResult, "status"> = {
     theme,
     error: renderError,
@@ -351,7 +394,10 @@ async function main(): Promise<void> {
   }, options.timeoutMs)
 
   const targetSlug = slugifyTarget(options.target)
-  const outDir = options.out !== null ? resolve(ROOT, options.out) : join(DEFAULT_OUT_ROOT, targetSlug)
+  const outDir =
+    options.out !== null
+      ? resolve(ROOT, options.out)
+      : join(DEFAULT_OUT_ROOT, targetSlug)
   ensureDir(outDir)
 
   if (options.mode === "story") {
@@ -368,7 +414,8 @@ async function main(): Promise<void> {
     }
   }
 
-  const serveRoot = options.mode === "story" ? STORYBOOK_STATIC_DIR : DASHBOARD_DIST_DIR
+  const serveRoot =
+    options.mode === "story" ? STORYBOOK_STATIC_DIR : DASHBOARD_DIST_DIR
   console.log(`[ui:probe] serving ${serveRoot} ...`)
   const server = await bindServer(serveRoot, options.port)
   activeServer = server
@@ -390,11 +437,20 @@ async function main(): Promise<void> {
       })
       const page = await context.newPage()
       try {
-        const render = await captureRender(page, theme, outDir, targetSlug, server.url, options)
+        const render = await captureRender(
+          page,
+          theme,
+          outDir,
+          targetSlug,
+          server.url,
+          options
+        )
         renders.push(render)
         console.log(
           `[ui:probe] ${theme}: ${render.status}` +
-            (render.error ? ` — ${render.error}` : ` (console errors ${render.consoleErrorCount}, axe ${render.axeViolationCount})`)
+            (render.error
+              ? ` — ${render.error}`
+              : ` (console errors ${render.consoleErrorCount}, axe ${render.axeViolationCount})`)
         )
       } finally {
         await context.close()
@@ -447,7 +503,10 @@ main().catch(async (error: unknown) => {
     process.exitCode = 1
     return
   }
-  console.error("[ui:probe] FATAL:", error instanceof Error ? error.stack ?? error.message : error)
+  console.error(
+    "[ui:probe] FATAL:",
+    error instanceof Error ? (error.stack ?? error.message) : error
+  )
   try {
     await activeBrowser?.close()
   } catch {

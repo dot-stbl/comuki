@@ -1,7 +1,4 @@
 {
-  "actions": {
-    "retry": "Retry"
-  },
   "registry": {
     "title": "Approvals",
     "summary": {
@@ -9,9 +6,6 @@
       "other": "<count/> awaiting decision"
     },
     "errorTitle": "Failed to load approvals"
-  },
-  "errors": {
-    "unknown": "Unknown error"
   },
   "decide": {
     "approvedToast": "Approved",

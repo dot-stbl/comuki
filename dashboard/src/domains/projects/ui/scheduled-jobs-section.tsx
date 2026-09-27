@@ -135,15 +135,18 @@ export function ScheduledJobsSection({
         <ScreenState
           kind="error"
           title={t("jobs.errorTitle")}
-          description={requestFailureMessage(jobs.error, t("errors.unknown"))}
+          description={requestFailureMessage(
+            jobs.error,
+            t("errors.unknown", { ns: "common" })
+          )}
           inset="none"
           data-test="project-jobs-error"
           action={
-            <Tooltip content={t("actions.retry")}>
+            <Tooltip content={t("actions.retry", { ns: "common" })}>
               <Button
                 size="icon-sm"
                 data-test="project-jobs-retry"
-                aria-label={t("actions.retry")}
+                aria-label={t("actions.retry", { ns: "common" })}
                 onClick={() => {
                   void jobs.refetch()
                 }}

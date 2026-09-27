@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import {
@@ -44,14 +45,16 @@ export const Route = createFileRoute("/identity/")({
 })
 
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { tab = "users", q } = Route.useSearch()
   const navigate = useNavigate()
 
   return (
     <RequirePermission
       permission="identity.manage"
-      title="Identity"
-      crumbs={[{ label: "platform" }, { label: "identity" }]}
+      title={t("route.identity")}
+      crumbs={[{ label: t("crumb.platform") }, { label: t("crumb.identity") }]}
     >
       <IdentityPage
         tab={tab}

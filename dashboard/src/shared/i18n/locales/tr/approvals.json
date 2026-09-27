@@ -1,0 +1,46 @@
+{
+  "registry": {
+    "title": "Onaylar",
+    "summary": {
+      "other": "<count/> karar bekliyor"
+    },
+    "errorTitle": "Onaylar yüklenemedi"
+  },
+  "decide": {
+    "approvedToast": "Onaylandı",
+    "rejectedToast": "Reddedildi",
+    "openedToast": "İnceleme açıldı",
+    "refused": "Karar yerine varmadı.",
+    "tail": "Kuyruk eskisi gibi — çalıştırma hâlâ bekliyor."
+  },
+  "empty": {
+    "title": "Kuyruk boş",
+    "description": "İnsanı bekleyen bir şey yok."
+  },
+  "card": {
+    "details": "Ayrıntılar",
+    "hide": "Gizle",
+    "review": "İncele",
+    "reject": "Reddet",
+    "approve": "Onayla",
+    "reviewAria": "{{app}} için {{noun}} öğesini incele",
+    "rejectAria": "{{app}} için {{noun}} öğesini reddet",
+    "approveAria": "{{app}} için {{noun}} öğesini onayla",
+    "planHead": "Plan — iş öğesi grafiği",
+    "assumptionsFallback": "Planlayıcı varsayımları",
+    "paneBaseline": "baseline",
+    "paneNew": "yeni"
+  },
+  "type": {
+    "plan": "plan",
+    "deploy": "deploy",
+    "baseline": "baseline",
+    "gate": "kapı",
+    "learning": "kural"
+  },
+  "risk": {
+    "high": "yüksek",
+    "medium": "orta",
+    "low": "düşük"
+  }
+}

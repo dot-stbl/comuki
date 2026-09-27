@@ -8,8 +8,14 @@
 // discipline applies to FE work. Designed to be called from the
 // `predev` and `prebuild` package.json hooks in dashboard/.
 //
+// Since `dashboard-i18n` it also carries the hardcoded-copy ban (design
+// D10, deny-by-default per task 7.3): user-facing copy as a literal in
+// JSX — text nodes or label-bearing attributes — fails the audit unless
+// it is on a reviewed fixture allowlist (wire-shape placeholders, wire
+// identifiers inside <code>, test fixtures).
+//
 // Output:
-//   stdout           -- banner + scope summary (terminal-readable)
+//   stdout           -- banner + scope summary + violations (terminal-readable)
 //   audit-data/last-commit-audit-fe.md -- machine-checkable artefact
 //
 // Invocation:
@@ -25,8 +31,9 @@ import {
   mkdirSync,
   writeFileSync,
   existsSync,
+  readFileSync,
 } from "node:fs"
-import { join, basename, dirname, resolve } from "node:path"
+import { join, basename, dirname, resolve, relative } from "node:path"
 import { spawnSync } from "node:child_process"
 
 // On Windows, `new URL(import.meta.url).pathname` returns `/C:/...`, and
@@ -64,6 +71,187 @@ const PATTERNS: { id: string; label: string; regex: RegExp }[] = [
   { id: "any-cast", label: "any cast", regex: /\bas\s+any\b/ },
   { id: "fetch-direct", label: "fetch() in component", regex: /\bfetch\s*\(/ },
 ]
+
+/* ------------------------------------------------------------------ */
+/* Hardcoded-copy ban (`dashboard-i18n` D10, deny-by-default per 7.3). */
+
+interface LiteralCopyFinding {
+  file: string
+  line: number
+  kind: "jsx-text" | "label-attr"
+  text: string
+}
+
+/**
+ * Reviewed fixtures — copy-shaped literals that are data, not copy
+ * (design D11): wire-shape placeholder examples, a wire identifier in a
+ * `<code>` slot, and the session test fixture's stand-in names. Each entry
+ * is `file :: text`; line numbers would drift.
+ */
+const LITERAL_COPY_ALLOWLIST: { file: string; text: string; reason: string }[] =
+  [
+    {
+      file: "src/domains/chat/pages/init-wizard-page.tsx",
+      text: "git@github.com:acme/checkout-web.git",
+      reason: "wire-shape placeholder example",
+    },
+    {
+      file: "src/domains/chat/pages/init-wizard-page.tsx",
+      text: "env:ACME_MODEL_KEY",
+      reason: "wire-shape placeholder example",
+    },
+    {
+      file: "src/domains/identity/ui/invite-user-form.tsx",
+      text: "name@example.com",
+      reason: "wire-shape placeholder example",
+    },
+    {
+      file: "src/domains/sources/ui/native-ticket-form.tsx",
+      text: "checkout-web, bug",
+      reason: "wire-shape placeholder example",
+    },
+    {
+      file: "src/domains/sources/ui/connection-fields.tsx",
+      text: "https://git.example.internal",
+      reason: "wire-shape placeholder example",
+    },
+    {
+      file: "src/domains/sources/ui/connection-form.tsx",
+      text: "COMUKI_GITHUB_TOKEN",
+      reason: "wire-shape placeholder example",
+    },
+    {
+      file: "src/domains/sources/ui/connect-source-form.tsx",
+      text: "COMUKI_GITHUB_TOKEN",
+      reason: "wire-shape placeholder example",
+    },
+    {
+      file: "src/domains/sources/pages/source-detail-page.tsx",
+      text: "secretEnvRef",
+      reason: "wire identifier inside a <code> slot",
+    },
+    {
+      file: "src/shared/session/test-session.tsx",
+      text: "Test User",
+      reason: "test fixture stand-in name",
+    },
+    {
+      file: "src/shared/session/test-session.tsx",
+      text: "Test project",
+      reason: "test fixture stand-in name",
+    },
+    {
+      file: "src/shared/session/test-session.tsx",
+      text: "Other project",
+      reason: "test fixture stand-in name",
+    },
+    {
+      file: "src/domains/chat/pages/init-wizard-page.tsx",
+      text: "https://api.example.com/v1",
+      reason: "wire-shape placeholder example",
+    },
+    {
+      file: "src/domains/identity/ui/link-oidc-form.tsx",
+      text: "oidc|provider|00000000",
+      reason: "wire-shape placeholder example",
+    },
+  ]
+
+/** Text directly before a *closing* tag — the classic JSX text node. */
+const JSX_TEXT_NODE = />(\s*[A-Za-z][A-Za-z0-9 ,.…'’&()-]*[A-Za-z.…!?)]\s*)<\//
+
+/** Copy-bearing attributes receiving a string literal (not `t(...)`). */
+const LABEL_ATTR =
+  /\b(?:label|title|description|placeholder|summary|emptyLabel|aria-label|content)\s*=\s*"([^"{}]*[A-Za-z]{2}[^"{}]*)"/
+
+/** True for lines that are prose about the code, not the code itself. */
+function isCommentLine(trimmed: string): boolean {
+  return (
+    trimmed.startsWith("//") ||
+    trimmed.startsWith("*") ||
+    trimmed.startsWith("/*")
+  )
+}
+
+function scanLiteralCopy(): LiteralCopyFinding[] {
+  const srcRoot = join(REPO_ROOT, "dashboard", "src")
+  const files: string[] = []
+  collectTsx(srcRoot, files)
+
+  const findings: LiteralCopyFinding[] = []
+  for (const abs of files) {
+    // `src/...` relative to dashboard/ — the shape the allowlist speaks.
+    const rel = relative(join(REPO_ROOT, "dashboard"), abs).replaceAll(
+      "\\",
+      "/"
+    )
+    const lines = readFileSync(abs, "utf8").split(/\r?\n/)
+    let inBlockComment = false
+    lines.forEach((line, index) => {
+      const trimmed = line.trim()
+      if (inBlockComment) {
+        if (trimmed.includes("*/")) {
+          inBlockComment = false
+        }
+        return
+      }
+      if (trimmed.startsWith("/*") && !trimmed.includes("*/")) {
+        inBlockComment = true
+        return
+      }
+      if (isCommentLine(trimmed)) {
+        return
+      }
+
+      const textMatch = line.match(JSX_TEXT_NODE)
+      if (textMatch && textMatch[1]!.trim().length >= 2) {
+        findings.push({
+          file: rel,
+          line: index + 1,
+          kind: "jsx-text",
+          text: textMatch[1]!.trim(),
+        })
+      }
+
+      const attrMatch = line.match(LABEL_ATTR)
+      if (attrMatch) {
+        findings.push({
+          file: rel,
+          line: index + 1,
+          kind: "label-attr",
+          text: attrMatch[1]!,
+        })
+      }
+    })
+  }
+  return findings
+}
+
+function collectTsx(dir: string, out: string[]): void {
+  for (const entry of readdirSync(dir)) {
+    if (entry === "node_modules" || entry === "dist" || entry.startsWith(".")) {
+      continue
+    }
+    const full = join(dir, entry)
+    const stats = statSync(full)
+    if (stats.isDirectory()) {
+      collectTsx(full, out)
+    } else if (
+      entry.endsWith(".tsx") &&
+      !entry.includes(".test.") &&
+      !entry.includes(".stories.") &&
+      !full.includes("_generated")
+    ) {
+      out.push(full)
+    }
+  }
+}
+
+function isAllowlisted(finding: LiteralCopyFinding): boolean {
+  return LITERAL_COPY_ALLOWLIST.some(
+    (entry) => entry.file === finding.file && entry.text === finding.text
+  )
+}
 
 interface RuleScope {
   name: string
@@ -231,6 +419,23 @@ function main(): void {
   console.log(
     `[rule-audit] ${level} ${total} violation(s) across ${hitsByFile.size} file(s); report at ${OUTPUT_PATH}`
   )
+
+  // Hardcoded-copy ban — deny-by-default (`dashboard-i18n` D10 / task 7.3).
+  const literalFindings = scanLiteralCopy().filter((finding) => {
+    const allowlisted = isAllowlisted(finding)
+    if (!allowlisted) {
+      console.log(
+        `[rule-audit] [FAIL] hardcoded copy: ${finding.file}:${finding.line} (${finding.kind}) "${finding.text}"`
+      )
+    }
+    return !allowlisted
+  })
+  console.log(
+    `[rule-audit] literal-copy: ${literalFindings.length} violation(s), ${LITERAL_COPY_ALLOWLIST.length} allowlisted fixture(s)`
+  )
+  if (literalFindings.length > 0) {
+    process.exit(1)
+  }
 }
 
 main()

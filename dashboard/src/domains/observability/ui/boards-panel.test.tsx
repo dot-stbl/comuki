@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
+import { i18n, loadLocale } from "@/shared/i18n"
 import { BoardsPanel } from "@/domains/observability/ui/boards-panel"
 import { ConnectGuide } from "@/domains/observability/ui/connect-guide"
 import {
@@ -170,5 +171,21 @@ describe("the seeded boards", () => {
     expect(OBSERVABILITY_UNCONFIGURED_SEED.boardsRepo).toEqual(
       OBSERVABILITY_SEED.boardsRepo
     )
+  })
+})
+
+describe("the boards in russian", () => {
+  it("says a board that is not imported in russian words", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    try {
+      render(<BoardsPanel boards={OBSERVABILITY_SEED.boards} />)
+
+      const pending = document.querySelector('[data-test="board-not-imported"]')
+      expect(pending?.textContent).toContain("ещё не импортирована")
+    } finally {
+      await i18n.changeLanguage("en")
+    }
   })
 })

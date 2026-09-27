@@ -1,0 +1,46 @@
+{
+  "registry": {
+    "title": "審批",
+    "summary": {
+      "other": "<count/> 個等待決策"
+    },
+    "errorTitle": "審批載入失敗"
+  },
+  "decide": {
+    "approvedToast": "已批准",
+    "rejectedToast": "已拒絕",
+    "openedToast": "已打開復審",
+    "refused": "決策未生效。",
+    "tail": "佇列保持原樣 — run 仍在等待。"
+  },
+  "empty": {
+    "title": "佇列為空",
+    "description": "沒有等待人的東西。"
+  },
+  "card": {
+    "details": "詳情",
+    "hide": "隱藏",
+    "review": "複審",
+    "reject": "拒絕",
+    "approve": "批准",
+    "reviewAria": "複審 {{app}} 的{{noun}}",
+    "rejectAria": "拒絕 {{app}} 的{{noun}}",
+    "approveAria": "批准 {{app}} 的{{noun}}",
+    "planHead": "計劃 — 工作項圖",
+    "assumptionsFallback": "規劃者假設",
+    "paneBaseline": "基線",
+    "paneNew": "新版"
+  },
+  "type": {
+    "plan": "計劃",
+    "deploy": "部署",
+    "baseline": "基線",
+    "gate": "門禁",
+    "learning": "規則"
+  },
+  "risk": {
+    "high": "高",
+    "medium": "中",
+    "low": "低"
+  }
+}

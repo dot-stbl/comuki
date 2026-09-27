@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { RequirePermission } from "@/app/layout/require-permission"
 import { CreateTicketPage } from "@/domains/sources"
@@ -19,16 +20,18 @@ export const Route = createFileRoute("/sources/$sourceId/ticket/new")({
    The route cannot spell that crumb — it has an id and not a name — so the page
    fills it once the connection has loaded. */
 function RouteComponent() {
+  const { t } = useTranslation("shell")
+
   const { sourceId } = Route.useParams()
 
   return (
     <RequirePermission
       permission="sources.view"
-      title="New ticket"
+      title={t("route.newTicket")}
       crumbs={[
-        { label: "configure" },
-        { label: "sources", to: "/sources" },
-        { label: "new ticket" },
+        { label: t("crumb.configure") },
+        { label: t("crumb.sources"), to: "/sources" },
+        { label: t("crumb.newTicket") },
       ]}
     >
       <CreateTicketPage sourceId={sourceId} />

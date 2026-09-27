@@ -29,6 +29,7 @@ export const TOKEN_MAP = [
   ["--foreground", "text"],
   ["--muted-foreground", "muted"],
   ["--text-faint", "faint"],
+  ["--text-on-tinted", "onTinted"],
   ["--primary", "accent"],
   ["--primary-foreground", "accentFg"],
   ["--destructive", "destructive"],

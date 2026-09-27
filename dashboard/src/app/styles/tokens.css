@@ -89,8 +89,8 @@
   --danger-foreground: var(--primary-foreground);
   --surface: var(--card);
   --surface-raised: var(--popover);
-  --text: var(--foreground);
-  --text-muted: var(--muted-foreground);
+--text: var(--foreground);
+--text-muted: var(--muted-foreground);
   --bar: var(--background);
   --rule: var(--border);
   --rule-strong: var(--border-strong);

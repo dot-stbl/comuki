@@ -42,6 +42,11 @@ export interface Palette {
   muted: string
   /** Tertiary text — still content, so it still clears 4.5:1 on the floor. */
   faint: string
+  /** Text that sits on a status-tinted background (selected row, highlighted chat
+     message, etc.). Clears 4.5:1 on every `--st-*-tint` at 18% over the lane. In
+     dark mode equals `text`; in light mode is darker than `text` because the
+     light floor+tint blend sits well above `faint`'s 4.5:1 ceiling. */
+  onTinted: string
   /** The one accent: filled button, focus ring, active rail border, caret. */
   accent: string
   /** What is legible *on* the accent. */
@@ -176,6 +181,7 @@ const DICHROMAT_DECK: Theme = {
       text: "#e8e8ee",
       muted: "#b8b8bd",
       faint: "#8a8a8f",
+      onTinted: "#e8e8ee",
       accent: "#ebebf0",
       accentFg: "#1c1c21",
       destructive: "#d2d200",
@@ -199,6 +205,7 @@ const DICHROMAT_DECK: Theme = {
       text: "#1f1f24",
       muted: "#414147",
       faint: "#67676c",
+      onTinted: "#000000",
       accent: "#2c2c31",
       accentFg: "#f6f6ff",
       destructive: "#333300",
@@ -230,6 +237,7 @@ const GRAPHITE: Theme = {
       text: "#e4e8ed",
       muted: "#adb1b6",
       faint: "#7a7d81",
+      onTinted: "#e4e8ed",
       accent: "#50ccd9",
       accentFg: "#141d1e",
       destructive: "#f77671",
@@ -253,6 +261,7 @@ const GRAPHITE: Theme = {
       text: "#1c2023",
       muted: "#42464a",
       faint: "#6c7073",
+      onTinted: "#000000",
       accent: "#00737d",
       accentFg: "#edf8fa",
       destructive: "#951720",
@@ -284,6 +293,7 @@ const DOCKSIDE: Theme = {
       text: "#ebe5df",
       muted: "#b7b0aa",
       faint: "#867e76",
+      onTinted: "#ebe5df",
       accent: "#f9a163",
       accentFg: "#201a17",
       destructive: "#f47b61",
@@ -307,6 +317,7 @@ const DOCKSIDE: Theme = {
       text: "#25211c",
       muted: "#4a443e",
       faint: "#736b63",
+      onTinted: "#000000",
       accent: "#a35623",
       accentFg: "#fef4f0",
       destructive: "#921e05",
@@ -338,6 +349,7 @@ const BLUEPRINT: Theme = {
       text: "#e1e6ec",
       muted: "#abb3bc",
       faint: "#78828e",
+      onTinted: "#e1e6ec",
       accent: "#b2e8fa",
       accentFg: "#151d1f",
       destructive: "#fc7460",
@@ -361,6 +373,7 @@ const BLUEPRINT: Theme = {
       text: "#1a1d22",
       muted: "#3e4349",
       faint: "#676d75",
+      onTinted: "#000000",
       accent: "#07597c",
       accentFg: "#eff7fd",
       destructive: "#980e04",
@@ -392,6 +405,7 @@ const BUREAU: Theme = {
       text: "#e6e6e2",
       muted: "#b4b4b0",
       faint: "#858481",
+      onTinted: "#e6e6e2",
       accent: "#da90b3",
       accentFg: "#201a1c",
       destructive: "#f77769",
@@ -415,6 +429,7 @@ const BUREAU: Theme = {
       text: "#1e1e1b",
       muted: "#444441",
       faint: "#6e6e6a",
+      onTinted: "#000000",
       accent: "#8c3564",
       accentFg: "#fdf4f8",
       destructive: "#951815",
@@ -446,6 +461,7 @@ const APERTURE: Theme = {
       text: "#e9eef4",
       muted: "#bcc1c6",
       faint: "#90959a",
+      onTinted: "#e9eef4",
       accent: "#c1d75b",
       accentFg: "#1b1c16",
       destructive: "#ff7166",
@@ -469,6 +485,7 @@ const APERTURE: Theme = {
       text: "#1a1d22",
       muted: "#393c42",
       faint: "#5b5e64",
+      onTinted: "#000000",
       accent: "#5c6900",
       accentFg: "#f5f7ef",
       destructive: "#9b040f",
@@ -529,6 +546,7 @@ const DISPATCHER: Theme = {
       text: "#dee4ea",
       muted: "#aaafb4",
       faint: "#787d82",
+      onTinted: "#dee4ea",
       accent: "#4fb3ac",
       accentFg: "#0b0e12",
       destructive: "#e0705f",
@@ -552,6 +570,7 @@ const DISPATCHER: Theme = {
       text: "#1b232e",
       muted: "#434952",
       faint: "#6e7379",
+      onTinted: "#000000",
       accent: "#24706b",
       accentFg: "#ffffff",
       destructive: "#b0473b",
@@ -591,6 +610,7 @@ export const PALETTE_KEYS = [
   "text",
   "muted",
   "faint",
+  "onTinted",
   "accent",
   "accentFg",
   "destructive",

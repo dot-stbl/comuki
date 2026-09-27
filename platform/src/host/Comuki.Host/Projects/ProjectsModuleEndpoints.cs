@@ -1,6 +1,5 @@
 using Comuki.Host.Projects.Models;
 using Comuki.Modules.Identity.Application.Permissions;
-using Comuki.Modules.Projects.Application.Projects;
 using Comuki.Modules.Projects.Application.Projects.Archive;
 using Comuki.Modules.Projects.Application.Projects.Create;
 using Comuki.Modules.Projects.Application.Projects.Queries;
@@ -16,8 +15,10 @@ namespace Comuki.Host.Projects;
 /// <summary>
 /// Thin REST surface of the Projects module (issue #12 T4.8): endpoints
 /// map requests to commands, run the FluentValidation validator and hand
-/// off to a handler — no business logic here. Typed exceptions become
-/// ProblemDetails responses (404 / 409 / 400) in one place.
+/// off to a handler — no business logic here, and no error plumbing either:
+/// typed exceptions surface as ProblemDetails through the composition-root
+/// <c>ProviderExceptionHandler</c> and its per-error-type handlers
+/// (<c>Errors/Handlers/Projects</c>).
 ///
 /// Permissions are enforced by the host-wide filter
 /// (<see cref="RequiresPermissionAttribute"/>) — read endpoints demand
@@ -29,8 +30,6 @@ namespace Comuki.Host.Projects;
 public static class ProjectsModuleEndpoints
 {
     /// <summary>Maps the projects endpoints under <see cref="ApiRoutes.Projects"/>.</summary>
-    /// <param name="app"></param>
-    /// <returns></returns>
     public static IEndpointRouteBuilder MapProjectsEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(ApiRoutes.Projects).WithTags("Projects");
@@ -54,14 +53,11 @@ public static class ProjectsModuleEndpoints
         IValidator<CreateProjectCommand> validator,
         CancellationToken cancellationToken)
     {
-        return await ProjectsEndpointRunner.ExecuteAsync(async () =>
-        {
-            var command = ProjectsEndpointMapper.ToCommand(request);
-            await validator.ValidateAndThrowAsync(command, cancellationToken);
-            var view = await handler.HandleAsync(command, cancellationToken);
+        var command = ProjectsEndpointMapper.ToCommand(request);
+        await validator.ValidateAndThrowAsync(command, cancellationToken);
+        var view = await handler.HandleAsync(command, cancellationToken);
 
-            return Results.Created($"{ApiRoutes.Projects}/{view.Id}", view);
-        });
+        return Results.Created($"{ApiRoutes.Projects}/{view.Id}", view);
     }
 
     [RequiresPermission("project:read")]
@@ -70,8 +66,7 @@ public static class ProjectsModuleEndpoints
         ListProjectsHandler handler,
         CancellationToken cancellationToken)
     {
-        return await ProjectsEndpointRunner.ExecuteAsync(
-            async () => Results.Ok(await handler.HandleAsync(includeArchived, cancellationToken)));
+        return Results.Ok(await handler.HandleAsync(includeArchived, cancellationToken));
     }
 
     [RequiresPermission("project:read")]
@@ -80,8 +75,7 @@ public static class ProjectsModuleEndpoints
         GetProjectHandler handler,
         CancellationToken cancellationToken)
     {
-        return await ProjectsEndpointRunner.ExecuteAsync(
-            async () => Results.Ok(await handler.HandleAsync(new ProjectId(projectId), cancellationToken)));
+        return Results.Ok(await handler.HandleAsync(new ProjectId(projectId), cancellationToken));
     }
 
     [RequiresPermission("project:admin")]
@@ -92,13 +86,10 @@ public static class ProjectsModuleEndpoints
         IValidator<UpdateProjectCommand> validator,
         CancellationToken cancellationToken)
     {
-        return await ProjectsEndpointRunner.ExecuteAsync(async () =>
-        {
-            var command = ProjectsEndpointMapper.ToCommand(projectId, request);
-            await validator.ValidateAndThrowAsync(command, cancellationToken);
+        var command = ProjectsEndpointMapper.ToCommand(projectId, request);
+        await validator.ValidateAndThrowAsync(command, cancellationToken);
 
-            return Results.Ok(await handler.HandleAsync(command, cancellationToken));
-        });
+        return Results.Ok(await handler.HandleAsync(command, cancellationToken));
     }
 
     [RequiresPermission("project:admin")]
@@ -107,12 +98,9 @@ public static class ProjectsModuleEndpoints
         ArchiveProjectHandler handler,
         CancellationToken cancellationToken)
     {
-        return await ProjectsEndpointRunner.ExecuteAsync(async () =>
-        {
-            await handler.HandleAsync(new ArchiveProjectCommand(new ProjectId(projectId)), cancellationToken);
+        await handler.HandleAsync(new ArchiveProjectCommand(new ProjectId(projectId)), cancellationToken);
 
-            return Results.NoContent();
-        });
+        return Results.NoContent();
     }
 
     [RequiresPermission("project:read")]
@@ -121,8 +109,7 @@ public static class ProjectsModuleEndpoints
         GetProjectSettingsHandler handler,
         CancellationToken cancellationToken)
     {
-        return await ProjectsEndpointRunner.ExecuteAsync(
-            async () => Results.Ok(await handler.HandleAsync(new ProjectId(projectId), cancellationToken)));
+        return Results.Ok(await handler.HandleAsync(new ProjectId(projectId), cancellationToken));
     }
 
     [RequiresPermission("project:admin")]
@@ -133,13 +120,10 @@ public static class ProjectsModuleEndpoints
         IValidator<UpdateSettingsCommand> validator,
         CancellationToken cancellationToken)
     {
-        return await ProjectsEndpointRunner.ExecuteAsync(async () =>
-        {
-            var command = ProjectsEndpointMapper.ToCommand(projectId, request);
-            await validator.ValidateAndThrowAsync(command, cancellationToken);
+        var command = ProjectsEndpointMapper.ToCommand(projectId, request);
+        await validator.ValidateAndThrowAsync(command, cancellationToken);
 
-            return Results.Ok(await handler.HandleAsync(command, cancellationToken));
-        });
+        return Results.Ok(await handler.HandleAsync(command, cancellationToken));
     }
 }
 
@@ -153,7 +137,10 @@ file static class ProjectsEndpointMapper
             request.Slug,
             request.Description,
             request.ProfilesGitUrl,
-            request.ProfilesGitRef);
+            request.ProfilesGitRef,
+            request.Icon,
+            request.Color,
+            request.Tags);
     }
 
     public static UpdateProjectCommand ToCommand(Guid projectId, UpdateProjectRequest request)
@@ -163,7 +150,10 @@ file static class ProjectsEndpointMapper
             request.Name,
             request.Description,
             request.ProfilesGitUrl,
-            request.ProfilesGitRef);
+            request.ProfilesGitRef,
+            request.Icon,
+            request.Color,
+            request.Tags);
     }
 
     public static UpdateSettingsCommand ToCommand(Guid projectId, UpdateSettingsRequest request)
@@ -182,60 +172,5 @@ file static class ProjectsEndpointMapper
             request.HardBudgetUsdMicros,
             request.DomainType,
             request.CustomDomainTypesJson);
-    }
-}
-
-/// <summary>Typed exceptions → ProblemDetails — one place for every endpoint of the module.</summary>
-file static class ProjectsEndpointRunner
-{
-    public static async Task<IResult> ExecuteAsync(Func<Task<IResult>> action)
-    {
-        try
-        {
-            return await action();
-        }
-        catch (ProjectNotFoundException exception)
-        {
-            return TypedResults.Problem(
-                title: "Project not found",
-                detail: exception.Message,
-                statusCode: StatusCodes.Status404NotFound,
-                extensions: new Dictionary<string, object?>
-                {
-                    ["code"] = "project.not_found",
-                    ["projectId"] = exception.ProjectId.ToString(),
-                });
-        }
-        catch (ProjectSettingsConflictException exception)
-        {
-            return TypedResults.Problem(
-                title: "Settings version conflict",
-                detail: exception.Message + "; re-read the settings and retry",
-                statusCode: StatusCodes.Status409Conflict,
-                extensions: new Dictionary<string, object?>
-                {
-                    ["code"] = "project.settings_conflict",
-                    ["projectId"] = exception.ProjectId.ToString(),
-                    ["currentVersion"] = exception.CurrentVersion,
-                });
-        }
-        catch (ProjectConflictException exception)
-        {
-            return TypedResults.Problem(
-                title: "Project conflict",
-                detail: exception.Message,
-                statusCode: StatusCodes.Status409Conflict,
-                extensions: new Dictionary<string, object?> { ["code"] = "project.conflict" });
-        }
-        catch (ValidationException exception)
-        {
-            var errors = exception.Errors
-                .GroupBy(static failure => failure.PropertyName, StringComparer.Ordinal)
-                .ToDictionary(
-                    static grouping => grouping.Key,
-                    static grouping => grouping.Select(static failure => failure.ErrorMessage).ToArray());
-
-            return TypedResults.ValidationProblem(errors);
-        }
     }
 }

@@ -1,3 +1,4 @@
+using Comuki.Modules.Projects.Domain.Projects;
 using FluentValidation;
 
 namespace Comuki.Modules.Projects.Application.Projects.Create;
@@ -11,7 +12,7 @@ public sealed class CreateProjectValidator : AbstractValidator<CreateProjectComm
     /// <summary>Slug shape: lower-case kebab-case, 3–64 chars (the URL key of the project).</summary>
     public const string SlugPattern = "^[a-z0-9]+(-[a-z0-9]+)*$";
 
-    /// <summary>Rules: name shape/length, slug pattern, optional field length bounds.</summary>
+    /// <summary>Rules: name shape/length, slug pattern, optional field length bounds, identity-field shape.</summary>
     public CreateProjectValidator()
     {
         RuleFor(static command => command.Name)
@@ -32,5 +33,21 @@ public sealed class CreateProjectValidator : AbstractValidator<CreateProjectComm
 
         RuleFor(static command => command.ProfilesGitRef)
             .MaximumLength(256);
+
+        RuleFor(static command => command.Icon)
+            .NotEmpty()
+            .When(static command => command.Icon is not null)
+            .MaximumLength(Project.MaxIconLength);
+
+        RuleFor(static command => command.Color)
+            .NotEmpty()
+            .When(static command => command.Color is not null)
+            .Must(static color => color is null || ProjectIdentityRules.ColorIsWellFormed(color))
+            .WithMessage("color must be a #rrggbb hex value, e.g. #3c5a86");
+
+        RuleFor(static command => command.Tags)
+            .Must(static tags => tags is null || ProjectIdentityRules.TagsAreWellFormed(tags))
+            .WithMessage(
+                $"tags must match '{Project.TagPattern}' after trimming and number at most {Project.MaxTags} distinct");
     }
 }

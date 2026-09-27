@@ -3,36 +3,39 @@ using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Modules.Projects.Application.Views;
 
-///<summary>
+/// <summary>
 /// Read model of per-project settings. <see cref="Version"/> rides along
 /// so API clients can echo it into the next PUT (optimistic concurrency).
 /// </summary>
-/// <param name="ProjectId"></param>
-/// <param name="MinIdle"></param>
-/// <param name="MaxConcurrent"></param>
-/// <param name="IdleTtlSeconds"></param>
-/// <param name="ApproveRequired"></param>
-/// <param name="KnowledgeEnabled"></param>
-/// <param name="VerifyEnabled"></param>
-/// <param name="ProxyEnabled"></param>
-/// <param name="SoftBudgetUsdMicros"></param>
-/// <param name="HardBudgetUsdMicros"></param>
-/// <param name="DomainType">Routing mode for user-facing domain types.</param>
-/// <param name="CustomDomainTypesJson">Per-project JSON map of <c>domain-type → profile-key</c>.</param>
-/// <param name="UpdatedAt"></param>
-/// <param name="Version"></param>
-public sealed record ProjectSettingsView(
-    ProjectId ProjectId,
-    int MinIdle,
-    int MaxConcurrent,
-    int? IdleTtlSeconds,
-    bool ApproveRequired,
-    bool KnowledgeEnabled,
-    bool VerifyEnabled,
-    bool ProxyEnabled,
-    long? SoftBudgetUsdMicros,
-    long? HardBudgetUsdMicros,
-    ProjectDomainType DomainType,
-    string? CustomDomainTypesJson,
-    DateTimeOffset UpdatedAt,
-    int Version);
+public sealed record ProjectSettingsView
+{
+    public required ProjectId ProjectId { get; init; }
+
+    public required int MinIdle { get; init; }
+
+    public required int MaxConcurrent { get; init; }
+
+    public required int? IdleTtlSeconds { get; init; }
+
+    public required bool ApproveRequired { get; init; }
+
+    public required bool KnowledgeEnabled { get; init; }
+
+    public required bool VerifyEnabled { get; init; }
+
+    public required bool ProxyEnabled { get; init; }
+
+    public required long? SoftBudgetUsdMicros { get; init; }
+
+    public required long? HardBudgetUsdMicros { get; init; }
+
+    /// <summary>Routing mode for user-facing domain types.</summary>
+    public required ProjectDomainType DomainType { get; init; }
+
+    /// <summary>Per-project JSON map of <c>domain-type → profile-key</c>.</summary>
+    public required string? CustomDomainTypesJson { get; init; }
+
+    public required DateTimeOffset UpdatedAt { get; init; }
+
+    public required int Version { get; init; }
+}

@@ -4,14 +4,9 @@ using Comuki.Modules.Projects.Application.Views;
 namespace Comuki.Modules.Projects.Application.Projects.Update;
 
 /// <summary>Applies a partial update to an existing project.</summary>
-/// <param name="projects"></param>
-/// <param name="clock"></param>
-public sealed class UpdateProjectHandler(IProjectStore projects, TimeProvider clock)
+public sealed class UpdateProjectHandler(IProjectStore projects, TimeProvider clock, IProjectsMapper mapper)
 {
     /// <summary>Updates the project.</summary>
-    /// <param name="command"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
     /// <exception cref="ProjectNotFoundException">No project with the given id.</exception>
     public async Task<ProjectView> HandleAsync(UpdateProjectCommand command, CancellationToken cancellationToken = default)
     {
@@ -23,10 +18,13 @@ public sealed class UpdateProjectHandler(IProjectStore projects, TimeProvider cl
             command.Description,
             command.ProfilesGitUrl,
             command.ProfilesGitRef,
-            clock.GetUtcNow());
+            clock.GetUtcNow(),
+            command.Icon,
+            command.Color,
+            command.Tags);
 
         await projects.SaveAsync(project, cancellationToken);
 
-        return ProjectMapper.ToView(project);
+        return mapper.ToView(project);
     }
 }

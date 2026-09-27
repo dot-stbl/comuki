@@ -10,10 +10,13 @@ namespace Comuki.Modules.Projects.Unit;
 /// <summary>
 /// Mapper fidelity: every entity field lands in its view slot, nullability
 /// rides along, and the settings version passes through unchanged (clients
-/// echo it into the next PUT).
+/// echo it into the next PUT). The mapper under test is the real
+/// Mapperly-generated <see cref="ProjectsMapper"/> — no mocks: generated
+/// bodies are deterministic and stateless.
 /// </summary>
-public sealed class ProjectMapperShould
+public sealed class ProjectsMapperShould
 {
+    private readonly IProjectsMapper mapper = new ProjectsMapper();
     private readonly DateTimeOffset now = new(2026, 8, 31, 12, 0, 0, TimeSpan.Zero);
 
     [Fact(DisplayName = "Given a project, when mapped, then the view mirrors every field including the optional ones")]
@@ -25,9 +28,12 @@ public sealed class ProjectMapperShould
             "customer portal",
             "https://git.example.com/acme/profiles.git",
             "refs/tags/v1",
-            now);
+            now,
+            icon: "🛰️",
+            color: "#3C5A86",
+            tags: ["Web"]);
 
-        var view = ProjectMapper.ToView(project);
+        var view = mapper.ToView(project);
 
         view.Id.ShouldBe(project.Id);
         view.Name.ShouldBe("Web Platform");
@@ -35,6 +41,9 @@ public sealed class ProjectMapperShould
         view.Description.ShouldBe("customer portal");
         view.ProfilesGitUrl.ShouldBe("https://git.example.com/acme/profiles.git");
         view.ProfilesGitRef.ShouldBe("refs/tags/v1");
+        view.Icon.ShouldBe("🛰️");
+        view.Color.ShouldBe("#3c5a86");
+        view.Tags.ShouldBe(["web"]);
         view.Archived.ShouldBeFalse();
         view.CreatedAt.ShouldBe(now);
         view.UpdatedAt.ShouldBe(now);
@@ -45,11 +54,14 @@ public sealed class ProjectMapperShould
     {
         var project = Project.Create("Backend", "backend", null, null, null, now);
 
-        var view = ProjectMapper.ToView(project);
+        var view = mapper.ToView(project);
 
         view.Description.ShouldBeNull();
         view.ProfilesGitUrl.ShouldBeNull();
         view.ProfilesGitRef.ShouldBeNull();
+        view.Icon.ShouldBeNull();
+        view.Color.ShouldBeNull();
+        view.Tags.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Given an archived project, when mapped, then the archive flag and timestamp ride along")]
@@ -58,7 +70,7 @@ public sealed class ProjectMapperShould
         var project = Project.Create("Backend", "backend", null, null, null, now);
         project.Archive(now.AddDays(1));
 
-        var view = ProjectMapper.ToView(project);
+        var view = mapper.ToView(project);
 
         view.Archived.ShouldBeTrue();
         view.ArchivedAt.ShouldBe(now.AddDays(1));
@@ -70,7 +82,7 @@ public sealed class ProjectMapperShould
         var projectId = ProjectId.New();
         var settings = ProjectSettings.CreateDefaults(projectId, now);
 
-        var view = ProjectMapper.ToView(settings);
+        var view = mapper.ToView(settings);
 
         view.ProjectId.ShouldBe(projectId);
         view.MinIdle.ShouldBe(0);
@@ -92,7 +104,7 @@ public sealed class ProjectMapperShould
         var settings = ProjectSettings.CreateDefaults(projectId, now);
         settings.Apply(2, 16, 1800, true, true, false, true, 2_000_000, 10_000_000, ProjectDomainType.Standard, null, now.AddMinutes(5));
 
-        var view = ProjectMapper.ToView(settings);
+        var view = mapper.ToView(settings);
 
         view.MinIdle.ShouldBe(2);
         view.MaxConcurrent.ShouldBe(16);

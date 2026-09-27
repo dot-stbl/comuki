@@ -57,6 +57,12 @@
     <PackageVersion Include="Refit" Version="15.2.0" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="15.2.0" />
     <PackageVersion Include="Refit.Reflection" Version="15.2.0" />
+    <!-- Riok.Mapperly 4.3.1 (adopt-mapperly): source generator for
+         entity→view mapping (canon ~/.agents/rules/csharp/mapping.md).
+         Latest stable on nuget.org, same line as the local package cache.
+         Referenced per adopted module with PrivateAssets/ExcludeAssets —
+         analyzer-style wiring, no runtime assembly flows. -->
+    <PackageVersion Include="Riok.Mapperly" Version="4.3.1" />
   </ItemGroup>
 
   <!-- Comuki-native surface (issue #54): TOML config parsing for

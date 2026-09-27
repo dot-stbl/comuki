@@ -84,4 +84,68 @@ public sealed class ProjectDomainShould
         project.ArchivedAt.ShouldBe(first);
         project.UpdatedAt.ShouldBe(first);
     }
+
+    [Fact(DisplayName = "Given identity fields, when Create is called, then the icon is verbatim, the colour lower-cased and the tags normalized")]
+    public void NormalizeIdentityOnCreate()
+    {
+        var project = Project.Create("Acme", "acme", null, null, null, now,
+            icon: "🛰️", color: "#3C5A86", tags: ["web", "Billing"]);
+
+        project.Icon.ShouldBe("🛰️");
+        project.Color.ShouldBe("#3c5a86");
+        project.Tags.ShouldBe(["web", "billing"]);
+    }
+
+    [Fact(DisplayName = "Given padded duplicate tags, when Create is called, then the stored list is one trimmed lower-case entry")]
+    public void CollapsePaddedDuplicateTagsOnCreate()
+    {
+        var project = Project.Create("Acme", "acme", null, null, null, now, tags: [" web ", "web", "", "WEB"]);
+
+        project.Tags.ShouldBe(["web"]);
+    }
+
+    [Fact(DisplayName = "Given no identity arguments, when Create is called, then icon and colour are null and tags empty")]
+    public void CreateWithoutIdentity()
+    {
+        var project = Project.Create("Acme", "acme", null, null, null, now);
+
+        project.Icon.ShouldBeNull();
+        project.Color.ShouldBeNull();
+        project.Tags.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Given a stored identity, when Update patches only the colour, then icon and tags stay")]
+    public void PatchColourOnlyKeepsIconAndTags()
+    {
+        var project = Project.Create("Acme", "acme", null, null, null, now,
+            icon: "🛰️", color: "#112233", tags: ["web"]);
+        var later = now.AddHours(1);
+
+        project.Update(null, null, null, null, later, icon: null, color: "#AABBCC", tags: null);
+
+        project.Icon.ShouldBe("🛰️");
+        project.Color.ShouldBe("#aabbcc");
+        project.Tags.ShouldBe(["web"]);
+        project.UpdatedAt.ShouldBe(later);
+    }
+
+    [Fact(DisplayName = "Given stored tags, when Update sends an empty list, then tags are cleared")]
+    public void EmptyTagsListClearsTags()
+    {
+        var project = Project.Create("Acme", "acme", null, null, null, now, tags: ["web", "billing"]);
+
+        project.Update(null, null, null, null, now, tags: []);
+
+        project.Tags.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Given stored tags, when Update omits the tags argument, then tags are unchanged")]
+    public void AbsentTagsKeepStoredTags()
+    {
+        var project = Project.Create("Acme", "acme", null, null, null, now, tags: ["web", "billing"]);
+
+        project.Update("Renamed", null, null, null, now);
+
+        project.Tags.ShouldBe(["web", "billing"]);
+    }
 }

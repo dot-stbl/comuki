@@ -6,7 +6,8 @@ namespace Comuki.Modules.Projects.Application.Projects.Archive;
 /// <summary>Archives a project; archiving twice is a no-op.</summary>
 /// <param name="projects"></param>
 /// <param name="clock"></param>
-public sealed class ArchiveProjectHandler(IProjectStore projects, TimeProvider clock)
+/// <param name="mapper">Projects the archived entity onto its API view.</param>
+public sealed class ArchiveProjectHandler(IProjectStore projects, TimeProvider clock, IProjectsMapper mapper)
 {
     /// <summary>Archives the project.</summary>
     /// <param name="command"></param>
@@ -21,6 +22,6 @@ public sealed class ArchiveProjectHandler(IProjectStore projects, TimeProvider c
         project.Archive(clock.GetUtcNow());
         await projects.SaveAsync(project, cancellationToken);
 
-        return ProjectMapper.ToView(project);
+        return mapper.ToView(project);
     }
 }

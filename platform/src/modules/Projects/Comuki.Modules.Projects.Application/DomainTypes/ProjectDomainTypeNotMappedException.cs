@@ -1,3 +1,5 @@
+using Comuki.Shared.Kernel.Exceptions;
+
 namespace Comuki.Modules.Projects.Application.DomainTypes;
 
 /// <summary>
@@ -15,9 +17,12 @@ public sealed class ProjectDomainTypeNotMappedException(
     string domainType,
     string projectDomainType,
     string reason)
-    : Exception(
+    : DomainException(
+        ErrorCode,
         $"domain type '{domainType}' is not mapped under project mode '{projectDomainType}' ({reason})")
 {
+    private const string ErrorCode = "project.domain_type_not_mapped";
+
     /// <summary>The user-facing domain type that was requested.</summary>
     public string DomainType { get; } = domainType;
 

@@ -6,7 +6,8 @@ namespace Comuki.Modules.Projects.Application.Projects.Queries;
 
 /// <summary>Reads a single project by id.</summary>
 /// <param name="projects"></param>
-public sealed class GetProjectHandler(IProjectStore projects)
+/// <param name="mapper">Projects the entity onto its API view.</param>
+public sealed class GetProjectHandler(IProjectStore projects, IProjectsMapper mapper)
 {
     /// <summary>Returns the project view.</summary>
     /// <param name="projectId"></param>
@@ -18,6 +19,6 @@ public sealed class GetProjectHandler(IProjectStore projects)
         var project = await projects.FindByIdAsync(projectId, cancellationToken)
             ?? throw new ProjectNotFoundException(projectId);
 
-        return ProjectMapper.ToView(project);
+        return mapper.ToView(project);
     }
 }

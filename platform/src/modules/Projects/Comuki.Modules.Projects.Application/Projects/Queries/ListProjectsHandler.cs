@@ -5,7 +5,8 @@ namespace Comuki.Modules.Projects.Application.Projects.Queries;
 
 /// <summary>Lists projects; archived ones only on request.</summary>
 /// <param name="projects"></param>
-public sealed class ListProjectsHandler(IProjectStore projects)
+/// <param name="mapper">Projects entities onto their API views.</param>
+public sealed class ListProjectsHandler(IProjectStore projects, IProjectsMapper mapper)
 {
     /// <summary>Returns the project list ordered by creation time.</summary>
     /// <param name="includeArchived"></param>
@@ -17,6 +18,6 @@ public sealed class ListProjectsHandler(IProjectStore projects)
     {
         var listed = await projects.ListAsync(includeArchived, cancellationToken);
 
-        return [.. listed.Select(static project => ProjectMapper.ToView(project))];
+        return [.. listed.Select(mapper.ToView)];
     }
 }

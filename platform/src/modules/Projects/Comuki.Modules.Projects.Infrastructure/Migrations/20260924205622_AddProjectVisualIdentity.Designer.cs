@@ -3,6 +3,7 @@ using System;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Comuki.Modules.Projects.Infrastructure.Migrations
 {
     [DbContext(typeof(ProjectsDbContext))]
-    partial class ProjectsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924205622_AddProjectVisualIdentity")]
+    partial class AddProjectVisualIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,55 +24,6 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Comuki.Modules.Projects.Domain.Attachments.ProjectRepositoryAttachment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Access")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("access");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("CredentialOverrideRef")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("credential_override_ref");
-
-                    b.Property<Guid>("ProjectId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("project_id");
-
-                    b.Property<Guid>("RepositoryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("repository_id");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("role");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_project_repository_attachments");
-
-                    b.HasIndex("ProjectId", "RepositoryId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_project_repository_attachments_project_repository");
-
-                    b.ToTable("project_repository_attachments", "projects");
-                });
 
             modelBuilder.Entity("Comuki.Modules.Projects.Domain.DomainTypes.DomainTypeAdmission", b =>
                 {
@@ -260,16 +214,6 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                         .HasName("pk_project_settings");
 
                     b.ToTable("project_settings", "projects");
-                });
-
-            modelBuilder.Entity("Comuki.Modules.Projects.Domain.Attachments.ProjectRepositoryAttachment", b =>
-                {
-                    b.HasOne("Comuki.Modules.Projects.Domain.Projects.Project", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_project_repository_attachments_projects_project_id");
                 });
 
             modelBuilder.Entity("Comuki.Modules.Projects.Domain.DomainTypes.DomainTypeAdmission", b =>

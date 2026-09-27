@@ -5,6 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Source generator only (adopt-mapperly D1): analyzer assets, no
+         runtime assembly, no transitive leak to consumers. -->
+    <PackageReference Include="Riok.Mapperly">
+      <PrivateAssets>all</PrivateAssets>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" />

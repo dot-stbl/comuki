@@ -18,6 +18,8 @@ using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Shared.Editions.Edition;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Testcontainers.PostgreSql;
@@ -505,6 +507,104 @@ public sealed class ProjectsMigrationsShould : IAsyncLifetime
         projectColumns["slug"].ShouldBe(new ColumnSpec("character varying", "NO"));
         projectColumns["description"].ShouldBe(new ColumnSpec("character varying", "YES"));
         projectColumns["profiles_git_url"].ShouldBe(new ColumnSpec("character varying", "YES"));
+        projectColumns["icon"].ShouldBe(new ColumnSpec("character varying", "YES"));
+        projectColumns["color"].ShouldBe(new ColumnSpec("character varying", "YES"));
+        projectColumns["tags"].ShouldBe(new ColumnSpec("ARRAY", "NO"));
+    }
+
+    [Fact(DisplayName = "Given a project created with identity fields, when read back, then tags round-trip through text[] and the colour stays normalized")]
+    public async Task RoundTripProjectIdentityAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        ProjectId projectId;
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var handler = scope.ServiceProvider.GetRequiredService<CreateProjectHandler>();
+            var view = await handler.HandleAsync(
+                new CreateProjectCommand("Identity", "identity-roundtrip", null, null, null,
+                    Icon: "🛰️", Color: "#3C5A86", Tags: [" Web ", "web", "Billing"]),
+                cancellationToken);
+
+            projectId = view.Id;
+        }
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var get = scope.ServiceProvider.GetRequiredService<GetProjectHandler>();
+            var view = await get.HandleAsync(projectId, cancellationToken);
+
+            view.Icon.ShouldBe("🛰️");
+            view.Color.ShouldBe("#3c5a86");
+            view.Tags.ShouldBe(["web", "billing"]);
+        }
+    }
+
+    [Fact(DisplayName = "Given a row stored before the identity migration, when the database migrates to head over it, then the row reads null icon, null colour and empty tags")]
+    public async Task MigrateLegacyRowToIdentityColumnsAsync()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
+
+            // roll back to the pre-identity head and plant a row the way the
+            // pre-change schema knew it (raw SQL — the current EF model now
+            // knows the three columns the down-migration just dropped)
+            var migrator = db.Database.GetService<IMigrator>();
+            await migrator.MigrateAsync("20260907170745_AddDomainTypeAdmissions", cancellationToken);
+            await ExecuteAsync(
+                "INSERT INTO projects.projects (id, name, slug, archived, created_at, updated_at) "
+                + "VALUES (gen_random_uuid(), 'Legacy Identity', 'legacy-identity', false, now(), now())",
+                cancellationToken);
+
+            // migrating to head again is the "over the previous head" pass
+            await migrator.MigrateAsync(cancellationToken: cancellationToken);
+        }
+
+        var identity = await QuerySingleColumnAsync(
+            "SELECT COALESCE(icon, '<null>') || '|' || COALESCE(color, '<null>') || '|' || array_to_string(tags, ',') "
+            + $"FROM {ProjectsDatabase.Schema}.{ProjectsDatabase.Projects} WHERE slug = 'legacy-identity'");
+        identity.ShouldHaveSingleItem().ShouldBe("<null>|<null>|");
+
+        var legacyId = (await QuerySingleValueAsync(
+            $"SELECT id FROM {ProjectsDatabase.Schema}.{ProjectsDatabase.Projects} WHERE slug = 'legacy-identity'"))
+            .ShouldNotBeNull();
+
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            var get = scope.ServiceProvider.GetRequiredService<GetProjectHandler>();
+            var view = await get.HandleAsync(new ProjectId((Guid)legacyId), cancellationToken);
+
+            view.Icon.ShouldBeNull();
+            view.Color.ShouldBeNull();
+            view.Tags.ShouldBeEmpty();
+        }
+    }
+
+    private async Task ExecuteAsync(string sql, CancellationToken cancellationToken)
+    {
+        await using var scope = provider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        var connection = db.Database.GetDbConnection();
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private async Task<object?> QuerySingleValueAsync(string sql)
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await using var scope = provider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ProjectsDbContext>();
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        var connection = db.Database.GetDbConnection();
+        await using var command = connection.CreateCommand();
+        command.CommandText = sql;
+
+        return await command.ExecuteScalarAsync(cancellationToken);
     }
 
     [Fact(DisplayName = "Given migrated project_repository_attachments, when columns are inspected, then ids are uuid, role and access are varchar, credential_override_ref is nullable varchar(256), timestamps are timestamptz, and the (project_id, repository_id) unique index + cascade FK exist")]

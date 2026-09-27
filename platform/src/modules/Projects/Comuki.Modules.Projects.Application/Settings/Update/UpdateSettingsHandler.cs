@@ -14,7 +14,8 @@ namespace Comuki.Modules.Projects.Application.Settings.Update;
 /// </summary>
 /// <param name="settings"></param>
 /// <param name="clock"></param>
-public sealed class UpdateSettingsHandler(IProjectSettingsStore settings, TimeProvider clock)
+/// <param name="mapper">Projects the saved entity onto its API view.</param>
+public sealed class UpdateSettingsHandler(IProjectSettingsStore settings, TimeProvider clock, IProjectsMapper mapper)
 {
     /// <summary>Updates the settings.</summary>
     /// <param name="command"></param>
@@ -50,6 +51,6 @@ public sealed class UpdateSettingsHandler(IProjectSettingsStore settings, TimePr
 
         var saved = await settings.SaveAsync(current, cancellationToken);
 
-        return ProjectMapper.ToView(saved);
+        return mapper.ToView(saved);
     }
 }

@@ -40,6 +40,25 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasColumnName("profiles_git_ref")
             .HasMaxLength(256);
 
+        // Identity columns (design D1): icon and colour bounds (200 / fixed 7)
+        // are schema-level — varchar(n) mirrors the validation limits; tags
+        // is a native Postgres text[] mirroring the admission arrays, with
+        // the database default letting the column land on existing rows as
+        // an empty list.
+        builder.Property(static project => project.Icon)
+            .HasColumnName("icon")
+            .HasMaxLength(200);
+
+        builder.Property(static project => project.Color)
+            .HasColumnName("color")
+            .HasMaxLength(7);
+
+        builder.Property(static project => project.Tags)
+            .HasColumnName("tags")
+            .HasColumnType("text[]")
+            .HasDefaultValueSql("'{}'")
+            .IsRequired();
+
         builder.Property(static project => project.Archived)
             .HasColumnName("archived");
 

@@ -1,3 +1,4 @@
+using Comuki.Modules.Projects.Domain.Projects;
 using FluentValidation;
 
 namespace Comuki.Modules.Projects.Application.Projects.Update;
@@ -5,7 +6,7 @@ namespace Comuki.Modules.Projects.Application.Projects.Update;
 /// <summary>Structural validation of <see cref="UpdateProjectCommand"/> — absent fields skip their rules.</summary>
 public sealed class UpdateProjectValidator : AbstractValidator<UpdateProjectCommand>
 {
-    /// <summary>Rules: optional name must be non-empty when provided; length bounds on every optional field.</summary>
+    /// <summary>Rules: optional name must be non-empty when provided; length bounds on every optional field; identity-field shape.</summary>
     public UpdateProjectValidator()
     {
         RuleFor(static command => command.Name)
@@ -21,5 +22,21 @@ public sealed class UpdateProjectValidator : AbstractValidator<UpdateProjectComm
 
         RuleFor(static command => command.ProfilesGitRef)
             .MaximumLength(256);
+
+        RuleFor(static command => command.Icon)
+            .NotEmpty()
+            .When(static command => command.Icon is not null)
+            .MaximumLength(Project.MaxIconLength);
+
+        RuleFor(static command => command.Color)
+            .NotEmpty()
+            .When(static command => command.Color is not null)
+            .Must(static color => color is null || ProjectIdentityRules.ColorIsWellFormed(color))
+            .WithMessage("color must be a #rrggbb hex value, e.g. #3c5a86");
+
+        RuleFor(static command => command.Tags)
+            .Must(static tags => tags is null || ProjectIdentityRules.TagsAreWellFormed(tags))
+            .WithMessage(
+                $"tags must match '{Project.TagPattern}' after trimming and number at most {Project.MaxTags} distinct");
     }
 }

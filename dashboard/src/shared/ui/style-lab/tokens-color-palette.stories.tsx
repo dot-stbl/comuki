@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import { Section } from "@/shared/ui"
 
@@ -283,16 +284,20 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   )
 }
 
-export default {
-  title: "Compositions/Style Lab/Tokens/Color Palette",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Tokens/Color Palette",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
+
+export default meta
+type Story = StoryObj
 
 /** The palette the toolbar is currently on — primitives and status hues read
     off the live document, so flipping the theme or mode selectors in the
     toolbar repaints this strip. */
-export function ActiveTheme(): ReactNode {
-  return (
+export const ActiveTheme: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -302,14 +307,14 @@ export function ActiveTheme(): ReactNode {
         <ActiveThemeStrip />
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** Every registered theme, in both modes. The `--preview-*` block holds each
     theme's own primitives readable from any theme context, so this gallery
     is legible inside whichever theme the operator picked in the toolbar. */
-export function AllThemes(): ReactNode {
-  return (
+export const AllThemes: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -324,5 +329,5 @@ export function AllThemes(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }

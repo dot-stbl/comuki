@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import { Section } from "@/shared/ui"
 
@@ -316,17 +317,21 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   )
 }
 
-export default {
-  title: "Compositions/Style Lab/Tokens/Geometry",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Tokens/Geometry",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
+
+export default meta
+type Story = StoryObj
 
 /** The five-step radius scale. Each row pairs the token with the size of
     box it was written for, and a sample rectangle drawn at that radius.
     The corner is optical: it is a property of the box, not a decoration
     a call site picks from a palette. */
-export function Radius(): ReactNode {
-  return (
+export const Radius: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -354,13 +359,13 @@ export function Radius(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The five control heights plus the four chrome heights. Every height
     has a role, and the role is not "this is a button". */
-export function Heights(): ReactNode {
-  return (
+export const Heights: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -374,14 +379,14 @@ export function Heights(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The five icon sizes. An icon sits at the cap height of the type beside
     it, never above it: xs beside micro labels, sm beside values, md
     beside body, lg for the large control, xl for the floating chrome. */
-export function Icons(): ReactNode {
-  return (
+export const Icons: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -395,5 +400,5 @@ export function Icons(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }

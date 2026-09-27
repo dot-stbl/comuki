@@ -1,16 +1,7 @@
-import { createContext, useContext, useState, type ReactNode } from "react"
 import type { Meta, StoryObj } from "@storybook/react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  RouterProvider,
-} from "@tanstack/react-router"
 
 import { tasksQueryKey } from "@/domains/tasks/api/queries"
-import { SessionProvider } from "@/shared/session"
+import { PageStoryFrame } from "@/shared/storybook/page-story-frame"
 
 import { TasksPage } from "./tasks-page"
 
@@ -18,97 +9,37 @@ import { TasksPage } from "./tasks-page"
    launch work into the swarm. Each row is one ticket, the dispatch on a
    row is the act that hands it to the orchestrator.
 
-   The crumbs are real `<Link>`s and the shell draws the whole rail, so the
-   screen only renders inside a router, a session and a query client — the
-   same three the app hands it. A memory router carrying the product's own
-   paths gives the story working crumbs without dragging in the generated
-   route tree; `form-page.stories.tsx` is the harness this follows.
-
    Mock-first: the inbox reads the mutable seed store. A story that says
    "four tickets waiting" actually has four rows the operator can dispatch.
    The mutation rides the same store — dispatching here settles the row
    exactly as it would in the app. The two stories below differ in the
    `focus` the address bar carried. */
 
-const SlotContext = createContext<ReactNode>(null)
-
-function Slot() {
-  return <>{useContext(SlotContext)}</>
-}
-
-const rootRoute = createRootRoute({ component: Slot })
-const blank = () => null
-
-const routeTree = rootRoute.addChildren(
-  [
-    "/",
-    "/tasks",
-    "/tasks/new",
-    "/runs",
-    "/queue",
-    "/approvals",
-    "/cost",
-    "/sources",
-    "/knowledge",
-    "/verify",
-    "/settings",
-    "/identity",
-    "/projects",
-    "/compute",
-    "/models",
-    "/observability",
-    "/components",
-  ].map((path) =>
-    createRoute({ getParentRoute: () => rootRoute, path, component: blank })
-  )
-)
-
-const router = createRouter({
-  routeTree,
-  history: createMemoryHistory({ initialEntries: ["/tasks"] }),
-})
+const ROUTES = [
+  "/",
+  "/tasks",
+  "/tasks/new",
+  "/runs",
+  "/queue",
+  "/approvals",
+  "/cost",
+  "/sources",
+  "/knowledge",
+  "/verify",
+  "/settings",
+  "/identity",
+  "/projects",
+  "/compute",
+  "/models",
+  "/observability",
+  "/components",
+] as const
 
 const PROJECTS = [
   { id: "p_comuki", key: "comuki", name: "Comuki platform" },
   { id: "p_atlas", key: "atlas", name: "Atlas" },
   { id: "p_plexor", key: "plexor", name: "Plexor" },
-]
-
-function Frame({
-  seed,
-  children,
-}: {
-  seed?: (client: QueryClient) => void
-  children: ReactNode
-}) {
-  const [client] = useState(() => {
-    const client = new QueryClient({
-      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
-    })
-    seed?.(client)
-    return client
-  })
-
-  return (
-    <SessionProvider
-      user={{
-        id: "u_story",
-        name: "Rhea Okafor",
-        email: "rhea@comuki.local",
-        platformRoles: ["platform-admin"],
-        projectRoles: {},
-      }}
-      projects={PROJECTS}
-    >
-      <QueryClientProvider client={client}>
-        <SlotContext value={children}>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <RouterProvider router={router as any} />
-        </SlotContext>
-      </QueryClientProvider>
-    </SessionProvider>
-  )
-}
+] as const
 
 const meta: Meta<typeof TasksPage> = {
   title: "Pages/Tasks",
@@ -127,9 +58,13 @@ type Story = StoryObj<typeof TasksPage>
  */
 export const InboxOpen: Story = {
   render: () => (
-    <Frame>
+    <PageStoryFrame
+      routes={ROUTES}
+      initialPath="/tasks"
+      projects={PROJECTS}
+    >
       <TasksPage />
-    </Frame>
+    </PageStoryFrame>
   ),
 }
 
@@ -140,9 +75,13 @@ export const InboxOpen: Story = {
  */
 export const InboxNarrowed: Story = {
   render: () => (
-    <Frame>
+    <PageStoryFrame
+      routes={ROUTES}
+      initialPath="/tasks"
+      projects={PROJECTS}
+    >
       <TasksPage focus="checkout" />
-    </Frame>
+    </PageStoryFrame>
   ),
 }
 
@@ -155,12 +94,15 @@ export const InboxNarrowed: Story = {
  */
 export const InboxEmpty: Story = {
   render: () => (
-    <Frame
+    <PageStoryFrame
+      routes={ROUTES}
+      initialPath="/tasks"
+      projects={PROJECTS}
       seed={(client) => {
         client.setQueryData(tasksQueryKey, [])
       }}
     >
       <TasksPage />
-    </Frame>
+    </PageStoryFrame>
   ),
 }

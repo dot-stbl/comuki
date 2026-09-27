@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import { Section } from "@/shared/ui"
 
@@ -27,8 +28,8 @@ const STEPS: readonly SpaceStep[] = [
 
 function SpaceBar({ step }: { readonly step: SpaceStep }): ReactNode {
   /* Each row draws the step as a horizontal bar in --primary, then sits
-     the role text beside it. The bar's width is the step in pixels, a
-     direct visual scale the body can compare. */
+     the role text beside it. The bar's width is the token — the px value
+     is read off CSS, the row is a live scale rather than a measured one. */
   return (
     <div
       style={{
@@ -67,7 +68,7 @@ function SpaceBar({ step }: { readonly step: SpaceStep }): ReactNode {
         <div
           style={{
             height: "var(--h-meter)",
-            width: `${step.px}px`,
+            width: `var(${step.token})`,
             background: "var(--primary)",
             borderRadius: "var(--hairline)",
           }}
@@ -175,16 +176,20 @@ const containerStyle: CSSProperties = {
   flexDirection: "column",
 }
 
-export default {
-  title: "Compositions/Style Lab/Tokens/Spacing",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Tokens/Spacing",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
 
+export default meta
+type Story = StoryObj
+
 /** The eight spacing steps drawn as bars in the order of the scale. Each
-    bar's width is the step in pixels, a direct visual scale the body can
+    bar's width is the step itself, a live visual scale the body can
     measure against the role the step plays. */
-export function Scale(): ReactNode {
-  return (
+export const Scale: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -198,17 +203,23 @@ export function Scale(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
-const CARDS = ["Pool / eu-west", "Worker / worker-3", "Run / 1f3a2", "Queue / 7 waiting", "Audit / 12s ago"]
+const CARDS = [
+  "Pool / eu-west",
+  "Worker / worker-3",
+  "Run / 1f3a2",
+  "Queue / 7 waiting",
+  "Audit / 12s ago",
+] as const
 
 /** The same five cards stacked with three different gaps, so the role of
     each step is felt rather than read. The visual difference between
     --s4, --s5, and --s6 is the difference between tight, normal, and
     generous, the only three spacings the operator usually has to pick. */
-export function Stacks(): ReactNode {
-  return (
+export const Stacks: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -240,5 +251,5 @@ export function Stacks(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }

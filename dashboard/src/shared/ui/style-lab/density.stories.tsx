@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import {
   DataTable,
@@ -149,7 +150,7 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   return (
     <div
       style={{
-        padding: "var(--s7) var(--page-x)",
+        padding: "var(--page-y) var(--page-x)",
         display: "flex",
         flexDirection: "column",
         gap: "var(--s8)",
@@ -162,18 +163,22 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   )
 }
 
-export default {
-  title: "Compositions/Style Lab/Density",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Density",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
+
+export default meta
+type Story = StoryObj
 
 /** The table's two stops, side by side on the same rows. `compact` is the
     duty screen's reading — the row is a unit of scan; `comfortable` is the
     report reading — the row is a unit of read. Nothing between them exists,
     and the specimen is the argument for why not: a middle stop would be a
     knob with no sentence behind it. */
-export function Table(): ReactNode {
-  return (
+export const Table: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -186,7 +191,7 @@ export function Table(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The list's two readings on the same rows. A list's density is not a prop
@@ -194,8 +199,8 @@ export function Table(): ReactNode {
     stops the product uses: the working step (`--s2`, the rows reading as
     one list) and the breathing step (`--s5`, the rows reading as separate
     items). The gap is labelled because it is the knob. */
-export function List(): ReactNode {
-  return (
+export const List: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -216,5 +221,5 @@ export function List(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }

@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 import { Plus, RotateCw } from "lucide-react"
 
 import {
@@ -94,7 +95,7 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   return (
     <div
       style={{
-        padding: "var(--s7) var(--page-x)",
+        padding: "var(--page-y) var(--page-x)",
         display: "flex",
         flexDirection: "column",
         gap: "var(--s8)",
@@ -107,18 +108,22 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   )
 }
 
-export default {
-  title: "Compositions/Style Lab/Kit matrix",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Kit matrix",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
+
+export default meta
+type Story = StoryObj
 
 /** Buttons, the whole surface at once: every variant the kit ships, each
     at every text size. One verb per variant keeps the row readable as a
     scale rather than a sentence — and the destructive variant sits at the
     end, where its distance from the primary act is visible rather than
     asserted. */
-export function Buttons(): ReactNode {
-  return (
+export const Buttons: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -150,13 +155,16 @@ export function Buttons(): ReactNode {
         </Row>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The input side of the kit: a labelled text field as the forms lay it
     out, the same field with its label drawn and hidden, and the search
-    field the toolbars use — live, so the typing works in the specimen. */
-export function Inputs(): ReactNode {
+    field the toolbars use — live, so the typing works in the specimen.
+    `InputsSpecimen` is a wrapper so `useState` lives at the top of a
+    function component, not inside `render` (where
+    `react-hooks/rules-of-hooks` would refuse it). */
+function InputsSpecimen(): ReactNode {
   const [value, setValue] = useState("worker-04")
   return (
     <Page>
@@ -191,13 +199,99 @@ export function Inputs(): ReactNode {
   )
 }
 
+export const Inputs: Story = {
+  render: () => <InputsSpecimen />,
+}
+
 /** Every status at both badge sizes — the closed vocabulary a screen can
     say about a run, in the two steps the kit allows. The `sm` step is the
     table row's; `md` is the panel's. A status not on this page is not a
     status the product can show. */
-export function Badges(): ReactNode {
+export const Badges: Story = {
+  render: () => (
+    <Page>
+      <Section
+        variant="screen"
+        title="Status badges"
+        note="Seven statuses, two sizes, one vocabulary. The spelling is the stored value — the badge never title-cases, because the filter beside it does not either. The hue and the hatch both come from the data-status block in tokens.css, so this row is the palette and the weave at once."
+      >
+        {STATUSES.map((status) => (
+          <Row key={status} label={status}>
+            <StatusBadge status={status} size="sm" />
+            <StatusBadge status={status} size="md" />
+          </Row>
+        ))}
+      </Section>
+    </Page>
+  ),
+}
+
+/** The whole kit matrix on one screen — buttons, inputs, badges — for the
+    moment the question is not one control but the loudness of a screen
+    that holds several. This is the page to stand back from.
+    `EverythingSpecimen` is a wrapper so its `useState` lives at the top
+    of a function component, not inside `render` (where
+    `react-hooks/rules-of-hooks` would refuse it). */
+function EverythingSpecimen(): ReactNode {
+  const [value, setValue] = useState("worker-04")
   return (
     <Page>
+      <Section
+        variant="screen"
+        title="Buttons"
+        note="Six variants, three text sizes, the whole decision on one page. The default variant carries the screen's one primary act; outline and secondary carry the rest of the work; ghost is chrome that can act; link is a word that navigates inside a sentence of controls; destructive is a verb that cannot be undone, and it is the only red on the row."
+      >
+        {VARIANTS.map((variant) => (
+          <Row key={variant} label={variant}>
+            {SIZES.map((size) => (
+              <Button key={size} variant={variant} size={size}>
+                Run
+              </Button>
+            ))}
+          </Row>
+        ))}
+        <Row label="icon sizes">
+          <Button size="icon" aria-label="Create">
+            <Plus />
+          </Button>
+          <Button size="icon-sm" aria-label="Retry">
+            <RotateCw />
+          </Button>
+          <Button variant="outline" size="icon" aria-label="Create">
+            <Plus />
+          </Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Retry">
+            <RotateCw />
+          </Button>
+        </Row>
+      </Section>
+      <Section
+        variant="screen"
+        title="Inputs"
+        note="The labelled field is the unit the forms build from; the label can be hidden when the column or the chrome already names the field, and the search field is the filter bar's own control — wider than a form field by design, because it holds a query rather than a value."
+      >
+        <div style={{ display: "flex", gap: "var(--s8)", flexWrap: "wrap" }}>
+          <div style={{ width: "18rem", display: "flex", flexDirection: "column", gap: "var(--s5)" }}>
+            <TextField
+              id="kit-matrix-worker-everything"
+              label="worker"
+              value={value}
+              onValueChange={setValue}
+            />
+            <TextField
+              id="kit-matrix-worker-hidden-everything"
+              label="worker"
+              labelHidden
+              placeholder="label hidden"
+              value={value}
+              onValueChange={setValue}
+            />
+          </div>
+          <div style={{ width: "18rem" }}>
+            <LiveSearchField />
+          </div>
+        </div>
+      </Section>
       <Section
         variant="screen"
         title="Status badges"
@@ -214,15 +308,6 @@ export function Badges(): ReactNode {
   )
 }
 
-/** The whole kit matrix on one screen — buttons, inputs, badges — for the
-    moment the question is not one control but the loudness of a screen
-    that holds several. This is the page to stand back from. */
-export function Everything(): ReactNode {
-  return (
-    <Page>
-      <Buttons />
-      <Inputs />
-      <Badges />
-    </Page>
-  )
+export const Everything: Story = {
+  render: () => <EverythingSpecimen />,
 }

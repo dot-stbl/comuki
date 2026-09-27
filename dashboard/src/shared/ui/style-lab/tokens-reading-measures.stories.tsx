@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import { Section } from "@/shared/ui"
 
@@ -316,10 +317,14 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   )
 }
 
-export default {
-  title: "Compositions/Style Lab/Tokens/Reading Measures",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Tokens/Reading Measures",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
+
+export default meta
+type Story = StoryObj
 
 /** The five reading measure stops with running prose at the cap width.
     `ch` where the cap is about the words, `rem` where it is about the
@@ -327,8 +332,8 @@ export default {
     the reader holds characters, while a form or a record is measured in
     rems because its inputs and its fact grids are laid out against
     fixed tracks rather than against the type beside it. */
-export function Stops(): ReactNode {
-  return (
+export const Stops: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -342,13 +347,13 @@ export function Stops(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The two prose stops side by side at the cap width, so the difference
     between a note and a paragraph is felt rather than read. */
-export function NoteVsProse(): ReactNode {
-  return (
+export const NoteVsProse: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -358,5 +363,5 @@ export function NoteVsProse(): ReactNode {
         <SideBySide />
       </Section>
     </Page>
-  )
+  ),
 }

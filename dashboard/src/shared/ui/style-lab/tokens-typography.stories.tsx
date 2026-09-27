@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import { Section } from "@/shared/ui"
 
@@ -60,10 +61,10 @@ interface Leading {
   readonly token: string
   readonly value: string
   readonly role: string
-  readonly example: ReactNode
+  readonly example: string
 }
 
-const LEADING: ReadonlyArray<Omit<Leading, "example"> & { readonly example: string }> = [
+const LEADING: readonly Leading[] = [
   {
     token: "--lh-flat",
     value: "1",
@@ -257,7 +258,7 @@ function TrackingRow({ row }: { readonly row: TrackingRow }): ReactNode {
   )
 }
 
-function LeadingRow({ entry }: { readonly entry: (typeof LEADING)[number] }): ReactNode {
+function LeadingRow({ entry }: { readonly entry: Leading }): ReactNode {
   const isProse = entry.token === "--lh-body"
   const style: CSSProperties = {
     margin: 0,
@@ -399,16 +400,20 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   )
 }
 
-export default {
-  title: "Compositions/Style Lab/Tokens/Typography",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Tokens/Typography",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
+
+export default meta
+type Story = StoryObj
 
 /** The seven-step type scale. Each row holds the token name, the resolved
     size in rem and pixels, the role it plays in the product, and a sample
     sentence so the reading weight is visible at a glance. */
-export function Scale(): ReactNode {
-  return (
+export const Scale: Story = {
+  render: () => (
     <Page>
       <Section variant="screen" title="Type scale" note="Eleven through twenty-four. The lower three are values and labels the operator scans; the body step is the smallest that still reads as running prose; the upper three are headings and the figure they sit beside. A new step in this scale has to buy its place — the gap between two steps is what carries the hierarchy.">
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -418,7 +423,7 @@ export function Scale(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The two voices. A token carrying a value or a label sits in the data
@@ -426,8 +431,8 @@ export function Scale(): ReactNode {
     distinction is not just visual — the data voice carries tabular figures
     and tight tracking, the interface voice carries the running prose the
     operator reads. */
-export function Voices(): ReactNode {
-  return (
+export const Voices: Story = {
+  render: () => (
     <Page>
       <Section variant="screen" title="Voices" note="The two voices the product speaks. --font-ui carries meaning; --font-data carries values. A label is in the data voice because it names a region, a value is in the data voice because it is a reading; a sentence that explains what something is, or what to do, is in the interface voice.">
         <div
@@ -443,14 +448,14 @@ export function Voices(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The three tracking roles. The region heading wears the wide gesture,
     the inline value wears the tight one, and the display step tightens
     toward the cap. */
-export function Tracking(): ReactNode {
-  return (
+export const Tracking: Story = {
+  render: () => (
     <Page>
       <Section variant="screen" title="Tracking" note="Three roles, not a free knob. The wide gesture marks a region heading; the tight gesture marks a value riding beside it; the negative gesture tightens the largest type, where proportional spacing adds air around the cap. A fourth would be a knob nobody has a name for — and an unnameable knob is how the raw `letter-spacing` literals happened the first time.">
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -460,15 +465,15 @@ export function Tracking(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The four leading modes. The text is not told how high to be by its size
     — it is told by what the text is *doing*. A button's height comes from
     its box, not from its line; a badge may still wrap; display type wants
     the air compressed; prose wants it opened up. */
-export function Leading(): ReactNode {
-  return (
+export const Leading: Story = {
+  render: () => (
     <Page>
       <Section variant="screen" title="Leading" note="Four modes, and a fifth is a defect. The reason there is no fifth: a leading that is 'a bit looser than tight' is a mode nobody can name, and an unnameable mode is how 29 raw literals across 27 files happened in the first place. --lh-flat lets the box set the height; --lh-tight holds a one-to-three-word label to two lines; --lh-display brings the cap down for large type; --lh-body opens prose up for reading.">
         <div style={{ display: "flex", flexDirection: "column" }}>
@@ -478,19 +483,19 @@ export function Leading(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The four weights. The voice picks the family; the role picks the weight.
     Regular carries prose; medium carries the values and labels the operator
     scans; semibold marks headings; bold is reserved for the moments where
     the message needs to out-shout the room. */
-export function Weights(): ReactNode {
-  return (
+export const Weights: Story = {
+  render: () => (
     <Page>
       <Section variant="screen" title="Weights" note="Four weights in regular use. Regular is the prose weight; medium is the body of a label or a value; semibold is the heading and the figure beside it; bold is for the moments where the message has to out-shout the room — an unscheduled restart, an account lockout. Black is not on this scale.">
         <WeightRow />
       </Section>
     </Page>
-  )
+  ),
 }

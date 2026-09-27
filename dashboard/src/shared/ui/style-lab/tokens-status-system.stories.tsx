@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import { Section, StatusBadge } from "@/shared/ui"
 
@@ -75,13 +76,12 @@ interface ChannelSampleProps {
 function ChannelSample({ status, channel }: ChannelSampleProps): ReactNode {
   /* Each sample sits on its own `[data-status]` element so the dual-channel
      declaration in `tokens.css` resolves `--hue` and `--weave` for it.
-     `hue` is just the fill colour; `weave` is the hatch; `both` layers them. */
+     `hue` is just the fill colour; `weave` is the hatch; `both` layers them.
+     The fill and backgroundImage are written inline rather than through a
+     helper because they are three lines long each, and a helper would have
+     been a name without a notion. */
   const fill =
-    channel === "weave"
-      ? "var(--card)"
-      : channel === "hue"
-        ? "var(--hue)"
-        : "var(--hue)"
+    channel === "hue" ? "var(--hue)" : "var(--card)"
   const backgroundImage = channel === "hue" ? "none" : "var(--weave)"
   return (
     <div
@@ -209,18 +209,22 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   )
 }
 
-export default {
-  title: "Compositions/Style Lab/Tokens/Status System",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Tokens/Status System",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
+
+export default meta
+type Story = StoryObj
 
 /** Each status shown in three ways side by side: the hue alone, the weave
     alone, and the two channels layered — to prove that the meaning survives
     when either channel is taken away. The seventh row, `cancelled`, and the
     badge to its left, are the proof that the whole encoding cost one
     `data-status` block in `tokens.css`. */
-export function Encoding(): ReactNode {
-  return (
+export const Encoding: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -234,31 +238,55 @@ export function Encoding(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The same matrix, pinned to the dark mode the product ships in. The
     toolbar global is a reader's choice; a palette specimen is a document,
     and a document that changed with the toolbar would show one theme and
     merely describe the other. */
-export function DarkReading(): ReactNode {
-  return (
+export const DarkReading: Story = {
+  render: () => (
     <ForceTheme mode="dark">
-      <Encoding />
+      <Page>
+        <Section
+          variant="screen"
+          title="Dual channel"
+          note="Every status wears two marks. The hue is the palette's role for the status; the weave is the hatch the same status paints over it. A consumer reads either channel; the audit trail in tokens.css is the place where both are stated once, and the badge at the left of each row is the third place where the encoding lands, on top of the fill and the hatch."
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s4)" }}>
+            {STATUSES.map((status) => (
+              <StatusRow key={status} status={status} />
+            ))}
+          </div>
+        </Section>
+      </Page>
     </ForceTheme>
-  )
+  ),
 }
 
 /** The same matrix in the light mode — the mode the palette's floors were
     derived against, and the one where a status hue that only clears
     contrast in the dark shows itself immediately. The two pinned readings
     side by side are the whole point of the lab. */
-export function LightReading(): ReactNode {
-  return (
+export const LightReading: Story = {
+  render: () => (
     <ForceTheme mode="light">
-      <Encoding />
+      <Page>
+        <Section
+          variant="screen"
+          title="Dual channel"
+          note="Every status wears two marks. The hue is the palette's role for the status; the weave is the hatch the same status paints over it. A consumer reads either channel; the audit trail in tokens.css is the place where both are stated once, and the badge at the left of each row is the third place where the encoding lands, on top of the fill and the hatch."
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--s4)" }}>
+            {STATUSES.map((status) => (
+              <StatusRow key={status} status={status} />
+            ))}
+          </div>
+        </Section>
+      </Page>
     </ForceTheme>
-  )
+  ),
 }
 
 /** The seven hatch angles written as their inputs — the second column of
@@ -266,8 +294,8 @@ export function LightReading(): ReactNode {
     reading the lightness scale in the same order: `running` and `success`
     wear no hatch, then the four diagonals climb from 67.5° (the bisector
     of the gap) to 0° (the densest vertical). */
-export function WeaveAngles(): ReactNode {
-  return (
+export const WeaveAngles: Story = {
+  render: () => (
     <Page>
       <Section variant="screen" title="Weave table" note="The seven hatch declarations in `tokens.css`, transposed to a table. Every angle is 22.5° from its neighbour; the gap between 45° (escalated) and 90° (queued) is the widest left, so 67.5° (cancelled) bisects it. The pattern density follows the same order — the quietest hatch in the set is the bisector, and `running` and `success` are the only rows with no hatch at all.">
         <table
@@ -315,7 +343,7 @@ export function WeaveAngles(): ReactNode {
         </table>
       </Section>
     </Page>
-  )
+  ),
 }
 
 function cellHead(): React.CSSProperties {

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import { Section } from "@/shared/ui"
 
@@ -227,17 +228,21 @@ function Page({ children }: { readonly children: ReactNode }): ReactNode {
   )
 }
 
-export default {
-  title: "Compositions/Style Lab/Tokens/Depth",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Tokens/Depth",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
+
+export default meta
+type Story = StoryObj
 
 /** The nine-rung z-index ladder, drawn as a stair step. The owner of
     each rung is named on the right: most rungs are owned by the
     document, but the dock is owned by the viewport and the dropdown
     is owned by the control that opened it. */
-export function ZIndex(): ReactNode {
-  return (
+export const ZIndex: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -285,14 +290,14 @@ export function ZIndex(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The five shadow tokens, plus the focus-ring recipe. Each tile shows
     the token's actual shadow on a small block, so the recipe is visible
     without any interaction. */
-export function Shadows(): ReactNode {
-  return (
+export const Shadows: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -312,14 +317,14 @@ export function Shadows(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }
 
 /** The two motion tokens: one easing curve, one duration. A new motion
     recipe has to use them both, or the operator sees one button drift
     and the next snap. */
-export function Motion(): ReactNode {
-  return (
+export const Motion: Story = {
+  render: () => (
     <Page>
       <Section
         variant="screen"
@@ -376,5 +381,5 @@ export function Motion(): ReactNode {
         </div>
       </Section>
     </Page>
-  )
+  ),
 }

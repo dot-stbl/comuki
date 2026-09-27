@@ -1,22 +1,15 @@
-import { createContext, useContext, useState, type ReactNode } from "react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  RouterProvider,
-} from "@tanstack/react-router"
+import type { ReactNode } from "react"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import { AppShell } from "@/app/layout/app-shell"
 import { PageHeader } from "@/app/layout/page-header"
-import { SessionProvider } from "@/shared/session"
 import {
   DataTable,
   Section,
   StatusBadge,
   type DataColumn,
 } from "@/shared/ui"
+import { PageStoryFrame } from "@/shared/storybook/page-story-frame"
 
 /* The layout lab: the shell's own frame — rail, topbar, pinned header —
    around the three width readings a screen's content can take. The product
@@ -26,81 +19,34 @@ import {
    a guess.
 
    The shell draws the whole rail and answers its own queries, so the story
-   needs the same three the app hands every screen: a router (the rail's
-   links), a session (the rail's visibility) and a query client. The memory
-   router is the pattern the page stories use. */
+   needs the same three the app hands every screen — the harness
+   (`PageStoryFrame`) carries them; this story wraps it in the shell
+   itself. */
 
-const SlotContext = createContext<ReactNode>(null)
-
-function Slot() {
-  return <>{useContext(SlotContext)}</>
-}
-
-const rootRoute = createRootRoute({ component: Slot })
-const blank = () => null
-
-const routeTree = rootRoute.addChildren(
-  [
-    "/",
-    "/tasks",
-    "/runs",
-    "/queue",
-    "/approvals",
-    "/cost",
-    "/sources",
-    "/knowledge",
-    "/verify",
-    "/settings",
-    "/identity",
-    "/projects",
-    "/compute",
-    "/models",
-    "/observability",
-    "/components",
-  ].map((path) =>
-    createRoute({ getParentRoute: () => rootRoute, path, component: blank })
-  )
-)
-
-const router = createRouter({
-  routeTree,
-  history: createMemoryHistory({ initialEntries: ["/queue"] }),
-})
+const ROUTES = [
+  "/",
+  "/tasks",
+  "/runs",
+  "/queue",
+  "/approvals",
+  "/cost",
+  "/sources",
+  "/knowledge",
+  "/verify",
+  "/settings",
+  "/identity",
+  "/projects",
+  "/compute",
+  "/models",
+  "/observability",
+  "/components",
+] as const
 
 const PROJECTS = [
   { id: "p_comuki", key: "comuki", name: "Comuki platform" },
   { id: "p_atlas", key: "atlas", name: "Atlas" },
   { id: "p_plexor", key: "plexor", name: "Plexor" },
-]
-
-function Frame({ children }: { children: ReactNode }) {
-  const [client] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: { queries: { retry: false, staleTime: Infinity } },
-      })
-  )
-
-  return (
-    <SessionProvider
-      user={{
-        id: "u_story",
-        name: "Rhea Okafor",
-        email: "rhea@comuki.local",
-        platformRoles: ["platform-admin"],
-        projectRoles: {},
-      }}
-      projects={PROJECTS}
-    >
-      <QueryClientProvider client={client}>
-        <SlotContext value={children}>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <RouterProvider router={router as any} />
-        </SlotContext>
-      </QueryClientProvider>
-    </SessionProvider>
-  )
-}
+] as const
 
 interface PoolRow {
   readonly pool: string
@@ -197,10 +143,14 @@ function Reading({
   )
 }
 
-export default {
-  title: "Compositions/Style Lab/Layout",
+const meta: Meta = {
+  title: "UI Kit/Style Lab/Layout",
   parameters: { layout: "fullscreen" },
+  tags: ["autodocs"],
 }
+
+export default meta
+type Story = StoryObj
 
 /** The shell in full — rail, topbar, pinned header — with the three width
     readings stacked in the scroll port. The form measure is a controlled
@@ -208,9 +158,13 @@ export default {
     uses; the wide reading is the full port at the page gutter, which is
     where the duty tables live. A screen that could not say which of the
     three it is has not chosen yet. */
-export function WidthReadings(): ReactNode {
-  return (
-    <Frame>
+export const WidthReadings: Story = {
+  render: () => (
+    <PageStoryFrame
+      routes={ROUTES}
+      initialPath="/queue"
+      projects={PROJECTS}
+    >
       <AppShell
         header={
           <PageHeader
@@ -248,6 +202,6 @@ export function WidthReadings(): ReactNode {
           />
         </div>
       </AppShell>
-    </Frame>
-  )
+    </PageStoryFrame>
+  ),
 }

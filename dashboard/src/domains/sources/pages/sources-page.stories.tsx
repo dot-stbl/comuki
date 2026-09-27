@@ -1,16 +1,7 @@
-import { createContext, useContext, useState, type ReactNode } from "react"
 import type { Meta, StoryObj } from "@storybook/react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  RouterProvider,
-} from "@tanstack/react-router"
 
 import { sourcesQueryKey } from "@/domains/sources/api/queries"
-import { SessionProvider } from "@/shared/session"
+import { PageStoryFrame } from "@/shared/storybook/page-story-frame"
 
 import { SourcesPage } from "./sources-page"
 
@@ -18,98 +9,38 @@ import { SourcesPage } from "./sources-page"
    ticket systems, webhooks — and the decisions that are decisions about a
    row, not edits of one.
 
-   The crumbs are real `<Link>`s and the shell draws the whole rail, so the
-   screen only renders inside a router, a session and a query client — the
-   same three the app hands it. A memory router carrying the product's own
-   paths gives the story working crumbs without dragging in the generated
-   route tree; `form-page.stories.tsx` is the harness this follows.
-
    Mock-first: the registry reads the mutable seed store. A story that
    says "three connections, one native" actually has the rows the operator
    would see if they had just signed in. The two stories below differ in
    the `focus` the address bar carried. */
 
-const SlotContext = createContext<ReactNode>(null)
-
-function Slot() {
-  return <>{useContext(SlotContext)}</>
-}
-
-const rootRoute = createRootRoute({ component: Slot })
-const blank = () => null
-
-const routeTree = rootRoute.addChildren(
-  [
-    "/",
-    "/tasks",
-    "/runs",
-    "/queue",
-    "/approvals",
-    "/cost",
-    "/sources",
-    "/sources/new",
-    "/sources/$sourceId",
-    "/sources/$sourceId/ticket/new",
-    "/knowledge",
-    "/verify",
-    "/settings",
-    "/identity",
-    "/projects",
-    "/compute",
-    "/models",
-    "/observability",
-    "/components",
-  ].map((path) =>
-    createRoute({ getParentRoute: () => rootRoute, path, component: blank })
-  )
-)
-
-const router = createRouter({
-  routeTree,
-  history: createMemoryHistory({ initialEntries: ["/sources"] }),
-})
+const ROUTES = [
+  "/",
+  "/tasks",
+  "/runs",
+  "/queue",
+  "/approvals",
+  "/cost",
+  "/sources",
+  "/sources/new",
+  "/sources/$sourceId",
+  "/sources/$sourceId/ticket/new",
+  "/knowledge",
+  "/verify",
+  "/settings",
+  "/identity",
+  "/projects",
+  "/compute",
+  "/models",
+  "/observability",
+  "/components",
+] as const
 
 const PROJECTS = [
   { id: "p_comuki", key: "comuki", name: "Comuki platform" },
   { id: "p_atlas", key: "atlas", name: "Atlas" },
   { id: "p_plexor", key: "plexor", name: "Plexor" },
-]
-
-function Frame({
-  seed,
-  children,
-}: {
-  seed?: (client: QueryClient) => void
-  children: ReactNode
-}) {
-  const [client] = useState(() => {
-    const client = new QueryClient({
-      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
-    })
-    seed?.(client)
-    return client
-  })
-
-  return (
-    <SessionProvider
-      user={{
-        id: "u_story",
-        name: "Rhea Okafor",
-        email: "rhea@comuki.local",
-        platformRoles: ["platform-admin"],
-        projectRoles: {},
-      }}
-      projects={PROJECTS}
-    >
-      <QueryClientProvider client={client}>
-        <SlotContext value={children}>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <RouterProvider router={router as any} />
-        </SlotContext>
-      </QueryClientProvider>
-    </SessionProvider>
-  )
-}
+] as const
 
 const meta: Meta<typeof SourcesPage> = {
   title: "Pages/Sources",
@@ -130,9 +61,13 @@ type Story = StoryObj<typeof SourcesPage>
  */
 export const Registry: Story = {
   render: () => (
-    <Frame>
+    <PageStoryFrame
+      routes={ROUTES}
+      initialPath="/sources"
+      projects={PROJECTS}
+    >
       <SourcesPage />
-    </Frame>
+    </PageStoryFrame>
   ),
 }
 
@@ -143,9 +78,13 @@ export const Registry: Story = {
  */
 export const RegistryFocused: Story = {
   render: () => (
-    <Frame>
+    <PageStoryFrame
+      routes={ROUTES}
+      initialPath="/sources"
+      projects={PROJECTS}
+    >
       <SourcesPage focus="plexor" />
-    </Frame>
+    </PageStoryFrame>
   ),
 }
 
@@ -158,7 +97,10 @@ export const RegistryFocused: Story = {
  */
 export const FirstRun: Story = {
   render: () => (
-    <Frame
+    <PageStoryFrame
+      routes={ROUTES}
+      initialPath="/sources"
+      projects={PROJECTS}
       seed={(client) => {
         client.setQueryData(sourcesQueryKey, {
           connections: [],
@@ -167,6 +109,6 @@ export const FirstRun: Story = {
       }}
     >
       <SourcesPage />
-    </Frame>
+    </PageStoryFrame>
   ),
 }

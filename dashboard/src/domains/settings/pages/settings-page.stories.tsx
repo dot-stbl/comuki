@@ -1,29 +1,15 @@
-import { createContext, useContext, useState, type ReactNode } from "react"
+import type { ReactElement } from "react"
 import type { Meta, StoryObj } from "@storybook/react"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  RouterProvider,
-} from "@tanstack/react-router"
 
 import type { SettingsTab } from "@/domains/settings/model/tabs"
 
-import { SessionProvider } from "@/shared/session"
+import { PageStoryFrame } from "@/shared/storybook/page-story-frame"
 
 import { SettingsPage } from "./settings-page"
 
 /* The control plane, in seven sections. The page is the door the platform
    admin walks through to read or change one of them; nothing on the screen
    claims to be a destination on its own.
-
-   The crumbs are real `<Link>`s and the shell draws the whole rail, so the
-   screen only renders inside a router, a session and a query client — the
-   same three the app hands it. A memory router carrying the product's own
-   paths gives the story working crumbs without dragging in the generated
-   route tree; `form-page.stories.tsx` is the harness this follows.
 
    Mock-first: the seven panels ride the control-plane snapshot. Three are
    read-only and say so on their own title — apps, rules, tracker — because
@@ -35,76 +21,29 @@ import { SettingsPage } from "./settings-page"
    This is the contract the route itself honours (`?tab=`), and the page
    reads no router state on its own. */
 
-const SlotContext = createContext<ReactNode>(null)
-
-function Slot() {
-  return <>{useContext(SlotContext)}</>
-}
-
-const rootRoute = createRootRoute({ component: Slot })
-const blank = () => null
-
-const routeTree = rootRoute.addChildren(
-  [
-    "/",
-    "/tasks",
-    "/runs",
-    "/queue",
-    "/approvals",
-    "/cost",
-    "/sources",
-    "/knowledge",
-    "/verify",
-    "/settings",
-    "/identity",
-    "/projects",
-    "/compute",
-    "/models",
-    "/observability",
-    "/components",
-  ].map((path) =>
-    createRoute({ getParentRoute: () => rootRoute, path, component: blank })
-  )
-)
-
-const router = createRouter({
-  routeTree,
-  history: createMemoryHistory({ initialEntries: ["/settings"] }),
-})
+const ROUTES = [
+  "/",
+  "/tasks",
+  "/runs",
+  "/queue",
+  "/approvals",
+  "/cost",
+  "/sources",
+  "/knowledge",
+  "/verify",
+  "/settings",
+  "/identity",
+  "/projects",
+  "/compute",
+  "/models",
+  "/observability",
+  "/components",
+] as const
 
 const PROJECTS = [
   { id: "p_comuki", key: "comuki", name: "Comuki platform" },
   { id: "p_atlas", key: "atlas", name: "Atlas" },
-]
-
-function Frame({ children }: { children: ReactNode }) {
-  const [client] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: { queries: { retry: false, staleTime: Infinity } },
-      })
-  )
-
-  return (
-    <SessionProvider
-      user={{
-        id: "u_story",
-        name: "Rhea Okafor",
-        email: "rhea@comuki.local",
-        platformRoles: ["platform-admin"],
-        projectRoles: {},
-      }}
-      projects={PROJECTS}
-    >
-      <QueryClientProvider client={client}>
-        <SlotContext value={children}>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <RouterProvider router={router as any} />
-        </SlotContext>
-      </QueryClientProvider>
-    </SessionProvider>
-  )
-}
+] as const
 
 const meta: Meta<typeof SettingsPage> = {
   title: "Pages/Settings",
@@ -116,11 +55,15 @@ const meta: Meta<typeof SettingsPage> = {
 export default meta
 type Story = StoryObj<typeof SettingsPage>
 
-function storyOf(tab: SettingsTab) {
+function storyOf(tab: SettingsTab): ReactElement {
   return (
-    <Frame>
+    <PageStoryFrame
+      routes={ROUTES}
+      initialPath="/settings"
+      projects={PROJECTS}
+    >
       <SettingsPage tab={tab} onTabChange={() => {}} />
-    </Frame>
+    </PageStoryFrame>
   )
 }
 

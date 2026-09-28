@@ -1,11 +1,11 @@
 [
   {
-    "storyId": "playbooks-workbench--live-run-needs-decision",
+    "storyId": "procedures-workbench--live-run-needs-decision",
     "theme": "dark",
     "ruleId": "color-contrast"
   },
   {
-    "storyId": "playbooks-workbench--live-run-needs-decision",
+    "storyId": "procedures-workbench--live-run-needs-decision",
     "theme": "light",
     "ruleId": "color-contrast"
   },

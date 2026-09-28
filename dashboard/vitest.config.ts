@@ -60,11 +60,11 @@ export default defineConfig({
         plugins: [
           storybookTest({
             configDir: path.resolve(import.meta.dirname, ".storybook"),
-            // `ws16-batch1` — runs/chat, the first batch (WS16). `playbooks`
-            // — the playbook workbench stories (add-project-playbooks
+            // `ws16-batch1` — runs/chat, the first batch (WS16). `procedures`
+            // — the procedure workbench stories (add-project-procedures
             // prototype): added per storybook-tests/README.md's "a future
             // batch adds its tag here".
-            tags: { include: ["ws16-batch1", "playbooks"] },
+            tags: { include: ["ws16-batch1", "procedures"] },
           }),
         ],
         resolve: {

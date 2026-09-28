@@ -32,22 +32,22 @@ import { cn } from "@/shared/lib/utils"
 
 import type {
   LiveRunFixture,
-  PlaybookEdge,
-  PlaybookFixture,
-  PlaybookMode,
-  PlaybookNode,
-  PlaybookNodeKind,
-  PlaybookStageStatus,
-  PlaybookFlowFixture,
-  PlaybookFlowNodeData,
+  ProcedureEdge,
+  ProcedureFixture,
+  ProcedureMode,
+  ProcedureNode,
+  ProcedureNodeKind,
+  ProcedureStageStatus,
+  ProcedureFlowFixture,
+  ProcedureFlowNodeData,
   ReplayEvent,
   StudioFixture,
-} from "./model/playbook-fixtures"
+} from "./model/procedure-fixtures"
 
-import styles from "./playbook-workbench.module.css"
+import styles from "./procedure-workbench.module.css"
 
 /**
- * Playbook Workbench — the operator's view of a playbook in three modes.
+ * Procedure Workbench — the operator's view of a procedure in three modes.
  *
  * One screen, three panels, one decision vocabulary. The mode (`studio`,
  * `live`, `replay`) is the panel the workbench is showing; the surrounding
@@ -56,7 +56,7 @@ import styles from "./playbook-workbench.module.css"
  * one question.
  *
  * The header is the studio's even when the live run is showing, because
- * the run is executing *this* playbook on *this* source. The graph sits in
+ * the run is executing *this* procedure on *this* source. The graph sits in
  * the centre column; the inspector is the right column; on a narrow window
  * the inspector falls below the graph rather than squashing either.
  *
@@ -65,15 +65,15 @@ import styles from "./playbook-workbench.module.css"
  * own state through `useState` so the stories can wire the play callbacks
  * without inventing a global store.
  */
-export interface PlaybookWorkbenchProps {
+export interface ProcedureWorkbenchProps {
   /** The shape the workbench renders. The mode on the fixture selects the panel. */
-  readonly fixture: PlaybookFixture
-  readonly flow?: PlaybookFlowFixture
+  readonly fixture: ProcedureFixture
+  readonly flow?: ProcedureFlowFixture
   /**
    * Optional initial mode override. Stories that need a specific mode hand it
    * in; the component otherwise picks the mode the fixture declares.
    */
-  readonly initialMode?: PlaybookMode
+  readonly initialMode?: ProcedureMode
   /** Names the region for assistive tech. */
   readonly label?: string
   className?: string
@@ -82,7 +82,7 @@ export interface PlaybookWorkbenchProps {
 interface PathRow {
   readonly key: string
   readonly label: string
-  readonly status: PlaybookStageStatus["status"] | "queued"
+  readonly status: ProcedureStageStatus["status"] | "queued"
 }
 
 /**
@@ -90,21 +90,21 @@ interface PathRow {
  * declares it. The component never picks — picking is the caller's.
  */
 function modeOf(
-  fixture: PlaybookFixture,
-  initialMode: PlaybookMode | undefined
-): PlaybookMode {
+  fixture: ProcedureFixture,
+  initialMode: ProcedureMode | undefined
+): ProcedureMode {
   return initialMode ?? fixture.mode
 }
 
 /**
- * The header — what the playbook *is*, regardless of mode. Studio and Live
+ * The header — what the procedure *is*, regardless of mode. Studio and Live
  * read the same three rows, in the same order, in the same voice.
  */
 function StudioHeader({ studio }: { studio: StudioFixture }) {
   return (
     <header className={styles.header} data-test="workbench-header">
       <div className={styles.headerTitle}>
-        <span className={styles.headerEyebrow}>playbook</span>
+        <span className={styles.headerEyebrow}>procedure</span>
         <h2 className={styles.headerName}>{studio.title}</h2>
       </div>
       <dl className={styles.headerFacts}>
@@ -140,17 +140,17 @@ function StudioHeader({ studio }: { studio: StudioFixture }) {
  * Below a narrow width, the grid collapses into a single column with
  * connectors drawn vertically — the linear fallback.
  */
-function PlaybookGraph({
+function ProcedureGraph({
   nodes,
   edges,
   label,
   flow,
   onNodeSelect,
 }: {
-  nodes: ReadonlyArray<PlaybookNode>
-  edges: ReadonlyArray<PlaybookEdge>
+  nodes: ReadonlyArray<ProcedureNode>
+  edges: ReadonlyArray<ProcedureEdge>
   label: string
-  flow?: PlaybookFlowFixture
+  flow?: ProcedureFlowFixture
   onNodeSelect?: (nodeId: string) => void
 }) {
   // Order columns by their declared col — the story may rearrange them, and
@@ -164,7 +164,7 @@ function PlaybookGraph({
   // On narrow windows the layout collapses to a single column and the
   // polyline runs top-to-bottom.
   const nodeById = useMemo(() => {
-    const map = new Map<string, PlaybookNode>()
+    const map = new Map<string, ProcedureNode>()
     for (const node of orderedNodes) {
       map.set(node.id, node)
     }
@@ -217,16 +217,16 @@ function PlaybookGraph({
   )
 }
 
-type PlaybookFlowNode = Node<PlaybookFlowNodeData, "playbook">
+type ProcedureFlowNode = Node<ProcedureFlowNodeData, "procedure">
 
 const flowNodeTypes: NodeTypes = {
-  playbook: PlaybookFlowNode,
+  procedure: ProcedureFlowNode,
 }
 
-function PlaybookFlowNode({
+function ProcedureFlowNode({
   data,
   selected,
-}: NodeProps<PlaybookFlowNode>) {
+}: NodeProps<ProcedureFlowNode>) {
   return (
     <div
       className={cn(
@@ -235,7 +235,7 @@ function PlaybookFlowNode({
         data.kind === "gate" && styles.flowNodeGate,
         selected && styles.flowNodeSelected
       )}
-      data-test="playbook-flow-node"
+      data-test="procedure-flow-node"
       data-node-kind={data.kind}
     >
       <Handle type="target" position={Position.Left} className={styles.flowHandle} />
@@ -253,7 +253,7 @@ function FlowCanvas({
   label,
   onNodeSelect,
 }: {
-  flow: PlaybookFlowFixture
+  flow: ProcedureFlowFixture
   label: string
   onNodeSelect?: (nodeId: string) => void
 }) {
@@ -267,7 +267,7 @@ function FlowCanvas({
   const edges = flow.edges.map((edge) => ({ ...edge }))
 
   return (
-    <div className={styles.flowFrame} data-test="playbook-flow-canvas">
+    <div className={styles.flowFrame} data-test="procedure-flow-canvas">
       <div className={styles.flowCanvas} aria-label={label}>
         <ReactFlow
           nodes={nodes}
@@ -306,7 +306,7 @@ function FlowCanvas({
  * the connector's reading, and the loop's hairline border wraps the cell
  * when its kind is `loop`.
  */
-function GraphCell({ node, isLoop }: { node: PlaybookNode; isLoop: boolean }) {
+function GraphCell({ node, isLoop }: { node: ProcedureNode; isLoop: boolean }) {
   return (
     <div
       className={cn(styles.graphCell, isLoop && styles.graphCellLoop)}
@@ -327,7 +327,7 @@ function GitTag() {
 }
 
 /** A human-readable name for a node kind. Kept short, two words at most. */
-function kindLabel(kind: PlaybookNodeKind): string {
+function kindLabel(kind: ProcedureNodeKind): string {
   switch (kind) {
     case "step":
       return "step"
@@ -414,7 +414,7 @@ function StudioInspector({ studio }: { studio: StudioFixture }) {
 
 /**
  * The bottom validation strip — a hairline separator and a small line of
- * text saying the playbook compiles and pins to a known release.
+ * text saying the procedure compiles and pins to a known release.
  */
 function ValidationStrip() {
   return (
@@ -558,7 +558,7 @@ function LiveRunInspector({
 function PathIcon({
   status,
 }: {
-  status: PlaybookStageStatus["status"] | "queued"
+  status: ProcedureStageStatus["status"] | "queued"
 }) {
   switch (status) {
     case "success":
@@ -580,7 +580,7 @@ function PathIcon({
  * caller.
  */
 function pathRows(
-  stages: ReadonlyArray<PlaybookStageStatus>
+  stages: ReadonlyArray<ProcedureStageStatus>
 ): ReadonlyArray<PathRow> {
   return stages.map((stage, index) => ({
     key: `${stage.name}-${index}`,
@@ -604,8 +604,8 @@ function ReplayInspector({
 }: {
   events: ReadonlyArray<ReplayEvent>
   selectedEvent: ReplayEvent | null
-  generatedNodes: ReadonlyArray<PlaybookNode>
-  generatedEdges: ReadonlyArray<PlaybookEdge>
+  generatedNodes: ReadonlyArray<ProcedureNode>
+  generatedEdges: ReadonlyArray<ProcedureEdge>
   onSelectEvent: (eventId: string) => void
 }) {
   return (
@@ -692,14 +692,14 @@ function ReplayInspector({
             </dl>
             <p className={styles.eventNote}>
               Actual differs but within policy — the harness noticed the branch
-              count and the visual skip, and the playbook finished inside its
+              count and the visual skip, and the procedure finished inside its
               risk budget. No replay needed.
             </p>
           </div>
 
           <div className={styles.generated}>
             <h4 className={styles.inspectorSectionTitle}>generated DAG</h4>
-            <PlaybookGraph
+            <ProcedureGraph
               nodes={generatedNodes}
               edges={generatedEdges}
               label="Generated DAG from the replay"
@@ -728,15 +728,15 @@ function driftLabel(drift: ReplayEvent["drift"]): string {
  * change inside a session. The graph is always drawn; the inspector and
  * the controls swap based on the mode.
  */
-export function PlaybookWorkbench({
+export function ProcedureWorkbench({
   fixture,
   flow,
   initialMode,
-  label = "Playbook workbench",
+  label = "Procedure workbench",
   className,
-}: PlaybookWorkbenchProps) {
+}: ProcedureWorkbenchProps) {
   const mode = modeOf(fixture, initialMode)
-  const [selectedMode, setSelectedMode] = useState<PlaybookMode>(mode)
+  const [selectedMode, setSelectedMode] = useState<ProcedureMode>(mode)
   const [approved, setApproved] = useState(false)
   const [paused, setPaused] = useState(false)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(
@@ -759,7 +759,7 @@ export function PlaybookWorkbench({
   return (
     <section
       className={cn(styles.workbench, className)}
-      data-test="playbook-workbench"
+      data-test="procedure-workbench"
       data-mode={selectedMode}
       aria-label={label}
     >
@@ -770,13 +770,13 @@ export function PlaybookWorkbench({
       <div className={styles.body}>
         {selectedMode === "studio" && studio ? (
           studio.valid === false ? (
-            <InvalidPlaybookNotice reason="The graph contains a cycle. Fix the edge before publishing this playbook." />
+            <InvalidProcedureNotice reason="The graph contains a cycle. Fix the edge before publishing this procedure." />
           ) : (
             <>
-              <PlaybookGraph
+              <ProcedureGraph
                 nodes={studio.nodes}
                 edges={studio.edges}
-                label="Playbook graph"
+                label="Procedure graph"
                 flow={flow ?? fixture.flow}
               />
               <StudioInspector studio={studio} />
@@ -824,8 +824,8 @@ function ModeTabs({
   selectedMode,
   onChange,
 }: {
-  selectedMode: PlaybookMode
-  onChange: (next: PlaybookMode) => void
+  selectedMode: ProcedureMode
+  onChange: (next: ProcedureMode) => void
 }) {
   return (
     <div className={styles.modeTabs} role="tablist" aria-label="Workbench mode">
@@ -861,7 +861,7 @@ function ModeTab({
   selected,
   onClick,
 }: {
-  id: PlaybookMode
+  id: ProcedureMode
   label: string
   icon: React.ReactNode
   selected: boolean
@@ -937,7 +937,7 @@ function LiveRunCenter({
 function ReplayCenter({
   replay,
 }: {
-  replay: NonNullable<PlaybookFixture["replay"]>
+  replay: NonNullable<ProcedureFixture["replay"]>
 }) {
   return (
     <div className={styles.replayCenter} data-test="workbench-replay-center">
@@ -949,7 +949,7 @@ function ReplayCenter({
           replayed the run.
         </p>
       </header>
-      <PlaybookGraph
+      <ProcedureGraph
         nodes={replay.generatedNodes}
         edges={replay.generatedEdges}
         label="Generated DAG from the replay"
@@ -960,15 +960,15 @@ function ReplayCenter({
 
 /**
  * The invalid studio reading — the workbench refuses to render the graph
- * and says so. Used by the InvalidPlaybook story when the data carries a
+ * and says so. Used by the InvalidProcedure story when the data carries a
  * cycle or a missing connector.
  */
-export function InvalidPlaybookNotice({ reason }: { reason: string }) {
+export function InvalidProcedureNotice({ reason }: { reason: string }) {
   return (
     <div className={styles.invalid} data-test="workbench-invalid">
       <AlertOctagon aria-hidden="true" />
       <div className={styles.invalidBody}>
-        <p className={styles.invalidTitle}>invalid playbook</p>
+        <p className={styles.invalidTitle}>invalid procedure</p>
         <p className={styles.invalidNote}>{reason}</p>
       </div>
     </div>

@@ -3,19 +3,19 @@ import type { Meta, StoryObj } from "@storybook/react"
 import { expect, fireEvent, waitFor } from "@storybook/test"
 
 import {
-  DOCS_ONLY_NO_DEPLOY_PLAYBOOK,
-  HOTFIX_MANUAL_DEPLOY_GATE_PLAYBOOK,
-  INVALID_CYCLE_PLAYBOOK,
-  INVALID_PLAYBOOK,
+  DOCS_ONLY_NO_DEPLOY_PROCEDURE,
+  HOTFIX_MANUAL_DEPLOY_GATE_PROCEDURE,
+  INVALID_CYCLE_PROCEDURE,
+  INVALID_PROCEDURE,
   LIVE_RUN_NEEDS_DECISION,
   REPLAY_OBSERVED_DRIFT,
-  STANDARD_FEATURE_PLAYBOOK,
+  STANDARD_FEATURE_PROCEDURE,
   STUDIO_DEFAULT,
-} from "./model/playbook-fixtures"
-import { InvalidPlaybookNotice, PlaybookWorkbench } from "./playbook-workbench"
+} from "./model/procedure-fixtures"
+import { InvalidProcedureNotice, ProcedureWorkbench } from "./procedure-workbench"
 
 /**
- * Playbook Workbench — the operator's view of a playbook in three modes.
+ * Procedure Workbench — the operator's view of a procedure in three modes.
  *
  * One screen, three panels, one decision vocabulary. The mode is the panel
  * the workbench is showing; the surrounding chrome (the header, the graph,
@@ -70,15 +70,15 @@ function byTest(root: HTMLElement, name: string): HTMLElement {
   return found
 }
 
-const meta: Meta<typeof PlaybookWorkbench> = {
-  title: "Playbooks/Workbench",
-  component: PlaybookWorkbench,
+const meta: Meta<typeof ProcedureWorkbench> = {
+  title: "Procedures/Workbench",
+  component: ProcedureWorkbench,
   parameters: { layout: "fullscreen" },
-  tags: ["autodocs", "playbooks"],
+  tags: ["autodocs", "procedures"],
 }
 
 export default meta
-type Story = StoryObj<typeof PlaybookWorkbench>
+type Story = StoryObj<typeof ProcedureWorkbench>
 
 /**
  * The Studio panel — the workbench as the operator sees it on first open.
@@ -93,9 +93,9 @@ type Story = StoryObj<typeof PlaybookWorkbench>
 export const Studio: Story = {
   render: () => (
     <Frame>
-      <PlaybookWorkbench
+      <ProcedureWorkbench
         fixture={STUDIO_DEFAULT}
-        flow={STANDARD_FEATURE_PLAYBOOK}
+        flow={STANDARD_FEATURE_PROCEDURE}
       />
     </Frame>
   ),
@@ -104,7 +104,7 @@ export const Studio: Story = {
     // ResizeObserver has measured it — asserting straight after storyReady
     // races that and reads a hidden node. Waiting is the honest contract:
     // the canvas is done when its first node is actually on screen.
-    const node = byTest(canvasElement, "playbook-flow-node")
+    const node = byTest(canvasElement, "procedure-flow-node")
     await waitFor(async () => {
       await expect(node).toBeVisible()
     })
@@ -119,7 +119,7 @@ export const Studio: Story = {
 }
 
 /**
- * The hotfix playbook — the same six shapes, but the human gate is a
+ * The hotfix procedure — the same six shapes, but the human gate is a
  * *manual* deploy gate. The gate node says so in its own meta line, because
  * "who presses the deploy button" is the one difference a duty engineer
  * needs to see before trusting a hotfix run.
@@ -127,25 +127,25 @@ export const Studio: Story = {
 export const StudioHotfixManualGate: Story = {
   render: () => (
     <Frame>
-      <PlaybookWorkbench
+      <ProcedureWorkbench
         fixture={STUDIO_DEFAULT}
-        flow={HOTFIX_MANUAL_DEPLOY_GATE_PLAYBOOK}
+        flow={HOTFIX_MANUAL_DEPLOY_GATE_PROCEDURE}
       />
     </Frame>
   ),
 }
 
 /**
- * The docs-only playbook — no Execute, no Repair loop, no deploy. The
+ * The docs-only procedure — no Execute, no Repair loop, no deploy. The
  * shortest graph that still validates; the gate reads `no deploy`, and the
  * canvas shows a pipeline that ends in a person rather than a rollout.
  */
 export const StudioDocsOnly: Story = {
   render: () => (
     <Frame>
-      <PlaybookWorkbench
+      <ProcedureWorkbench
         fixture={STUDIO_DEFAULT}
-        flow={DOCS_ONLY_NO_DEPLOY_PLAYBOOK}
+        flow={DOCS_ONLY_NO_DEPLOY_PROCEDURE}
       />
     </Frame>
   ),
@@ -160,9 +160,9 @@ export const StudioDocsOnly: Story = {
 export const StudioInvalidCycle: Story = {
   render: () => (
     <Frame>
-      <PlaybookWorkbench
-        fixture={INVALID_PLAYBOOK}
-        flow={INVALID_CYCLE_PLAYBOOK}
+      <ProcedureWorkbench
+        fixture={INVALID_PROCEDURE}
+        flow={INVALID_CYCLE_PROCEDURE}
       />
     </Frame>
   ),
@@ -183,7 +183,7 @@ export const StudioInvalidCycle: Story = {
 export const LiveRunNeedsDecision: Story = {
   render: () => (
     <Frame>
-      <PlaybookWorkbench fixture={LIVE_RUN_NEEDS_DECISION} initialMode="live" />
+      <ProcedureWorkbench fixture={LIVE_RUN_NEEDS_DECISION} initialMode="live" />
     </Frame>
   ),
   play: async ({ canvasElement }) => {
@@ -216,29 +216,29 @@ export const LiveRunNeedsDecision: Story = {
 export const ReplayObservedDrift: Story = {
   render: () => (
     <Frame height="36rem">
-      <PlaybookWorkbench fixture={REPLAY_OBSERVED_DRIFT} />
+      <ProcedureWorkbench fixture={REPLAY_OBSERVED_DRIFT} />
     </Frame>
   ),
 }
 
 /**
- * The Invalid panel — the workbench refuses to render a malformed playbook
+ * The Invalid panel — the workbench refuses to render a malformed procedure
  * and says so out loud.
  *
  * The fixture carries a cycle (`Plan` depends on itself) so the workbench
  * would not survive a real compile. The studio still renders the header
- * (the playbook is named, even when broken) and the notice explains the
+ * (the procedure is named, even when broken) and the notice explains the
  * reason in one line.
  *
- * We do not use the full `PlaybookWorkbench` here — the cycle is the kind
+ * We do not use the full `ProcedureWorkbench` here — the cycle is the kind
  * of thing a real harness would catch before it reaches this surface. The
  * notice is what the surface says when it does.
  */
-export const InvalidPlaybook: Story = {
+export const InvalidProcedure: Story = {
   render: () => (
     <Frame>
-      <InvalidPlaybookNotice
-        reason={`The graph has a cycle: 'Plan (self)' depends on 'Plan', and 'Plan' depends on 'Plan (self)'. The harness could not compile this playbook — fix the edge before publishing.`}
+      <InvalidProcedureNotice
+        reason={`The graph has a cycle: 'Plan (self)' depends on 'Plan', and 'Plan' depends on 'Plan (self)'. The harness could not compile this procedure — fix the edge before publishing.`}
       />
     </Frame>
   ),
@@ -247,10 +247,10 @@ export const InvalidPlaybook: Story = {
 /** The workbench in Invalid mode, for completeness — the graph does not
  *  draw, the inspector renders the same notice. Used when the cycle is
  *  detected upstream and the workbench still has to honour its layout. */
-export const InvalidPlaybookInWorkbench: Story = {
+export const InvalidProcedureInWorkbench: Story = {
   render: () => (
     <Frame>
-      <PlaybookWorkbench fixture={INVALID_PLAYBOOK} initialMode="studio" />
+      <ProcedureWorkbench fixture={INVALID_PROCEDURE} initialMode="studio" />
     </Frame>
   ),
 }

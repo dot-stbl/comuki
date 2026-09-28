@@ -1,8 +1,8 @@
-/* Playbook Workbench — the dispatcher board's view of a playbook.
+/* Procedure Workbench — the dispatcher board's view of a procedure.
  *
  * Three regions, one chrome, three modes. The header is the studio's even
  * when the live run is showing, because the run is executing *this*
- * playbook on *this* source. The mode strip rides below the header — three
+ * procedure on *this* source. The mode strip rides below the header — three
  * semantic tab buttons, the active one wearing the brand rule under it.
  *
  * The body is a grid: graph on the left, inspector on the right. The

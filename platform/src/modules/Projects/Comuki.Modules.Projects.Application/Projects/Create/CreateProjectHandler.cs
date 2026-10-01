@@ -23,10 +23,12 @@ namespace Comuki.Modules.Projects.Application.Projects.Create;
 /// <param name="projects">Project persistence port.</param>
 /// <param name="edition">The runtime read-side of the current license — supplies the cap.</param>
 /// <param name="clock">Time source for the project's created/updated timestamps.</param>
+/// <param name="mapper">Maps the created project to its view.</param>
 public sealed class CreateProjectHandler(
     IProjectStore projects,
     IEdition edition,
-    TimeProvider clock)
+    TimeProvider clock,
+    IProjectsMapper mapper)
 {
     /// <summary>Creates the project.</summary>
     /// <param name="command"></param>
@@ -69,6 +71,6 @@ public sealed class CreateProjectHandler(
                 message: $"limit 'projects' is exhausted ({current}/{cap})");
         }
 
-        return ProjectMapper.ToView(project);
+        return mapper.ToView(project);
     }
 }

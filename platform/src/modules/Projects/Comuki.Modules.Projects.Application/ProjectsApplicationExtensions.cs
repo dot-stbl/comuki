@@ -10,6 +10,7 @@ using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Application.Settings.DistributedCache;
 using Comuki.Modules.Projects.Application.Settings.Update;
+using Comuki.Modules.Projects.Application.Views;
 using Comuki.Shared.Editions.Gating;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Distributed;
@@ -61,6 +62,7 @@ public static class ProjectsApplicationExtensions
                 ? serviceProvider.GetRequiredService<DistributedProjectSettingsCache>()
                 : serviceProvider.GetRequiredService<ProjectSettingsCache>());
         services.AddSingleton<IProjectDomainTypeResolver, ProjectDomainTypeResolver>();
+        services.AddSingleton<IProjectsMapper, ProjectsMapper>();
 
         services.AddScoped<CreateProjectHandler>();
         services.AddScoped<UpdateProjectHandler>();

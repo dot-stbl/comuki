@@ -1,0 +1,56 @@
+{
+  "$comment": "Командный конфиг openflow для comuki. Гейты — по AGENTS.md (паттерны 1, 4, 10) и CI. Модели и харнессы здесь не задаются: они личные, в ~/.agents/openflow.json.",
+  "gates": {
+    "$comment": "test:affected сам решает, что затронуто (.NET, архитектурные тесты, openspec validate по затронутым change), интеграцию без Podman не включает. test сравнивается с базой ветки по report.json: красное до прогона не валит этап.",
+    "build": "dotnet build comuki.slnx -c Debug",
+    "test": {
+      "run": "bun run test:affected",
+      "report": {
+        "path": "artifacts/test-reports/affected/report.json",
+        "format": "comuki"
+      },
+      "baseline": true
+    },
+    "dashboard": "cd dashboard && bun run typecheck && bun run lint && bun run format:check && bun run test",
+    "attribution": "node scripts/ci/no-ai-attribution.mjs --range origin/master..HEAD"
+  },
+  "skills": {
+    "propose": "openspec-propose",
+    "apply": "openspec-apply-change",
+    "review": "review",
+    "reinvention": "reinvention",
+    "qa": "qa"
+  },
+  "forbidPaths": [
+    "**/*.py",
+    "**/requirements*.txt",
+    "**/pyproject.toml",
+    "deploy/hybrid/**",
+    ".gitlab-ci.yml",
+    ".github/workflows/**",
+    "openspec/specs/**",
+    "comuki.slnx",
+    "Directory.Build.props",
+    "Directory.Packages.props",
+    ".editorconfig",
+    "dashboard/src/shared/api/_generated/**",
+    "dashboard/src/routeTree.gen.ts",
+    "cli/src/contracts/_generated/**",
+    "platform/src/modules/*/*Infrastructure/Migrations/**",
+    ".agents/docs/design-system/**",
+    "artifacts/**",
+    "audit-data/**"
+  ],
+  "authorization": "Прогон запущен владельцем через openflow. Код, тесты, dashboard, cli, agents и openspec/changes/** правь без вопросов. Инженерную зону (сборка, CI, деплой, главные спеки) не трогай: если без неё не решить — верни status=blocked с объяснением. Коммиты — в формате [.stbl](feat/<area>): <описание>, без AI-атрибуции (никаких Co-Authored-By, Generated with, Assisted-By — их ловит CI-гейт no-ai-attribution). Не пушь в master, не мержи, не используй --no-verify.",
+  "context": "Перед работой прочитай AGENTS.md в корне — это канон, и выполни ритуал из .agents/RULES-BOOTSTRAP.md. Общение и отчёты — на русском, спеки OpenSpec — на английском. Тесты — через dotnet run --project tests/unit/<Proj>, не dotnet test. Нельзя: dev/watch/serve, vite, playwright, chromium, Python, порты вне пула 17000–17200. После любого C#-изменения прогони скилл review (canon + drift + nitor). Генерируемое (_generated, routeTree.gen.ts, EF-миграции) руками не правится — только через свои генераторы.",
+  "worktree": {
+    "$comment": "remote github: код и issues comuki живут на GitHub (dot-stbl/comuki). setup: зависимости bun в новом worktree — иначе тесты agents/ не находят пакеты. dashboard и cli без lock-файла, поэтому --no-save: дерево остаётся чистым.",
+    "remote": "github",
+    "integration": "master",
+    "setup": [
+      "cd agents && bun install --frozen-lockfile",
+      "cd dashboard && bun install --no-save",
+      "cd cli && bun install --no-save"
+    ]
+  }
+}

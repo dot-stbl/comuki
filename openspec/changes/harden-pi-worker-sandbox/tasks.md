@@ -45,3 +45,4 @@
 
 - [ ] 7.1 Cowork `worker-pools` spec notes this change as the floor for `strong` (comment or cross-link only — no slot implementation).
 - [x] 7.2 Final `dotnet build comuki.slnx -c Debug` after each merged slice; no AX/Substrate package references in the tree.
+- [x] 7.3 Per-claim env stamps inherit the "omit unset, keep default" contract from OpenSpec change `fix-null-translator-working-directory` (Translator environment contract, scenario "An unset required option still fails the boot" still passes for required options; non-required options like `COMUKI_WORKING_DIRECTORY` keep their declared defaults). Adding a new key to `TranslatorEnvironment.Snapshot` requires either a default on `TranslatorOptions` or a `[Required]` annotation — see the contract note in `platform/src/host/Comuki.Host.Translator/Program.cs`.

@@ -1,0 +1,81 @@
+---
+name: feature
+description: Проектная версия comuki: OpenSpec → реализация → гейты → ревью ↔ правки → аудит переизобретения ↔ правки → QA ↔ правки → MR
+defaults:
+  timeoutMin: 60
+  access: write
+---
+
+propose → apply → gate ⇄ fix ×2 → review ⇄ fix ×3 → reinvention ⇄ fix ×2 → qa ⇄ fix ×2 → ship
+
+## propose
+- role: plan
+- skill: {skills.propose}
+- exports: [change]
+
+Заведи OpenSpec change под задачу «{task}»: proposal, design, specs и tasks. Имя change — kebab-case с ключом задачи, если он есть в тексте.
+done: В openspec/changes/<change>/ лежат proposal.md, design.md, tasks.md и дельта-спеки; openspec validate по change проходит; имя change отдано в vars.change.
+
+## apply
+- role: code
+- skill: {skills.apply}
+- inputs: [propose]
+- verify: ["{gates.build}"]
+- timeoutMin: 120
+
+Реализуй задачи из openspec/changes/{change}/tasks.md по спеке и design.md. Отмечай выполненные пункты в tasks.md. Тесты пиши вместе с кодом.
+done: Все пункты tasks.md отмечены, код соответствует спеке, сборка зелёная ({gates.build}).
+
+## gate
+- type: gate
+- run: ["{gates.build}", "{gates.test}"]
+- onFail: { goto: fix, maxLoops: 2, then: human }
+
+## review
+- role: review
+- skill: {skills.review}
+- read-only
+- inputs: [apply]
+- onFail: { goto: fix, maxLoops: 3, then: human }
+
+Проведи ревью изменений текущей ветки против openspec/changes/{change}/: соответствие спеке, канон репозитория, регрессии, пропущенные тесты. Код не правь.
+done: Отдан result.json со списком findings. Нет находок уровня blocker — status pass; есть хотя бы одна — status fail, у каждой указаны файл, строка и что исправить.
+
+## reinvention
+- role: review
+- skill: {skills.reinvention}
+- read-only
+- when: { changed: ["**/*.cs", "**/*.ts", "**/*.tsx"] }
+- onFail: { goto: fix, maxLoops: 2, then: human }
+
+Проведи аудит переизобретения по скиллу reinvention в режиме audit на файлах, изменённых в ветке прогона относительно базы. Отчёт запиши в {run.dir}/reinvention.md.
+done: Отчёт {run.dir}/reinvention.md по формату скилла. В result.json findings по разделу «В openflow» скилла (blocker — безопасность, major — A/B/D с высокой уверенностью без согласия, minor — остальное), vars.reportPath и vars.fixable.
+
+## qa
+- role: qa
+- skill: {skills.qa}
+- read-only
+- inputs: [apply, review]
+- onFail: { goto: fix, maxLoops: 2, then: human }
+
+Проверь, что реализованное работает как описано в openspec/changes/{change}/specs: пройди сценарии спеки, запусти тесты и, где применимо, живой контур. Код не правь.
+done: Каждый сценарий спеки проверен и отражён в findings или summary. Все сценарии проходят — status pass; есть расхождение — status fail с воспроизведением в message.
+
+## ship
+- role: code
+- inputs: [review, qa]
+- exports: [mrUrl]
+- next: $end
+
+Запушь ветку прогона {worktree.branch} в remote и открой MR в интеграционную ветку (её имя: git symbolic-ref refs/remotes/origin/HEAD; клиент — glab или gh, что есть в репо). Описание MR собери из отчёта прогона ({run.dir}/report.md): что сделано, гейты, итоги ревью и QA. Не мержи. Нет remote — status blocked, вопрос «нет remote». Ошибка пуша или создания MR — status blocked с причиной. Ссылку на MR отдай в vars.mrUrl.
+done: Ветка запушена, MR открыт и не смержен; в result.json vars.mrUrl — ссылка на MR.
+
+## fix
+- role: code
+- skill: {skills.apply}
+- inputs: [review, qa, reinvention]
+- verify: ["{gates.build}"]
+- next: gate
+
+Исправь причины провала предыдущего этапа: он описан во входах (lastFailure) — находки ревью или QA, либо хвост лога гейта. Правь только то, что в них названо.
+done: Каждая названная находка или ошибка гейта устранена; сборка зелёная ({gates.build}); побочных правок нет.

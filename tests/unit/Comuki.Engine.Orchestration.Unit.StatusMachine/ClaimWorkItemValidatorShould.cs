@@ -18,7 +18,7 @@ public sealed class ClaimWorkItemValidatorShould
     public void RejectInvalidLabels(string image, string profilesRef, string profileKey, string expectedInvalidProperty)
     {
         var validator = new ClaimWorkItemValidator();
-        var command = new ClaimWorkItemCommand(WorkerId.New(), new WorkItemLabels(image, profilesRef, profileKey));
+        var command = new ClaimWorkItemCommand(WorkerId.New(), new WorkItemLabels(image, profilesRef, profileKey, "net10-sdk-bun"));
 
         var result = validator.Validate(command);
 
@@ -31,7 +31,7 @@ public sealed class ClaimWorkItemValidatorShould
     {
         var validator = new ClaimWorkItemValidator();
         var command = new ClaimWorkItemCommand(
-            new WorkerId(Guid.Empty), new WorkItemLabels("worker:dev", "refs/heads/main", "implement"));
+            new WorkerId(Guid.Empty), new WorkItemLabels("worker:dev", "refs/heads/main", "implement", "net10-sdk-bun"));
 
         var result = validator.Validate(command);
 
@@ -44,7 +44,7 @@ public sealed class ClaimWorkItemValidatorShould
     {
         var validator = new ClaimWorkItemValidator();
         var command = new ClaimWorkItemCommand(
-            WorkerId.New(), new WorkItemLabels("ghcr.io/comuki/worker@sha256:9f86d0", "refs/heads/main", "explore-readonly"));
+            WorkerId.New(), new WorkItemLabels("ghcr.io/comuki/worker@sha256:9f86d0", "refs/heads/main", "explore-readonly", "net10-sdk-bun"));
 
         var result = validator.Validate(command);
 

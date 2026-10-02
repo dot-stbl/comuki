@@ -20,10 +20,10 @@ namespace Comuki.Modules.Projects.Application.Projects.Create;
 /// carrying the <c>edition.limit_exceeded</c> code. Two concurrent
 /// writers at the cap serialise on the lock; only one commits.
 /// </summary>
-/// <param name="projects">Project persistence port.</param>
+/// <param name="projects">Persistence port — slug pre-flight, the transactional insert-with-limit, and the post-refusal count re-read.</param>
 /// <param name="edition">The runtime read-side of the current license — supplies the cap.</param>
 /// <param name="clock">Time source for the project's created/updated timestamps.</param>
-/// <param name="mapper">Maps the created project to its view.</param>
+/// <param name="mapper">Entity → view projection; the same Mapperly mapper used by every other projects handler.</param>
 public sealed class CreateProjectHandler(
     IProjectStore projects,
     IEdition edition,
@@ -31,9 +31,6 @@ public sealed class CreateProjectHandler(
     IProjectsMapper mapper)
 {
     /// <summary>Creates the project.</summary>
-    /// <param name="command"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns>The created project's view.</returns>
     /// <exception cref="ProjectConflictException">The slug is already taken.</exception>
     /// <exception cref="ProviderForbiddenException">The current edition's project cap is exhausted. The handler is the authoritative cap check (the request-time <c>[EnforceLimit]</c> filter is advisory only).</exception>
     public async Task<ProjectView> HandleAsync(CreateProjectCommand command, CancellationToken cancellationToken = default)
@@ -51,7 +48,13 @@ public sealed class CreateProjectHandler(
             command.Description,
             command.ProfilesGitUrl,
             command.ProfilesGitRef,
-            now);
+            now,
+            command.Icon,
+            command.Color,
+            command.Tags,
+            command.EnvClass,
+            command.SourceGitUrl,
+            command.SourceGitRef);
 
         var cap = edition.Limit(Limits.Projects);
         var settings = ProjectSettings.CreateDefaults(project.Id, now);
@@ -63,12 +66,11 @@ public sealed class CreateProjectHandler(
         if (!await projects.TryInsertWithProjectLimitAsync(project, settings, cap, cancellationToken))
         {
             // Re-read the current count for the problem detail — the
-            // store refused without committing, so the count we saw
+            // store refused without committing, so the count we see
             // here is the post-first-writer snapshot.
-            var current = await projects.CountAsync(includeArchived: false, cancellationToken);
             throw new ProviderForbiddenException(
                 code: "edition.limit_exceeded",
-                message: $"limit 'projects' is exhausted ({current}/{cap})");
+                message: $"limit 'projects' is exhausted ({await projects.CountAsync(includeArchived: false, cancellationToken)}/{cap})");
         }
 
         return mapper.ToView(project);

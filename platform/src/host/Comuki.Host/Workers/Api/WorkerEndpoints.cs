@@ -38,6 +38,7 @@ public static class WorkerEndpoints
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
         ClaimWorkItemHandler claimHandler,
+        ClaimSourceGitResolver sourceGitResolver,
         IWorkerPoolState pool,
         VirtualKeys.MintedVirtualKeyService virtualKeys,
         CancellationToken cancellationToken)
@@ -53,7 +54,7 @@ public static class WorkerEndpoints
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var command = new ClaimWorkItemCommand(
             workerId,
-            new WorkItemLabels(request.Image, request.ProfilesRef, request.ProfileKey));
+            new WorkItemLabels(request.Image ?? "diagnostics-only", request.ProfilesRef, request.ProfileKey, request.EnvClass));
         try
         {
             var claimed = await claimHandler.HandleAsync(command, cancellationToken);
@@ -68,20 +69,27 @@ public static class WorkerEndpoints
 
             // Mint after the claim transaction: the queue's journal event
             // mirrors the transition only, and the raw token appears
-            // exactly once — in this response body.
+            // exactly once — in this response body. The source-git
+            // enrichment (4.3) rides the same contract: URL/ref/credential
+            // appear only here; the credential is never journaled or logged.
             var minted = await virtualKeys.MintAsync(
                 claimed.ProjectId, claimed.WorkItemId, claimed.LeaseUntil, cancellationToken);
+            var sourceGit = await sourceGitResolver.ResolveAsync(claimed.ProjectId, cancellationToken);
             return Results.Ok(new ClaimedWorkItemResponse(
                 claimed.WorkItemId,
                 claimed.RunId.Value,
                 claimed.ProjectId,
                 claimed.ProfileKey,
+                claimed.EnvClass,
                 claimed.Brief,
                 claimed.LeaseUntil.ToUnixTimeMilliseconds(),
                 claimed.Attempt,
                 claimed.Generation,
                 ProxyBaseUrl: minted?.ProxyBaseUrl,
-                VirtualKey: minted?.Token));
+                VirtualKey: minted?.Token,
+                SourceGitUrl: sourceGit.SourceGitUrl,
+                SourceGitRef: sourceGit.SourceGitRef,
+                GitCredential: sourceGit.GitCredential));
         }
         catch (ValidationException exception)
         {

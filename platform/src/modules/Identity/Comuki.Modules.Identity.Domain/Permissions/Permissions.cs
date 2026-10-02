@@ -90,6 +90,12 @@ public static class Permissions
     /// <summary>Write scheduled jobs (create / patch / delete).</summary>
     public static readonly PermissionKey SchedulerWrite = new("scheduler:write");
 
+    /// <summary>Read procedures (compiled versions, patches, traces).</summary>
+    public static readonly PermissionKey ProcedureRead = new("procedure:read");
+
+    /// <summary>Write procedures (propose patches, publish, retry).</summary>
+    public static readonly PermissionKey ProcedureWrite = new("procedure:write");
+
     /// <summary>Platform-level administration (everything else is scoped below it).</summary>
     public static readonly PermissionKey PlatformAdmin = new("platform:admin");
 }

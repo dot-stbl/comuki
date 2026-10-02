@@ -147,6 +147,11 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("description");
 
+                    b.Property<string>("EnvClass")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("env_class");
+
                     b.Property<string>("Icon")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
@@ -173,6 +178,16 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("slug");
+
+                    b.Property<string>("SourceGitRef")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("source_git_ref");
+
+                    b.Property<string>("SourceGitUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("source_git_url");
 
                     b.PrimitiveCollection<string[]>("Tags")
                         .IsRequired()
@@ -214,6 +229,11 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)")
                         .HasColumnName("domain_type");
+
+                    b.Property<string>("GitCredentialRef")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("git_credential_ref");
 
                     b.Property<long?>("HardBudgetUsdMicros")
                         .HasColumnType("bigint")

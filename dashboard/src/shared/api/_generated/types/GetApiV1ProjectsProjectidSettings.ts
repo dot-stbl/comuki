@@ -3,6 +3,8 @@
  * Do not edit manually.
  */
 
+import type { ProjectSettingsView } from "./ProjectSettingsView"
+
 export type GetApiV1ProjectsProjectidSettingsPathParams = {
   /**
    * @type string, uuid
@@ -13,7 +15,7 @@ export type GetApiV1ProjectsProjectidSettingsPathParams = {
 /**
  * @description OK
  */
-export type GetApiV1ProjectsProjectidSettings200 = any
+export type GetApiV1ProjectsProjectidSettings200 = ProjectSettingsView
 
 export type GetApiV1ProjectsProjectidSettingsQueryResponse =
   GetApiV1ProjectsProjectidSettings200

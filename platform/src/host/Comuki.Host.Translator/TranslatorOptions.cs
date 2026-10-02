@@ -40,6 +40,19 @@ public sealed class TranslatorOptions
     [Required]
     public required string WorkerImage { get; init; }
 
+    /// <summary>
+    /// Environment class the worker was scaled for (claim label).
+    /// Sourced from <c>COMUKI_ENV_CLASS</c>; the compute provider stamps
+    /// it on the container at Start. Required once this change ships as
+    /// the running contract — task 3.2 wires the worker claim body to
+    /// demand it. Default-empty for this slice: the orchestrator accepts
+    /// an empty value as "no class bound" and the queue's
+    /// <c>env_class = @envClass</c> filter guarantees no claimer ever
+    /// matches such an item, so the worker simply sees 204 on every claim.
+    /// A separate compute-side change (WS3.3) flips this to required.
+    /// </summary>
+    public string EnvClass { get; init; } = string.Empty;
+
     /// <summary>Executable spawned per work item. Production: <c>pi</c>; tests: TestFakePi.</summary>
     public string PiExecutable { get; init; } = "pi";
 
@@ -59,4 +72,19 @@ public sealed class TranslatorOptions
     /// <summary>How often to extend the lease while an item is running.</summary>
     [Range(typeof(TimeSpan), "00:00:05", "01:00:00")]
     public TimeSpan HeartbeatInterval { get; init; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Opt-in operator debug (harden-pi-worker-sandbox 5.3, spec
+    /// "Operator debug is opt-in"). When true, the worker accepts
+    /// <c>Exec</c> commands delivered over the worker gRPC stream and
+    /// spawns the requested child process inside its own boundary.
+    /// Default off: production workers MUST refuse Exec when this is
+    /// false, the refusal is logged and never executed. Bound from
+    /// <c>Translator:DebugExec</c>; the compute provider stamps the
+    /// value through <c>COMUKI_DEBUG_EXEC</c> on the worker boundary
+    /// when they want a one-off debuggable slot. Operators switch it on
+    /// deliberately for one run; off is the safe default for
+    /// everything else.
+    /// </summary>
+    public bool DebugExec { get; init; }
 }

@@ -15,10 +15,16 @@
       "none": "ancora nessun progetto"
     }
   },
+  "list": {
+    "envClass": {
+      "none": "nessuna classe associata"
+    }
+  },
   "column": {
     "slug": "slug",
     "name": "nome",
     "tags": "tag",
+    "envClass": "classe ambiente",
     "inFlight": "in volo",
     "runs": "run",
     "costToday": "costo di oggi",
@@ -30,7 +36,7 @@
     "icon": "icona",
     "accentColour": "colore d'accento",
     "tags": "tag",
-    "repo": "repository dei profili git",
+        "repo": "repository dei profili git",
     "iconPlaceholder": "🛰️ oppure https://example.com/mark.png",
     "platformDefaults": "default della piattaforma"
   },
@@ -91,6 +97,7 @@
     "factsSection": "il progetto in sé",
     "editIdentity": "modifica identità",
     "editIdentityFailure": "L'identità non è stata salvata.",
+    "envClass": "classe ambiente",
     "rolesSection": "ruoli su questo progetto",
     "rolesForbiddenSubject": "Ruoli su questo progetto",
     "rolesHeld": {

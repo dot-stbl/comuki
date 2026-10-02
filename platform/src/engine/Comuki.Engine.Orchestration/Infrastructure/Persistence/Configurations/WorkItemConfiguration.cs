@@ -63,6 +63,11 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
             .HasMaxLength(512)
             .IsRequired();
 
+        builder.Property(static item => item.EnvClass)
+            .HasColumnName("env_class")
+            .HasMaxLength(128)
+            .IsRequired();
+
         builder.Property(static item => item.ProfilesRef)
             .HasColumnName("profiles_ref")
             .HasMaxLength(256)
@@ -108,8 +113,8 @@ public sealed class WorkItemConfiguration : IEntityTypeConfiguration<WorkItem>
             .HasDatabaseName("ix_work_items_active")
             .HasFilter(ActiveStatusesFilter);
 
-        // the claim subselect: profile match + FIFO within one profile, live rows only
-        builder.HasIndex(static item => new { item.ProfileKey, item.CreatedAt })
+        // the claim subselect: profile + env-class match + FIFO within one profile+class, live rows only
+        builder.HasIndex(static item => new { item.ProfileKey, item.EnvClass, item.CreatedAt })
             .HasDatabaseName("ix_work_items_claim")
             .HasFilter(QueuedStatusFilter);
     }

@@ -26,7 +26,7 @@ public sealed class GitLabTicketSync(
     public async Task TransitionAsync(SourceConnection connection, TicketTransition transition, CancellationToken cancellationToken = default)
     {
         var hashIndex = transition.ExternalId.IndexOf('#');
-        if (hashIndex <= 0 || !int.TryParse(transition.ExternalId[(hashIndex + 1)..], out var issueIid))
+        if (hashIndex <= 0 || !int.TryParse(transition.ExternalId[(hashIndex + 1)..], out var iid))
         {
             throw new InvalidOperationException($"gitlab external id '{transition.ExternalId}' is malformed");
         }
@@ -36,12 +36,21 @@ public sealed class GitLabTicketSync(
             settings.ApiBase,
             await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken));
 
-        await api.PostNoteAsync(settings.ProjectId, issueIid, new GitLabNoteBody(TrackerSyncComments.Of(transition)), cancellationToken);
+        var body = new GitLabNoteBody(TrackerSyncComments.Of(transition));
+
+        if (transition.Kind == InboundTicketKind.PullRequest)
+        {
+            await api.PostMergeRequestNoteAsync(settings.ProjectId, iid, body, cancellationToken);
+        }
+        else
+        {
+            await api.PostNoteAsync(settings.ProjectId, iid, body, cancellationToken);
+        }
 
         // Comuki does not decide to merge an MR — close-on-success applies to issues only.
         if (transition.RunStatus == RunStatuses.Succeeded && transition.Kind == InboundTicketKind.Issue)
         {
-            await api.UpdateIssueAsync(settings.ProjectId, issueIid, new GitLabIssueUpdate("close"), cancellationToken);
+            await api.UpdateIssueAsync(settings.ProjectId, iid, new GitLabIssueUpdate("close"), cancellationToken);
         }
     }
 }

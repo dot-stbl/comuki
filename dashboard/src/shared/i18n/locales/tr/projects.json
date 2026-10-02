@@ -13,10 +13,16 @@
       "none": "henüz proje yok"
     }
   },
+  "list": {
+    "envClass": {
+      "none": "sınıf atanmamış"
+    }
+  },
   "column": {
     "slug": "slug",
     "name": "ad",
     "tags": "etiketler",
+    "envClass": "ortam sınıfı",
     "inFlight": "uçuşta",
     "runs": "çalıştırmalar",
     "costToday": "bugünkü maliyet",
@@ -28,7 +34,7 @@
     "icon": "ikon",
     "accentColour": "vurgu rengi",
     "tags": "etiketler",
-    "repo": "git profil deposu",
+        "repo": "git profil deposu",
     "iconPlaceholder": "🛰️ veya https://example.com/mark.png",
     "platformDefaults": "platform varsayılanları"
   },
@@ -89,6 +95,7 @@
     "factsSection": "projenin kendisi",
     "editIdentity": "kimliği düzenle",
     "editIdentityFailure": "Kimlik kaydedilmedi.",
+    "envClass": "ortam sınıfı",
     "rolesSection": "bu projedeki roller",
     "rolesForbiddenSubject": "Bu projedeki roller",
     "rolesHeld": {

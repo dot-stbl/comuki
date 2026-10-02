@@ -23,7 +23,9 @@ internal static class DockerComputeMapping
     /// and the <see cref="DockerComputeProvider.WorkerIdLabel"/> stamp derive from the
     /// worker id; the network is the verified fenced one, or
     /// <see cref="Options.DockerComputeOptions.NetworkMode"/> under the unfenced dev
-    /// override.
+    /// override. The provider passes the catalog-resolved image through
+    /// <see cref="ComputeStartRequest.Image"/>; the mapping carries both it and
+    /// the env class as labels + env.
     /// </summary>
     public static CreateContainerParameters ToCreateParameters(
         ComputeStartRequest request,
@@ -89,6 +91,7 @@ internal static class DockerComputeMapping
             new WorkerId(workerId),
             container.ID,
             LabelOrDefault(container.Labels, ComputeLabels.Profile),
+            LabelOrDefault(container.Labels, ComputeLabels.EnvClass),
             LabelOrDefault(container.Labels, ComputeLabels.Image),
             LabelOrDefault(container.Labels, ComputeLabels.ProfilesRef));
     }
@@ -121,6 +124,7 @@ internal static class DockerComputeMapping
             $"COMUKI_PROJECT_ID={request.ProjectId.Value}",
             $"COMUKI_PROFILE_KEY={request.ProfileKey}",
             $"COMUKI_PROFILES_REF={request.ProfilesGitRef}",
+            $"COMUKI_ENV_CLASS={request.EnvClass}",
             $"COMUKI_WORKER_IMAGE={request.Image}",
             $"COMUKI_ORCH_GRPC={request.OrchestratorGrpcUrl}",
         };
@@ -135,6 +139,7 @@ internal static class DockerComputeMapping
         {
             [ComputeLabels.Project] = request.ProjectId.Value.ToString(),
             [ComputeLabels.Profile] = ComputeLabels.Sanitize(request.ProfileKey),
+            [ComputeLabels.EnvClass] = ComputeLabels.Sanitize(request.EnvClass),
             [ComputeLabels.Image] = ComputeLabels.Sanitize(request.Image),
             [ComputeLabels.ProfilesRef] = ComputeLabels.Sanitize(request.ProfilesGitRef),
             [DockerComputeProvider.WorkerIdLabel] = workerId.Value.ToString(),

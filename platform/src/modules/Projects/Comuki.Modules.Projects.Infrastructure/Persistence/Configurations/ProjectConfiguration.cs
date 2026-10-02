@@ -40,6 +40,14 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasColumnName("profiles_git_ref")
             .HasMaxLength(256);
 
+        builder.Property(static project => project.SourceGitUrl)
+            .HasColumnName("source_git_url")
+            .HasMaxLength(2048);
+
+        builder.Property(static project => project.SourceGitRef)
+            .HasColumnName("source_git_ref")
+            .HasMaxLength(256);
+
         // Identity columns (design D1): icon and colour bounds (200 / fixed 7)
         // are schema-level — varchar(n) mirrors the validation limits; tags
         // is a native Postgres text[] mirroring the admission arrays, with
@@ -58,6 +66,16 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasColumnType("text[]")
             .HasDefaultValueSql("'{}'")
             .IsRequired();
+
+        // Environment-class id (add-worker-environments task 2.2): the
+        // scalar stand-in for the project's source repository catalog
+        // binding. Nullable (empty binding → implement items stay
+        // unclaimable); varchar(128) mirrors Project.MaxEnvClassLength.
+        // Move-onto-Repository hand-off is tracked in the add-multi-repo-projects
+        // change — this column becomes a temporary stand-in.
+        builder.Property(static project => project.EnvClass)
+            .HasColumnName("env_class")
+            .HasMaxLength(Project.MaxEnvClassLength);
 
         builder.Property(static project => project.Archived)
             .HasColumnName("archived");

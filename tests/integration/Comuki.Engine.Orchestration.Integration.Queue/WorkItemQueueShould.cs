@@ -347,7 +347,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         claimed.LeaseUntil.ShouldBe(clock.GetUtcNow().AddMinutes(2));
 
         await Should.ThrowAsync<ValidationException>(
-            () => handler.HandleAsync(new ClaimWorkItemCommand(workerId, new WorkItemLabels("", ProfilesRef, "implement")), cancellationToken));
+            () => handler.HandleAsync(new ClaimWorkItemCommand(workerId, new WorkItemLabels("", ProfilesRef, "implement", "net10-sdk-bun")), cancellationToken));
     }
 
     [Fact(DisplayName = "Given a claimed item, when the journal is read through the port, then the claim transition is on the timeline")]
@@ -377,8 +377,8 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
         var now = clock.GetUtcNow();
         var run = Run.Create(ProjectId.New(), now);
-        var prerequisite = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"prerequisite"}""", WorkItemStatus.Queued, now);
-        var dependent = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"dependent"}""", WorkItemStatus.Blocked, now);
+        var prerequisite = WorkItem.Create(run.Id, "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"prerequisite"}""", WorkItemStatus.Queued, now);
+        var dependent = WorkItem.Create(run.Id, "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"dependent"}""", WorkItemStatus.Blocked, now);
         db.Runs.Add(run);
         db.WorkItems.AddRange(prerequisite, dependent);
         db.WorkItemDependencies.Add(WorkItemDependency.Create(dependent.Id, prerequisite.Id));
@@ -460,9 +460,9 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
         var now = clock.GetUtcNow();
         var run = Run.Create(ProjectId.New(), now);
-        var prerequisiteA = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"a"}""", WorkItemStatus.Queued, now);
-        var prerequisiteB = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"b"}""", WorkItemStatus.Queued, now.AddMilliseconds(1));
-        var dependent = WorkItem.Create(run.Id, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"c"}""", WorkItemStatus.Blocked, now);
+        var prerequisiteA = WorkItem.Create(run.Id, "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"a"}""", WorkItemStatus.Queued, now);
+        var prerequisiteB = WorkItem.Create(run.Id, "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"b"}""", WorkItemStatus.Queued, now.AddMilliseconds(1));
+        var dependent = WorkItem.Create(run.Id, "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"c"}""", WorkItemStatus.Blocked, now);
         db.Runs.Add(run);
         db.WorkItems.AddRange(prerequisiteA, prerequisiteB, dependent);
         db.WorkItemDependencies.Add(WorkItemDependency.Create(dependent.Id, prerequisiteA.Id));
@@ -499,10 +499,10 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
         var now = clock.GetUtcNow();
         var run = Run.Create(ProjectId.New(), now);
-        var prerequisiteA = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"a"}""", WorkItemStatus.Queued, now);
-        var prerequisiteB = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"b"}""", WorkItemStatus.Queued, now);
-        var dependentOne = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"diamond-1"}""", WorkItemStatus.Blocked, now);
-        var dependentTwo = WorkItem.Create(run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"diamond-2"}""", WorkItemStatus.Blocked, now);
+        var prerequisiteA = WorkItem.Create(run.Id, profileKey, Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"a"}""", WorkItemStatus.Queued, now);
+        var prerequisiteB = WorkItem.Create(run.Id, profileKey, Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"b"}""", WorkItemStatus.Queued, now);
+        var dependentOne = WorkItem.Create(run.Id, profileKey, Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"diamond-1"}""", WorkItemStatus.Blocked, now);
+        var dependentTwo = WorkItem.Create(run.Id, profileKey, Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"diamond-2"}""", WorkItemStatus.Blocked, now);
         db.Runs.Add(run);
         db.WorkItems.AddRange(prerequisiteA, prerequisiteB, dependentOne, dependentTwo);
         db.WorkItemDependencies.Add(WorkItemDependency.Create(dependentOne.Id, prerequisiteA.Id));
@@ -523,7 +523,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         {
             var profileKey = $"diamond-{trial}";
             var (_, _, dependentOne, dependentTwo) = await SeedDiamondDependentsAsync(profileKey);
-            var labels = new WorkItemLabels(Image, ProfilesRef, profileKey);
+            var labels = new WorkItemLabels(Image, ProfilesRef, profileKey, "net10-sdk-bun");
             using var scopeA = CreateScope();
             using var scopeB = CreateScope();
             var queueA = scopeA.ServiceProvider.GetRequiredService<IWorkItemQueue>();

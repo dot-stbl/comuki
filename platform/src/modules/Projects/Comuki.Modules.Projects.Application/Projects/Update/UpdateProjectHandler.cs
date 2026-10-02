@@ -21,7 +21,10 @@ public sealed class UpdateProjectHandler(IProjectStore projects, TimeProvider cl
             clock.GetUtcNow(),
             command.Icon,
             command.Color,
-            command.Tags);
+            command.Tags,
+            command.EnvClass,
+            command.SourceGitUrl,
+            command.SourceGitRef);
 
         await projects.SaveAsync(project, cancellationToken);
 

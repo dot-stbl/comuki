@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { projectSettingsViewSchema } from "./projectSettingsViewSchema"
 import { z } from "zod/v4"
 
 export const getApiV1ProjectsProjectidSettingsPathParamsSchema = z.object({
@@ -12,7 +13,11 @@ export const getApiV1ProjectsProjectidSettingsPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const getApiV1ProjectsProjectidSettings200Schema = z.any()
+export const getApiV1ProjectsProjectidSettings200Schema = z
+  .lazy(() => projectSettingsViewSchema)
+  .describe(
+    "Read model of per-project settings. int ProjectSettingsView.Version rides along\r\nso API clients can echo it into the next PUT (optimistic concurrency)."
+  )
 
 export const getApiV1ProjectsProjectidSettingsQueryResponseSchema = z.lazy(
   () => getApiV1ProjectsProjectidSettings200Schema

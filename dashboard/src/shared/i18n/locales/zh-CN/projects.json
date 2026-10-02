@@ -13,10 +13,16 @@
       "none": "还没有项目"
     }
   },
+  "list": {
+    "envClass": {
+      "none": "未绑定类别"
+    }
+  },
   "column": {
     "slug": "slug",
     "name": "名称",
     "tags": "标签",
+    "envClass": "环境类别",
     "inFlight": "进行中",
     "runs": "运行",
     "costToday": "今日开销",
@@ -28,7 +34,7 @@
     "icon": "图标",
     "accentColour": "强调色",
     "tags": "标签",
-    "repo": "git 配置仓库",
+        "repo": "git 配置仓库",
     "iconPlaceholder": "🛰️ 或 https://example.com/mark.png",
     "platformDefaults": "平台默认配置"
   },
@@ -89,6 +95,7 @@
     "factsSection": "项目本身",
     "editIdentity": "编辑标识",
     "editIdentityFailure": "标识未保存。",
+    "envClass": "环境类别",
     "rolesSection": "此项目上的角色",
     "rolesForbiddenSubject": "此项目上的角色",
     "rolesHeld": {

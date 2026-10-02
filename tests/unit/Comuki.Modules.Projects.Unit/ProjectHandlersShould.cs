@@ -29,7 +29,6 @@ public sealed class ProjectHandlersShould
     private readonly IProjectStore projects = Substitute.For<IProjectStore>();
     private readonly IProjectSettingsStore settings = Substitute.For<IProjectSettingsStore>();
     private readonly IEdition edition = Substitute.For<IEdition>();
-    private readonly IProjectsMapper mapper = new ProjectsMapper();
     private readonly FakeTime clock;
 
     public ProjectHandlersShould()
@@ -45,7 +44,7 @@ public sealed class ProjectHandlersShould
         projects
             .TryInsertWithProjectLimitAsync(Arg.Any<Project>(), Arg.Any<ProjectSettings>(), 5, Arg.Any<CancellationToken>())
             .Returns(true);
-        var handler = new CreateProjectHandler(projects, edition, clock, mapper);
+        var handler = new CreateProjectHandler(projects, edition, clock, new ProjectsMapper());
 
         var view = await handler.HandleAsync(
             new CreateProjectCommand("Acme", "Acme", "d", "git://x", "main"),
@@ -69,7 +68,7 @@ public sealed class ProjectHandlersShould
             .TryInsertWithProjectLimitAsync(Arg.Any<Project>(), Arg.Any<ProjectSettings>(), 1, Arg.Any<CancellationToken>())
             .Returns(false);
         projects.CountAsync(false, Arg.Any<CancellationToken>()).Returns(1);
-        var handler = new CreateProjectHandler(projects, edition, clock, mapper);
+        var handler = new CreateProjectHandler(projects, edition, clock, new ProjectsMapper());
 
         var exception = await Should.ThrowAsync<ProviderForbiddenException>(
             () => handler.HandleAsync(
@@ -85,7 +84,7 @@ public sealed class ProjectHandlersShould
     {
         var existing = Project.Create("Taken", "taken", null, null, null, now);
         projects.FindBySlugAsync("taken", Arg.Any<CancellationToken>()).Returns(existing);
-        var handler = new CreateProjectHandler(projects, edition, clock, mapper);
+        var handler = new CreateProjectHandler(projects, edition, clock, new ProjectsMapper());
 
         await Should.ThrowAsync<ProjectConflictException>(
             () => handler.HandleAsync(new CreateProjectCommand("X", "Taken", null, null, null), TestContext.Current.CancellationToken));
@@ -96,7 +95,7 @@ public sealed class ProjectHandlersShould
     {
         var project = Project.Create("Old", "old", "a", null, null, now);
         projects.FindByIdAsync(project.Id, Arg.Any<CancellationToken>()).Returns(project);
-        var handler = new UpdateProjectHandler(projects, clock, mapper);
+        var handler = new UpdateProjectHandler(projects, clock, new ProjectsMapper());
 
         var view = await handler.HandleAsync(
             new UpdateProjectCommand(project.Id, "New", null, "git://n", "n"),
@@ -112,7 +111,7 @@ public sealed class ProjectHandlersShould
     {
         var id = ProjectId.New();
         projects.FindByIdAsync(id, Arg.Any<CancellationToken>()).Returns((Project?)null);
-        var handler = new UpdateProjectHandler(projects, clock, mapper);
+        var handler = new UpdateProjectHandler(projects, clock, new ProjectsMapper());
 
         var exception = await Should.ThrowAsync<ProjectNotFoundException>(
             () => handler.HandleAsync(new UpdateProjectCommand(id, "n", null, null, null), TestContext.Current.CancellationToken));
@@ -124,7 +123,7 @@ public sealed class ProjectHandlersShould
     {
         var project = Project.Create("P", "p", null, null, null, now);
         projects.FindByIdAsync(project.Id, Arg.Any<CancellationToken>()).Returns(project);
-        var handler = new ArchiveProjectHandler(projects, clock, mapper);
+        var handler = new ArchiveProjectHandler(projects, clock, new ProjectsMapper());
 
         var view = await handler.HandleAsync(new ArchiveProjectCommand(project.Id), TestContext.Current.CancellationToken);
 
@@ -138,7 +137,7 @@ public sealed class ProjectHandlersShould
         var first = Project.Create("A", "a", null, null, null, now);
         var second = Project.Create("B", "b", null, null, null, now);
         projects.ListAsync(false, Arg.Any<CancellationToken>()).Returns([first, second]);
-        var handler = new ListProjectsHandler(projects, mapper);
+        var handler = new ListProjectsHandler(projects, new ProjectsMapper());
 
         var views = await handler.HandleAsync(false, TestContext.Current.CancellationToken);
 
@@ -152,7 +151,7 @@ public sealed class ProjectHandlersShould
     {
         var project = Project.Create("A", "a", null, null, null, now);
         projects.FindByIdAsync(project.Id, Arg.Any<CancellationToken>()).Returns(project);
-        var handler = new GetProjectHandler(projects, mapper);
+        var handler = new GetProjectHandler(projects, new ProjectsMapper());
 
         var view = await handler.HandleAsync(project.Id, TestContext.Current.CancellationToken);
 
@@ -166,7 +165,7 @@ public sealed class ProjectHandlersShould
         var projectId = ProjectId.New();
         var row = ProjectSettings.CreateDefaults(projectId, now);
         settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);
-        var handler = new GetProjectSettingsHandler(settings, mapper);
+        var handler = new GetProjectSettingsHandler(settings, new ProjectsMapper());
 
         var view = await handler.HandleAsync(projectId, TestContext.Current.CancellationToken);
 
@@ -181,7 +180,7 @@ public sealed class ProjectHandlersShould
         var row = ProjectSettings.CreateDefaults(projectId, now);
         settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);
         settings.SaveAsync(row, Arg.Any<CancellationToken>()).Returns(static callInfo => callInfo.Arg<ProjectSettings>());
-        var handler = new UpdateSettingsHandler(settings, clock, mapper);
+        var handler = new UpdateSettingsHandler(settings, clock, new ProjectsMapper());
 
         var view = await handler.HandleAsync(
             new UpdateSettingsCommand(projectId, 1, 1, 8, 60, true, true, true, true, 1000, 2000,
@@ -203,7 +202,7 @@ public sealed class ProjectHandlersShould
         var projectId = ProjectId.New();
         var row = ProjectSettings.CreateDefaults(projectId, now);
         settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);
-        var handler = new UpdateSettingsHandler(settings, clock, mapper);
+        var handler = new UpdateSettingsHandler(settings, clock, new ProjectsMapper());
 
         var exception = await Should.ThrowAsync<ProjectSettingsConflictException>(
             () => handler.HandleAsync(
@@ -221,7 +220,7 @@ public sealed class ProjectHandlersShould
     {
         var projectId = ProjectId.New();
         settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns((ProjectSettings?)null);
-        var handler = new GetProjectSettingsHandler(settings, mapper);
+        var handler = new GetProjectSettingsHandler(settings, new ProjectsMapper());
 
         await Should.ThrowAsync<ProjectNotFoundException>(
             () => handler.HandleAsync(projectId, TestContext.Current.CancellationToken));

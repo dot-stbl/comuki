@@ -52,10 +52,13 @@ internal static class WorkItemQueueSql
     /// see <c>HostCancelRunAdapter</c>'s <c>RunCancelSql</c>).</summary>
     private const string RunCancelled = nameof(RunStatus.Cancelled);
 
-    /// <summary>Claim: oldest queued item matching the labels, row-locked for the update. Excludes
-    /// items whose run has already gone terminal — defense-in-depth alongside the host cancel path's
-    /// own item transitions (see <see cref="RunCancelled"/> remarks): a claim racing a not-yet-committed
-    /// cancel must never hand out an item whose run it will never belong to again.</summary>
+    /// <summary>Claim: oldest queued item matching the labels (profile_key + env_class + profiles_ref),
+    /// row-locked for the update. Image is NOT a match key — the catalog resolves the image
+    /// from the class at compute start (add-worker-environments spec §"claim by env class").
+    /// Excludes items whose run has already gone terminal — defense-in-depth
+    /// alongside the host cancel path's own item transitions (see <see cref="RunCancelled"/> remarks):
+    /// a claim racing a not-yet-committed cancel must never hand out an item whose run it will never
+    /// belong to again.</summary>
     public const string ClaimSql =
         "UPDATE " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "SET status = '" + Running + "', leased_by = @workerId, lease_until = @leaseUntil, "
@@ -65,7 +68,7 @@ internal static class WorkItemQueueSql
         + "    SELECT id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.WorkItems + " "
         + "    WHERE status = '" + Queued + "' "
         + "      AND profile_key = @profileKey "
-        + "      AND image = @image "
+        + "      AND env_class = @envClass "
         + "      AND profiles_ref = @profilesRef "
         + "      AND EXISTS ( "
         + "          SELECT 1 FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " r "
@@ -78,7 +81,7 @@ internal static class WorkItemQueueSql
         + ") "
         + "RETURNING id, run_id, "
         + "(SELECT r.project_id FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " r WHERE r.id = work_items.run_id), "
-        + "profile_key, brief, lease_until, attempt, generation";
+        + "profile_key, env_class, brief, lease_until, attempt, generation";
 
     /// <summary>Heartbeat: extend the lease, guarded by owner, running status, an unexpired lease, and a matching generation.</summary>
     public const string HeartbeatSql =
@@ -227,7 +230,7 @@ internal static class WorkItemQueueSql
         command.CommandText = ClaimSql;
         AddParameter(command, "@workerId", workerId.Value);
         AddParameter(command, "@profileKey", labels.ProfileKey);
-        AddParameter(command, "@image", labels.Image);
+        AddParameter(command, "@envClass", labels.EnvClass);
         AddParameter(command, "@profilesRef", labels.ProfilesRef);
         AddParameter(command, "@leaseUntil", leaseUntil);
         AddParameter(command, "@now", now);
@@ -405,9 +408,10 @@ internal static class WorkItemQueueSql
             reader.GetGuid(2),
             reader.GetString(3),
             reader.GetString(4),
-            reader.GetFieldValue<DateTimeOffset>(5),
-            reader.GetInt32(6),
-            reader.GetInt32(7));
+            reader.GetString(5),
+            reader.GetFieldValue<DateTimeOffset>(6),
+            reader.GetInt32(7),
+            reader.GetInt32(8));
     }
 
     /// <summary>Adds one typed parameter (Npgsql infers uuid/timestamptz/text from the CLR value).</summary>

@@ -19,7 +19,7 @@ namespace Comuki.Engine.Orchestration.Unit.StatusMachine;
 /// </summary>
 public sealed class ClaimWorkItemHandlerShould
 {
-    private static readonly WorkItemLabels labels = new("ghcr.io/comuki/worker@sha256:9f86d0", "refs/heads/main", "implement");
+    private static readonly WorkItemLabels labels = new("ghcr.io/comuki/worker@sha256:9f86d0", "refs/heads/main", "implement", "net10-sdk-bun");
     private static readonly DateTimeOffset now = new(2026, 8, 31, 12, 0, 0, TimeSpan.Zero);
 
     [Fact(DisplayName = "Given a valid command, when HandleAsync is called, then it claims with a lease of the configured ttl")]
@@ -28,7 +28,7 @@ public sealed class ClaimWorkItemHandlerShould
         var clock = new FakeTimeProvider();
         var leaseOptions = OptionsFactory.Create(new LeaseOptions { LeaseTtl = TimeSpan.FromMinutes(5) });
         var queue = Substitute.For<IWorkItemQueue>();
-        var claimed = new ClaimedWorkItem(Guid.CreateVersion7(), RunId.New(), Guid.CreateVersion7(), "implement", /*lang=json,strict*/ """{"goal":"x"}""", now.AddMinutes(5), 1, 1);
+        var claimed = new ClaimedWorkItem(Guid.CreateVersion7(), RunId.New(), Guid.CreateVersion7(), "implement", "net10-sdk-bun", /*lang=json,strict*/ """{"goal":"x"}""", now.AddMinutes(5), 1, 1);
         var cancellationToken = TestContext.Current.CancellationToken;
         queue.ClaimAsync(Arg.Any<WorkerId>(), Arg.Any<WorkItemLabels>(), Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), cancellationToken)
             .Returns(claimed);
@@ -55,7 +55,7 @@ public sealed class ClaimWorkItemHandlerShould
             new ClaimWorkItemValidator(), queue, new FakeTimeProvider(), OptionsFactory.Create(new LeaseOptions()));
 
         await Should.ThrowAsync<ValidationException>(
-            () => handler.HandleAsync(new ClaimWorkItemCommand(WorkerId.New(), new WorkItemLabels("", "refs/heads/main", "implement")), TestContext.Current.CancellationToken));
+            () => handler.HandleAsync(new ClaimWorkItemCommand(WorkerId.New(), new WorkItemLabels("", "refs/heads/main", "implement", "net10-sdk-bun")), TestContext.Current.CancellationToken));
         await queue.DidNotReceiveWithAnyArgs().ClaimAsync(default, default!, default, default, TestContext.Current.CancellationToken);
     }
 

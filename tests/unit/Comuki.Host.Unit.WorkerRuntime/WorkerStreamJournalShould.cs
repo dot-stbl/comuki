@@ -107,6 +107,83 @@ public sealed class WorkerStreamJournalShould
 
         await journal.Received(1).AppendAsync(Arg.Any<RunEventEntry>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact(DisplayName = "Given a WorkspacePrepared condition event, when appended, then a worker.condition entry is journaled with the same name/value")]
+    public async Task JournalWorkspacePreparedConditionAsync()
+    {
+        var runId = Guid.NewGuid();
+        var workItemId = Guid.NewGuid();
+        var streamJournal = CreateJournal();
+        await streamJournal.AppendAsync(StartEvent(runId), TestContext.Current.CancellationToken);
+
+        await streamJournal.AppendAsync(
+            new WorkerEvent
+            {
+                Condition = new StageCondition
+                {
+                    WorkItemId = workItemId.ToString(),
+                    Name = "WorkspacePrepared",
+                    Value = true,
+                },
+            },
+            TestContext.Current.CancellationToken);
+
+        await journal.Received(1).AppendAsync(
+            Arg.Is<RunEventEntry>(static entry =>
+                entry.RunId.Value == entry.RunId.Value
+                && entry.Type == RunEventTypes.WorkerCondition
+                && entry.PayloadJson.Contains("WorkspacePrepared", StringComparison.Ordinal)
+                && entry.PayloadJson.Contains("true", StringComparison.OrdinalIgnoreCase)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given an EgressApplied=false condition event, when appended, then the value false is preserved on the journal entry")]
+    public async Task JournalConditionWithFalseValueAsync()
+    {
+        var runId = Guid.NewGuid();
+        var streamJournal = CreateJournal();
+        await streamJournal.AppendAsync(StartEvent(runId), TestContext.Current.CancellationToken);
+
+        await streamJournal.AppendAsync(
+            new WorkerEvent
+            {
+                Condition = new StageCondition
+                {
+                    WorkItemId = Guid.NewGuid().ToString(),
+                    Name = "EgressApplied",
+                    Value = false,
+                },
+            },
+            TestContext.Current.CancellationToken);
+
+        await journal.Received(1).AppendAsync(
+            Arg.Is<RunEventEntry>(static entry =>
+                entry.Type == RunEventTypes.WorkerCondition
+                && entry.PayloadJson.Contains("EgressApplied", StringComparison.Ordinal)
+                && entry.PayloadJson.Contains("false", StringComparison.OrdinalIgnoreCase)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given a condition event before a Start, when appended, then it is dropped, not journaled")]
+    public async Task DropConditionBeforeStartAsync()
+    {
+        var streamJournal = CreateJournal();
+
+        await streamJournal.AppendAsync(
+            new WorkerEvent
+            {
+                Condition = new StageCondition
+                {
+                    WorkItemId = Guid.NewGuid().ToString(),
+                    Name = "WorkspacePrepared",
+                    Value = true,
+                },
+            },
+            TestContext.Current.CancellationToken);
+
+        streamJournal.RunId.ShouldBeNull();
+        await journal.DidNotReceiveWithAnyArgs().AppendAsync(default!, TestContext.Current.CancellationToken);
+    }
 }
 
 /// <summary>Deterministic clock for journal timestamps.</summary>

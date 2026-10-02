@@ -27,5 +27,5 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }

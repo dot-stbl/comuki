@@ -267,6 +267,9 @@ DocProject/Help/*.hhp
 DocProject/Help/Html2
 DocProject/Help/html
 publish/
+# Translator domain folder — not MSBuild publish output
+!platform/src/host/Comuki.Host.Translator/Execution/Publish/
+!platform/src/host/Comuki.Host.Translator/Execution/Publish/**
 *.[Pp]ublish.xml
 *.azurePubxml
 *.pubxml

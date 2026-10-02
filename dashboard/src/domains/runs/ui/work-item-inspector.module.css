@@ -71,7 +71,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .identStrong {
@@ -111,7 +111,7 @@
   margin: 0;
   font-size: var(--t-micro);
   letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .figureValue {
@@ -176,7 +176,7 @@
   margin-left: auto;
   font-family: var(--font-data);
   letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 /* --- what this item waits on --- */
@@ -229,7 +229,7 @@
   flex: 0 0 auto;
   width: var(--icon-sm);
   height: var(--icon-sm);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .depLabel {
@@ -256,7 +256,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
   white-space: nowrap;
 }
 
@@ -298,7 +298,7 @@
   flex: 0 0 auto;
   width: var(--icon-sm);
   height: var(--icon-sm);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .chipDetail {
@@ -357,7 +357,7 @@
 }
 
 .eventTime {
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -455,13 +455,13 @@
 }
 
 .lineNumber {
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
 .lineSign {
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .line[data-kind="add"] {
@@ -484,7 +484,7 @@
 .none {
   margin: 0;
   font-size: var(--t-sm);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 @media (prefers-reduced-motion: reduce) {

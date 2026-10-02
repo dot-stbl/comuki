@@ -1,0 +1,12 @@
+{
+  "required": ["patchId", "baseVersionId", "rationale", "diffSummary"],
+  "type": "object",
+  "properties": {
+    "patchId": { "type": "string" },
+    "baseVersionId": { "type": "string" },
+    "rationale": { "type": "string" },
+    "diffSummary": { "type": "string" }
+  },
+  "description": "Response DTO for a proposed patch\r\n(`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\nThe chat surface has no publication path — the human publishes from\r\nStudio after reviewing the rendered diff.",
+  "x-readme-ref-name": "ProposedPatchResponse"
+}

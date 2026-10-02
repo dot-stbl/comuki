@@ -57,13 +57,15 @@ public sealed class WorkerPoolState(
     /// <param name="tokenId"></param>
     /// <param name="projectId"></param>
     /// <param name="profileKey"></param>
-    public void Register(WorkerHandle handle, WorkerId tokenId, ProjectId projectId, string profileKey)
+    /// <param name="envClass">Environment class the worker started for — claim matching scopes per (profile, env class) pair.</param>
+    public void Register(WorkerHandle handle, WorkerId tokenId, ProjectId projectId, string profileKey, string envClass)
     {
         workers[handle.Id] = new PoolWorker(
             handle.Id,
             tokenId,
             projectId,
             profileKey,
+            envClass,
             handle.ProviderRef,
             clock.GetUtcNow(),
             IsBusy: false);
@@ -101,6 +103,7 @@ public sealed class WorkerPoolState(
                 info.Id,
                 projectId,
                 info.ProfileKey,
+                info.EnvClass,
                 info.ProviderRef,
                 clock.GetUtcNow(),
                 IsBusy: false);

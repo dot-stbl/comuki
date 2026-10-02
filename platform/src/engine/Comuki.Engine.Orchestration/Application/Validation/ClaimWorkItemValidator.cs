@@ -30,5 +30,11 @@ public sealed class ClaimWorkItemValidator : AbstractValidator<ClaimWorkItemComm
             .MaximumLength(128)
             .Matches("^[a-z0-9][a-z0-9-]*$")
             .WithMessage("profile key must be a lowercase slug (letters, digits, dashes)");
+
+        RuleFor(static command => command.Labels.EnvClass)
+            .NotEmpty()
+            .MaximumLength(128)
+            .Matches("^[a-z0-9][a-z0-9-]*$")
+            .WithMessage("env class must be a lowercase slug (letters, digits, dashes)");
     }
 }

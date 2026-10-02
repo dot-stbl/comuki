@@ -265,8 +265,7 @@ export function SourceDetailPage({ sourceId }: SourceDetailPageProps) {
   const projectKey = where ?? connection.projectId
   const native = isNativeIntake(connection.kind)
 
-  const dropProbe = () =>
-    setProbe((current) => (current === null ? current : null))
+  const dropProbe = () => setProbe(null)
 
   const onTest = () => {
     if (editDenial) {

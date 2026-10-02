@@ -151,6 +151,13 @@ cd dashboard && bun run build
 
 Не стартуй `bun run dev` / `dotnet run` (host) / watch из агентской сессии.
 
+```bash
+# GitHub = код; GitLab = тест/деплой (overlay .gitlab-ci.yml + deploy/hybrid)
+node scripts/ci/sync-gitlab.mjs                 # dry-run
+node scripts/ci/sync-gitlab.mjs --apply         # подлить github/master → gitlab/master
+node scripts/ci/sync-gitlab.mjs --to-github --apply  # догнать github (без overlay)
+```
+
 ---
 
 ## Правила — куда править

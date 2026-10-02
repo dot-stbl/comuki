@@ -66,7 +66,7 @@ public sealed class CrownScenarioHost : IAsyncLifetime
     /// (the <c>Intake:Worker:*</c> config on this host + the explicit seeds in <see cref="CrownScenarioShould"/>),
     /// so a single <see cref="IWorkItemQueue.ClaimAsync"/> call covers them all. Mirror of the host's
     /// intake-worker defaults — change <c>Intake:Worker:*</c> above and update this constant with it.</summary>
-    public static WorkItemLabels EntryLabels => new("ghcr.io/comuki/worker:crown-test", "crown-test", "implement");
+    public static WorkItemLabels EntryLabels => new("ghcr.io/comuki/worker:crown-test", "crown-test", "implement", "net10-sdk-bun");
 
     /// <inheritdoc />
     public async ValueTask InitializeAsync()

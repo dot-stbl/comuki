@@ -5,7 +5,7 @@ namespace Comuki.Host.Intake;
 /// and the pinned profiles-ref. The worker <c>profileKey</c> is no
 /// longer hardcoded — <see cref="Modules.Intake.Application.Ports.Admission.IIntakeProfileRouter"/>
 /// picks it (PR-kind → <c>pr-review</c>; issue-kind →
-/// <c>IntakeProfileRouter.IssueDefault</c>, default <c>general</c>).
+/// <c>IntakeProfileRouter.IssueDefault</c>, default <c>implement</c>).
 /// Per-connection <c>profileKey</c> in the settings jsonb wins.
 /// Mirrors <c>ChatWorkerDefaults</c>.
 /// </summary>
@@ -15,7 +15,7 @@ public sealed class IntakeWorkerDefaults
     public const string SectionName = "Intake:Worker";
 
     /// <summary>Default profile key for issue-kind intake tickets when no per-connection override is set.</summary>
-    public string IssueDefaultProfileKey { get; init; } = "general";
+    public string IssueDefaultProfileKey { get; init; } = "implement";
 
     /// <summary>Worker image (with digest) intake-created items claim on.</summary>
     public string Image { get; init; } = "ghcr.io/comuki/worker:dev";

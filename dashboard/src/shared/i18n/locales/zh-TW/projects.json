@@ -13,10 +13,16 @@
       "none": "還沒有專案"
     }
   },
+  "list": {
+    "envClass": {
+      "none": "未綁定類別"
+    }
+  },
   "column": {
     "slug": "slug",
     "name": "名稱",
     "tags": "標籤",
+    "envClass": "環境類別",
     "inFlight": "進行中",
     "runs": "執行",
     "costToday": "今日開銷",
@@ -28,7 +34,7 @@
     "icon": "圖示",
     "accentColour": "強調色",
     "tags": "標籤",
-    "repo": "git 配置倉庫",
+        "repo": "git 配置倉庫",
     "iconPlaceholder": "🛰️ 或 https://example.com/mark.png",
     "platformDefaults": "平臺預設配置"
   },
@@ -89,6 +95,7 @@
     "factsSection": "專案本身",
     "editIdentity": "編輯標識",
     "editIdentityFailure": "標識未儲存。",
+    "envClass": "環境類別",
     "rolesSection": "此專案上的角色",
     "rolesForbiddenSubject": "此專案上的角色",
     "rolesHeld": {

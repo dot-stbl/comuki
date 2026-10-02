@@ -14,10 +14,16 @@
       "none": "noch keine Projekte"
     }
   },
+  "list": {
+    "envClass": {
+      "none": "keine Klasse gebunden"
+    }
+  },
   "column": {
     "slug": "slug",
     "name": "name",
     "tags": "tags",
+    "envClass": "Umgebungsklasse",
     "inFlight": "in Arbeit",
     "runs": "runs",
     "costToday": "kosten heute",
@@ -90,6 +96,7 @@
     "factsSection": "das Projekt selbst",
     "editIdentity": "Zeichen bearbeiten",
     "editIdentityFailure": "Das Zeichen wurde nicht gespeichert.",
+    "envClass": "Umgebungsklasse",
     "rolesSection": "Rollen in diesem Projekt",
     "rolesForbiddenSubject": "Rollen in diesem Projekt",
     "rolesHeld": {

@@ -112,7 +112,7 @@ public sealed class RunJournalShould(PostgresCollectionFixture postgres) : Queue
         var now = clock.GetUtcNow();
         var run = Run.Create(ProjectId.New(), now);
         var items = Enumerable.Range(0, count)
-            .Select(index => WorkItem.Create(run.Id, "implement", Image, ProfilesRef, $$"""{"goal":"item {{index}}"}""", WorkItemStatus.Queued, now))
+            .Select(index => WorkItem.Create(run.Id, "implement", Image, "net10-sdk-bun", ProfilesRef, $$"""{"goal":"item {{index}}"}""", WorkItemStatus.Queued, now))
             .ToList();
         db.Runs.Add(run);
         db.WorkItems.AddRange(items);

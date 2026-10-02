@@ -54,7 +54,7 @@ public sealed class ChatRunStarterDependencyGateShould(HostChatServer server) : 
         // test correct regardless of how the host's ChatWorkerDefaults
         // are configured (and through WorkerImagePinning, regardless of
         // the running build version).
-        var labels = new WorkItemLabels(prerequisite.Image, prerequisite.ProfilesRef, prerequisite.ProfileKey);
+        var labels = new WorkItemLabels(prerequisite.Image, prerequisite.ProfilesRef, prerequisite.ProfileKey, "net10-sdk-bun");
 
         // 1. First claim: gets the prerequisite (the only Queued item),
         //    never the dependent (it is Blocked, not Queued).

@@ -13,6 +13,7 @@ namespace Comuki.Engine.Compute.Pool;
 /// </param>
 /// <param name="ProjectId">Owning project.</param>
 /// <param name="ProfileKey">Profile the worker was started for (claim matching).</param>
+/// <param name="EnvClass">Environment-class id the worker was started for — claim matching scopes per (profile, env class) pair.</param>
 /// <param name="ProviderRef">Container id / job name at the provider.</param>
 /// <param name="LastActiveAt">Last start/claim/heartbeat time — feeds the idle TTL.</param>
 /// <param name="IsBusy">True while the worker holds a claimed work item.</param>
@@ -21,6 +22,7 @@ public sealed record PoolWorker(
     WorkerId TokenId,
     ProjectId ProjectId,
     string ProfileKey,
+    string EnvClass,
     string ProviderRef,
     DateTimeOffset LastActiveAt,
     bool IsBusy);

@@ -38,5 +38,16 @@ public sealed class UpdateProjectValidator : AbstractValidator<UpdateProjectComm
             .Must(static tags => tags is null || ProjectIdentityRules.TagsAreWellFormed(tags))
             .WithMessage(
                 $"tags must match '{Project.TagPattern}' after trimming and number at most {Project.MaxTags} distinct");
+
+        // PATCH shape: null leaves the stored class untouched, an empty
+        // string clears the binding (operator's way to take a project
+        // back to "no class"), a non-empty value must match the catalog
+        // id pattern and fit the column bound.
+        RuleFor(static command => command.EnvClass)
+            .MaximumLength(Project.MaxEnvClassLength)
+            .Must(static envClass => envClass is null
+                || envClass.Length == 0
+                || ProjectIdentityRules.EnvClassIsWellFormed(envClass))
+            .WithMessage($"envClass, when provided, must match '{Project.EnvClassPattern}' or be empty to clear");
     }
 }

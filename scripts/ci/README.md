@@ -4,6 +4,27 @@ CI/dev scripts shared between GitHub Actions and GitLab CI, and between CI
 and a local/agent inner loop. Zero third-party dependencies — bun/node only,
 runs on a bare checkout.
 
+## `sync-gitlab.mjs` — pour GitHub onto GitLab for hybrid test/deploy
+
+GitHub (`dot-stbl/comuki`) is the **code** platform. GitLab
+(`nova/projects/comuki`) is the **test/deploy** contour: it keeps the
+hybrid overlay (`.gitlab-ci.yml`, `deploy/hybrid/**`, gitignored on
+GitHub) and runs unit + migrate + Harbor + Argo.
+
+```bash
+node scripts/ci/sync-gitlab.mjs                 # dry-run: fetch + classify
+node scripts/ci/sync-gitlab.mjs --apply         # github/master → gitlab/master
+node scripts/ci/sync-gitlab.mjs --to-github     # dry-run catch-up GitHub
+node scripts/ci/sync-gitlab.mjs --to-github --apply
+```
+
+Never force-pushes. If GitLab is ahead (the usual state while code
+lands on GitLab first), the pour is a no-op with a warning — catch
+GitHub up separately; do not rewind GitLab. Overlay always comes from
+the GitLab tip after the merge.
+
+Unit tests: `node --test scripts/ci/sync-gitlab.test.mjs`.
+
 ## `test-affected.mjs` — green gate before an MR
 
 ```bash

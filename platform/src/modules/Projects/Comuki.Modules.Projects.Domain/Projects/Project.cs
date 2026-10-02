@@ -26,6 +26,16 @@ public sealed class Project
     /// <summary>Shape of a colour accepted on input: #rrggbb in either letter case.</summary>
     public const string ColorPattern = "^#[0-9A-Fa-f]{6}$";
 
+    /// <summary>Upper bound of <see cref="EnvClass"/> on the wire / in the database (mirrored by validation).</summary>
+    public const int MaxEnvClassLength = 128;
+
+    /// <summary>
+    /// Shape of an environment-class id accepted on input: lower-case
+    /// alphanumeric + dash, 1+ chars. Matches the catalog id format
+    /// (see <c>Comuki.Engine.Compute.Environments.EnvironmentBundle</c>).
+    /// </summary>
+    public const string EnvClassPattern = "^[a-z0-9][a-z0-9-]*$";
+
     /// <summary>Strong-typed project id (UUIDv7, from the Shared Kernel).</summary>
     public ProjectId Id { get; private set; }
 
@@ -44,6 +54,16 @@ public sealed class Project
     /// <summary>Pinned git ref of the profiles repository (branch, tag or digest).</summary>
     public string? ProfilesGitRef { get; private set; }
 
+    /// <summary>
+    /// Git URL of the project's source repository (the work-item source code);
+    /// optional. Mirrors <see cref="ProfilesGitUrl"/>'s shape and PATCH semantics
+    /// (null leaves the stored value untouched on update).
+    /// </summary>
+    public string? SourceGitUrl { get; private set; }
+
+    /// <summary>Pinned git ref of the source repository (branch, tag or digest); optional.</summary>
+    public string? SourceGitRef { get; private set; }
+
     /// <summary>Operator-chosen identity mark (an emoji or an image URL); an opaque display string stored verbatim.</summary>
     public string? Icon { get; private set; }
 
@@ -52,6 +72,27 @@ public sealed class Project
 
     /// <summary>Identity tags — normalized (trimmed, lower-cased, de-duplicated); empty when none.</summary>
     public string[] Tags { get; private set; } = [];
+
+    /// <summary>
+    /// Environment-class id the scalar source repository binds to
+    /// (catalog id, e.g. <c>"net10-sdk-bun"</c>); empty when unset.
+    /// Implements the project stand-in described by the
+    /// <c>add-worker-environments</c> change (task 2.2): an empty
+    /// value means the project's implement work items are not
+    /// claimable until an operator confirms a class.
+    /// <para>
+    /// Hand-off to <c>add-multi-repo-projects</c>: when that change
+    /// migrates <see cref="ProfilesGitUrl"/>'s sibling scalar
+    /// <c>SourceGitUrl</c> to a primary <c>ProjectRepositoryAttachment</c>,
+    /// <see cref="EnvClass"/> moves onto that <c>Repository</c> row and
+    /// the <c>Project</c> field ceases to be source of truth (env-class
+    /// lives on the repo, the same as the gate already does for
+    /// repository-backed work items). Until that migration lands,
+    /// <see cref="EnvClass"/> is the binding for the project's single
+    /// scalar source repository.
+    /// </para>
+    /// </summary>
+    public string? EnvClass { get; private set; }
 
     /// <summary>Soft-archive flag; archived projects keep their runs and settings.</summary>
     public bool Archived { get; private set; }
@@ -75,7 +116,10 @@ public sealed class Project
         DateTimeOffset now,
         string? icon = null,
         string? color = null,
-        IReadOnlyList<string>? tags = null)
+        IReadOnlyList<string>? tags = null,
+        string? envClass = null,
+        string? sourceGitUrl = null,
+        string? sourceGitRef = null)
     {
         return new Project
         {
@@ -88,6 +132,9 @@ public sealed class Project
             Icon = icon,
             Color = color is null ? null : NormalizeColor(color),
             Tags = NormalizeTags(tags ?? []),
+            EnvClass = NormalizeEnvClass(envClass),
+            SourceGitUrl = sourceGitUrl,
+            SourceGitRef = sourceGitRef,
             Archived = false,
             ArchivedAt = null,
             CreatedAt = now,
@@ -103,6 +150,20 @@ public sealed class Project
     public static string NormalizeColor(string color)
     {
         return color.Trim().ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Normalizes an environment-class id: <c>null</c> passes through
+    /// (the scalar Project stays without a class); non-null values are
+    /// trimmed. Catalog ids are already lower-case alphanumeric + dash
+    /// by convention (see <see cref="EnvClassPattern"/>), so no
+    /// case-fold is applied here — the validator enforces the shape.
+    /// </summary>
+    /// <param name="envClass">Raw input from create / update; null when unset.</param>
+    /// <returns>Normalized class id, or null when input is null.</returns>
+    public static string? NormalizeEnvClass(string? envClass)
+    {
+        return envClass?.Trim();
     }
 
     /// <summary>
@@ -127,8 +188,11 @@ public sealed class Project
     /// semantics). The slug is deliberately not editable — it is the stable
     /// external key other modules reference. The one list-vs-scalar
     /// asymmetry: an absent tags list keeps the stored tags, an empty list
-    /// clears them (design D5). <see cref="UpdatedAt"/> always moves, even
-    /// when no field changed.
+    /// clears them (design D5). The <see cref="EnvClass"/> string follows
+    /// the same nullable-PATCH shape as <see cref="Description"/>: null
+    /// leaves the stored value, an empty string clears it (the operator's
+    /// way to take a project back to "no class" without dropping the row).
+    /// <see cref="UpdatedAt"/> always moves, even when no field changed.
     /// </summary>
     public void Update(
         string? name,
@@ -138,7 +202,10 @@ public sealed class Project
         DateTimeOffset now,
         string? icon = null,
         string? color = null,
-        IReadOnlyList<string>? tags = null)
+        IReadOnlyList<string>? tags = null,
+        string? envClass = null,
+        string? sourceGitUrl = null,
+        string? sourceGitRef = null)
     {
         if (name is { } nextName)
         {
@@ -173,6 +240,23 @@ public sealed class Project
         if (tags is { } nextTags)
         {
             Tags = NormalizeTags(nextTags);
+        }
+
+        if (envClass is { } nextEnvClass)
+        {
+            // Empty string clears (matches tags-asymmetry convention); the
+            // validator rejects whitespace-only input before we get here.
+            EnvClass = nextEnvClass.Length == 0 ? null : NormalizeEnvClass(nextEnvClass);
+        }
+
+        if (sourceGitUrl is { } nextSourceUrl)
+        {
+            SourceGitUrl = nextSourceUrl;
+        }
+
+        if (sourceGitRef is { } nextSourceRef)
+        {
+            SourceGitRef = nextSourceRef;
         }
 
         UpdatedAt = now;

@@ -169,7 +169,7 @@ public sealed class WorkItemLeaseShould
         var item = WorkItem.Create(
             RunId.New(),
             "implement",
-            Image,
+            Image, "net10-sdk-bun",
             ProfilesRef,
             /*lang=json,strict*/ """{"goal":"x"}""",
             status == WorkItemStatus.Blocked ? WorkItemStatus.Blocked : WorkItemStatus.Queued,

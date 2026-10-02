@@ -59,6 +59,8 @@ using Comuki.Modules.Knowledge.Infrastructure;
 using Comuki.Modules.Memory.Application;
 using Comuki.Modules.Memory.Infrastructure;
 using Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
+using Comuki.Modules.Procedures.Application;
+using Comuki.Modules.Procedures.Infrastructure;
 using Comuki.Modules.Projects.Application;
 using Comuki.Modules.Projects.Infrastructure;
 using Comuki.Modules.Proxy.Application;
@@ -218,6 +220,11 @@ internal static class HostComposer
 
         builder.Services.AddProjectsApplication();
         builder.Services.AddProjectsPersistence(database.ConnectionString);
+
+        builder.Services.AddProceduresApplication();
+        builder.Services.AddProceduresInfrastructure(database.ConnectionString);
+        builder.Services.AddSingleton<IValidator<Procedures.Models.ProposePatchRequest>, Procedures.Models.ProposePatchRequestValidator>();
+        builder.Services.AddSingleton<Shared.Contracts.IOutbox, Procedures.ProceduresOutboxAdapter>();
 
         // Costs module (S9 T9.5): usage_events + budgets. Budget ports are
         // host-composed (Projects settings + orchestration cancel/journal)

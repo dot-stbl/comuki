@@ -21,6 +21,19 @@ public sealed class ScaleSupervisorOptions
     [MinLength(1)]
     public string WorkerImage { get; init; } = "ghcr.io/dot-stbl/comuki-worker";
 
+    /// <summary>
+    /// Default environment-class id the supervisor falls back to when a
+    /// project has no explicit <c>EnvClass</c> binding
+    /// (worker-environments spec §"Scale supervisor pass"). The supervisor
+    /// resolves the bundle through <c>IEnvironmentCatalog</c> and starts
+    /// workers from that class's image digest — never from a project image
+    /// override that names a different class (spec §"Project cannot swap
+    /// class via image override").
+    /// </summary>
+    [Required]
+    [MinLength(1)]
+    public string DefaultEnvClass { get; init; } = "net10-sdk-bun";
+
     /// <summary>Default pinned git ref of the profiles repo stamped on started workers.</summary>
     [Required]
     [MinLength(1)]

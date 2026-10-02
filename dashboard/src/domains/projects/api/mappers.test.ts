@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 
+import type { ProjectView } from "@/shared/api/_generated/types/ProjectView"
+
 import {
   mapCostsPageToCostSummary,
   mapCreateProjectInputToCreateRequest,
@@ -22,10 +24,10 @@ import {
  */
 
 function projectViewFixture(
-  overrides: Partial<ProjectViewStub> = {}
-): ProjectViewStub {
+  overrides: Partial<ProjectView> = {}
+): ProjectView {
   return {
-    id: "00000000-0000-0000-0000-0000000000aa",
+    id: { value: "00000000-0000-0000-0000-0000000000aa" },
     name: "Comuki platform",
     slug: "comuki",
     description: null,
@@ -34,28 +36,13 @@ function projectViewFixture(
     icon: null,
     color: null,
     tags: [],
+    envClass: null,
     archived: false,
     archivedAt: null,
     createdAt: "2026-03-04T00:00:00.000+00:00",
     updatedAt: "2026-09-04T00:00:00.000+00:00",
     ...overrides,
   }
-}
-
-interface ProjectViewStub {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  profilesGitUrl: string | null
-  profilesGitRef: string | null
-  icon?: string | null
-  color?: string | null
-  tags?: string[] | null
-  archived: boolean
-  archivedAt: string | null
-  createdAt: string
-  updatedAt: string
 }
 
 describe("mapProjectViewToDetail", () => {
@@ -115,19 +102,13 @@ describe("mapProjectViewToDetail", () => {
     expect(row.tags).toEqual(["web", "billing"])
   })
 
-  it("maps a legacy wire row — no identity keys at all — to null / null / []", () => {
-    // A view from before the fields existed: the stub drops the keys rather
-    // than spelling nulls, which is the shape an old host or a caching proxy
-    // can still hand back. The read direction has no absent-vs-empty
-    // distinction to preserve, so the tolerant defaults are the whole story.
-    const legacy = {
-      ...projectViewFixture(),
-      icon: undefined,
-      color: undefined,
-      tags: undefined,
-    }
-
-    const row = mapProjectViewToDetail(legacy)
+  it("maps a null-identity wire row to null / null / []", () => {
+    // The contract now always carries the identity keys (the endpoint emits
+    // the ProjectView schema), but null is the legitimate "unset" value —
+    // the tolerant defaults still own that path.
+    const row = mapProjectViewToDetail(
+      projectViewFixture({ icon: null, color: null, tags: [] })
+    )
 
     expect(row.icon).toBeNull()
     expect(row.color).toBeNull()
@@ -138,8 +119,8 @@ describe("mapProjectViewToDetail", () => {
 describe("mapProjectsPageToSummaries", () => {
   it("maps every wire row in the list", () => {
     const rows = mapProjectsPageToSummaries([
-      projectViewFixture({ id: "id-1", slug: "vega" }),
-      projectViewFixture({ id: "id-2", slug: "atlas" }),
+      projectViewFixture({ id: { value: "id-1" }, slug: "vega" }),
+      projectViewFixture({ id: { value: "id-2" }, slug: "atlas" }),
     ])
 
     expect(rows).toHaveLength(2)
@@ -156,7 +137,7 @@ describe("mapProjectsPageToSummaries", () => {
 describe("mapProjectSettingsViewToSettings", () => {
   it("carries every numeric and boolean field through verbatim", () => {
     const settings = mapProjectSettingsViewToSettings({
-      projectId: "p_comuki",
+      projectId: { value: "p_comuki" },
       minIdle: 2,
       maxConcurrent: 12,
       idleTtlSeconds: 600,
@@ -166,6 +147,8 @@ describe("mapProjectSettingsViewToSettings", () => {
       proxyEnabled: true,
       softBudgetUsdMicros: 100_000_000,
       hardBudgetUsdMicros: 200_000_000,
+      domainType: 0,
+      customDomainTypesJson: null,
       updatedAt: "2026-09-04T00:00:00.000+00:00",
       version: 7,
     })
@@ -186,7 +169,7 @@ describe("mapProjectSettingsViewToSettings", () => {
 
   it("keeps null fields as null — the panel renders 'platform default' for those", () => {
     const settings = mapProjectSettingsViewToSettings({
-      projectId: "p_atlas",
+      projectId: { value: "p_atlas" },
       minIdle: 1,
       maxConcurrent: 4,
       idleTtlSeconds: null,
@@ -196,6 +179,8 @@ describe("mapProjectSettingsViewToSettings", () => {
       proxyEnabled: false,
       softBudgetUsdMicros: null,
       hardBudgetUsdMicros: null,
+      domainType: 0,
+      customDomainTypesJson: null,
       updatedAt: "2026-09-04T00:00:00.000+00:00",
       version: 1,
     })

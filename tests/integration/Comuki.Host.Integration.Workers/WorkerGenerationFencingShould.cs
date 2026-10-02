@@ -73,7 +73,7 @@ public sealed class WorkerGenerationFencingShould(PostgresCollectionFixture post
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
         var now = DateTimeOffset.UtcNow;
         var run = Run.Create(ProjectId.New(), now);
-        var item = WorkItem.Create(run.Id, ProfileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, now);
+        var item = WorkItem.Create(run.Id, ProfileKey, Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, now);
         db.Runs.Add(run);
         db.WorkItems.Add(item);
         await db.SaveChangesAsync(cancellationToken);
@@ -95,7 +95,7 @@ public sealed class WorkerGenerationFencingShould(PostgresCollectionFixture post
         await SeedQueuedItemAsync(cancellationToken);
         using var client = CreateWorkerClient();
 
-        var claimResponse = await client.PostAsJsonAsync("/workers/claim", new ClaimWorkItemRequest(Image, ProfilesRef, ProfileKey), cancellationToken);
+        var claimResponse = await client.PostAsJsonAsync("/workers/claim", new ClaimWorkItemRequest(Image, ProfilesRef, ProfileKey, "net10-sdk-bun"), cancellationToken);
         claimResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
         var claimed = (await claimResponse.Content.ReadFromJsonAsync<ClaimedWorkItemResponse>(cancellationToken)).ShouldNotBeNull();
         claimed.Generation.ShouldBeGreaterThan(0);
@@ -122,7 +122,7 @@ public sealed class WorkerGenerationFencingShould(PostgresCollectionFixture post
         await SeedQueuedItemAsync(cancellationToken);
         using var client = CreateWorkerClient();
 
-        var claimResponse = await client.PostAsJsonAsync("/workers/claim", new ClaimWorkItemRequest(Image, ProfilesRef, ProfileKey), cancellationToken);
+        var claimResponse = await client.PostAsJsonAsync("/workers/claim", new ClaimWorkItemRequest(Image, ProfilesRef, ProfileKey, "net10-sdk-bun"), cancellationToken);
         var claimed = (await claimResponse.Content.ReadFromJsonAsync<ClaimedWorkItemResponse>(cancellationToken)).ShouldNotBeNull();
 
         var staleHeartbeat = await client.PostAsJsonAsync(
@@ -145,7 +145,7 @@ public sealed class WorkerGenerationFencingShould(PostgresCollectionFixture post
         await SeedQueuedItemAsync(cancellationToken);
         using var client = CreateWorkerClient();
 
-        var claimResponse = await client.PostAsJsonAsync("/workers/claim", new ClaimWorkItemRequest(Image, ProfilesRef, ProfileKey), cancellationToken);
+        var claimResponse = await client.PostAsJsonAsync("/workers/claim", new ClaimWorkItemRequest(Image, ProfilesRef, ProfileKey, "net10-sdk-bun"), cancellationToken);
         var claimed = (await claimResponse.Content.ReadFromJsonAsync<ClaimedWorkItemResponse>(cancellationToken)).ShouldNotBeNull();
 
         // No body at all — a pre-WS4/WS5 Translator's exact shape. Must bind

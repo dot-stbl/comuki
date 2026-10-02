@@ -30,7 +30,7 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
     protected const string ProfilesRef = "refs/heads/main";
 
     /// <summary>Default claim labels the seeded items match on.</summary>
-    protected static WorkItemLabels ImplementLabels => new(Image, ProfilesRef, "implement");
+    protected static WorkItemLabels ImplementLabels => new(Image, ProfilesRef, "implement", "net10-sdk-bun");
 
     /// <summary>
     /// boundary: initialised in InitializeAsync before any test runs
@@ -105,7 +105,7 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
         var now = clock.GetUtcNow();
         var run = Run.Create(ProjectId.New(), now);
         var item = WorkItem.Create(
-            run.Id, profileKey, Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"do the thing"}""", WorkItemStatus.Queued, now);
+            run.Id, profileKey, Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"do the thing"}""", WorkItemStatus.Queued, now);
 
         db.Runs.Add(run);
         db.WorkItems.Add(item);

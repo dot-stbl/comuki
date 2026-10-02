@@ -28,9 +28,12 @@ public sealed class ProjectViewWireShapeShould
         "description",
         "profilesGitUrl",
         "profilesGitRef",
+        "sourceGitUrl",
+        "sourceGitRef",
         "icon",
         "color",
         "tags",
+        "envClass",
         "archived",
         "archivedAt",
         "createdAt",
@@ -51,6 +54,7 @@ public sealed class ProjectViewWireShapeShould
         "hardBudgetUsdMicros",
         "domainType",
         "customDomainTypesJson",
+        "gitCredentialRef",
         "updatedAt",
         "version",
     ];
@@ -80,7 +84,7 @@ public sealed class ProjectViewWireShapeShould
     public void ProjectSettingsViewSerializesThePinnedPropertySequence()
     {
         var settings = ProjectSettings.CreateDefaults(ProjectId.New(), now);
-        settings.Apply(2, 16, 1800, true, true, false, true, 2_000_000, 10_000_000, ProjectDomainType.Hybrid, "{}", now.AddMinutes(5));
+        settings.Apply(2, 16, 1800, true, true, false, true, 2_000_000, 10_000_000, ProjectDomainType.Hybrid, "{}", null, now.AddMinutes(5));
 
         var json = JsonSerializer.Serialize(mapper.ToView(settings), JsonSerializerOptions.Web);
         var names = JsonDocument.Parse(json).RootElement.EnumerateObject().Select(static property => property.Name).ToArray();

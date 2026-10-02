@@ -47,6 +47,7 @@ public sealed class UpdateSettingsHandler(IProjectSettingsStore settings, TimePr
             command.HardBudgetUsdMicros,
             command.DomainType,
             command.CustomDomainTypesJson,
+            command.GitCredentialRef,
             clock.GetUtcNow());
 
         var saved = await settings.SaveAsync(current, cancellationToken);

@@ -72,7 +72,7 @@ public sealed class OrchestrationWorkerProjectResolverShould
     {
         var now = DateTimeOffset.UtcNow;
         var run = Run.Create(projectId, now);
-        var item = WorkItem.Create(run.Id, "implement", "img:digest", "refs/heads/main", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, now);
+        var item = WorkItem.Create(run.Id, "implement", "img:digest", "net10-sdk-bun", "refs/heads/main", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, now);
         item.AssignLease(workerId, 1, now.AddMinutes(5), now);
         if (finalStatus == WorkItemStatus.Succeeded)
         {

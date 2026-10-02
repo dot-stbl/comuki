@@ -1,0 +1,10 @@
+# Comuki environment declaration — schema 1 (openspec/changes/add-worker-environments).
+# class binds this repository to the golden bundle; [restore] keys are
+# opcodes that class advertises, run by the Translator after clone.
+schema = 1
+class = "net10-sdk-bun"
+runtime = "linux"
+
+[restore]
+dotnet = "comuki.slnx"
+bun = ["dashboard", "agents", "cli"]

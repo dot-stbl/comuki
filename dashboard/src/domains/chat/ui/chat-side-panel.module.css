@@ -27,7 +27,7 @@
   font-size: var(--t-micro);
   font-weight: var(--fw-regular);
   letter-spacing: var(--tracking-label);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .reading {
@@ -63,7 +63,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .denial {
@@ -79,7 +79,7 @@
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--t-micro);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .help {
@@ -101,7 +101,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-weight: var(--fw-medium);
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }
 
 .helpDescription {
@@ -111,5 +111,5 @@
   font-family: var(--font-ui);
   font-size: var(--t-micro);
   line-height: var(--lh-body);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }

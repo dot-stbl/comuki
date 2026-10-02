@@ -48,6 +48,15 @@ public interface IGitLabApi
     [Post("/projects/{projectId}/issues/{issueIid}/notes")]
     public Task PostNoteAsync(int projectId, int issueIid, [Body] GitLabNoteBody body, CancellationToken cancellationToken);
 
+    /// <summary>Posts a note (comment) on a merge request.</summary>
+    /// <param name="projectId"></param>
+    /// <param name="mergeRequestIid"></param>
+    /// <param name="body"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [Post("/projects/{projectId}/merge_requests/{mergeRequestIid}/notes")]
+    public Task PostMergeRequestNoteAsync(int projectId, int mergeRequestIid, [Body] GitLabNoteBody body, CancellationToken cancellationToken);
+
     /// <summary>Patches the issue state (close on success).</summary>
     /// <param name="projectId"></param>
     /// <param name="issueIid"></param>

@@ -39,4 +39,33 @@ internal static class WorkItemEventPayloads
     {
         return JsonSerializer.Serialize(new { itemId, from = nameof(WorkItemStatus.Running), to, attempt }, JsonSerializerOptions.Web);
     }
+
+    /// <summary>
+    /// Payload for <c>worker.admitted</c> (add-worker-admission task 1.2,
+    /// spec §"Journal admission"): the admission id, env class, profile key,
+    /// and isolation class. Secret refs are deliberately omitted — the
+    /// journal must never carry secret values, and the Translator is the
+    /// only consumer that needs the refs.
+    /// </summary>
+    /// <param name="admissionId">Stable admission id (UUIDv7); the slot's identity.</param>
+    /// <param name="envClass">Catalog id the slot binds to (toolchain axis).</param>
+    /// <param name="profileKey">Control-plane profile key (role axis).</param>
+    /// <param name="isolationClass">Isolation strength the slot requires (<c>trusted-process</c> | <c>strong</c>).</param>
+    public static string WorkerAdmitted(Guid admissionId, string envClass, string profileKey, string isolationClass)
+    {
+        return JsonSerializer.Serialize(new { admissionId, envClass, profileKey, isolationClass }, JsonSerializerOptions.Web);
+    }
+
+    /// <summary>
+    /// Payload for <c>worker.admission_denied</c>: the typed
+    /// the <c>SlotAdmission.Codes</c> class in Engine.Compute.Admission
+    /// denial code (e.g. <c>admission.publisher</c>) and the admission id
+    /// when the slot had one minted before the deny.
+    /// </summary>
+    /// <param name="denialCode">Stable typed code from <c>SlotAdmission.Codes</c>.</param>
+    /// <param name="admissionId">Slot's admission id when minted; null on a pre-evaluation deny.</param>
+    public static string WorkerAdmissionDenied(string denialCode, Guid? admissionId)
+    {
+        return JsonSerializer.Serialize(new { denialCode, admissionId }, JsonSerializerOptions.Web);
+    }
 }

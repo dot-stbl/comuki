@@ -6,6 +6,7 @@ using Comuki.Modules.Projects.Application.Projects.Queries;
 using Comuki.Modules.Projects.Application.Projects.Update;
 using Comuki.Modules.Projects.Application.Settings;
 using Comuki.Modules.Projects.Application.Settings.Update;
+using Comuki.Modules.Projects.Application.Views;
 using Comuki.Shared.Editions.Gating;
 using Comuki.Shared.Kernel.Ids;
 using FluentValidation;
@@ -34,13 +35,20 @@ public static class ProjectsModuleEndpoints
     {
         var group = app.MapGroup(ApiRoutes.Projects).WithTags("Projects");
 
-        group.MapPost("", CreateAsync);
-        group.MapGet("", ListAsync);
-        group.MapGet("/{projectId:guid}", GetAsync);
-        group.MapPatch("/{projectId:guid}", UpdateAsync);
-        group.MapDelete("/{projectId:guid}", ArchiveAsync);
-        group.MapGet("/{projectId:guid}/settings", GetSettingsAsync);
-        group.MapPut("/{projectId:guid}/settings", UpdateSettingsAsync);
+        group.MapPost("", CreateAsync)
+            .Produces<ProjectView>(StatusCodes.Status201Created);
+        group.MapGet("", ListAsync)
+            .Produces<IReadOnlyList<ProjectView>>(StatusCodes.Status200OK);
+        group.MapGet("/{projectId:guid}", GetAsync)
+            .Produces<ProjectView>(StatusCodes.Status200OK);
+        group.MapPatch("/{projectId:guid}", UpdateAsync)
+            .Produces<ProjectView>(StatusCodes.Status200OK);
+        group.MapDelete("/{projectId:guid}", ArchiveAsync)
+            .Produces(StatusCodes.Status204NoContent);
+        group.MapGet("/{projectId:guid}/settings", GetSettingsAsync)
+            .Produces<ProjectSettingsView>(StatusCodes.Status200OK);
+        group.MapPut("/{projectId:guid}/settings", UpdateSettingsAsync)
+            .Produces<ProjectSettingsView>(StatusCodes.Status200OK);
 
         return app;
     }
@@ -140,7 +148,10 @@ file static class ProjectsEndpointMapper
             request.ProfilesGitRef,
             request.Icon,
             request.Color,
-            request.Tags);
+            request.Tags,
+            EnvClass: null,
+            request.SourceGitUrl,
+            request.SourceGitRef);
     }
 
     public static UpdateProjectCommand ToCommand(Guid projectId, UpdateProjectRequest request)
@@ -153,7 +164,10 @@ file static class ProjectsEndpointMapper
             request.ProfilesGitRef,
             request.Icon,
             request.Color,
-            request.Tags);
+            request.Tags,
+            EnvClass: null,
+            request.SourceGitUrl,
+            request.SourceGitRef);
     }
 
     public static UpdateSettingsCommand ToCommand(Guid projectId, UpdateSettingsRequest request)
@@ -171,6 +185,7 @@ file static class ProjectsEndpointMapper
             request.SoftBudgetUsdMicros,
             request.HardBudgetUsdMicros,
             request.DomainType,
-            request.CustomDomainTypesJson);
+            request.CustomDomainTypesJson,
+            request.GitCredentialRef);
     }
 }

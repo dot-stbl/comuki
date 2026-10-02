@@ -53,6 +53,7 @@ internal static class WorkerSessionTestHelpers
             RunId: Guid.NewGuid(),
             ProjectId: Guid.NewGuid(),
             ProfileKey: "test-profile",
+            EnvClass: "net10-sdk-bun",
             Brief: "test-brief",
             LeaseUntilUnixMs: 0,
             Attempt: 1,

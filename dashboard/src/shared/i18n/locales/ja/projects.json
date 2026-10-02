@@ -13,10 +13,16 @@
       "none": "プロジェクトはまだありません"
     }
   },
+  "list": {
+    "envClass": {
+      "none": "クラス未バインド"
+    }
+  },
   "column": {
     "slug": "slug",
     "name": "名前",
     "tags": "タグ",
+    "envClass": "環境クラス",
     "inFlight": "実行中",
     "runs": "実行",
     "costToday": "本日の費用",
@@ -28,7 +34,7 @@
     "icon": "アイコン",
     "accentColour": "アクセント色",
     "tags": "タグ",
-    "repo": "git プロファイルリポジトリ",
+        "repo": "git プロファイルリポジトリ",
     "iconPlaceholder": "🛰️ または https://example.com/mark.png",
     "platformDefaults": "プラットフォームのデフォルト"
   },
@@ -89,6 +95,7 @@
     "factsSection": "プロジェクト自身",
     "editIdentity": "マークを編集",
     "editIdentityFailure": "マークは保存されませんでした。",
+    "envClass": "環境クラス",
     "rolesSection": "このプロジェクトでの役割",
     "rolesForbiddenSubject": "このプロジェクトでの役割",
     "rolesHeld": {

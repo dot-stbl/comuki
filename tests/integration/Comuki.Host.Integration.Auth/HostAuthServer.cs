@@ -186,7 +186,7 @@ public sealed class HostAuthServer : IAsyncLifetime
         var item = WorkItem.Create(
             run.Id,
             "implement",
-            "ghcr.io/comuki/worker:test",
+            "ghcr.io/comuki/worker:test", "net10-sdk-bun",
             "refs/heads/main",
             /*lang=json,strict*/ """{"goal":"scope check"}""",
             WorkItemStatus.Queued,

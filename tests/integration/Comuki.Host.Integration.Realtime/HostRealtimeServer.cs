@@ -103,7 +103,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
         var item = WorkItem.Create(
             run.Id,
             profileKey,
-            "image",
+            "image", "net10-sdk-bun",
             "profiles-ref",
                                  /*lang=json,strict*/
                                  """{"goal":"seed"}""",
@@ -129,7 +129,7 @@ public sealed class HostRealtimeServer : IAsyncLifetime
 
         var claimed = await queue.ClaimAsync(
             new WorkerId(Guid.NewGuid()),
-            new Shared.Contracts.Queue.WorkItemLabels("image", "profiles-ref", profileKey),
+            new Shared.Contracts.Queue.WorkItemLabels("image", "profiles-ref", profileKey, "net10-sdk-bun"),
             DateTimeOffset.UtcNow.AddMinutes(2),
             DateTimeOffset.UtcNow,
             cancellationToken);

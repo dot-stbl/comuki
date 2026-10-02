@@ -20,6 +20,7 @@ namespace Comuki.Host.Projects.Models;
 /// <param name="HardBudgetUsdMicros"></param>
 /// <param name="DomainType">Routing mode for user-facing domain types. Serialised as a string for readability.</param>
 /// <param name="CustomDomainTypesJson">Per-project JSON map of <c>domain-type → profile-key</c>.</param>
+/// <param name="GitCredentialRef">Secret reference for the source-repo HTTPS credential; null = public repo.</param>
 public sealed record UpdateSettingsRequest(
     int Version,
     int MinIdle,
@@ -32,4 +33,5 @@ public sealed record UpdateSettingsRequest(
     long? SoftBudgetUsdMicros,
     long? HardBudgetUsdMicros,
     [property: JsonConverter(typeof(JsonStringEnumConverter))] ProjectDomainType DomainType,
-    string? CustomDomainTypesJson);
+    string? CustomDomainTypesJson,
+    string? GitCredentialRef = null);

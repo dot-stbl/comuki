@@ -78,6 +78,30 @@
   text-underline-offset: 0.25em;
 }
 
+/* The environment class a project binds to. The box itself is
+   `badgeShell()` from the kit (`shared/ui`) — every badge in the product
+   draws itself inside the same shape, and `shared/ui/badge-shell.tsx`
+   hands the box, the hairline (through `--badge-edge`) and the data voice
+   for free. What the kit deliberately leaves for the caller — colour,
+   background, font-weight (`badge-shell.module.css`) — is what this rule
+   sets, with the surface's muted ink rather than the project's accent:
+   the env class identifies a runtime, not the project identity, so it
+   should not wear the row's colour. */
+.envClassChip {
+  color: var(--text);
+  background: color-mix(in oklab, var(--text-faint) 18%, transparent);
+  font-weight: var(--fw-medium);
+}
+
+/* The absent state — a project that has no class has implement items that
+   are not claimable (add-worker-environments 2.2). Same voice the cell's
+   other absent readings wear (`--text-faint` in the data face): faint
+   enough to read as "no fact" rather than as a rendering fault. */
+.envClassNone {
+  font-family: var(--font-data);
+  color: var(--text-faint);
+}
+
 .slug:focus-visible {
   outline: var(--hairline) solid var(--ring);
   outline-offset: var(--hairline);

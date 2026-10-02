@@ -1,0 +1,19 @@
+{
+  "required": [
+    "versionId",
+    "projectId",
+    "procedureKey",
+    "catalogVersion",
+    "sourceRef"
+  ],
+  "type": "object",
+  "properties": {
+    "versionId": { "type": "string" },
+    "projectId": { "type": "string", "format": "uuid" },
+    "procedureKey": { "type": "string" },
+    "catalogVersion": { "type": "string" },
+    "sourceRef": { "type": "string" }
+  },
+  "description": "Response DTO for a compiled procedure version\r\n(`GET /api/v1/procedures/{projectId}/{procedureKey}` and\r\n`GET /api/v1/procedures/versions/{versionId}`). Carries only the\r\nidentity + provenance fields the dashboard renders — the compiled\r\ngraph itself stays server-side.",
+  "x-readme-ref-name": "ProcedureVersionResponse"
+}

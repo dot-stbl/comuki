@@ -356,7 +356,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
             .AsSystem("translator-e2e-fixture");
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
         var run = Run.Create(ProjectId.New(), DateTimeOffset.UtcNow);
-        var item = WorkItem.Create(run.Id, ProfileKey, Image, ProfilesRef, brief, WorkItemStatus.Queued, DateTimeOffset.UtcNow);
+        var item = WorkItem.Create(run.Id, ProfileKey, Image, "net10-sdk-bun", ProfilesRef, brief, WorkItemStatus.Queued, DateTimeOffset.UtcNow);
         db.Runs.Add(run);
         db.WorkItems.Add(item);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);

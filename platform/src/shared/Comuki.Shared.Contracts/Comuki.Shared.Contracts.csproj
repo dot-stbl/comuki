@@ -3,6 +3,10 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="protobuf-net.Grpc" />
+    <!-- add-worker-environments 4.1: strict parser for .comuki/environment.toml.
+         Tomlyn 2.10.1 (CPM-resolved, same line as Comuki.Shared.Bootstrap's
+         config.toml pipeline). -->
+    <PackageReference Include="Tomlyn" />
   </ItemGroup>
 
   <ItemGroup>

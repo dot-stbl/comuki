@@ -28,6 +28,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "comuki.serviceAccountName" . }}
+      automountServiceAccountToken: true
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -35,6 +36,7 @@ spec:
           image: {{ include "comuki.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/app/host/comuki"]
+          automountServiceAccountToken: true
           ports:
             - name: http
               containerPort: 8080

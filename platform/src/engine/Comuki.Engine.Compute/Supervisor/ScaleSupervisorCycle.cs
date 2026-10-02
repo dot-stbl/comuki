@@ -3,7 +3,6 @@ using Comuki.Engine.Compute.Pool;
 using Comuki.Engine.Compute.Ports;
 using Comuki.Engine.Compute.Scaling;
 using Comuki.Engine.Compute.Security;
-using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Compute;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Logging;
@@ -12,15 +11,17 @@ using Microsoft.Extensions.Options;
 namespace Comuki.Engine.Compute.Supervisor;
 
 /// <summary>
-/// One scale supervisor pass (issue #3 T2.4/T2.5): reconcile the worker pool
-/// with the provider, read the backlog per profile, apply the pure scale
-/// policy, then start workers (token via <see cref="WorkerTokenIssuer"/>,
-/// image/ref labels from settings+options) and reap stale idle ones with
+/// One scale supervisor pass (issue #3 T2.4/T2.5; add-worker-environments task
+/// 3.4): reconcile the worker pool with the provider, read the backlog per
+/// (profile, env class) pair, apply the pure scale policy, then start
+/// workers (token via <see cref="WorkerTokenIssuer"/>, image from the
+/// catalog bundle the class resolves to — never a per-project image
+/// override of a different class, profiles-ref from per-project settings
+/// falling back to supervisor options) and reap stale idle ones with
 /// <see cref="ComputeStopReason.IdleTtl"/>. All I/O goes through injected
 /// ports — unit tests drive it with fakes.
 /// </summary>
 /// <param name="scaleOptions"></param>
-/// <param name="buildInformation"></param>
 /// <param name="backlogReader"></param>
 /// <param name="pool"></param>
 /// <param name="tokenIssuer"></param>
@@ -30,7 +31,6 @@ namespace Comuki.Engine.Compute.Supervisor;
 /// <param name="logger"></param>
 public sealed class ScaleSupervisorCycle(
     IOptions<ScaleSupervisorOptions> scaleOptions,
-    ComukiBuildInformation buildInformation,
     IBacklogReader backlogReader,
     WorkerPoolState pool,
     WorkerTokenIssuer tokenIssuer,
@@ -56,28 +56,25 @@ public sealed class ScaleSupervisorCycle(
 
             var settings = projectScaleSettings.Get(projectId);
 
-            // Release contract: an untagged worker image is pinned to the
-            // running build's version (WorkerImagePinning) — covers both the
-            // options default and the per-project override, at the single
-            // spawn resolution site.
-            var configuredImage = settings.WorkerImage ?? options.WorkerImage;
-            var effectiveImage = WorkerImagePinning.Resolve(configuredImage, buildInformation);
-            if (!string.Equals(effectiveImage, configuredImage, StringComparison.Ordinal))
-            {
-                logger.LogInformation(
-                    "Pinned untagged worker image {ConfiguredImage} to {EffectiveImage} from build version {BuildVersion}",
-                    configuredImage,
-                    effectiveImage,
-                    buildInformation.Version);
-            }
+            // Per-project env class binding (add-worker-environments task 3.4):
+            // null means "use the supervisor's default class" — the bridge
+            // returns null when the project has no binding, and the supervisor
+            // (not the provider) owns the fallback so the policy inputs and
+            // the started stamp agree.
+            var effectiveEnvClass = settings.EnvClass ?? options.DefaultEnvClass;
 
             foreach (var profileKey in options.ProfileKeys)
             {
                 var queuedCount = await backlogReader.CountQueuedAsync(projectId, profileKey, cancellationToken);
                 var projectWorkers = pool.List(projectId);
-                var profileWorkers = projectWorkers.Where(worker => worker.ProfileKey == profileKey).ToArray();
-                var idleCount = profileWorkers.Count(worker => !worker.IsBusy);
-                var staleIdleCount = profileWorkers.Count(
+                // Idle / coverage / reaper counts are per (profile, env class) pair —
+                // workers of a different class never satisfy this pair's backlog
+                // (worker-environments spec §"Scale policy per (profile, env class)").
+                var pairWorkers = projectWorkers
+                    .Where(worker => worker.ProfileKey == profileKey && worker.EnvClass == effectiveEnvClass)
+                    .ToArray();
+                var idleCount = pairWorkers.Count(worker => !worker.IsBusy);
+                var staleIdleCount = pairWorkers.Count(
                     worker => !worker.IsBusy && clock.GetUtcNow() - worker.LastActiveAt > settings.IdleTtl);
 
                 var decision = ScalePolicy.Decide(
@@ -92,16 +89,18 @@ public sealed class ScaleSupervisorCycle(
                 if (decision.ClampedByCapacity)
                 {
                     logger.LogWarning(
-                        "Scale decision for project {ProjectId} profile {ProfileKey} clamped by provider capacity: freeSlots={FreeSlots}",
+                        "Scale decision for project {ProjectId} profile {ProfileKey} class {EnvClass} clamped by provider capacity: freeSlots={FreeSlots}",
                         projectId.Value,
                         profileKey,
+                        effectiveEnvClass,
                         remainingFreeSlots);
                 }
 
                 logger.LogInformation(
-                    "Scale decision for project {ProjectId} profile {ProfileKey}: queued={QueuedCount} idle={IdleCount} staleIdle={StaleIdleCount} running={RunningCount} freeSlots={FreeSlots}; start={StartWorkers} stopIdle={StopIdleWorkers} clampedByCapacity={ClampedByCapacity}",
+                    "Scale decision for project {ProjectId} profile {ProfileKey} class {EnvClass}: queued={QueuedCount} idle={IdleCount} staleIdle={StaleIdleCount} running={RunningCount} freeSlots={FreeSlots}; start={StartWorkers} stopIdle={StopIdleWorkers} clampedByCapacity={ClampedByCapacity}",
                     projectId.Value,
                     profileKey,
+                    effectiveEnvClass,
                     queuedCount,
                     idleCount,
                     staleIdleCount,
@@ -120,19 +119,24 @@ public sealed class ScaleSupervisorCycle(
                         PreIssuedWorkerId = tokenId,
                         ProfileKey = profileKey,
                         ProfilesGitRef = settings.ProfilesGitRef ?? options.ProfilesGitRef,
-                        Image = effectiveImage,
+                        EnvClass = effectiveEnvClass,
+                        // Image is a placeholder — the provider resolves the actual image
+                        // from the catalog bundle for the class (add-worker-environments
+                        // spec §"class resolves to digest at start").
+                        Image = "resolved-by-catalog",
                         WorkerToken = tokenIssuer.Issue(tokenId),
                         OrchestratorGrpcUrl = options.OrchestratorGrpcUrl,
                     };
 
                     var handle = await computeProvider.StartAsync(request, cancellationToken);
-                    pool.Register(handle, tokenId, projectId, profileKey);
+                    pool.Register(handle, tokenId, projectId, profileKey, effectiveEnvClass);
                     remainingFreeSlots = Math.Max(0, remainingFreeSlots - 1);
                     logger.LogInformation(
-                        "Scale supervisor started worker {WorkerId} for project {ProjectId} profile {ProfileKey}",
+                        "Scale supervisor started worker {WorkerId} for project {ProjectId} profile {ProfileKey} class {EnvClass}",
                         handle.Id.Value,
                         projectId.Value,
-                        profileKey);
+                        profileKey,
+                        effectiveEnvClass);
                 }
 
                 if (decision.StopIdleWorkers is 0)
@@ -142,6 +146,7 @@ public sealed class ScaleSupervisorCycle(
 
                 var staleWorkers = pool.List(projectId)
                     .Where(worker => worker.ProfileKey == profileKey
+                        && worker.EnvClass == effectiveEnvClass
                         && !worker.IsBusy
                         && clock.GetUtcNow() - worker.LastActiveAt > settings.IdleTtl)
                     .OrderBy(worker => worker.LastActiveAt)
@@ -152,10 +157,11 @@ public sealed class ScaleSupervisorCycle(
                     tokenIssuer.Revoke(worker.TokenId);
                     pool.Remove(worker.Id);
                     logger.LogInformation(
-                        "Scale supervisor stopped idle worker {WorkerId} of project {ProjectId} profile {ProfileKey} after idle TTL {IdleTtl}",
+                        "Scale supervisor stopped idle worker {WorkerId} of project {ProjectId} profile {ProfileKey} class {EnvClass} after idle TTL {IdleTtl}",
                         worker.Id.Value,
                         projectId.Value,
                         profileKey,
+                        effectiveEnvClass,
                         settings.IdleTtl);
                 }
             }

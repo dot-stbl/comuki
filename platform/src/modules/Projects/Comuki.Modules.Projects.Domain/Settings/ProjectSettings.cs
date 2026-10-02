@@ -70,6 +70,14 @@ public sealed class ProjectSettings
     public ProjectDomainType DomainType { get; private set; }
 
     /// <summary>
+    /// Secret reference (e.g. <c>env:MY_GIT_TOKEN</c>) used as the HTTPS
+    /// credential when cloning <c>Project.SourceGitUrl</c>. Null is valid —
+    /// public repositories need no credential (harden-pi-worker-sandbox 4.2).
+    /// The ref is a name, never a token value.
+    /// </summary>
+    public string? GitCredentialRef { get; private set; }
+
+    /// <summary>
     /// Per-project JSON map of <c>domain-type → profile-key</c>.
     /// Read when <see cref="DomainType"/> is <see cref="ProjectDomainType.Custom"/>
     /// or <see cref="ProjectDomainType.Hybrid"/>. Ignored for
@@ -103,6 +111,7 @@ public sealed class ProjectSettings
             HardBudgetUsdMicros = null,
             DomainType = ProjectDomainType.Standard,
             CustomDomainTypesJson = null,
+            GitCredentialRef = null,
             UpdatedAt = now,
             Version = 1,
         };
@@ -131,6 +140,7 @@ public sealed class ProjectSettings
     /// <param name="hardBudgetUsdMicros">See <see cref="HardBudgetUsdMicros"/>.</param>
     /// <param name="domainType">See <see cref="DomainType"/>.</param>
     /// <param name="customDomainTypesJson">See <see cref="CustomDomainTypesJson"/>.</param>
+    /// <param name="gitCredentialRef">See <see cref="GitCredentialRef"/>.</param>
     /// <param name="updatedAt">Captured mutation timestamp — carried through as-is, not re-stamped.</param>
     /// <param name="version">Exact version to restore — unlike <see cref="Apply"/>, this is not incremented.</param>
     public static ProjectSettings FromSnapshot(
@@ -146,6 +156,7 @@ public sealed class ProjectSettings
         long? hardBudgetUsdMicros,
         ProjectDomainType domainType,
         string? customDomainTypesJson,
+        string? gitCredentialRef,
         DateTimeOffset updatedAt,
         int version)
     {
@@ -163,6 +174,7 @@ public sealed class ProjectSettings
             HardBudgetUsdMicros = hardBudgetUsdMicros,
             DomainType = domainType,
             CustomDomainTypesJson = customDomainTypesJson,
+            GitCredentialRef = gitCredentialRef,
             UpdatedAt = updatedAt,
             Version = version,
         };
@@ -185,6 +197,7 @@ public sealed class ProjectSettings
     /// <param name="hardBudgetUsdMicros"></param>
     /// <param name="domainType"></param>
     /// <param name="customDomainTypesJson"></param>
+    /// <param name="gitCredentialRef"></param>
     /// <param name="now"></param>
     public void Apply(
         int minIdle,
@@ -198,6 +211,7 @@ public sealed class ProjectSettings
         long? hardBudgetUsdMicros,
         ProjectDomainType domainType,
         string? customDomainTypesJson,
+        string? gitCredentialRef,
         DateTimeOffset now)
     {
         MinIdle = minIdle;
@@ -211,6 +225,7 @@ public sealed class ProjectSettings
         HardBudgetUsdMicros = hardBudgetUsdMicros;
         DomainType = domainType;
         CustomDomainTypesJson = customDomainTypesJson;
+        GitCredentialRef = gitCredentialRef;
         UpdatedAt = now;
         Version++;
     }

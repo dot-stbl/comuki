@@ -100,14 +100,14 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-weight: var(--fw-medium);
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }
 
 .pendingClock {
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 /* The one authored moment on this screen, and it is a *state* rather than
@@ -208,7 +208,7 @@
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   font-style: italic;
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }
 
 /* The announcement. Off screen but not `display: none` — a hidden live region
@@ -251,5 +251,5 @@
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   line-height: var(--lh-body);
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }

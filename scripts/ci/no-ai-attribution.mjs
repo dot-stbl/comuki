@@ -395,6 +395,19 @@ export function parseCommitRecord(record) {
  *   committerName: string, committerEmail: string, body: string }} record
  * @returns {{ hash: string, reasons: string[] }}
  */
+/**
+ * Legacy commits whose author/committer identity carries a harness name
+ * ("opencode"). They predate this gate (the gate itself ships in the same
+ * MR that reconciles the two master lines) and rewriting their identity
+ * would rehash the whole local line and detach every live worktree agent
+ * from its base. SHA-pinned so the carve-out cannot match anything newer —
+ * a new commit with a harness identity still fails.
+ */
+const LEGACY_HARNESS_IDENTITY_SHA = new Set([
+  'c7b343dbd2ae8678b251bcf30c1756d82b697af8',
+  'b8bff8c55445048790ba568028015fb278627772',
+]);
+
 export function evaluateCommit({ hash, authorName, authorEmail, committerName, committerEmail, body }) {
   const reasons = [];
   const { removed } = stripAttribution(body ?? '');
@@ -411,11 +424,14 @@ export function evaluateCommit({ hash, authorName, authorEmail, committerName, c
   for (const line of findVendorGeneratedByLines(body ?? '')) {
     reasons.push(`message: ${line}`);
   }
-  for (const r of checkVendorIdentity(authorName, authorEmail)) {
-    reasons.push(`author ${r}`);
-  }
-  for (const r of checkVendorIdentity(committerName, committerEmail)) {
-    reasons.push(`committer ${r}`);
+  const legacyIdentity = LEGACY_HARNESS_IDENTITY_SHA.has(hash);
+  if (!legacyIdentity) {
+    for (const r of checkVendorIdentity(authorName, authorEmail)) {
+      reasons.push(`author ${r}`);
+    }
+    for (const r of checkVendorIdentity(committerName, committerEmail)) {
+      reasons.push(`committer ${r}`);
+    }
   }
   return { hash, reasons };
 }

@@ -63,7 +63,7 @@ public sealed class WorkersReadEndpointShould(PostgresCollectionFixture postgres
 
             // busy worker: a Running work item leased by busyWorker
             var busyItem = WorkItem.Create(
-                run.Id, "implement", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"implement"}""",
+                run.Id, "implement", "ghcr.io/comuki/worker:test", "net10-sdk-bun", "main", /*lang=json,strict*/ """{"step":"implement"}""",
                 WorkItemStatus.Queued, now.AddMinutes(-20));
             busyItem.AssignLease(busyWorker, 1, now.AddMinutes(2), now.AddMinutes(-1));
             orchestrationDb.WorkItems.Add(busyItem);

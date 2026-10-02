@@ -31,6 +31,10 @@ The slug is the stable external key other modules reference. Update SHALL be par
 - **WHEN** a caller patches only the name
 - **THEN** the name changes and every other field, including the slug, stays
 
+#### Scenario: Patch identity only
+- **WHEN** a caller patches `icon`, `color` and `tags` and nothing else
+- **THEN** those fields change and the name, slug and git fields stay
+
 #### Scenario: Patch source git
 - **WHEN** a caller patches `sourceGitUrl` and `sourceGitRef`
 - **THEN** those fields change and the slug and profiles git fields stay

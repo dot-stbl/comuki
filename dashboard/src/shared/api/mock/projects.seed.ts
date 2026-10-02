@@ -40,6 +40,13 @@ export interface SeedProject {
   readonly icon?: string | null
   readonly color?: string | null
   readonly tags?: readonly string[]
+  /**
+   * The bound environment class, when the mock seed wants to exercise a chip
+   * on the row. Optional on the seed so a bare project spells its absence
+   * rather than its default — every mocked project without a class renders
+   * the "no class bound" indicator the catalog id would replace.
+   */
+  readonly envClass?: string | null
 }
 
 export const PLATFORM_PROJECTS_SEED: SeedProject[] = [

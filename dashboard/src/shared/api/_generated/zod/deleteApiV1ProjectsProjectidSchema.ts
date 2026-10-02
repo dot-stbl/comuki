@@ -10,10 +10,10 @@ export const deleteApiV1ProjectsProjectidPathParamsSchema = z.object({
 })
 
 /**
- * @description OK
+ * @description No Content
  */
-export const deleteApiV1ProjectsProjectid200Schema = z.any()
+export const deleteApiV1ProjectsProjectid204Schema = z.any()
 
 export const deleteApiV1ProjectsProjectidMutationResponseSchema = z.lazy(
-  () => deleteApiV1ProjectsProjectid200Schema
+  () => deleteApiV1ProjectsProjectid204Schema
 )

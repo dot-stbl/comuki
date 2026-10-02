@@ -25,7 +25,8 @@ public sealed class InMemoryProjectScaleSettings(IOptions<ScaleSupervisorOptions
             : new ProjectScaleSettings(
                 scaleOptions.Value.MinIdle,
                 scaleOptions.Value.MaxConcurrent,
-                scaleOptions.Value.IdleTtl);
+                scaleOptions.Value.IdleTtl,
+                EnvClass: null);
     }
 
     /// <inheritdoc />

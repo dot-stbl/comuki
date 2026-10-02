@@ -22,6 +22,7 @@ public sealed class PiRunner(
     public async IAsyncEnumerable<string> RunAsync(
         string brief,
         IReadOnlyDictionary<string, string>? environment = null,
+        string? workingDirectory = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var executable = options.Value.PiExecutable;
@@ -31,7 +32,7 @@ public sealed class PiRunner(
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-            WorkingDirectory = options.Value.WorkingDirectory,
+            WorkingDirectory = workingDirectory ?? options.Value.WorkingDirectory,
         };
         startInfo.ArgumentList.Add("-p");
         startInfo.ArgumentList.Add(brief);

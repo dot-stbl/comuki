@@ -43,6 +43,7 @@ public sealed class KubernetesComputeMappingShould
         var labels = metadata.Labels.ShouldNotBeNull();
         labels[ComputeLabels.Project].ShouldBe(projectId.Value.ToString());
         labels[ComputeLabels.Profile].ShouldBe("implement");
+        labels[ComputeLabels.EnvClass].ShouldBe("net10-sdk-bun");
         labels[ComputeLabels.Image].ShouldBe("ghcr.io_comuki_worker_sha256_abc");
         labels[ComputeLabels.ProfilesRef].ShouldBe("refs_tags_v1.2");
         metadata.Annotations.ShouldNotBeNull()[KubernetesComputeProvider.WorkerIdAnnotation]
@@ -73,6 +74,7 @@ public sealed class KubernetesComputeMappingShould
         environment.ShouldContain(env => env.Name == "COMUKI_PROJECT_ID" && env.Value == projectId.Value.ToString());
         environment.ShouldContain(env => env.Name == "COMUKI_PROFILE_KEY" && env.Value == "implement");
         environment.ShouldContain(env => env.Name == "COMUKI_PROFILES_REF" && env.Value == "refs/tags/v1.2");
+        environment.ShouldContain(env => env.Name == "COMUKI_ENV_CLASS" && env.Value == "net10-sdk-bun");
         environment.ShouldContain(env => env.Name == "COMUKI_WORKER_IMAGE" && env.Value == "ghcr.io/comuki/worker@sha256:abc");
         environment.ShouldContain(env => env.Name == "COMUKI_ORCH_GRPC" && env.Value == request.OrchestratorGrpcUrl.ToString());
         // caller extras come after the contract env
@@ -238,6 +240,7 @@ public sealed class KubernetesComputeMappingShould
             ProjectId = projectId,
             ProfileKey = "implement",
             ProfilesGitRef = "refs/tags/v1.2",
+            EnvClass = "net10-sdk-bun",
             Image = "ghcr.io/comuki/worker@sha256:abc",
             WorkerToken = "secret-token",
             OrchestratorGrpcUrl = new Uri("http://orch:5051"),

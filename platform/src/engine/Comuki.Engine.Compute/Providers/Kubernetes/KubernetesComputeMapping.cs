@@ -275,6 +275,7 @@ internal static class KubernetesComputeMapping
             new WorkerId(workerId),
             job.Metadata.Name ?? string.Empty,
             LabelOrDefault(labels, ComputeLabels.Profile),
+            LabelOrDefault(labels, ComputeLabels.EnvClass),
             LabelOrDefault(labels, ComputeLabels.Image),
             LabelOrDefault(labels, ComputeLabels.ProfilesRef));
     }
@@ -292,6 +293,7 @@ internal static class KubernetesComputeMapping
         {
             [ComputeLabels.Project] = request.ProjectId.Value.ToString(),
             [ComputeLabels.Profile] = ComputeLabels.Sanitize(request.ProfileKey),
+            [ComputeLabels.EnvClass] = ComputeLabels.Sanitize(request.EnvClass),
             [ComputeLabels.Image] = ComputeLabels.Sanitize(request.Image),
             [ComputeLabels.ProfilesRef] = ComputeLabels.Sanitize(request.ProfilesGitRef),
         };
@@ -306,6 +308,7 @@ internal static class KubernetesComputeMapping
             new("COMUKI_PROJECT_ID", request.ProjectId.Value.ToString()),
             new("COMUKI_PROFILE_KEY", request.ProfileKey),
             new("COMUKI_PROFILES_REF", request.ProfilesGitRef),
+            new("COMUKI_ENV_CLASS", request.EnvClass),
             new("COMUKI_WORKER_IMAGE", request.Image),
             new("COMUKI_ORCH_GRPC", request.OrchestratorGrpcUrl.ToString()),
         };

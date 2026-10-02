@@ -1,0 +1,49 @@
+{
+  "required": [
+    "id",
+    "name",
+    "slug",
+    "description",
+    "profilesGitUrl",
+    "profilesGitRef",
+    "sourceGitUrl",
+    "sourceGitRef",
+    "icon",
+    "color",
+    "tags",
+    "envClass",
+    "archived",
+    "archivedAt",
+    "createdAt",
+    "updatedAt"
+  ],
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "object",
+      "properties": { "value": { "type": "string", "format": "uuid" } },
+      "description": "Strong-typed identifier of a project — the scope unit for runs, work items,\r\nsettings and role assignments.",
+      "x-readme-ref-name": "ProjectId"
+    },
+    "name": { "type": "string" },
+    "slug": { "type": "string" },
+    "description": { "type": ["null", "string"] },
+    "profilesGitUrl": { "type": ["null", "string"] },
+    "profilesGitRef": { "type": ["null", "string"] },
+    "sourceGitUrl": { "type": ["null", "string"] },
+    "sourceGitRef": { "type": ["null", "string"] },
+    "icon": { "type": ["null", "string"] },
+    "color": { "type": ["null", "string"] },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "envClass": {
+      "type": ["null", "string"],
+      "description": "Environment-class id the scalar source repository binds to (catalog id, e.g. `\"net10-sdk-bun\"`);\r\nnull when the project has no confirmed class. Mirrors the\r\n`Project.EnvClass` stand-in (add-worker-environments task 2.2):\r\nan empty binding means implement work items for the project are not claimable."
+    },
+    "archived": { "type": "boolean" },
+    "archivedAt": { "type": ["null", "string"], "format": "date-time" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "description": "Read model of a project — everything the operational UI needs, nothing\r\ninternal. Identity fields arrive display-ready: the colour is lower-case\r\n`#rrggbb`, tags are trimmed/lower-cased/deduplicated, the icon is an\r\nopaque string (emoji or URL) to render verbatim.",
+  "x-readme-ref-name": "ProjectView"
+}

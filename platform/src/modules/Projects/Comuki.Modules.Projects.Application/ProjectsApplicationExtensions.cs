@@ -47,8 +47,6 @@ public static class ProjectsApplicationExtensions
     /// snapshot-cache factory below only does once it has confirmed
     /// <see cref="IDistributedCache"/> is present.
     /// </summary>
-    /// <param name="services"></param>
-    /// <returns></returns>
     public static IServiceCollection AddProjectsApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
@@ -62,6 +60,7 @@ public static class ProjectsApplicationExtensions
                 ? serviceProvider.GetRequiredService<DistributedProjectSettingsCache>()
                 : serviceProvider.GetRequiredService<ProjectSettingsCache>());
         services.AddSingleton<IProjectDomainTypeResolver, ProjectDomainTypeResolver>();
+        // Mapperly projection, stateless — singleton per the mapping convention.
         services.AddSingleton<IProjectsMapper, ProjectsMapper>();
 
         services.AddScoped<CreateProjectHandler>();

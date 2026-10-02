@@ -4,9 +4,11 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Inbox;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host.Projects;
 using Comuki.Modules.Intake.Application.Ports.Admission;
 using Comuki.Modules.Intake.Domain.Connections;
 using Comuki.Modules.Intake.Domain.Tickets;
+using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -39,12 +41,14 @@ namespace Comuki.Host.Intake;
 /// <param name="profileRouter">Profile-key resolver (PRs vs, / issues).</param>
 /// <param name="defaults">Claim labels for intake-created items.</param>
 /// <param name="clock">Time source for domain stamps.</param>
+/// <param name="projects">Projects module port — stamps <c>Project.EnvClass</c> onto the work item (task 3.1).</param>
 public sealed class IntakeRunLauncher(
     OrchestrationDbContext db,
     IInbox inbox,
     IIntakeProfileRouter profileRouter,
     IOptions<IntakeWorkerDefaults> defaults,
-    TimeProvider clock) : IRunLauncher
+    TimeProvider clock,
+    IProjectStore projects) : IRunLauncher
 {
     /// <summary>
     /// Launches the run for a ticket; returns the run id (the new run's
@@ -86,6 +90,7 @@ public sealed class IntakeRunLauncher(
             run.Id,
             profileRouter.ResolveProfileKey(connection, ticket),
             defaults.Value.Image,
+            await EnvClassResolver.ResolveAsync(projects, projectId, "intake admission", cancellationToken),
             defaults.Value.ProfilesRef,
             IntakeItemBrief.ToJson(ticket),
             WorkItemStatus.Queued,

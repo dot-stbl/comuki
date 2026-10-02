@@ -20,6 +20,10 @@ internal static partial class ProjectIdentityRules
     [GeneratedRegex(Project.ColorPattern)]
     public static partial Regex ColorPattern();
 
+    /// <summary>Compiled <see cref="Project.EnvClassPattern"/>.</summary>
+    [GeneratedRegex(Project.EnvClassPattern)]
+    public static partial Regex EnvClassPattern();
+
     /// <summary>
     /// True when every tag, after the domain's normalisation (trim,
     /// lower-case, drop blanks, de-duplicate), matches
@@ -38,5 +42,17 @@ internal static partial class ProjectIdentityRules
     public static bool ColorIsWellFormed(string color)
     {
         return ColorPattern().IsMatch(color.Trim());
+    }
+
+    /// <summary>
+    /// True when the environment-class id matches
+    /// <see cref="Project.EnvClassPattern"/> after the domain's trim
+    /// (catalog ids are lower-case alphanumeric + dash by convention;
+    /// see <c>Comuki.Engine.Compute.Environments.EnvironmentBundle</c>).
+    /// Empty string is rejected — use <c>null</c> to clear.
+    /// </summary>
+    public static bool EnvClassIsWellFormed(string envClass)
+    {
+        return EnvClassPattern().IsMatch(envClass.Trim());
     }
 }

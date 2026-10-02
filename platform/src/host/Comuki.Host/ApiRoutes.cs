@@ -26,6 +26,9 @@ public static class ApiRoutes
 
     public const string Projects = "/api/v1/projects";
 
+    /// <summary>Procedures surface: read compiled versions, propose patches.</summary>
+    public const string Procedures = "/api/v1/procedures";
+
     /// <summary>Run listing surface (filter/sort DSL, permission run:read).</summary>
     public const string Runs = "/api/v1/runs";
 

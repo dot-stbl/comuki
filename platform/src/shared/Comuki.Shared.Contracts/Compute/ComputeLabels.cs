@@ -4,14 +4,30 @@ namespace Comuki.Shared.Contracts.Compute;
 
 /// <summary>
 /// Label keys stamped on every worker container. Claim matching uses them:
-/// a work item is claimable only when the worker's image digest and profiles
-/// ref labels match the item's requirements.
+/// a work item is claimable only when the worker's environment class,
+/// image digest and profiles ref labels match the item's requirements.
 /// </summary>
 public static partial class ComputeLabels
 {
     public const string Project = "comuki.project";
     public const string Profile = "comuki.profile";
+
+    /// <summary>
+    /// Claim-matching environment-class label. A worker labelled
+    /// <c>comuki.env_class=net10-sdk-bun</c> only satisfies backlog of the
+    /// same class — idle UE workers do not satisfy a net10 backlog
+    /// (worker-environments spec §"Idle net10 worker does not match UE backlog").
+    /// </summary>
+    public const string EnvClass = "comuki.env_class";
+
+    /// <summary>
+    /// Diagnostics-only label carrying the resolved image digest. Claim
+    /// matching does NOT select on this label — the env class is the
+    /// claim key. Stamped for operators who want to verify the started
+    /// image matches the bound class.
+    /// </summary>
     public const string Image = "comuki.image";
+
     public const string ProfilesRef = "comuki.profiles_ref";
 
     /// <summary>Kubernetes label values must match <c>[A-Za-z0-9._-]</c>

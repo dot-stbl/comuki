@@ -1,6 +1,9 @@
 using Comuki.Host.Translator;
 using Comuki.Host.Translator.Api.Registration;
+using Comuki.Host.Translator.Execution.Clone;
+using Comuki.Host.Translator.Execution.Commands;
 using Comuki.Host.Translator.Execution.Loop;
+using Comuki.Host.Translator.Execution.Restore;
 using Comuki.Host.Translator.Grpc;
 using Comuki.Host.Translator.Profiles;
 using Comuki.Host.Translator.Runtime;
@@ -37,7 +40,12 @@ builder.Services.AddOptions<TranslatorOptions>()
 builder.Services.TryAddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IPiRunner, PiRunner>();
 builder.Services.AddSingleton<IProfilesProvider, ProfilesProvider>();
+builder.Services.AddSingleton<RestoreRunner>();
+builder.Services.AddSingleton<IRestoreProcessRunner, RestoreProcessRunner>();
+builder.Services.AddSingleton<ISourceCloneProcessRunner, SourceCloneProcessRunner>();
+builder.Services.AddSingleton<SourceCloneRunner>();
 builder.Services.AddSingleton<HeartbeatMonitor>();
+builder.Services.AddSingleton<IDebugExecHost, DebugExecHost>();
 builder.Services.AddSingleton<TranslatorLoop>();
 builder.Services.AddHostedService<TranslatorHostedService>();
 
@@ -82,12 +90,29 @@ internal static class TranslatorEnvironment
             ["Translator:ProfileKey"] = Environment.GetEnvironmentVariable("COMUKI_PROFILE_KEY"),
             ["Translator:ProfilesRef"] = Environment.GetEnvironmentVariable("COMUKI_PROFILES_REF"),
             ["Translator:WorkerImage"] = Environment.GetEnvironmentVariable("COMUKI_WORKER_IMAGE"),
+            ["Translator:EnvClass"] = Environment.GetEnvironmentVariable("COMUKI_ENV_CLASS"),
             ["Translator:ProfilesPath"] = Environment.GetEnvironmentVariable("COMUKI_PROFILES_PATH"),
             ["Translator:ProfilesGitUrl"] = Environment.GetEnvironmentVariable("COMUKI_PROFILES_GIT_URL"),
             ["Translator:PiExecutable"] = Environment.GetEnvironmentVariable("COMUKI_PI_EXECUTABLE"),
             ["Translator:WorkingDirectory"] = Environment.GetEnvironmentVariable("COMUKI_WORKING_DIRECTORY"),
+            ["Translator:DebugExec"] = ReadDebugExec(),
         }
             .Where(static pair => pair.Value is not null)
             .ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal);
+
+        // COMUKI_DEBUG_EXEC normalizes to a strict true/false string so the
+        // Microsoft.Extensions.Configuration binder round-trips it
+        // deterministically regardless of casing (the default
+        // BooleanConverter accepts "true"/"false" only; common dev
+        // typos like "yes"/"1" silently map to false). Anything we don't
+        // recognize maps to false (the documented safe default). An
+        // unset env var OMIT the entry, and the option's default wins.
+        static string? ReadDebugExec()
+        {
+            var raw = Environment.GetEnvironmentVariable("COMUKI_DEBUG_EXEC");
+            return raw is null
+                ? null
+                : string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
+        }
     }
 }

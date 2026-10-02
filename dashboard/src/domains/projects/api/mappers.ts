@@ -8,6 +8,8 @@ import type {
 } from "@/domains/projects/model/types"
 import type { CreateProjectRequest } from "@/shared/api/_generated/types/CreateProjectRequest"
 import type { ProjectCostsView } from "@/shared/api/_generated/types/ProjectCostsView"
+import type { ProjectSettingsView } from "@/shared/api/_generated/types/ProjectSettingsView"
+import type { ProjectView } from "@/shared/api/_generated/types/ProjectView"
 import type { UpdateProjectRequest } from "@/shared/api/_generated/types/UpdateProjectRequest"
 import type { UpdateSettingsRequest } from "@/shared/api/_generated/types/UpdateSettingsRequest"
 import type { UsageEventView } from "@/shared/api/_generated/types/UsageEventView"
@@ -17,60 +19,20 @@ import type { ProjectRef } from "@/shared/session"
 // ---------------------------------------------------------------------------
 // Wire → domain mappers (real-backend path).
 //
-// The costs view is typed by the kubb-generated `ProjectCostsView` (the
-// spec now declares the response schema). The projects/settings reads are
-// still `any`-free local claims below — their endpoints carry no response
-// schemas yet; the day they grow them, the same swap happens there.
-//
-// The spec types counters as `number | string` (the serializer may read
-// numbers from strings) and the ids the host wraps in typed records
-// (`ProjectId`, `RunId`) as `{ value: string }` objects — both are
-// normalised at this edge. The mappers stay intentionally tolerant: a wire
-// row missing one of the optional fields falls back to a domain default
-// (`null`, `0`, `false`, `""`) rather than throwing. The screen renders
-// those defaults honestly (dashes, zero, "—") — fabricating values would
-// be a worse lie than declaring the field absent.
+// Every view here is typed by the kubb-generated contract types — the
+// endpoints declare their response schemas (task 6.4 typed the projects
+// endpoints; costs landed earlier). The spec types counters as
+// `number | string` (the serializer may read numbers from strings) and the
+// ids the host wraps in typed records (`ProjectId`, `RunId`) as
+// `{ value: string }` objects — both are normalised at this edge. The
+// mappers stay intentionally tolerant: a wire row missing one of the
+// optional fields falls back to a domain default (`null`, `0`, `false`,
+// `""`) rather than throwing. The screen renders those defaults honestly
+// (dashes, zero, "—") — fabricating values would be a worse lie than
+// declaring the field absent.
 // ---------------------------------------------------------------------------
 
-/** Wire shape of GET /api/v1/projects — a `ProjectView[]`. */
-interface ProjectView {
-  readonly id: string
-  readonly name: string
-  readonly slug: string
-  readonly description: string | null
-  readonly profilesGitUrl: string | null
-  readonly profilesGitRef: string | null
-  /**
-   * Identity fields — optional on the read because they postdate the
-   * contract: a view from before they existed (or a caching proxy in
-   * between) answers without the keys, and the mapper's tolerant defaults
-   * are the whole story on that path.
-   */
-  readonly icon?: string | null
-  readonly color?: string | null
-  /** The view always serves an array, never `null`; the default stays for version skew. */
-  readonly tags?: readonly string[] | null
-  readonly archived: boolean
-  readonly archivedAt: string | null
-  readonly createdAt: string
-  readonly updatedAt: string
-}
-
-/** Wire shape of GET /api/v1/projects/{id}/settings. */
-interface ProjectSettingsView {
-  readonly projectId: string
-  readonly minIdle: number
-  readonly maxConcurrent: number
-  readonly idleTtlSeconds: number | null
-  readonly approveRequired: boolean
-  readonly knowledgeEnabled: boolean
-  readonly verifyEnabled: boolean
-  readonly proxyEnabled: boolean
-  readonly softBudgetUsdMicros: number | null
-  readonly hardBudgetUsdMicros: number | null
-  readonly updatedAt: string
-  readonly version: number
-}
+/** Wire shape of GET /api/v1/projects/{id}/settings — the kubb-generated `ProjectSettingsView` (its `projectId` is a `{ value }` object, normalized in the mapper like the costs view). */
 
 const EMPTY_COSTS: UsageEvent[] = []
 
@@ -87,7 +49,7 @@ const EMPTY_COSTS: UsageEvent[] = []
  */
 export function mapProjectViewToDetail(view: ProjectView): ProjectRow {
   return {
-    id: view.id,
+    id: view.id.value ?? "",
     slug: view.slug,
     name: view.name,
     // The domain treats `gitProfileRepo` as a single handle; the wire splits
@@ -106,6 +68,11 @@ export function mapProjectViewToDetail(view: ProjectView): ProjectRow {
     // on a screen. The *mutation* direction preserves the distinction (D5);
     // this read direction has no distinction to preserve.
     tags: view.tags ?? [],
+    // The bound environment class: a project that has none cannot have its
+    // implement work items claimed (add-worker-environments 2.2). `?? null`
+    // matches the tolerant convention above — a pre-class wire row answers
+    // `null`, which is the same value an unset column writes.
+    envClass: view.envClass ?? null,
     activeRuns: 0,
     totalRuns: 0,
     spendToday: null,
@@ -153,17 +120,17 @@ export function mapProjectSettingsViewToSettings(
   view: ProjectSettingsView
 ): ProjectSettings {
   return {
-    projectId: view.projectId,
-    minIdle: view.minIdle,
-    maxConcurrent: view.maxConcurrent,
-    idleTtlSeconds: view.idleTtlSeconds,
+    projectId: view.projectId.value ?? "",
+    minIdle: Number(view.minIdle),
+    maxConcurrent: Number(view.maxConcurrent),
+    idleTtlSeconds: view.idleTtlSeconds === null ? null : Number(view.idleTtlSeconds),
     approveRequired: view.approveRequired,
     knowledgeEnabled: view.knowledgeEnabled,
     verifyEnabled: view.verifyEnabled,
     proxyEnabled: view.proxyEnabled,
-    softBudgetUsdMicros: view.softBudgetUsdMicros,
-    hardBudgetUsdMicros: view.hardBudgetUsdMicros,
-    version: view.version,
+    softBudgetUsdMicros: view.softBudgetUsdMicros === null ? null : Number(view.softBudgetUsdMicros),
+    hardBudgetUsdMicros: view.hardBudgetUsdMicros === null ? null : Number(view.hardBudgetUsdMicros),
+    version: Number(view.version),
     updatedAt: view.updatedAt,
   }
 }
@@ -194,7 +161,8 @@ export function mapProjectSettingsToUpdateRequest(
     // map) but the FE settings panel does not yet expose it as a control.
     // Pass the platform default — the panel keeps working until the BE
     // surfaces a domain-type control and we wire it through here.
-    domainType: "Standard",
+    // (0 = the wire's Standard discriminant.)
+    domainType: 0,
     customDomainTypesJson: null,
   }
 }
@@ -272,6 +240,10 @@ export function toProjectRow(seed: SeedProject): ProjectRow {
     icon: seed.icon ?? null,
     color: seed.color ?? null,
     tags: seed.tags ?? [],
+    // The mock seed has no bound class — the catalog id is a wire-side fact
+    // until the mock store grows a class-per-project mapping. Every mock row
+    // renders as "no class bound" for now.
+    envClass: seed.envClass ?? null,
     activeRuns: 0,
     totalRuns: 0,
     spendToday: null,

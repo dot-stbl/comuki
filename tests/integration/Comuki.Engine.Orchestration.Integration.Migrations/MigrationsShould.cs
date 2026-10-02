@@ -136,8 +136,8 @@ public sealed class MigrationsShould : IAsyncLifetime
         run.TransitionTo(RunStatus.Waiting, now);
         run.TransitionTo(RunStatus.Running, now.AddMinutes(1));
 
-        var prerequisite = WorkItem.Create(run.Id, "explore-readonly", "ghcr.io/comuki/worker@sha256:9f86d0", "refs/heads/main", /*lang=json,strict*/ """{"goal":"read the repo"}""", WorkItemStatus.Queued, now);
-        var dependent = WorkItem.Create(run.Id, "implement", "ghcr.io/comuki/worker@sha256:9f86d0", "refs/heads/main", /*lang=json,strict*/ """{"goal":"write the fix"}""", WorkItemStatus.Blocked, now);
+        var prerequisite = WorkItem.Create(run.Id, "explore-readonly", "ghcr.io/comuki/worker@sha256:9f86d0", "net10-sdk-bun", "refs/heads/main", /*lang=json,strict*/ """{"goal":"read the repo"}""", WorkItemStatus.Queued, now);
+        var dependent = WorkItem.Create(run.Id, "implement", "ghcr.io/comuki/worker@sha256:9f86d0", "net10-sdk-bun", "refs/heads/main", /*lang=json,strict*/ """{"goal":"write the fix"}""", WorkItemStatus.Blocked, now);
         var dependency = WorkItemDependency.Create(dependent.Id, prerequisite.Id);
         var runEvent = RunEvent.Create(
             run.Id,

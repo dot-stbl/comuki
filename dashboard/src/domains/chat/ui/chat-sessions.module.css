@@ -28,7 +28,7 @@
   font-size: var(--t-micro);
   font-weight: var(--fw-regular);
   letter-spacing: var(--tracking-label);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .list {
@@ -101,5 +101,5 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }

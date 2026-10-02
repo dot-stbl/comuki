@@ -402,7 +402,7 @@ public sealed class WorkerUploadArtifactShould(PostgresCollectionFixture postgre
         var workItem = WorkItem.Create(
             run.Id,
             "implementer",
-            "image:latest",
+            "image:latest", "net10-sdk-bun",
             "refs/heads/main",
                                  /*lang=json,strict*/
                                  """{"goal":"build a thing"}""",

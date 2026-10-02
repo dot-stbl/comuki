@@ -104,7 +104,7 @@ public static class EvalRunner
                     item = WorkItem.Create(
                         runId,
                         profileKey: "implement",
-                        image: "ghcr.io/test/worker:latest",
+                        image: "ghcr.io/test/worker:latest", "net10-sdk-bun",
                         profilesRef: "abc1234",
                         brief: /*lang=json,strict*/ "{\"goal\":\"eval\"}",
                         initialStatus: initial,

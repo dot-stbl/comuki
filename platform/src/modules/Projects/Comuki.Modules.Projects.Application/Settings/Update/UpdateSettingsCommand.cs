@@ -26,6 +26,7 @@ namespace Comuki.Modules.Projects.Application.Settings.Update;
 /// Standard projects; required (non-null, non-empty) for Custom projects;
 /// optional for Hybrid projects.
 /// </param>
+/// <param name="GitCredentialRef">Secret reference for the source-repo HTTPS credential; null = public repo.</param>
 public sealed record UpdateSettingsCommand(
     ProjectId ProjectId,
     int Version,
@@ -39,4 +40,5 @@ public sealed record UpdateSettingsCommand(
     long? SoftBudgetUsdMicros,
     long? HardBudgetUsdMicros,
     ProjectDomainType DomainType,
-    string? CustomDomainTypesJson);
+    string? CustomDomainTypesJson,
+    string? GitCredentialRef = null);

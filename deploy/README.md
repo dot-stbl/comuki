@@ -27,8 +27,16 @@ paths live next to this file — start at [`oss/README.md`](./oss/README.md):
 | `.env.example` | Copy to `.env` to override credentials (incl. Phase 4 worker keys) |
 | `postgres/init.d/01-pgvector.sql` | Enables `vector` extension (Phase 5, `Comuki.Platform.Knowledge`) |
 | `worker.Dockerfile` | Real minimal pi-coding-agent image (lands in Phase 4, Slice 0 step 0) |
+| `env/net10-sdk-bun.Dockerfile` | Golden bundle `net10-sdk-bun`: implement-default env class with full .NET 10 SDK (openspec `add-worker-environments` §1) |
 | `scripts/test-pi-headless.{sh,ps1}` | Build worker, run pi in container, assert stream-json output |
 | `grafana/` | Dashboards-as-code + provisioning (S8; profile `grafana`) |
+
+> **Implement work MUST NOT default to the runtime-only `worker.Dockerfile`.**
+> The implement default is `env/net10-sdk-bun.Dockerfile` (full .NET 10
+> SDK + bun + pi + translator) — anything bound to the `net10-sdk-bun`
+> env class claims work items against this image. `worker.Dockerfile`
+> stays for non-implement worker paths only. See
+> `openspec/changes/add-worker-environments` §1.
 
 ## Bring it up
 

@@ -121,6 +121,8 @@ file sealed record ProjectSettingsCacheEntry
 
     public string? CustomDomainTypesJson { get; init; }
 
+    public string? GitCredentialRef { get; init; }
+
     public required DateTimeOffset UpdatedAt { get; init; }
 
     public required int Version { get; init; }
@@ -152,6 +154,7 @@ file static class ProjectSettingsCacheEntryMapper
             HardBudgetUsdMicros = settings.HardBudgetUsdMicros,
             DomainType = settings.DomainType,
             CustomDomainTypesJson = settings.CustomDomainTypesJson,
+            GitCredentialRef = settings.GitCredentialRef,
             UpdatedAt = settings.UpdatedAt,
             Version = settings.Version,
         };
@@ -172,6 +175,7 @@ file static class ProjectSettingsCacheEntryMapper
             entry.HardBudgetUsdMicros,
             entry.DomainType,
             entry.CustomDomainTypesJson,
+            entry.GitCredentialRef,
             entry.UpdatedAt,
             entry.Version);
     }

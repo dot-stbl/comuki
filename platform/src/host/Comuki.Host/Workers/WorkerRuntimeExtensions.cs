@@ -45,6 +45,17 @@ public static class WorkerRuntimeExtensions
         // worker test fixtures).
         services.AddSingleton<VirtualKeys.MintedVirtualKeyService>();
 
+        // Source-git enrichment of the claim (harden-pi-worker-sandbox
+        // 4.3): resolves the project's repository URL/ref and the
+        // optional HTTPS credential. IProjectStore /
+        // IProjectSettingsStore / ISecretResolver come from the Projects
+        // module and the host's secret composition — resolved lazily, so
+        // a fixture that maps the worker surface without the Projects
+        // module only pays for this when it actually claims. Scoped: the
+        // store dependencies are ProjectsDbContext-bound (request scope),
+        // a singleton registration would capture the context.
+        services.AddScoped<ClaimSourceGitResolver>();
+
         // The worker runtime is a system consumer by nature: the gRPC
         // service and the REST surface run every operation as
         // AsSystem("worker-runtime") and need the ambient-scope bus to do

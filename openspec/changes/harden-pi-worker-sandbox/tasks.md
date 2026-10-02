@@ -31,15 +31,15 @@
 
 - [ ] 5.1 Journal `WorkspacePrepared` / `EgressApplied` / `AgentRunning` on the bound run; verify journal payload tests.
 - [ ] 5.2 Translator drain of brief/result/pins before complete/fail; packager skips already-bundled; drain error does not skip complete; verify packager + translator tests.
-- [ ] 5.3 Opt-in debug exec (default off) for operators; verify 403/refuse when off.
+- [x] 5.3 Opt-in debug exec (default off) for operators; verify 403/refuse when off.
 - [ ] 5.4 Production start requires image digest; tag-only fails in Production; verify provider test.
 - [ ] 5.5 `translator --fixture` runs prepare + fake pi without claim; verify a unit/integration test with a fixture file.
 
 ## 6. Follow-up: pi-extensions
 
-- [ ] 6.1 Wire default locks through a pi-extension so a test-file edit is denied at tool-call time; verify worker-sdk + an integration with TestFakePi or pi hook test.
-- [ ] 6.2 Register materialized skills with pi via the extension; `listSkills` alone does not count; verify a skill is callable after prepare.
-- [ ] 6.3 Worker MCP client from `COMUKI_MCP_URL` in the worker-sdk (not dev-sdk); unset URL → no MCP tools; verify unit tests.
+- [x] 6.1 Wire default locks through a pi-extension so a test-file edit is denied at tool-call time; verify worker-sdk + an integration with TestFakePi or pi hook test.
+- [x] 6.2 Register materialized skills with pi via the extension; `listSkills` alone does not count; verify a skill is callable after prepare.
+- [x] 6.3 Worker MCP client from `COMUKI_MCP_URL` in the worker-sdk (not dev-sdk); unset URL → no MCP tools; verify unit tests.
 
 ## 7. Cross-slice gate
 

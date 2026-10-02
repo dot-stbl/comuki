@@ -1,8 +1,11 @@
+using Comuki.Engine.Compute.Environments.Catalog;
+using Comuki.Engine.Compute.Environments.Pinning;
 using Comuki.Engine.Compute.Options;
 using Comuki.Shared.Contracts.Compute;
 using Comuki.Shared.Kernel.Ids;
 using Docker.DotNet;
 using Docker.DotNet.Models;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Engine.Compute.Providers;
@@ -13,14 +16,23 @@ namespace Comuki.Engine.Compute.Providers;
 /// tests substitute it. The Kubernetes provider (prod) lives elsewhere.
 /// Starts are fail-closed on the egress fence: <see cref="DockerEgressFence"/>
 /// resolves (and refuses) the fenced network before any container is created.
+/// Starts also resolve the worker's <see cref="ComputeStartRequest.EnvClass"/>
+/// through <see cref="IEnvironmentCatalog"/>: the catalog map drives both the
+/// stamped image (a <c>comuki.env_class</c> may NOT name an image of a
+/// different class — spec §"Project cannot swap class via image override")
+/// and the Production tag-only refusal (<see cref="EnvironmentBundlePinning.IsStartable"/>).
 /// </summary>
 /// <param name="egressFence">Egress fence verifier (fenced network must exist and be internal).</param>
 /// <param name="containers">Docker container operations — create, start, list, stop, remove.</param>
+/// <param name="environmentCatalog">Catalog of environment classes the start path resolves the bound class against.</param>
+/// <param name="hostEnvironment">Host environment; the Production refusal reads <see cref="HostEnvironmentEnvExtensions.IsProduction(IHostEnvironment)"/>.</param>
 /// <param name="providerOptions">Compute-wide options (AllowUnfencedEgress dev override).</param>
 /// <param name="computeOptions">Docker options bound from Compute:Docker — fenced network, RunAsUser, memory/cpu limits.</param>
 public sealed class DockerComputeProvider(
     DockerEgressFence egressFence,
     IContainerOperations containers,
+    IEnvironmentCatalog environmentCatalog,
+    IHostEnvironment hostEnvironment,
     IOptions<ComputeOptions> providerOptions,
     IOptions<DockerComputeOptions> computeOptions) : IComputeProvider
 {
@@ -39,9 +51,40 @@ public sealed class DockerComputeProvider(
     {
         var workerId = request.PreIssuedWorkerId ?? WorkerId.New();
 
+        // Resolve the class through the catalog before the container is created
+        // — Production needs a digest-pinned reference (worker-environments spec
+        // §"Production refuses a tag-only bundle"), and the catalog is the one
+        // place that knows what the bound class maps to. The provider stamps the
+        // resolved image (not a caller-supplied one) so a per-project legacy image
+        // override cannot silently swap the class.
+        if (!environmentCatalog.TryGet(request.EnvClass, out var bundle) || bundle is null)
+        {
+            throw new InvalidOperationException(
+                $"Environment class '{request.EnvClass}' is not in the catalog; refusing to start a worker.");
+        }
+
+        if (!EnvironmentBundlePinning.IsStartable(bundle.Image, hostEnvironment.IsProduction()))
+        {
+            throw new InvalidOperationException(
+                $"Environment class '{request.EnvClass}' image '{bundle.Image}' is not startable "
+                + $"(Production requires a digest; got a tag-only or untagged reference).");
+        }
+
+        // Fleet allowlist gate (worker-environments spec
+        // §"Unallowlisted community bundle is not started"): the publisher
+        // shelf must be on the fleet allowlist; the catalog refuses the
+        // start before any container is created.
+        if (!environmentCatalog.IsAllowed(bundle.Publisher.Value))
+        {
+            throw new InvalidOperationException(
+                $"Environment class '{request.EnvClass}' publisher '{bundle.Publisher.Value}' is not on the fleet allowlist; refusing to start a worker.");
+        }
+
+        var resolvedRequest = request with { Image = bundle.Image };
+
         var created = await containers.CreateContainerAsync(
             DockerComputeMapping.ToCreateParameters(
-                request,
+                resolvedRequest,
                 workerId,
                 computeOptions.Value,
                 await egressFence.ResolveNetworkModeAsync(

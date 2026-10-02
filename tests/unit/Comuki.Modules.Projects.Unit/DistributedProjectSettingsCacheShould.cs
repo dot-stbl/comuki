@@ -54,7 +54,7 @@ public sealed class DistributedProjectSettingsCacheShould
         cache.Warm(original);
 
         var updated = ProjectSettings.CreateDefaults(projectId, DateTimeOffset.UtcNow);
-        updated.Apply(1, 12, 600, false, false, false, false, null, null, ProjectDomainType.Standard, null, DateTimeOffset.UtcNow);
+        updated.Apply(1, 12, 600, false, false, false, false, null, null, ProjectDomainType.Standard, null, null, DateTimeOffset.UtcNow);
         cache.Refresh(updated);
 
         var stored = cache.Get(projectId);

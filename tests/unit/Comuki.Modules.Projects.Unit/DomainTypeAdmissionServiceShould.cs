@@ -196,6 +196,7 @@ file static class AdmissionFixtures
             hardBudgetUsdMicros: null,
             domainType: mode,
             customDomainTypesJson: customDomainTypesJson,
+            gitCredentialRef: null,
             now: created.AddMinutes(1));
 
         return settings;

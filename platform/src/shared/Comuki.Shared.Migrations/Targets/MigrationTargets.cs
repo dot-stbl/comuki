@@ -6,6 +6,7 @@ using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Intake.Infrastructure.Persistence;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
+using Comuki.Modules.Procedures.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Repositories.Infrastructure.Persistence;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence;
@@ -99,6 +100,12 @@ public static class MigrationTargets
             var builder = new DbContextOptionsBuilder<RepositoriesDbContext>();
             RepositoriesDbContext.ApplyOptions(builder, connectionString);
             return new RepositoriesDbContext(builder.Options);
+        }),
+        new("procedures", ProceduresDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<ProceduresDbContext>();
+            ProceduresDbContext.ApplyOptions(builder, connectionString);
+            return new ProceduresDbContext(builder.Options);
         }),
     ];
 }

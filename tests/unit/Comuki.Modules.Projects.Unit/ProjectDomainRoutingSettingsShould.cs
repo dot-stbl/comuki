@@ -42,6 +42,7 @@ public sealed class ProjectDomainRoutingSettingsShould
             hardBudgetUsdMicros: 5_000_000,
             domainType: ProjectDomainType.Hybrid,
             customDomainTypesJson: /*lang=json,strict*/ """{"code":"implement","data":"data-pipeline"}""",
+            gitCredentialRef: null,
             now: later);
 
         settings.DomainType.ShouldBe(ProjectDomainType.Hybrid);
@@ -66,6 +67,7 @@ public sealed class ProjectDomainRoutingSettingsShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Custom,
             customDomainTypesJson: /*lang=json,strict*/ """{"code":"implement"}""",
+            gitCredentialRef: null,
             now: now.AddMinutes(1));
 
         settings.DomainType.ShouldBe(ProjectDomainType.Custom);
@@ -84,6 +86,7 @@ public sealed class ProjectDomainRoutingSettingsShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Standard,
             customDomainTypesJson: null,
+            gitCredentialRef: null,
             now: now.AddMinutes(2));
 
         settings.DomainType.ShouldBe(ProjectDomainType.Standard);

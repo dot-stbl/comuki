@@ -3,6 +3,7 @@
  * Do not edit manually.
  */
 
+import { projectViewSchema } from "./projectViewSchema"
 import { z } from "zod/v4"
 
 export const getApiV1ProjectsProjectidPathParamsSchema = z.object({
@@ -12,7 +13,11 @@ export const getApiV1ProjectsProjectidPathParamsSchema = z.object({
 /**
  * @description OK
  */
-export const getApiV1ProjectsProjectid200Schema = z.any()
+export const getApiV1ProjectsProjectid200Schema = z
+  .lazy(() => projectViewSchema)
+  .describe(
+    "Read model of a project — everything the operational UI needs, nothing\r\ninternal. Identity fields arrive display-ready: the colour is lower-case\r\n`#rrggbb`, tags are trimmed/lower-cased/deduplicated, the icon is an\r\nopaque string (emoji or URL) to render verbatim."
+  )
 
 export const getApiV1ProjectsProjectidQueryResponseSchema = z.lazy(
   () => getApiV1ProjectsProjectid200Schema

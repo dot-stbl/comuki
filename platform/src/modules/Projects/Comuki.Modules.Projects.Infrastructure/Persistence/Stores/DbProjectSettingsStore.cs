@@ -81,6 +81,7 @@ public sealed class DbProjectSettingsStore(
                 settings.HardBudgetUsdMicros,
                 settings.DomainType,
                 settings.CustomDomainTypesJson,
+                settings.GitCredentialRef,
                 settings.UpdatedAt);
             saved = row;
         }

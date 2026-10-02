@@ -12,11 +12,15 @@ The platform SHALL distinguish WorkerHost, Slot, Execution, and AgentSession ide
 - **THEN** each maintains an independent command/event stream and cannot heartbeat or complete another slot's WorkItem
 
 ### Requirement: Advertised capabilities and hard capacity
-A worker host SHALL advertise compatible profiles, images, tools, models, resource shape, and provider hard maximum slots. A provider/profile that does not declare safe concurrency defaults to one slot. Project quotas and provider limits bound active slots. Profile resource policy MAY permit measured oversubscription for I/O-heavy work within provider hard limits. The deterministic capacity planner chooses host count, placement, and active slot count; Brain cannot exceed these limits.
+A worker host SHALL advertise compatible profiles, **environment classes**, tools, models, resource shape, and provider hard maximum slots. `images` MAY be listed as resolved digests of those classes and SHALL NOT be the only compatibility key once `add-worker-environments` has landed. A provider/profile that does not declare safe concurrency defaults to one slot. Project quotas and provider limits bound active slots. Profile resource policy MAY permit measured oversubscription for I/O-heavy work within provider hard limits. The deterministic capacity planner chooses host count, placement, and active slot count; Brain cannot exceed these limits.
 
 #### Scenario: Desired parallelism exceeds capacity
 - **WHEN** Brain requests twenty slots but provider and project policy allow eight
 - **THEN** the planner activates at most eight and reports the constrained plan and expected delay
+
+#### Scenario: Host advertises env class
+- **WHEN** a host advertises `net10-sdk-bun` and a slot admission names `ue5.4-win`
+- **THEN** the planner does not place that slot on the host
 
 ### Requirement: Desired parallelism intent
 Brain and operators MAY submit desired parallelism, priority, deadline, and cost preference as a capacity intent. Effective autonomy and Compute risk policy decide whether it executes automatically or becomes a proposal. The intent SHALL NOT name privileged provider credentials or bypass placement.

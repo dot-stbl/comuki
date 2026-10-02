@@ -41,6 +41,7 @@ public sealed class PiEnvironmentShould
             Guid.NewGuid(),
             Guid.NewGuid(),
             "implement",
+            "net10-sdk-bun",
             "do it",
             DateTimeOffset.UtcNow.AddMinutes(2).ToUnixTimeMilliseconds(),
             1,

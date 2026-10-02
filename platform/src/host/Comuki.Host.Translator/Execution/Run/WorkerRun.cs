@@ -19,6 +19,14 @@ public sealed class WorkerRun(
     /// </summary>
     public required CancellationTokenSource RunCancellation { get; init; }
 
+    /// <summary>
+    /// The cloned repository root (harden-pi-worker-sandbox 4.3) — the
+    /// working directory pi, exec commands and restore opcodes run in.
+    /// Falls back to the configured working directory when set to
+    /// <c>null</c>.
+    /// </summary>
+    public string? RepositoryDirectory { get; init; }
+
     /// <summary>The claimed item this run executes.</summary>
     public ClaimedWorkItemResponse Claimed => claimed;
 

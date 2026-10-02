@@ -19,6 +19,14 @@ public static class OrchestrationErrorCodes
     /// <summary>WorkItem factory rejected an empty profiles git ref.</summary>
     public const string WorkItemProfilesRefEmpty = "orchestration.work_item.profiles_ref.empty";
 
+    /// <summary>
+    /// WorkItem factory rejected an empty environment class
+    /// (<c>add-worker-environments</c>, task 3.1) — every implement item
+    /// MUST carry the class bound at enqueue; an empty value never matches
+    /// a claimer (queue SQL filters <c>env_class = @envClass</c>).
+    /// </summary>
+    public const string WorkItemEnvClassEmpty = "orchestration.work_item.env_class.empty";
+
     /// <summary>WorkItem factory rejected an empty brief (worker brief, stored as jsonb).</summary>
     public const string WorkItemBriefEmpty = "orchestration.work_item.brief.empty";
 

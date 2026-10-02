@@ -280,7 +280,7 @@ public sealed class ArtifactsEndToEndShould(PostgresCollectionFixture postgres) 
         var workItem = Engine.Orchestration.Domain.WorkItems.WorkItem.Create(
             run.Id,
             "implementer",
-            "image:latest",
+            "image:latest", "net10-sdk-bun",
             "refs/heads/main",
                                  /*lang=json,strict*/
                                  """{"goal":"build a thing"}""",

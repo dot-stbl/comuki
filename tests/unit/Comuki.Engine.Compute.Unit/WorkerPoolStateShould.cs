@@ -34,8 +34,8 @@ public sealed class WorkerPoolStateShould
         var secondProject = ProjectId.New();
         var state = CreateState();
         var firstHandle = CreateHandle(firstProject);
-        state.Register(firstHandle, firstHandle.Id, firstProject, "implement");
-        state.Register(CreateHandle(secondProject), WorkerId.New(), secondProject, "docs");
+        state.Register(firstHandle, firstHandle.Id, firstProject, "implement", "net10-sdk-bun");
+        state.Register(CreateHandle(secondProject), WorkerId.New(), secondProject, "docs", "net10-sdk-bun");
 
         var workers = state.List(firstProject);
 
@@ -51,7 +51,7 @@ public sealed class WorkerPoolStateShould
         var projectId = ProjectId.New();
         var state = CreateState();
         var handle = CreateHandle(projectId);
-        state.Register(handle, handle.Id, projectId, "implement");
+        state.Register(handle, handle.Id, projectId, "implement", "net10-sdk-bun");
 
         clock.Advance(TimeSpan.FromMinutes(5));
         state.MarkBusy(handle.Id);
@@ -67,7 +67,7 @@ public sealed class WorkerPoolStateShould
         var projectId = ProjectId.New();
         var state = CreateState();
         var handle = CreateHandle(projectId);
-        state.Register(handle, handle.Id, projectId, "implement");
+        state.Register(handle, handle.Id, projectId, "implement", "net10-sdk-bun");
         state.MarkBusy(handle.Id);
 
         clock.Advance(TimeSpan.FromMinutes(1));
@@ -84,7 +84,7 @@ public sealed class WorkerPoolStateShould
         var projectId = ProjectId.New();
         var state = CreateState();
         var handle = CreateHandle(projectId);
-        state.Register(handle, handle.Id, projectId, "implement");
+        state.Register(handle, handle.Id, projectId, "implement", "net10-sdk-bun");
         state.MarkBusy(handle.Id);
 
         clock.Advance(TimeSpan.FromMinutes(1));
@@ -111,7 +111,7 @@ public sealed class WorkerPoolStateShould
         var projectId = ProjectId.New();
         var state = CreateState();
         var handle = CreateHandle(projectId);
-        state.Register(handle, handle.Id, projectId, "implement");
+        state.Register(handle, handle.Id, projectId, "implement", "net10-sdk-bun");
 
         state.Remove(handle.Id);
 
@@ -126,7 +126,7 @@ public sealed class WorkerPoolStateShould
         var state = CreateState();
         var cancellationToken = TestContext.Current.CancellationToken;
         computeProvider.ListAsync(projectId, cancellationToken)
-            .Returns([new WorkerInfo(workerId, "container-1", "implement", "img:1", "refs/tags/v1")]);
+            .Returns([new WorkerInfo(workerId, "container-1", "implement", "net10-sdk-bun", "img:1", "refs/tags/v1")]);
 
         await state.SyncFromProviderAsync(projectId, cancellationToken);
 
@@ -144,7 +144,7 @@ public sealed class WorkerPoolStateShould
         var projectId = ProjectId.New();
         var state = CreateState();
         var handle = CreateHandle(projectId);
-        state.Register(handle, handle.Id, projectId, "implement");
+        state.Register(handle, handle.Id, projectId, "implement", "net10-sdk-bun");
         var cancellationToken = TestContext.Current.CancellationToken;
         computeProvider.ListAsync(projectId, cancellationToken).Returns([]);
 
@@ -159,12 +159,12 @@ public sealed class WorkerPoolStateShould
         var projectId = ProjectId.New();
         var state = CreateState();
         var handle = CreateHandle(projectId);
-        state.Register(handle, handle.Id, projectId, "implement");
+        state.Register(handle, handle.Id, projectId, "implement", "net10-sdk-bun");
         state.MarkBusy(handle.Id);
         var registeredAt = state.List(projectId).ShouldHaveSingleItem().LastActiveAt;
         var cancellationToken = TestContext.Current.CancellationToken;
         computeProvider.ListAsync(projectId, cancellationToken)
-            .Returns([new WorkerInfo(handle.Id, handle.ProviderRef, "implement", "img:1", "refs/tags/v1")]);
+            .Returns([new WorkerInfo(handle.Id, handle.ProviderRef, "implement", "net10-sdk-bun", "img:1", "refs/tags/v1")]);
 
         clock.Advance(TimeSpan.FromMinutes(30));
         await state.SyncFromProviderAsync(projectId, cancellationToken);

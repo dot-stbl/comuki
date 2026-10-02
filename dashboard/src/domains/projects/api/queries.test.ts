@@ -123,6 +123,7 @@ describe("queries.ts mock-first path", () => {
         icon: null,
         color: null,
         tags: [],
+        envClass: null,
         activeRuns: 0,
         totalRuns: 0,
         spendToday: null,
@@ -148,7 +149,7 @@ describe("queries.ts one-request contract (real mode)", () => {
     >
     wire.mockResolvedValue([
       {
-        id: "p_comuki",
+        id: { value: "p_comuki" },
         name: "Comuki platform",
         slug: "comuki",
         description: null,
@@ -160,7 +161,7 @@ describe("queries.ts one-request contract (real mode)", () => {
         updatedAt: "2026-01-01T00:00:00Z",
       },
       {
-        id: "p_old",
+        id: { value: "p_old" },
         name: "Retired thing",
         slug: "retired-thing",
         description: null,

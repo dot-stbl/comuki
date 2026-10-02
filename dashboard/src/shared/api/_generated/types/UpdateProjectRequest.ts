@@ -35,4 +35,12 @@ export type UpdateProjectRequest = {
    * @type null,array
    */
   tags?: string[] | null
+  /**
+   * @type null,string
+   */
+  sourceGitUrl?: string | null
+  /**
+   * @type null,string
+   */
+  sourceGitRef?: string | null
 }

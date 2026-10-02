@@ -317,7 +317,7 @@ public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgre
         var queue = claimScope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var claimed = await queue.ClaimAsync(
             WorkerId.New(),
-            new WorkItemLabels(WorkItemImage, WorkItemProfilesRef, WorkItemProfileKey),
+            new WorkItemLabels(WorkItemImage, WorkItemProfilesRef, WorkItemProfileKey, "net10-sdk-bun"),
             now.AddMinutes(2),
             now,
             cancellationToken);
@@ -339,13 +339,13 @@ public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgre
         var run = Run.Create(ProjectId.New(), now);
         run.TransitionTo(RunStatus.Running, now.AddSeconds(1));
         var runningItem = WorkItem.Create(
-            run.Id, WorkItemProfileKey, WorkItemImage, WorkItemProfilesRef,
+            run.Id, WorkItemProfileKey, WorkItemImage, "net10-sdk-bun", WorkItemProfilesRef,
             /*lang=json,strict*/ """{"goal":"live"}""", WorkItemStatus.Queued, now);
         var queuedItem = WorkItem.Create(
-            run.Id, WorkItemProfileKey, WorkItemImage, WorkItemProfilesRef,
+            run.Id, WorkItemProfileKey, WorkItemImage, "net10-sdk-bun", WorkItemProfilesRef,
             /*lang=json,strict*/ """{"goal":"queued"}""", WorkItemStatus.Queued, now.AddMilliseconds(1));
         var blockedItem = WorkItem.Create(
-            run.Id, WorkItemProfileKey, WorkItemImage, WorkItemProfilesRef,
+            run.Id, WorkItemProfileKey, WorkItemImage, "net10-sdk-bun", WorkItemProfilesRef,
             /*lang=json,strict*/ """{"goal":"blocked"}""", WorkItemStatus.Blocked, now.AddMilliseconds(2));
 
         await using (var seedContext = NewSystemDbContext())
@@ -363,7 +363,7 @@ public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgre
             var queue = claimScope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
             claimed = await queue.ClaimAsync(
                 workerId,
-                new WorkItemLabels(WorkItemImage, WorkItemProfilesRef, WorkItemProfileKey),
+                new WorkItemLabels(WorkItemImage, WorkItemProfilesRef, WorkItemProfileKey, "net10-sdk-bun"),
                 now.AddMinutes(2),
                 now,
                 cancellationToken);
@@ -399,7 +399,7 @@ public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgre
         var workItem = WorkItem.Create(
             run.Id,
             WorkItemProfileKey,
-            WorkItemImage,
+            WorkItemImage, "net10-sdk-bun",
             WorkItemProfilesRef,
             /*lang=json,strict*/ """{"goal":"ws5"}""",
             WorkItemStatus.Queued,
@@ -419,7 +419,7 @@ public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgre
             var queue = claimScope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
             claimed = await queue.ClaimAsync(
                 workerId,
-                new WorkItemLabels(WorkItemImage, WorkItemProfilesRef, WorkItemProfileKey),
+                new WorkItemLabels(WorkItemImage, WorkItemProfilesRef, WorkItemProfileKey, "net10-sdk-bun"),
                 now.AddMinutes(2),
                 now,
                 cancellationToken);

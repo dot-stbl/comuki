@@ -243,7 +243,7 @@ public sealed class GetRunDetailHandlerShould
         var item = WorkItem.Create(
             runId,
             profileKey,
-            image,
+            image, "net10-sdk-bun",
             profilesRef,
             brief,
             WorkItemStatus.Queued,

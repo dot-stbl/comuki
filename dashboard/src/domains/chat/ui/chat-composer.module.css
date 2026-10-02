@@ -52,7 +52,7 @@
 }
 
 .input::placeholder {
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 /* The ring is on the box, not on the bare textarea inside it — otherwise the
@@ -108,7 +108,7 @@
 .seedAbout {
   font-family: var(--font-ui);
   font-size: var(--t-micro);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 /* The identifier is a value, and mono is where values live. */
@@ -116,7 +116,7 @@
   font-family: var(--font-data);
   font-size: var(--t-xs);
   font-variant-numeric: tabular-nums;
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }
 
 .seed:hover .seedId {
@@ -126,7 +126,7 @@
 .seedX {
   inline-size: var(--icon-xs);
   block-size: var(--icon-xs);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 /* Scope ------------------------------------------------------------------- */
@@ -143,12 +143,12 @@
 .scopeLabel {
   font-family: var(--font-ui);
   font-size: var(--t-micro);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .scopeCommand {
   font-family: var(--font-data);
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }
 
 .scopeNone {
@@ -165,7 +165,7 @@
   white-space: nowrap;
   font-family: var(--font-ui);
   font-size: var(--t-micro);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 /* A refused send ----------------------------------------------------------- */
@@ -226,7 +226,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   line-height: var(--lh-body);
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }
 
 /* Menu -------------------------------------------------------------------- */
@@ -255,7 +255,7 @@
   font-size: var(--t-micro);
   font-weight: var(--fw-regular);
   letter-spacing: var(--tracking-label);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .menu {
@@ -306,11 +306,11 @@
   white-space: nowrap;
   font-family: var(--font-ui);
   font-size: var(--t-micro);
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }
 
 .optionOrigin {
   font-family: var(--font-data);
   font-size: var(--t-micro);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }

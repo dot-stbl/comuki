@@ -2,6 +2,8 @@ using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host.Projects;
+using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Scheduler.Application.Ports;
 using Comuki.Modules.Scheduler.Domain.Jobs;
 using Comuki.Shared.Kernel.Ids;
@@ -21,20 +23,24 @@ namespace Comuki.Host.Scheduler;
 /// <param name="db">Orchestration context of the current scope.</param>
 /// <param name="defaults">Worker image / profiles-ref every scheduled run claims on.</param>
 /// <param name="clock">Wall-clock source for the run stamps.</param>
+/// <param name="projects">Projects module port — stamps <c>Project.EnvClass</c> (task 3.1).</param>
 public sealed class SchedulerRunLauncher(
     OrchestrationDbContext db,
     IOptions<SchedulerWorkerDefaults> defaults,
-    TimeProvider clock) : ISchedulerDispatcher
+    TimeProvider clock,
+    IProjectStore projects) : ISchedulerDispatcher
 {
     /// <inheritdoc />
     public async Task<RunId> DispatchAsync(ScheduledJob job, CancellationToken cancellationToken = default)
     {
         var now = clock.GetUtcNow();
         var run = Run.Create(job.ProjectId, now);
+        var envClass = await EnvClassResolver.ResolveAsync(projects, job.ProjectId, "scheduler dispatch", cancellationToken);
         var workItem = WorkItem.Create(
             run.Id,
             job.ProfileKey,
             defaults.Value.Image,
+            envClass,
             defaults.Value.ProfilesRef,
             job.BriefJson,
             WorkItemStatus.Queued,

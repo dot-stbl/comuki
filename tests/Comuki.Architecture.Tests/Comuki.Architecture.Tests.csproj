@@ -40,6 +40,9 @@
     <ProjectReference Include="..\..\platform\src\modules\Repositories\Comuki.Modules.Repositories.Domain\Comuki.Modules.Repositories.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Repositories\Comuki.Modules.Repositories.Application\Comuki.Modules.Repositories.Application.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Repositories\Comuki.Modules.Repositories.Infrastructure\Comuki.Modules.Repositories.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Procedures\Comuki.Modules.Procedures.Domain\Comuki.Modules.Procedures.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Procedures\Comuki.Modules.Procedures.Application\Comuki.Modules.Procedures.Application.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Procedures\Comuki.Modules.Procedures.Infrastructure\Comuki.Modules.Procedures.Infrastructure.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Scheduler\Comuki.Modules.Scheduler.Domain\Comuki.Modules.Scheduler.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Verify\Comuki.Modules.Verify.Domain\Comuki.Modules.Verify.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Verify\Comuki.Modules.Verify.Application\Comuki.Modules.Verify.Application.csproj" />

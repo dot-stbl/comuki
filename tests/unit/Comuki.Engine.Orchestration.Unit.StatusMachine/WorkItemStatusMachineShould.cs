@@ -93,7 +93,7 @@ public sealed class WorkItemStatusMachineShould
         var runId = RunId.New();
         var now = DateTimeOffset.UtcNow;
 
-        var item = WorkItem.Create(runId, "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"write tests"}""", WorkItemStatus.Queued, now);
+        var item = WorkItem.Create(runId, "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"write tests"}""", WorkItemStatus.Queued, now);
 
         item.RunId.ShouldBe(runId);
         item.Status.ShouldBe(WorkItemStatus.Queued);
@@ -110,7 +110,7 @@ public sealed class WorkItemStatusMachineShould
     [Fact(DisplayName = "Given plan apply with dependencies, when Create is called blocked, then the item starts blocked")]
     public void CreateBlockedWorkItem()
     {
-        var item = WorkItem.Create(RunId.New(), "docs-writer", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"document"}""", WorkItemStatus.Blocked, DateTimeOffset.UtcNow);
+        var item = WorkItem.Create(RunId.New(), "docs-writer", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"document"}""", WorkItemStatus.Blocked, DateTimeOffset.UtcNow);
 
         item.Status.ShouldBe(WorkItemStatus.Blocked);
     }
@@ -119,26 +119,26 @@ public sealed class WorkItemStatusMachineShould
     public void RejectInvalidInitialStatus()
     {
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Running, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Running, DateTimeOffset.UtcNow));
     }
 
     [Fact(DisplayName = "Given an empty profile key, image, profiles ref or brief, when Create is called, then it throws")]
     public void RejectEmptyLabelsAndBrief()
     {
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), " ", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), " ", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), "implement", "", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", "", "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), "implement", Image, " ", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", Image, "net10-sdk-bun", " ", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, "", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", Image, "net10-sdk-bun", ProfilesRef, "", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
     }
 
     [Fact(DisplayName = "Given a running item, when the lease expires and is requeued, then TransitionTo queued succeeds")]
     public void ApplyRequeueTransitionOnAggregate()
     {
-        var item = WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow);
+        var item = WorkItem.Create(RunId.New(), "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow);
         item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow);
 
         item.TransitionTo(WorkItemStatus.Queued, DateTimeOffset.UtcNow);
@@ -149,7 +149,7 @@ public sealed class WorkItemStatusMachineShould
     [Fact(DisplayName = "Given a terminal item, when TransitionTo is called, then the aggregate throws")]
     public void RejectIllegalTransitionOnAggregate()
     {
-        var item = WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow);
+        var item = WorkItem.Create(RunId.New(), "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow);
         item.TransitionTo(WorkItemStatus.Running, DateTimeOffset.UtcNow);
         item.TransitionTo(WorkItemStatus.Succeeded, DateTimeOffset.UtcNow);
 

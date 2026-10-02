@@ -86,11 +86,7 @@ public sealed class ProjectSettingsCacheRefresherShould : IAsyncLifetime
         // to satisfy the FK on Project.Id.
         var project = Domain.Projects.Project.Create(
             $"name-{projectId.Value:N}"[..16],
-            $"slug-{projectId.Value:N}"[..16],
-            null,
-            null,
-            null,
-            now);
+            $"slug-{projectId.Value:N}"[..16], null, null, null, now);
         db.Projects.Add(project);
 
         var settings = ProjectSettings.CreateDefaults(project.Id, now);

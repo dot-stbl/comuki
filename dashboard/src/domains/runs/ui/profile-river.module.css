@@ -212,7 +212,7 @@
   height: var(--h-node-mix);
   line-height: var(--h-node-mix);
   font-size: var(--t-micro);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

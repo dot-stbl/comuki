@@ -103,7 +103,7 @@
   font-size: var(--t-micro);
   line-height: var(--h-graph-head);
   letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -200,7 +200,7 @@
 }
 
 .node[data-blocked] .label {
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .node[data-blocked] .note {
@@ -297,7 +297,7 @@
 
 .state {
   flex: 0 0 auto;
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
   white-space: nowrap;
 }
 
@@ -326,7 +326,7 @@
   font-size: var(--t-micro);
   line-height: var(--h-graph-line);
   letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
   white-space: nowrap;
   text-overflow: ellipsis;
 }

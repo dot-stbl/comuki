@@ -33,7 +33,7 @@ public sealed class StatusLiteralSqlShould
             + "    SELECT id FROM orchestration.work_items "
             + "    WHERE status = 'Queued' "
             + "      AND profile_key = @profileKey "
-            + "      AND image = @image "
+            + "      AND env_class = @envClass "
             + "      AND profiles_ref = @profilesRef "
             + "      AND EXISTS ( "
             + "          SELECT 1 FROM orchestration.runs r "
@@ -46,7 +46,7 @@ public sealed class StatusLiteralSqlShould
             + ") "
             + "RETURNING id, run_id, "
             + "(SELECT r.project_id FROM orchestration.runs r WHERE r.id = work_items.run_id), "
-            + "profile_key, brief, lease_until, attempt, generation");
+            + "profile_key, env_class, brief, lease_until, attempt, generation");
     }
 
     [Fact(DisplayName = "Given the heartbeat SQL, when composed, then it matches the historical text byte-for-byte")]

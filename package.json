@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:affected": "node scripts/ci/test-affected.mjs"
+    "test:affected": "node scripts/ci/test-affected.mjs",
+    "sync:gitlab": "node scripts/ci/sync-gitlab.mjs"
   }
 }

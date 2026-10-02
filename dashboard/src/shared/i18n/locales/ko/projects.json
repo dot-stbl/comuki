@@ -13,10 +13,16 @@
       "none": "아직 프로젝트가 없습니다"
     }
   },
+  "list": {
+    "envClass": {
+      "none": "클래스 미할당"
+    }
+  },
   "column": {
     "slug": "slug",
     "name": "이름",
     "tags": "태그",
+    "envClass": "환경 클래스",
     "inFlight": "진행 중",
     "runs": "런",
     "costToday": "오늘 비용",
@@ -28,7 +34,7 @@
     "icon": "아이콘",
     "accentColour": "강조색",
     "tags": "태그",
-    "repo": "git 프로필 리포지토리",
+        "repo": "git 프로필 리포지토리",
     "iconPlaceholder": "🛰️ 또는 https://example.com/mark.png",
     "platformDefaults": "플랫폼 기본값"
   },
@@ -89,6 +95,7 @@
     "factsSection": "프로젝트 자체",
     "editIdentity": "아이덴티티 편집",
     "editIdentityFailure": "아이덴티티가 저장되지 않았습니다.",
+    "envClass": "환경 클래스",
     "rolesSection": "이 프로젝트의 역할",
     "rolesForbiddenSubject": "이 프로젝트의 역할",
     "rolesHeld": {

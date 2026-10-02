@@ -17,6 +17,8 @@ export const updateProjectRequestSchema = z
     icon: z.string().nullish(),
     color: z.string().nullish(),
     tags: z.array(z.string()).nullish(),
+    sourceGitUrl: z.string().nullish(),
+    sourceGitRef: z.string().nullish(),
   })
   .describe(
     "Wire body of PATCH /api/v1/projects/{projectId} — null fields are left\r\nuntouched; an empty tags array clears the list. Icon and color follow\r\nthe same shapes as on create (≤ 200 chars / `#rrggbb`)."

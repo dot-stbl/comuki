@@ -74,11 +74,30 @@ A WorkItem created with unsatisfied dependencies SHALL enter `Blocked` and SHALL
 
 ### Requirement: Work item claim shape
 
-A work item SHALL carry the claim labels `ProfileKey`, `Image`, `ProfilesRef` (worker matches on all three), a raw-JSON `Brief`, the lease columns `LeasedBy` / `LeaseUntil` / `HeartbeatAt`, and an `Attempt` counter that counts claims including requeue retries. Creation SHALL require non-empty profile key, image, profiles ref and brief. Assigning a lease SHALL be legal only from `Queued`, SHALL bump `Attempt` and SHALL move the item to `Running` (see work-queue for the SQL contract).
+A WorkItem created with unsatisfied dependencies SHALL enter `Blocked` and SHALL NOT be eligible for claim while any `work_item_dependencies` prerequisite has not reached `Succeeded`. The claim query SHALL match only `Queued` items; a `Blocked` item SHALL transition to `Queued` when its last unresolved prerequisite reaches `Succeeded`, evaluated in the same transaction that finalizes that prerequisite's terminal status. A prerequisite reaching `Failed` or `Cancelled` SHALL NOT silently unblock its dependents; the dependent remains `Blocked` until the plan's failure policy resolves it.
+
+#### Scenario: Dependent cannot claim before its prerequisite succeeds
+- **WHEN** a `Blocked` WorkItem's prerequisite is still `Queued` or `Running`
+- **THEN** the dependent is not returned by any claim, regardless of matching profile/image/profilesRef labels
+
+#### Scenario: Prerequisite success unblocks its dependent
+- **WHEN** a WorkItem's last unresolved prerequisite transitions to `Succeeded`
+- **THEN** the dependent moves `Blocked` → `Queued` in the same transaction and becomes claimable
+
+#### Scenario: Prerequisite failure does not auto-unblock
+- **WHEN** a WorkItem's prerequisite transitions to `Failed` or `Cancelled`
+- **THEN** the dependent stays `Blocked`; the Run's plan-level failure policy decides its fate, not the claim path
+
+### Requirement: Work item claim shape
+A work item SHALL carry the claim labels `ProfileKey`, **`EnvClass`**, `ProfilesRef` (worker matches on all three), a raw-JSON `Brief`, the lease columns `LeasedBy` / `LeaseUntil` / `HeartbeatAt`, and an `Attempt` counter that counts claims including requeue retries. Creation SHALL require non-empty profile key, **confirmed env class**, profiles ref and brief. The env class SHALL be copied from the target repository's `EnvClass` at enqueue; Brain SHALL NOT supply a different class. Assigning a lease SHALL be legal only from `Queued`, SHALL bump `Attempt` and SHALL move the item to `Running` (see work-queue for the SQL contract).
 
 #### Scenario: Attempt counts claims
 - **WHEN** an item is claimed, reaped, requeued and claimed again
 - **THEN** its `Attempt` is 2
+
+#### Scenario: Enqueue copies repository class
+- **WHEN** a run creates a work item whose target repository binds `net10-sdk-bun`
+- **THEN** the work item's `EnvClass` is `net10-sdk-bun` regardless of any image string on the Project
 
 ### Requirement: Append-only run journal
 
@@ -417,6 +436,13 @@ SHOULD not retry `replay`, `duplicate`, `skipped`, `filtered`,
 - **WHEN** the provider normalizes the delivery to null (ping, unrelated
   event kind)
 - **THEN** the answer is 200 with outcome `skipped`
+
+### Requirement: Restore journal events
+The `run_events` journal SHALL record `worker.restore_started` when Translator begins class restore opcodes and `worker.restore_failed` when an opcode exits non-zero (payload: opcode name, exit code; no secret values). Successful restore MAY be implied by `worker.reported` StageStart and SHALL NOT require a third type.
+
+#### Scenario: Restore failure is on the timeline
+- **WHEN** `dotnet restore` exits non-zero
+- **THEN** the run journal contains `worker.restore_failed` and pi is not started
 
 ## ADAPTER Notes
 

@@ -13,7 +13,7 @@
   font-family: var(--font-data);
   font-size: var(--t-xs);
   font-variant-numeric: tabular-nums;
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
   text-decoration: none;
 }
 
@@ -40,7 +40,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-data);
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }
 
 .title {
@@ -74,7 +74,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-muted);
+  color: var(--text-on-tinted);
 }
 
 /* A ticket the brain has not planned yet: it has no profile and no step name,
@@ -84,7 +84,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
 }
 
 .actions {
@@ -98,7 +98,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   letter-spacing: var(--tracking-data);
-  color: var(--text-faint);
+  color: var(--text-on-tinted);
   white-space: nowrap;
 }
 

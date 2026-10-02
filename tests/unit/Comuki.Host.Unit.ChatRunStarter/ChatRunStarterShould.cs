@@ -1,14 +1,16 @@
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Chat.RunStarter;
+using Comuki.Modules.Projects.Application.Ports;
+using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Plans;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using NSubstitute;
 using Shouldly;
 using Xunit;
-
 using ChatRunStarterService = Comuki.Host.Chat.RunStarter.ChatRunStarter;
 
 namespace Comuki.Host.Unit.ChatRunStarter;
@@ -187,10 +189,21 @@ public sealed class ChatRunStarterShould
 
     private static ChatRunStarterService NewStarter(OrchestrationDbContext db)
     {
+        var projects = Substitute.For<IProjectStore>();
+        projects.FindByIdAsync(Arg.Any<ProjectId>(), Arg.Any<CancellationToken>())
+            .Returns(static callInfo => Project.Create(
+                "Test project",
+                "test-project",
+                null,
+                null,
+                null,
+                new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                envClass: "net10-sdk-bun"));
         return new ChatRunStarterService(
             db,
             Options.Create(new ChatWorkerDefaults()),
             ComukiBuildInformation.Unknown,
-            TimeProvider.System);
+            TimeProvider.System,
+            projects);
     }
 }

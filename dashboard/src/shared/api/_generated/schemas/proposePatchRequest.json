@@ -1,0 +1,11 @@
+{
+  "required": ["baseVersionId", "rationale", "draftedBy"],
+  "type": "object",
+  "properties": {
+    "baseVersionId": { "type": "string" },
+    "rationale": { "type": "string" },
+    "draftedBy": { "type": "string" }
+  },
+  "description": "Request DTO for proposing a patch from chat\r\n(`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\nThe chat surface calls this when an operator asks for a procedure\r\nchange in chat — the brain drafts a `GraphPatch` via the\r\nProposePatchFromChatHandler\r\nand the human publishes it from Studio.",
+  "x-readme-ref-name": "ProposePatchRequest"
+}

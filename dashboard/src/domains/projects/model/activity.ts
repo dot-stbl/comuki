@@ -95,6 +95,9 @@ export function buildProjectRows(
       icon: project.icon ?? null,
       color: project.color ?? null,
       tags: project.tags ?? [],
+      // The bound environment class is a wire-side fact the mock seed may
+      // carry. Absent on the seed — same `?? null` as the identity fields.
+      envClass: project.envClass ?? null,
       // The seed store has no archive — every mock project is a live one.
       archived: false,
       activeRuns: active.get(project.id) ?? 0,

@@ -1,10 +1,13 @@
 using System.Net;
+using Comuki.Engine.Compute.Environments.Catalog;
+using Comuki.Engine.Compute.Environments.Pinning;
 using Comuki.Engine.Compute.Exceptions;
 using Comuki.Engine.Compute.Options;
 using Comuki.Shared.Contracts.Compute;
 using Comuki.Shared.Kernel.Ids;
 using k8s;
 using k8s.Autorest;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -21,7 +24,10 @@ namespace Comuki.Engine.Compute.Providers.Kubernetes;
 /// egress fence: the per-worker default-deny NetworkPolicy is created
 /// before the Job, and a creation failure aborts the start
 /// (<see cref="ComputeFenceException"/>) unless
-/// <c>Compute:AllowUnfencedEgress=true</c>.
+/// <c>Compute:AllowUnfencedEgress=true</c>. Starts also resolve the
+/// <see cref="ComputeStartRequest.EnvClass"/> through
+/// <see cref="IEnvironmentCatalog"/> (mirroring the docker provider) so the
+/// Production tag-only refusal fires uniformly on both providers.
 /// </summary>
 /// <param name="services">
 ///     Composition root access — the provider resolves <see cref="IKubernetes"/>
@@ -35,11 +41,15 @@ namespace Comuki.Engine.Compute.Providers.Kubernetes;
 ///     <see cref="NotSupportedException"/> because silently dropping would
 ///     mask caller mistakes).
 /// </param>
+/// <param name="environmentCatalog">Catalog of environment classes the start path resolves the bound class against.</param>
+/// <param name="hostEnvironment">Host environment; the Production refusal reads <see cref="HostEnvironmentEnvExtensions.IsProduction(IHostEnvironment)"/>.</param>
 /// <param name="providerOptions">Compute-wide options (AllowUnfencedEgress dev override).</param>
 /// <param name="computeOptions">Kubernetes options bound from configuration.</param>
 /// <param name="logger">Provider-scoped logger; used to surface no-op degradations.</param>
 public sealed class KubernetesComputeProvider(
     IServiceProvider services,
+    IEnvironmentCatalog environmentCatalog,
+    IHostEnvironment hostEnvironment,
     IOptions<ComputeOptions> providerOptions,
     IOptions<KubernetesComputeOptions> computeOptions,
     ILogger<KubernetesComputeProvider> logger) : IComputeProvider
@@ -72,7 +82,38 @@ public sealed class KubernetesComputeProvider(
         }
 
         var workerId = request.PreIssuedWorkerId ?? WorkerId.New();
-        var policy = KubernetesComputeMapping.ToNetworkPolicy(request, workerId, computeOptions.Value);
+
+        // Resolve the class through the catalog before any k8s resource is created —
+        // Production needs a digest-pinned reference, and the catalog is the one
+        // place that knows what the bound class maps to. The provider stamps the
+        // resolved image (not a caller-supplied one) so a per-project legacy image
+        // override cannot silently swap the class.
+        if (!environmentCatalog.TryGet(request.EnvClass, out var bundle) || bundle is null)
+        {
+            throw new InvalidOperationException(
+                $"Environment class '{request.EnvClass}' is not in the catalog; refusing to start a worker.");
+        }
+
+        if (!EnvironmentBundlePinning.IsStartable(bundle.Image, hostEnvironment.IsProduction()))
+        {
+            throw new InvalidOperationException(
+                $"Environment class '{request.EnvClass}' image '{bundle.Image}' is not startable "
+                + $"(Production requires a digest; got a tag-only or untagged reference).");
+        }
+
+        // Fleet allowlist gate (worker-environments spec
+        // §"Unallowlisted community bundle is not started"): mirrors the
+        // docker provider — an unallowlisted publisher is refused before
+        // any k8s resource (NetworkPolicy, Job) is created.
+        if (!environmentCatalog.IsAllowed(bundle.Publisher.Value))
+        {
+            throw new InvalidOperationException(
+                $"Environment class '{request.EnvClass}' publisher '{bundle.Publisher.Value}' is not on the fleet allowlist; refusing to start a worker.");
+        }
+
+        var resolvedRequest = request with { Image = bundle.Image };
+
+        var policy = KubernetesComputeMapping.ToNetworkPolicy(resolvedRequest, workerId, computeOptions.Value);
 
         // The fence goes in before the Job: on failure no Job is created
         // (fail-closed) unless the unfenced dev override is set.
@@ -104,7 +145,7 @@ public sealed class KubernetesComputeProvider(
         return new WorkerHandle(
             workerId,
             (await kubernetes.BatchV1.CreateNamespacedJobAsync(
-                KubernetesComputeMapping.ToJob(request, workerId, computeOptions.Value),
+                KubernetesComputeMapping.ToJob(resolvedRequest, workerId, computeOptions.Value),
                 computeOptions.Value.Namespace,
                 cancellationToken: cancellationToken)).Metadata.Name
             ?? KubernetesComputeMapping.ToJobName(workerId));

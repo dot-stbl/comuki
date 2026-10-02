@@ -59,25 +59,21 @@ public static class HostTlsInstaller
         // listener already binds (ResolveListenHost — same precedence,
         // reused, not reimplemented).
         var listenHost = ResolveListenHost(builder.Configuration);
+        var serverCertificate = tls.CertificatePath is { Length: > 0 } certificatePath
+            && tls.CertificateKeyPath is { Length: > 0 } keyPath
+            ? LoadPemCertificate(certificatePath, keyPath)
+            : null;
         builder.WebHost.ConfigureKestrel(server =>
         {
             if (listenHost == "*")
             {
-                server.ListenAnyIP(tls.HttpsPort, listen => listen.UseHttps());
+                server.ListenAnyIP(tls.HttpsPort, listen => HostTlsListen.BindHttps(listen, serverCertificate));
             }
             else
             {
-                server.Listen(System.Net.IPAddress.Parse(listenHost), tls.HttpsPort, listen => listen.UseHttps());
+                server.Listen(System.Net.IPAddress.Parse(listenHost), tls.HttpsPort, listen => HostTlsListen.BindHttps(listen, serverCertificate));
             }
         });
-
-        if (tls.CertificatePath is { Length: > 0 } certificatePath && tls.CertificateKeyPath is { Length: > 0 } keyPath)
-        {
-            builder.WebHost.ConfigureKestrel(server => server.ConfigureHttpsDefaults(https =>
-            {
-                https.ServerCertificate = LoadPemCertificate(certificatePath, keyPath);
-            }));
-        }
 
         if (ShouldRedirectHttp(tls))
         {
@@ -226,5 +222,19 @@ public static class HostTlsInstaller
                 X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.Exportable,
                 Pkcs12LoaderLimits.DangerousNoLimits);
         }
+    }
+}
+
+file static class HostTlsListen
+{
+    public static void BindHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listen, X509Certificate2? serverCertificate)
+    {
+        if (serverCertificate is null)
+        {
+            listen.UseHttps();
+            return;
+        }
+
+        listen.UseHttps(serverCertificate);
     }
 }

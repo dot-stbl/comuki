@@ -33,6 +33,16 @@ public sealed class WorkItem
     /// <summary>Worker image (with digest) the item must run on — claim label.</summary>
     public string Image { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Environment class the item must run on (catalog id, e.g.
+    /// <c>"net10-sdk-bun"</c>) — claim label, stamped at enqueue from the
+    /// parent Project's <c>EnvClass</c> (the scalar stand-in until
+    /// <c>add-multi-repo-projects</c> moves the binding onto a Repository
+    /// row). The claim SQL filters <c>env_class = @envClass</c>, so an item
+    /// with an empty class is silently unclaimable.
+    /// </summary>
+    public string EnvClass { get; private set; } = string.Empty;
+
     /// <summary>Pinned git ref of the profiles repo — claim label.</summary>
     public string ProfilesRef { get; private set; } = string.Empty;
 
@@ -63,10 +73,14 @@ public sealed class WorkItem
     /// <summary>
     /// Creates a work item. The initial status must be <see cref="WorkItemStatus.Queued"/>
     /// (no dependencies) or <see cref="WorkItemStatus.Blocked"/> (has unsatisfied dependencies).
+    /// The env class is required (mirrors <c>Image</c>): an empty value would
+    /// make the item permanently unclaimable because the queue SQL filters
+    /// on <c>env_class = @envClass</c>.
     /// </summary>
     /// <param name="runId"></param>
     /// <param name="profileKey"></param>
     /// <param name="image"></param>
+    /// <param name="envClass"></param>
     /// <param name="profilesRef"></param>
     /// <param name="brief"></param>
     /// <param name="initialStatus"></param>
@@ -76,6 +90,7 @@ public sealed class WorkItem
         RunId runId,
         string profileKey,
         string image,
+        string envClass,
         string profilesRef,
         string brief,
         WorkItemStatus initialStatus,
@@ -93,6 +108,13 @@ public sealed class WorkItem
             throw new OrchestrationDomainException(
                 OrchestrationErrorCodes.WorkItemImageEmpty,
                 "image must not be empty");
+        }
+
+        if (string.IsNullOrWhiteSpace(envClass))
+        {
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.WorkItemEnvClassEmpty,
+                "env class must not be empty");
         }
 
         if (string.IsNullOrWhiteSpace(profilesRef))
@@ -123,6 +145,7 @@ public sealed class WorkItem
             RunId = runId,
             ProfileKey = profileKey,
             Image = image,
+            EnvClass = envClass,
             ProfilesRef = profilesRef,
             Brief = brief,
             Status = initialStatus,

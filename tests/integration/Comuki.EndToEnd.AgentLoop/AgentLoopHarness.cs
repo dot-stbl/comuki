@@ -59,6 +59,7 @@ public sealed class AgentLoopHarness(AgentLoopHost host) : IAgentLoopHarness
             PreIssuedWorkerId = workerId,
             ProfileKey = scenario.Worker.ProfileKey,
             ProfilesGitRef = scenario.Worker.ProfilesRef,
+            EnvClass = "net10-sdk-bun",
             Image = scenario.Worker.Image,
             WorkerToken = token,
             OrchestratorGrpcUrl = containerReachableGrpc,

@@ -35,6 +35,63 @@ public static class RunEventTypes
     public const string RunEscalationTimeout = "run.escalation_timeout";
 
     /// <summary>
+    /// A coding-agent slot passed <c>ISlotAdmissionEvaluator</c> and is
+    /// cleared to start; payload carries <c>admissionId</c>, <c>envClass</c>,
+    /// <c>profileKey</c>, and <c>isolationClass</c>. Never includes secret
+    /// values — <c>SecretRefs</c> ride separately as refs only (worker-admission
+    /// spec §"Journal admission").
+    /// </summary>
+    public const string WorkerAdmitted = "worker.admitted";
+
+    /// <summary>
+    /// A coding-agent slot was refused by the admission gate; payload
+    /// carries <c>admissionId</c> (the slot's id when present) and the
+    /// stable typed <c>denialCode</c> from <c>AdmissionCodes</c>.
+    /// Operators branch on the code; the code is the contract.
+    /// </summary>
+    public const string WorkerAdmissionDenied = "worker.admission_denied";
+
+    /// <summary>
+    /// The Translator's <c>VerifyRunner</c> finished a verify-profile
+    /// work item; every declared opcode exited zero. Payload carries
+    /// <c>{ workItemId, opcodes[] }</c> so the dashboard / journal
+    /// reader can see the verify scope without re-parsing
+    /// <c>.comuki/environment.toml</c>. <b>Does not</b> mean the item's
+    /// <see cref="WorkItemStatusChanged"/> — verify is a side effect that
+    /// happens during the run; the run's terminal event is independent.
+    /// </summary>
+    public const string VerifyCompleted = "verify.completed";
+
+    /// <summary>
+    /// The Translator's <c>VerifyRunner</c> failed a verify-profile work
+    /// item: an opcode exited non-zero, failed to launch, or hit its
+    /// timeout. Payload carries <c>{ workItemId, opcode, exitCode?,
+    /// reason }</c>. The Host stays up — a non-zero exit is a verify
+    /// report, not a Host crash (isolate-verifier-runtime spec scenario
+    /// "Build failure is a verify report").
+    /// </summary>
+    public const string VerifyFailed = "verify.failed";
+
+    /// <summary>
+    /// A sandbox stage flipped a boolean condition (harden-pi-worker-sandbox
+    /// 5.1, spec D6): <c>WorkspacePrepared</c>, <c>EgressApplied</c>,
+    /// <c>AgentRunning</c>. Payload carries <c>{ name, value }</c>;
+    /// conditions are journal events, not columns — the dashboard reads
+    /// them off the timeline; the reaper still keys off the lease.
+    /// </summary>
+    public const string WorkerCondition = "worker.condition";
+
+    /// <summary>
+    /// The Translator flushed its accumulated artifact list over the
+    /// worker stream just before <c>complete</c> / <c>fail</c>
+    /// (harden-pi-worker-sandbox 5.2, spec D7). Payload carries the
+    /// drain's <c>{ workItemId, artifacts[] }</c>; the host-side
+    /// packager reads this to skip already-bundled prefixes. A drain
+    /// failure is logged but never blocks <c>complete</c>.
+    /// </summary>
+    public const string WorkerDrained = "worker.drained";
+
+    /// <summary>
     /// WS7 (issue #87) durable outbox contract name for a Run reaching a
     /// terminal status (Succeeded or Failed) — per the Integration Event
     /// Contract naming convention (context.aggregate.past-tense.vMajor).

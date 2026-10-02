@@ -30,4 +30,11 @@
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- fix-null-translator-working-directory: TranslatorEnvironment.Snapshot
+         regression tests live in Comuki.Host.Translator.Unit.Runtime; the
+         helper is `internal static` so it is only visible to friends. -->
+    <InternalsVisibleTo Include="Comuki.Host.Translator.Unit.Runtime" />
+  </ItemGroup>
+
 </Project>

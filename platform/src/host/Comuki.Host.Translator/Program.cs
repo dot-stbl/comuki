@@ -62,7 +62,15 @@ return 0;
 /// would overwrite the option's default with null — WorkingDirectory
 /// crashed exactly that way (Path.Combine on null).
 /// </summary>
-file static class TranslatorEnvironment
+/// <remarks>
+/// Contract discipline: every entry in <see cref="Snapshot"/> MUST be
+/// safe at its <c>TranslatorOptions</c> default OR carry a
+/// <c>[Required]</c> annotation on the option. Adding a new key without
+/// a default and without <c>[Required]</c> re-introduces the null-binding
+/// footgun the filter forecloses — <c>ValidateOnStart</c> will not catch
+/// it because the option is not annotated as required.
+/// </remarks>
+internal static class TranslatorEnvironment
 {
     public static IDictionary<string, string?> Snapshot()
     {

@@ -1,4 +1,5 @@
 using Comuki.Host.Translator.Profiles;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -15,8 +16,13 @@ namespace Comuki.Host.Translator.Unit.Runtime;
 /// second call (the <c>profiles/</c> target directory already exists on
 /// disk). The git-clone path is exercised through a mocked
 /// <see cref="Shared.Contracts.Artifacts.IRunArtifactStore"/>-style
-/// surrogate — we never hit the network from a unit test.
+/// surrogate — we never hit the network from a unit test. Serialised
+/// through <see cref="TranslatorEnvSafeCollection"/> because
+/// <see cref="SnapshotWithUnsetWorkingDirectoryPreservesDefault"/> reads
+/// the same <c>COMUKI_*</c> env vars
+/// <see cref="TranslatorEnvironmentSnapshotShould"/> mutates.
 /// </summary>
+[Collection(nameof(TranslatorEnvSafeCollection))]
 public sealed class ProfilesProviderShould
 {
     [Fact(DisplayName = "Given a configured local profiles path, when PrepareAsync is called, then the source is copied under profiles/ in the working directory")]
@@ -91,6 +97,69 @@ public sealed class ProfilesProviderShould
         var profiles = Path.Combine(workingDir.DirectoryPath, "profiles");
         File.ReadAllText(Path.Combine(profiles, "a.md")).ShouldBe("alpha");
         File.ReadAllText(Path.Combine(profiles, "nested", "b.md")).ShouldBe("beta");
+    }
+
+    [Fact(DisplayName = "Given the default TranslatorOptions (WorkingDirectory = Directory.GetCurrentDirectory()) and no profiles source, when PrepareAsync runs, then it logs the documented warning and does not throw ArgumentNullException on Path.Combine")]
+    public async Task WorkingDirectoryDefaultDoesNotThrowAsync()
+    {
+        // No TempDirectory wrapper here — the test deliberately exercises the
+        // default TranslatorOptions.WorkingDirectory (Directory.GetCurrentDirectory()).
+        // The provider must log the documented "no profiles source" warning
+        // and short-circuit BEFORE Path.Combine even runs (the directory
+        // exists because the cwd does), so this asserts the no-throw shape of
+        // the issue #151 regression path.
+        var options = NewOptionsValue(NewOptions(Directory.GetCurrentDirectory(), profilesPath: null));
+        var logger = Substitute.For<ILogger<ProfilesProvider>>();
+        var provider = new ProfilesProvider(options, logger);
+
+        await provider.PrepareAsync(profilesRef: "v1", TestContext.Current.CancellationToken);
+
+        logger.Received(1).Log(
+            LogLevel.Warning,
+            Arg.Any<EventId>(),
+            Arg.Any<object?>(),
+            Arg.Any<Exception?>(),
+            Arg.Any<Func<object?, Exception?, string>>());
+    }
+
+    [Fact(DisplayName = "Given an empty env-snapshot (no COMUKI_* set), when TranslatorOptions is bound from the configuration, then WorkingDirectory keeps Directory.GetCurrentDirectory()")]
+    public void SnapshotWithUnsetWorkingDirectoryPreservesDefault()
+    {
+        // Mirrors TranslatorEnvironment.Snapshot()'s contract from
+        // Translator/Program.cs: with no env vars set, the snapshot contributes
+        // NO entries — so the binder sees only the configuration's defaults.
+        // We run the same IConfigurationBinder.Bind(...) step Program.cs uses
+        // against a manually-seeded options instance; required fields are
+        // satisfied up front (the host's ValidateOnStart would have already
+        // crashed on their absence in production), so the assertion focuses
+        // on the non-required fields — WorkingDirectory specifically —
+        // that the snapshot filter is supposed to keep at their declared
+        // defaults. Pre-#151, the snapshot's null entry would have
+        // overwritten WorkingDirectory with null and the second assertion
+        // would have failed.
+        var snapshot = TranslatorEnvironment.Snapshot();
+        snapshot.ShouldBeEmpty("the post-#151 filter omits unset env entries");
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(snapshot)
+            .Build();
+
+        var options = new TranslatorOptions
+        {
+            OrchestratorBaseUrl = new Uri("https://orchestrator.example"),
+            OrchestratorGrpcUrl = new Uri("https://orchestrator.example"),
+            WorkerToken = "0123456789abcdef0123456789abcdef",
+            ProfileKey = "implement",
+            ProfilesRef = "main",
+            WorkerImage = "ghcr.io/example/worker@sha256:abc",
+        };
+
+        configuration.GetSection(TranslatorOptions.SectionName).Bind(options);
+
+        options.WorkingDirectory.ShouldBe(Directory.GetCurrentDirectory());
+        options.ProfilesPath.ShouldBeNull();
+        options.ProfilesGitUrl.ShouldBeNull();
+        options.PiExecutable.ShouldBe("pi");
     }
 
     private static TranslatorOptions NewOptions(string workingDirectory, string? profilesPath)

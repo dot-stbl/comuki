@@ -67,25 +67,15 @@ public sealed class AgentLoopHarness(AgentLoopHost host) : IAgentLoopHarness
             // claim/heartbeat/complete/fail surface needs it too, so it
             // rides the caller-supplied Env extras.
             //
-            // COMUKI_WORKING_DIRECTORY: a found production gap, not a
-            // cosmetic default — see the WS6 report. With neither
-            // COMUKI_PROFILES_PATH nor COMUKI_PROFILES_GIT_URL set (the
-            // documented "skip, log a warning" path —
-            // ProfilesProvider.PrepareAsync's own doc comment), the real
-            // container observed TranslatorOptions.WorkingDirectory as
-            // null at runtime (not its Directory.GetCurrentDirectory()
-            // default), and ProfilesProvider.PrepareAsync's unguarded
-            // Path.Combine(opts.WorkingDirectory, "profiles") threw
-            // ArgumentNullException, crashing the whole host (fatal,
-            // BackgroundServiceExceptionBehavior.StopHost) immediately
-            // after a real claim succeeded. Stamped explicitly here to
-            // unblock T2a; deploy/hybrid/worker.Dockerfile does not set it
-            // either, so a real deployment with no profiles source
-            // configured would hit the same crash.
+            // COMUKI_WORKING_DIRECTORY is intentionally not stamped here:
+            // the in-memory snapshot in Comuki.Host.Translator/Program.cs
+            // filters out unset env entries, so the option keeps its
+            // Directory.GetCurrentDirectory() default and the container
+            // mirrors the production image's documented behaviour — see
+            // OpenSpec change `fix-null-translator-working-directory`.
             Env = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["COMUKI_ORCH_HTTP"] = containerReachableBase.ToString().TrimEnd('/'),
-                ["COMUKI_WORKING_DIRECTORY"] = "/work",
             },
         };
 

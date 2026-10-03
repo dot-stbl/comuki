@@ -160,6 +160,20 @@ node scripts/ci/sync-gitlab.mjs --to-github --apply  # догнать github (б
 
 ---
 
+## Инженерная зона — только с владельцем
+
+Перед работой выполни ритуал из `.agents/RULES-BOOTSTRAP.md`.
+
+Без явного согласия владельца не трогай: сборку и пакеты (`comuki.slnx`, `Directory.Build.props`,
+`Directory.Packages.props`, `.editorconfig`), CI и деплой (`.gitlab-ci.yml`, `.github/workflows/**`,
+`deploy/hybrid/**`), главные спеки (`openspec/specs/**` — правятся через `openspec/changes/**`),
+дизайн-систему (`.agents/docs/design-system/**`), Python. Без этой зоны задачу не решить — остановись и
+объясни, какая правка нужна и почему.
+
+Генерируемое руками не правится — только своим генератором: `dashboard/src/shared/api/_generated/**`,
+`dashboard/src/routeTree.gen.ts`, `cli/src/contracts/_generated/**`, EF-миграции
+(`platform/src/modules/*/*Infrastructure/Migrations/**`).
+
 ## Правила — куда править
 
 - Проектные: `.agents/rules/**` (этот репо) — только специфика проекта

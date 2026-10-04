@@ -27,6 +27,10 @@ import { ChatApp, describeError } from "./commands/chat"
 import { runOpentuiRepl } from "./commands/opentui"
 import { LoginApp } from "./commands/login"
 import { printRunsJson, RunsApp } from "./commands/runs"
+import {
+  printProcedureTraceJson,
+  ProceduresTraceApp,
+} from "./commands/procedures"
 import { printStatusJson, StatusApp } from "./commands/status"
 import { printConfigShow } from "./commands/config"
 import { printCompletion } from "./commands/completion"
@@ -256,6 +260,15 @@ async function main(): Promise<void> {
       describe: "print the performance budgets table and exit",
     })
     .command("status", "platform snapshot")
+    .command(
+      "procedures trace <runId>",
+      "planned-vs-observed trace for a procedure-pinned run",
+      (y) =>
+        y.positional("runId", {
+          type: "string",
+          describe: "the run the trace belongs to",
+        })
+    )
     .command("runs [list]", "run ledger", (y) =>
       y
         .positional("list", { type: "string", default: "list" })
@@ -494,6 +507,18 @@ async function main(): Promise<void> {
       return
     }
     render(<StatusApp config={config} />, { exitOnCtrlC: true })
+    return
+  }
+  if (command === "procedures" && (argv._[0] ?? "") === "trace") {
+    const runId = String(argv._[1] ?? "")
+    if (json) {
+      await printProcedureTraceJson(config, runId)
+      return
+    }
+    render(
+      <ProceduresTraceApp config={config} runId={runId} />,
+      { exitOnCtrlC: true }
+    )
     return
   }
   if (command === "runs") {

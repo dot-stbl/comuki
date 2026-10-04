@@ -1,0 +1,1 @@
+{"required":["isWithinPolicy","summary"],"type":"object","properties":{"isWithinPolicy":{"type":"boolean","description":"True when the observed drift stayed inside the declared tolerance."},"summary":{"type":"string","description":"Human-readable summary."}},"description":"Drift verdict — same shape ProcedureTraceRecorder.ClassifyDrift produces.","x-readme-ref-name":"DriftDto"}

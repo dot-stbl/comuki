@@ -8,6 +8,7 @@ export type CommandName =
   | "repl"
   | "status"
   | "runs"
+  | "procedures"
   | "login"
   | "whoami"
   | "config"
@@ -20,6 +21,7 @@ export type CommandName =
 const KNOWN_COMMANDS: readonly CommandName[] = [
   "status",
   "runs",
+  "procedures",
   "login",
   "whoami",
   "config",

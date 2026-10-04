@@ -55,6 +55,9 @@ public sealed class CrownScenarioHost : IAsyncLifetime
     private WebApplication application = null!;
     private Uri baseAddress = null!;
 
+    /// <summary>The cwd the host captured at <see cref="InitializeAsync"/>, restored on <see cref="DisposeAsync"/>.</summary>
+    private string? cwdRestore;
+
     /// <summary>The database connection string (direct context access for asserts).</summary>
     public string ConnectionString { get; private set; } = string.Empty;
 

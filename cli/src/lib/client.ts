@@ -37,6 +37,9 @@ export type {
 export type { ChatMessageMeta as ChatMessageMetaView }
 export type { PlanNode } from "../contracts/_generated/http/types/PlanNode"
 export type { PlanEdge } from "../contracts/_generated/http/types/PlanEdge"
+import type { ProcedureTraceResponse } from "../contracts/_generated/http/types/ProcedureTraceResponse"
+import type { TraceEventDto } from "../contracts/_generated/http/types/TraceEventDto"
+export type { ProcedureTraceResponse, TraceEventDto }
 
 export class ComukiApiError extends Error {
   constructor(
@@ -479,6 +482,19 @@ export class ComukiClient {
   }
 
   // -- platform ------------------------------------------------------------
+
+  /**
+   * Planned-vs-observed trace for a procedure-pinned run — the timeline
+   * Studio's Replay panel reads. PHASE 1 wired the wire shape
+   * (`GET /api/v1/procedures/runs/{runId}/trace`); the CLI surfaces the
+   * same read so operators can read a run's lifecycle in the terminal
+   * (the dashboard mirror's purpose, by another name).
+   */
+  procedureRunTrace(
+    runId: string
+  ): Promise<ProcedureTraceResponse> {
+    return this.request("GET", `/api/v1/procedures/runs/${runId}/trace`)
+  }
 
   runs(page = 1, pageSize = 20, filter?: string): Promise<RunsPageView> {
     const params = new URLSearchParams({

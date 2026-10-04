@@ -3,6 +3,7 @@
 * Do not edit manually.
 */
 
+import type { ProjectView } from "./ProjectView";
 
 export type GetApiV1ProjectsQueryParams = {
     /**
@@ -14,7 +15,7 @@ export type GetApiV1ProjectsQueryParams = {
 /**
  * @description OK
 */
-export type GetApiV1Projects200 = any;
+export type GetApiV1Projects200 = ProjectView[];
 
 export type GetApiV1ProjectsQueryResponse = GetApiV1Projects200;
 

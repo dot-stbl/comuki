@@ -1,29 +1,20 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
-using Comuki.Engine.Orchestration.Domain;
-using Comuki.Engine.Orchestration.Infrastructure;
-using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Host;
-using Comuki.Host.Testing;
-using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Modules.Procedures.Application.Admission;
 using Comuki.Modules.Procedures.Application.Compiler;
 using Comuki.Modules.Procedures.Application.Compiler.Model;
 using Comuki.Modules.Procedures.Application.Patches;
-using Comuki.Modules.Procedures.Application.ProcedureVersions;
-using Comuki.Modules.Procedures.Application.Runtime.Trace;
-using Comuki.Modules.Procedures.Application.Runtime.Trace.Storage;
-using Comuki.Modules.Procedures.Domain.Definitions;
 using Comuki.Modules.Procedures.Domain.Definitions.Elements;
-using Comuki.Modules.Procedures.Domain.Layering.Model;
 using Comuki.Modules.Procedures.Domain.Layering.Results;
 using Comuki.Modules.Procedures.Domain.Patches;
 using Comuki.Modules.Procedures.Domain.Patches.Model;
 using Comuki.Modules.Procedures.Domain.Patches.Publication;
-
+using Comuki.Shared.Kernel.Ids;
+using Comuki.Shared.Kernel.Scoping;
+using Microsoft.Extensions.DependencyInjection;
+using Shouldly;
+using Xunit;
 // Aliases to avoid ambiguity between Domain and Application types with the
 // same name. The Application layer's `ProcedureDefinition` is the
 // compile-gate input; the Domain's is a published-graph type. The seed
@@ -31,12 +22,6 @@ using Comuki.Modules.Procedures.Domain.Patches.Publication;
 // compile-gate.
 using ApplicationProcedureDefinition =
     Comuki.Modules.Procedures.Application.Compiler.Model.ProcedureDefinition;
-using Comuki.Shared.Kernel.Ids;
-using Comuki.Shared.Kernel.Scoping;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Shouldly;
-using Xunit;
 
 namespace Comuki.EndToEnd.AgentLoop;
 
@@ -143,7 +128,7 @@ public sealed class ProceduresCrownScenarioShould(CrownScenarioHost host)
         var versionV1 = await PublishSeedVersionAsync(projectId, procedureKey, "v1-docs", cancellationToken);
 
         var brainPatch = new GraphPatch(
-            new Comuki.Modules.Procedures.Domain.Ids.GraphPatchId(Guid.NewGuid()),
+            new Modules.Procedures.Domain.Ids.GraphPatchId(Guid.NewGuid()),
             versionV1.VersionId,
             projectId,
             procedureKey,
@@ -216,7 +201,7 @@ public sealed class ProceduresCrownScenarioShould(CrownScenarioHost host)
             ProjectId: projectId,
             ProcedureKey: procedureKey,
             GitRef: $"seed:{versionLabel}",
-            Graph: new Comuki.Modules.Procedures.Domain.Definitions.ProcedureGraph(
+            Graph: new Modules.Procedures.Domain.Definitions.ProcedureGraph(
                 Nodes: nodes,
                 Edges: edges));
         var compiler = scope.ServiceProvider.GetRequiredService<IProcedureCompiler>();
@@ -226,7 +211,7 @@ public sealed class ProceduresCrownScenarioShould(CrownScenarioHost host)
         await publicationService.PublishAsync(
             new PublicationRequest(
                 Patch: new GraphPatch(
-                    new Comuki.Modules.Procedures.Domain.Ids.GraphPatchId(Guid.NewGuid()),
+                    new Modules.Procedures.Domain.Ids.GraphPatchId(Guid.NewGuid()),
                     compiled.VersionId,
                     projectId,
                     procedureKey,
@@ -307,7 +292,7 @@ public sealed class ProceduresCrownScenarioShould(CrownScenarioHost host)
             RepositoryBindings: []);
 
         var patch = new GraphPatch(
-            new Comuki.Modules.Procedures.Domain.Ids.GraphPatchId(Guid.Parse(patchId)),
+            new Modules.Procedures.Domain.Ids.GraphPatchId(Guid.Parse(patchId)),
             BaseVersionId: Guid.NewGuid().ToString("N"), // base is replaced by the compiler's re-emission
             ProjectId: projectId,
             ProcedureKey: procedureKey,
@@ -381,8 +366,9 @@ public sealed class ProceduresCrownScenarioShould(CrownScenarioHost host)
     /// <c>DEFAULT_PROCEDURE_NODES</c> so the e2e flow's domain matches
     /// the dashboard's mock fixtures.
     /// </summary>
-    private static IReadOnlyList<ProcedureNode> BuildSeedNodes(string procedureKey) =>
-    [
+    private static IReadOnlyList<ProcedureNode> BuildSeedNodes(string procedureKey)
+    {
+        return [
         new ProcedureNode("intake", "agent", new Dictionary<string, string>()),
         new ProcedureNode("plan", "agent", new Dictionary<string, string>()),
         new ProcedureNode("execute", "agent", new Dictionary<string, string>()),
@@ -390,6 +376,7 @@ public sealed class ProceduresCrownScenarioShould(CrownScenarioHost host)
         new ProcedureNode("repair", "agent", new Dictionary<string, string>()),
         new ProcedureNode($"human-{procedureKey}", "human-gate", new Dictionary<string, string>()),
     ];
+    }
 
     /// <summary>
     /// Six canonical edges: plan fans out into execute + repair, both
@@ -397,14 +384,16 @@ public sealed class ProceduresCrownScenarioShould(CrownScenarioHost host)
     /// never enters the gate on success — its work completes inside
     /// the compile-gate's DAG.
     /// </summary>
-    private static IReadOnlyList<ProcedureEdge> BuildSeedEdges() =>
-    [
+    private static IReadOnlyList<ProcedureEdge> BuildSeedEdges()
+    {
+        return [
         new ProcedureEdge("intake", "default", "plan"),
         new ProcedureEdge("plan", "default", "execute"),
         new ProcedureEdge("execute", "default", "verify"),
         new ProcedureEdge("verify", "default", "repair"),
         new ProcedureEdge("repair", "default", "verify"),
     ];
+    }
 
     /// <summary>Wire shape for <c>POST /propose-patch</c> response — the
     /// full semantic diff the kubb generator emits (camelCase). Mapped

@@ -55,9 +55,6 @@ public sealed class CrownScenarioHost : IAsyncLifetime
     private WebApplication application = null!;
     private Uri baseAddress = null!;
 
-    /// <summary>The cwd the host captured at <see cref="InitializeAsync"/>, restored on <see cref="DisposeAsync"/>.</summary>
-    private string? cwdRestore;
-
     /// <summary>The database connection string (direct context access for asserts).</summary>
     public string ConnectionString { get; private set; } = string.Empty;
 
@@ -114,7 +111,6 @@ public sealed class CrownScenarioHost : IAsyncLifetime
         // for them.
         var repoRoot = ResolveRepoRoot();
         builder.Configuration["ControlPlane:Root"] = Path.Combine(repoRoot, "control-plane");
-        Console.WriteLine($"[crown] controlPlane.root = {builder.Configuration["ControlPlane:Root"]}");
 
         application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(ConnectionString));
         baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
@@ -147,19 +143,6 @@ public sealed class CrownScenarioHost : IAsyncLifetime
         if (application is not null)
         {
             await application.DisposeAsync();
-        }
-
-        if (cwdRestore is not null)
-        {
-            try
-            {
-                Directory.SetCurrentDirectory(cwdRestore);
-            }
-            catch
-            {
-                // Best-effort: the test process is about to exit anyway.
-            }
-            cwdRestore = null;
         }
 
         await postgres.DisposeAsync();

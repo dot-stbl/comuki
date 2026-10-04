@@ -124,6 +124,7 @@ git commit --no-verify
 ## Related
 
 - [`commit-format.md`](commit-format.md) — формат subject, который проверяет тот же линтер
+- [`commit-and-pr.md`](commit-and-pr.md) — тело коммита и текст PR
 - [`pre-commit.md`](pre-commit.md) — установка и обход git-хуков
 - `scripts/commit-lint.mjs` — реализация, единственный source of truth по паттернам
 - `scripts/commit-lint.test.mjs` — `node --test`, покрывает каждый паттерн

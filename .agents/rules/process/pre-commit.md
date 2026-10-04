@@ -102,6 +102,7 @@ git config --unset core.hooksPath
 - `scripts/hooks/README.md` — установка и обход
 - `scripts/install-hooks.sh` — one-line installer
 - [`commit-format.md`](commit-format.md) — формат subject
+- [`commit-and-pr.md`](commit-and-pr.md) — тело коммита и текст PR; хук их не проверяет
 - [`no-ai-attribution.md`](no-ai-attribution.md) — байлайны модели
 - [`build-verification.md`](build-verification.md) — CI-сторона той же проверки формата
 - `.agents/rules/coding/ANALYZERS.md` — analyzer packages (Roslynator, Meziantou)

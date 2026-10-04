@@ -68,7 +68,21 @@ banner means and how to act on it.
 Legacy form `[.stbl] <type>(<scope>): <description>` is also accepted by the
 hook (current commit-format.md, "legacy" example).
 
-Full reference: [`.agents/rules/process/commit-format.md`](../../.agents/rules/process/commit-format.md).
+Full reference: [`.agents/rules/process/commit-format.md`](../../.agents/rules/process/commit-format.md)
+(subject). Body and PR text:
+[`.agents/rules/process/commit-and-pr.md`](../../.agents/rules/process/commit-and-pr.md).
+
+When the subject does not say why, add a body: a blank line, then 2–4
+lines in Russian. Say why the change exists and what it deliberately
+does not do. Do not restate the diff. A one-line fix stays one line.
+No `Change:` / `Gate:` / `Out:` questionnaire. The hook does not check
+the body.
+
+A pull request title is the commit subject without the `[.stbl]` tag.
+The body is the three sections GitHub fills from
+[`.github/pull_request_template.md`](../../../.github/pull_request_template.md):
+Что, Зачем, Как проверено. Gates go in prose under «Как проверено»,
+including what was not run and why. No checklist.
 
 Two anti-patterns that bit this repo in the past:
 

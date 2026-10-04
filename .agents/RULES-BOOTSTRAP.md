@@ -113,5 +113,6 @@ read" — flag it to the user.
 - `.agents/STATE.md` — current phase + decisions
 - `.agents/rules/process/worker-audit.md` — the prose self-audit gate
 - `.agents/rules/process/build-verification.md` — build gate contract
-- `.agents/rules/process/commit-format.md` — commit format
+- `.agents/rules/process/commit-format.md` — commit subject
+- `.agents/rules/process/commit-and-pr.md` — commit body and PR text
 - `.agents/docs/operations/onboarding.md` — human onboarding doc

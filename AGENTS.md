@@ -52,7 +52,7 @@ Comuki **не пишет свой код сам** — это инструмен�
 | Визуальный мир / токены | [`DESIGN.md`](DESIGN.md) + [`dashboard/src/app/styles/tokens.css`](dashboard/src/app/styles/tokens.css) |
 | C# style / DI — canon | `~/.agents/rules/csharp/` (user-global; [`.agents/rules/coding/`](.agents/rules/coding/) holds only project specifics — layers, ports, module structure) |
 | Unit/integration test conventions (этот репо) | `.agents/rules/coding/testing-unit.md` / `testing-integration.md` (landing via `docs/ws0-testing-rules`) |
-| Build / commits / scripts | [`.agents/rules/process/`](.agents/rules/process/) + `~/.agents/rules/process/` (canon: `build-verification.md`, `commit-format.md`) |
+| Build / commits / scripts | [`.agents/rules/process/`](.agents/rules/process/) + `~/.agents/rules/process/` (canon: `build-verification.md`, `commit-format.md`; тело коммита и PR — [`commit-and-pr.md`](.agents/rules/process/commit-and-pr.md)) |
 | Local test runtime (podman) | `.agents/rules/process/local-test-runtime.md` (landing via WS11 — not merged yet) |
 | Текущая фаза (контекст) | [`.agents/phases/`](.agents/phases/) |
 
@@ -80,9 +80,14 @@ CLI rebuild epic (#71–#85) закрыт; `harden-pi-worker-sandbox` (#121)
    префикс `[.stbl]`, feature-путь после `(` обязателен. Legacy-форма
    `[.stbl] <type>(<scope>): <description>` тоже принимается хуком
    (`scripts/commit-lint.mjs`). Старый `[hybrid]` отвергается —
-   `~/.agents/rules/process/commit-format.md` о причинах (user-global,
-   та же причина удаления копии).
-   Байлайнов модели (`Co-Authored-By: Claude`, `🤖 Generated with …`) нет
+    `~/.agents/rules/process/commit-format.md` о причинах (user-global,
+    та же причина удаления копии).
+    Тело — когда из subject не ясно зачем: 2–4 строки, русский, без
+    пересказа diff. PR: заголовок = subject без `[.stbl]`, описание из
+    трёх секций шаблона `.github/pull_request_template.md`. Хук тело и
+    PR не проверяет. Канон —
+    [commit-and-pr.md](.agents/rules/process/commit-and-pr.md).
+    Байлайнов модели (`Co-Authored-By: Claude`, `🤖 Generated with …`) нет
    нигде — хук `commit-msg` их вырезает, см.
    [no-ai-attribution.md](.agents/rules/process/no-ai-attribution.md).
 

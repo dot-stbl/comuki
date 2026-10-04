@@ -92,7 +92,7 @@ public sealed class CrownScenarioHost : IAsyncLifetime
         // Claim labels every WorkItem seeded by this suite uses — fixed at host
         // boot (Intake:Worker:*/Chat:Worker:* each bind once); the in-process
         // worker caller in CrownScenarioShould only ever asks for these exact
-        // strings, so one ClaimAsync covers the intake-created item AND the
+        // strings, so one ClaimCall covers the intake-created item AND the
         // ChatRunStarter-materialized plan items alike. The image already
         // carries a tag (":crown-test") so WorkerImagePinning.Resolve — which
         // ChatRunStarter runs it through — returns it unchanged; see its
@@ -102,9 +102,40 @@ public sealed class CrownScenarioHost : IAsyncLifetime
         builder.Configuration["Intake:Worker:IssueDefaultProfileKey"] = "implement";
         builder.Configuration["Chat:Worker:Image"] = "ghcr.io/comuki/worker:crown-test";
         builder.Configuration["Chat:Worker:ProfilesRef"] = "crown-test";
+        // Point the procedures module's catalog reader at the repo's checked-in
+        // control-plane content (procedure-node-kinds/*.md + chat-commands/*.md).
+        // Without this the compile-gate refuses to load its baseline catalog
+        // and ProceduresCrownScenarioShould.PublishSeedVersionAsync crashes
+        // before it can publish the v1 seed. Other suites in this collection
+        // do not touch the procedures module, so the new binding is a no-op
+        // for them.
+        var repoRoot = ResolveRepoRoot();
+        builder.Configuration["ControlPlane:Root"] = Path.Combine(repoRoot, "control-plane");
+        Console.WriteLine($"[crown] controlPlane.root = {builder.Configuration["ControlPlane:Root"]}");
 
         application = await HostComposer.ComposeAsync(builder, HostDatabase.Explicit(ConnectionString));
         baseAddress = await TestHostBuilder.StartAsync(application, cancellationToken);
+    }
+
+    /// <summary>
+    /// Walks up from the test binary's location until it finds the
+    /// repository root (the directory that contains <c>control-plane/</c>).
+    /// Test runners execute from the bin directory; the repo root is
+    /// <c>{repoRoot}/tests/integration/.../bin/</c> deep.
+    /// </summary>
+    private static string ResolveRepoRoot()
+    {
+        var current = AppContext.BaseDirectory;
+        while (current is not null)
+        {
+            if (Directory.Exists(Path.Combine(current, "control-plane", "procedure-node-kinds")))
+            {
+                return current;
+            }
+            current = Path.GetDirectoryName(current);
+        }
+        throw new InvalidOperationException(
+            "Could not locate the repository root from " + AppContext.BaseDirectory);
     }
 
     /// <inheritdoc />
@@ -113,6 +144,19 @@ public sealed class CrownScenarioHost : IAsyncLifetime
         if (application is not null)
         {
             await application.DisposeAsync();
+        }
+
+        if (cwdRestore is not null)
+        {
+            try
+            {
+                Directory.SetCurrentDirectory(cwdRestore);
+            }
+            catch
+            {
+                // Best-effort: the test process is about to exit anyway.
+            }
+            cwdRestore = null;
         }
 
         await postgres.DisposeAsync();

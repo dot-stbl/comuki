@@ -1,0 +1,26 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "skills": {
+    "paths": [
+      "C:/Users/bradw/.agents/skills/review",
+      "C:/Users/bradw/.agents/skills/canon",
+      "C:/Users/bradw/.agents/skills/drift",
+      "C:/Users/bradw/.agents/skills/nitor",
+      "C:/Users/bradw/.agents/skills/worktree",
+      "C:/Users/bradw/.agents/skills/agent-orchestrate",
+      "C:/Users/bradw/.agents/skills/artifacts",
+      "C:/Users/bradw/.agents/skills/grilling",
+      "C:/Users/bradw/.agents/skills/secrets",
+      "C:/Users/bradw/.agents/skills/reinvention",
+      "C:/Users/bradw/.agents/skills/gh-issues",
+      "C:/Users/bradw/.agents/skills/qa",
+      "C:/Users/bradw/source/hybrid/comuki.orchestrator/.agents/skills/openspec-apply-change",
+      "C:/Users/bradw/source/hybrid/comuki.orchestrator/.agents/skills/openspec-archive-change",
+      "C:/Users/bradw/source/hybrid/comuki.orchestrator/.agents/skills/openspec-explore",
+      "C:/Users/bradw/source/hybrid/comuki.orchestrator/.agents/skills/openspec-propose",
+      "C:/Users/bradw/source/hybrid/comuki.orchestrator/.agents/skills/openspec-sync-specs",
+      "C:/Users/bradw/source/hybrid/comuki.orchestrator/.agents/skills/openspec-update-change"
+    ]
+  }
+}

@@ -37,6 +37,34 @@ Comuki **не пишет свой код сам** — это инструмен�
 > **`agents/` ≠ `.agents/`.** `agents/` — TS SDK-пакеты. `.agents/` —
 > правила и планирование для AI-харнессов.
 
+## Агенты и флоу
+
+Продуктовая задача ведётся **скиллом flowla**: шаги плана — в
+[`.agents/flows/`](.agents/flows/), код пишется агентами в
+[`.agents/worktree/`](.agents/worktree/) (worktree гитигнорен, живёт
+в рамках одного прогона).
+
+Роли флоу — **code**, **review**, **reinvention**, **explore**, **grill**.
+Мастер выбирает subagent по `description` и передаёт ему скоуп задачи.
+
+**Граница.** Продуктовая задача («сделай», «добавь», «почини», «доработай») —
+это **flowla**: человек называет задачу, шаги не диктует; grilling → OpenSpec →
+код → review/reinvention → qa идут по `.agents/flows/feature.md`. Точечная
+работа по явной просьбе («прогони ревью», «посмотри что наделал», «где это»,
+«только поправь X, без ревью») — **разовый агент**, без цикла плана. Фразы
+«только ревью» / «без ревью» в задаче — сигнал разового запуска. Неясно — один
+вопрос человеку.
+
+Агенты этого репозитория (живут рядом с этим AGENTS.md):
+
+- [`.opencode/agents/worker.md`](.opencode/agents/worker.md) — роль
+  `code`, модель MiniMax-M3. Узкая реализация одной правки.
+- [`.opencode/agents/auditor.md`](.opencode/agents/auditor.md) — роли
+  `review` и `reinvention`, модель GLM-5.2. Без правок.
+
+> **`.agents/flowla/`** — runtime-статус прогона flowla. В git
+> не коммитится, агентам не редактировать.
+
 Подробнее: [`.agents/docs/architecture/`](.agents/docs/architecture/).
 
 ---

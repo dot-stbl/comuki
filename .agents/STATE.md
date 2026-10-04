@@ -267,6 +267,7 @@ slices landed during v1 polish. Master tip `fa659fd` (2026-09-08).
 | Merge-queue entity | `6072dd9` | MergeQueue aggregate + IMergeQueueStore + AddMergeQueueTable |
 | Status-machine golden-replay tester (historically mislabeled "Eval-harness") | `7989779` | `EvalRunner` + 7 golden `Golden/0N-*.json` fixtures + JSON parser + Markdown writer — a deterministic replay of `Create`/`Transition` ops against the pure Run/WorkItem domain, asserting `transitionLog`/`finalStatus`. **Not** an agent/model-quality eval — no LLM, no rubric, no golden *tasks for the brain or pi worker*. See `tests/unit/Comuki.Engine.Orchestration.Unit.Eval/`. |
 | Autonomy ratchet (slice 1) | `6f2ddb8` + `3f769f5` | RunTrustClass enum (`Supervised/Trusted/Autonomous`) + `AddRunTrustClass` migration — **shipped**. `TrustClassRatchetSweeper` was never built (see below), despite this row historically listing it. |
+| Autonomy ratchet (slice 2 — escalation-timeout sweeper) | `293eb9e7` | `EscalationTimeoutSweeper` + `EscalationTimeoutWorker` (passive ratchet: `Escalated` runs with `updated_at` older than `EscalationTimeout` → `Cancelled`, journal `run.escalation_timeout`) — shipped on master. Driven off the existing `Escalated → Cancelled` edge in `RunTransitions`; no new entity, no migration. |
 | Domain-user intake (slice 1) | `1ac0550` | DomainTypeAdmission EF + gate service + AddDomainTypeAdmissions |
 | C#→TS codegen (Option A) | `77561c9` → `0aeae3e` | RealtimeContractAttribute + RealtimeContractEmitter + contracts in Shared.Contracts |
 

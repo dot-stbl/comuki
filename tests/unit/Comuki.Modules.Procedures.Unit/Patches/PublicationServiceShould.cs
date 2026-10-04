@@ -1,3 +1,4 @@
+using Comuki.Modules.Procedures.Application;
 using Comuki.Modules.Procedures.Application.Compiler;
 using Comuki.Modules.Procedures.Application.Compiler.Model;
 using Comuki.Modules.Procedures.Application.Patches;
@@ -16,6 +17,7 @@ using Comuki.Modules.Procedures.Domain.Patches;
 using Comuki.Modules.Procedures.Domain.Patches.Model;
 using Comuki.Modules.Procedures.Domain.Patches.Publication;
 using Comuki.Shared.Contracts;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -136,7 +138,11 @@ public sealed class PublicationServiceShould
             .Returns(BuildCatalog());
         var editionsSource = Substitute.For<IEditionsFeatureSource>();
         editionsSource.ResolveEffective().Returns(GrantedFeatureKeys.Empty);
-        var compiler = new ProcedureCompiler(catalogReader, editionsSource);
+        var options = Options.Create(new ProceduresOptions
+        {
+            ControlPlaneRoot = Path.Combine(Path.GetTempPath(), $"comuki-procedures-pub-{Guid.NewGuid():N}"),
+        });
+        var compiler = new ProcedureCompiler(catalogReader, editionsSource, options);
         var outbox = Substitute.For<IOutbox>();
         var versionStore = Substitute.For<IProcedureVersionStore>();
         return (new PublicationService(compiler, versionStore, outbox, TimeProvider.System), outbox, versionStore);

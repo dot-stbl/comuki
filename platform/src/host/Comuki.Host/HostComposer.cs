@@ -221,7 +221,7 @@ internal static class HostComposer
         builder.Services.AddProjectsApplication();
         builder.Services.AddProjectsPersistence(database.ConnectionString);
 
-        builder.Services.AddProceduresApplication();
+        builder.Services.AddProceduresApplication(builder.Configuration);
         builder.Services.AddProceduresInfrastructure(database.ConnectionString);
         builder.Services.AddSingleton<IValidator<Procedures.Models.ProposePatchRequest>, Procedures.Models.ProposePatchRequestValidator>();
         builder.Services.AddSingleton<Shared.Contracts.IOutbox, Procedures.ProceduresOutboxAdapter>();

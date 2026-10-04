@@ -14,12 +14,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace Comuki.Host.Procedures.Controllers;
 
 /// <summary>
-/// MVC surface of the Procedures module (task 7.1 + 7.2). Read endpoints
-/// demand <c>procedure:read</c>; the propose-patch + publish endpoints
-/// demand <c>procedure:write</c> (brain sessions get this via the chat
-/// surface, not by calling the endpoint directly). Routes are
-/// constant-typed (see <see cref="ApiRoutes"/>) — no inline literals in
-/// <c>[Route]</c>.
+/// MVC surface of the Procedures module (task 7.1 + 7.2). Read endpoints demand
+/// <c>procedure:read</c>; the propose-patch + publish endpoints demand
+/// <c>procedure:write</c> (brain sessions get this via the chat surface,
+/// not by calling the endpoint directly). Routes are constant-typed (see
+/// <see cref="ApiRoutes"/>) — no inline literals in <c>[Route]</c>.
 /// </summary>
 /// <param name="pinResolver">Resolves the current attempt pin to a concrete version id.</param>
 /// <param name="versionHandler">Reads a compiled procedure version by id.</param>
@@ -45,7 +44,6 @@ public sealed class ProceduresController(
     [HttpGet("{projectId:guid}/{procedureKey}")]
     [RequiresPermission("procedure:read")]
     [ProducesResponseType<ProcedureVersionResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProcedureVersionResponse>> GetLatestAsync(
         [FromRoute] Guid projectId,
         [FromRoute] string procedureKey,
@@ -69,7 +67,6 @@ public sealed class ProceduresController(
     [HttpGet("versions/{versionId}")]
     [RequiresPermission("procedure:read")]
     [ProducesResponseType<ProcedureVersionResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProcedureVersionResponse>> GetVersionAsync(
         [FromRoute] string versionId,
         CancellationToken cancellationToken = default)
@@ -84,13 +81,18 @@ public sealed class ProceduresController(
     /// Returns the planned-vs-observed trace for one procedure-pinned
     /// run — the timeline Studio's Replay panel renders. 404 when the
     /// run has not been admitted against a procedure (no seeded trace).
+    /// The Live run panel reads the same endpoint and renders a null
+    /// trace as the "no pin yet" empty state — composition on the
+    /// server is not required when the trace endpoint is null-safe by
+    /// design (no <c>404 → empty projection</c> mapping is needed
+    /// client-side). Phase A.3 retired the dedicated
+    /// <c>/runs/{runId}/live</c> endpoint for this reason.
     /// </summary>
     /// <param name="runId">The run whose trace to read.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
     [HttpGet("runs/{runId:guid}/trace")]
     [RequiresPermission("procedure:read")]
     [ProducesResponseType<ProcedureTraceResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProcedureTraceResponse>> ReadRunTraceAsync(
         [FromRoute] Guid runId,
         CancellationToken cancellationToken = default)
@@ -102,42 +104,23 @@ public sealed class ProceduresController(
     }
 
     /// <summary>
-    /// Returns the Live run projection for one procedure-pinned run —
-    /// the pinned version chrome, the timeline, and (when the runtime
-    /// has stamped a comparison) the drift verdict. Composed from the
-    /// trace store, which already carries the pin metadata seeded at
-    /// admission. The endpoint is a single read; the dashboard's Live
-    /// run mode hits it instead of stitching trace + runs/{id} on the
-    /// client.
-    /// </summary>
-    /// <param name="runId">The run whose live projection to read.</param>
-    /// <param name="cancellationToken">Cooperative cancellation.</param>
-    [HttpGet("runs/{runId:guid}/live")]
-    [RequiresPermission("procedure:read")]
-    [ProducesResponseType<ProcedureLiveResponse>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<ProcedureLiveResponse>> ReadRunLiveAsync(
-        [FromRoute] Guid runId,
-        CancellationToken cancellationToken = default)
-    {
-        var trace = await traceStore.ReadAsync(runId, cancellationToken);
-        return Ok(ProcedureLiveResponse.From(runId, trace));
-    }
-
-    /// <summary>
     /// Drafts a GraphPatch from a chat-side request. The patch is durable
     /// (id, timestamp, identity) but the chat surface has no publication
     /// path — the human publishes from Studio after reviewing the
-    /// rendered diff.
+    /// rendered diff. The body carries the patch's typed
+    /// <see cref="ProposePatchRequest.Operations"/> in the same
+    /// <c>GraphPatchOperation</c> closed-hierarchy shape the response's
+    /// diff buckets render; an empty array (the default) means a no-op
+    /// patch.
     /// </summary>
     /// <param name="projectId">The project the procedure belongs to.</param>
     /// <param name="procedureKey">Stable key identifying the procedure.</param>
-    /// <param name="request">The operator's intent (what to change, why).</param>
-    /// <param name="validator"></param>
+    /// <param name="request">The operator's intent (what to change, why) + operations.</param>
+    /// <param name="validator">FluentValidation for the legacy three fields.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>
     [HttpPost("{projectId:guid}/{procedureKey}/propose-patch")]
     [RequiresPermission("procedure:write")]
     [ProducesResponseType<ProposedPatchResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ProposedPatchResponse>> ProposePatchAsync(
         [FromRoute] Guid projectId,
         [FromRoute] string procedureKey,
@@ -147,11 +130,13 @@ public sealed class ProceduresController(
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
 
+        var operations = DeserializeOperations(request.Operations);
+
         var draftRequest = new DraftGraphPatchRequest(
             BaseVersionId: request.BaseVersionId,
             ProjectId: projectId,
             ProcedureKey: procedureKey,
-            Operations: [],
+            Operations: operations,
             Rationale: request.Rationale,
             DraftedBy: new GraphPatchDraftedBy(
                 request.DraftedBy,
@@ -187,6 +172,45 @@ public sealed class ProceduresController(
     }
 
     /// <summary>
+    /// Deserializes the wire's operations array — each element is a
+    /// <see cref="System.Text.Json.JsonElement"/> with a <c>kind</c>
+    /// discriminator — into the closed
+    /// <see cref="GraphPatchOperation"/> hierarchy via the
+    /// <see cref="GraphPatchOperationJsonConverter"/>. The converter
+    /// throws a typed <see cref="System.Text.Json.JsonException"/> on
+    /// an unknown <c>kind</c> or a missing required property;
+    /// <c>AddProblemDetails()</c> in <c>Program.cs</c> maps the
+    /// exception to a 400.
+    /// </summary>
+    /// <param name="elements">The wire-side operations (raw JSON elements).</param>
+    /// <returns>The closed-hierarchy operations; empty when the wire sent none.</returns>
+    private static IReadOnlyList<GraphPatchOperation> DeserializeOperations(
+        IReadOnlyList<System.Text.Json.JsonElement> elements)
+    {
+        if (elements.Count == 0)
+        {
+            return [];
+        }
+
+        var options = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web);
+        options.Converters.Add(new GraphPatchOperationJsonConverter());
+        var operations = new List<GraphPatchOperation>(elements.Count);
+        foreach (var element in elements)
+        {
+            // Each element is a self-contained JSON object. STJ
+            // positions its reader on the StartObject via
+            // Deserialize<T>; the converter's Read walks the
+            // discriminator + body in one pass.
+            var op = System.Text.Json.JsonSerializer.Deserialize<GraphPatchOperation>(
+                element.GetRawText(), options)
+                ?? throw new System.Text.Json.JsonException(
+                    "GraphPatchOperation deserialized to null.");
+            operations.Add(op);
+        }
+        return operations;
+    }
+
+    /// <summary>
     /// Publishes a human-approved patch: validates the patch against the
     /// base graph + policy context, runs the deterministic compile gate,
     /// persists the new compiled version, and writes the
@@ -203,7 +227,6 @@ public sealed class ProceduresController(
     [HttpPost("{projectId:guid}/{procedureKey}/publish")]
     [RequiresPermission("procedure:write")]
     [ProducesResponseType<PublicationResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PublicationResponse>> PublishAsync(
         [FromRoute] Guid projectId,
         [FromRoute] string procedureKey,

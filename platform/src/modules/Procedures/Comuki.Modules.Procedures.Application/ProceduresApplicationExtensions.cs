@@ -7,6 +7,7 @@ using Comuki.Modules.Procedures.Application.Ports;
 using Comuki.Modules.Procedures.Application.ProcedureVersions;
 using Comuki.Modules.Procedures.Application.ProcedureVersions.Ledger;
 using Comuki.Modules.Procedures.Application.Runtime.Trace.Storage;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Comuki.Modules.Procedures.Application;
@@ -33,8 +34,21 @@ public static class ProceduresApplicationExtensions
     /// <c>IOutbox</c>.
     /// </summary>
     /// <param name="services">The service collection the Procedures module is being composed into.</param>
-    public static IServiceCollection AddProceduresApplication(this IServiceCollection services)
+    /// <param name="configuration">
+    /// The host configuration. The <c>ControlPlane</c> section
+    /// (<see cref="ProceduresOptions.SectionName"/>) feeds both this
+    /// options class and the host's <c>ControlPlaneCatalogOptions</c>;
+    /// the validation pass on the host's options covers the binding.
+    /// </param>
+    public static IServiceCollection AddProceduresApplication(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        services.AddOptions<ProceduresOptions>()
+            .Bind(configuration.GetSection(ProceduresOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IProcedureCompiler, ProcedureCompiler>();
         services.AddSingleton<IEditionsFeatureSource, CommunityEditionsFeatureSource>();

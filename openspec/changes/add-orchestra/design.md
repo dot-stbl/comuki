@@ -228,9 +228,11 @@ Phase 7 (Tuner)            — mutable IVirtualKeyStore + PATCH /api/v1/proxy/ke
                               overlay becomes the primary store for tunings
 
 Phase 8 (Instrument)      — IHarness abstraction
-                              rides cowork 11.1 (slot/execution identity)
-                              Comuki.TestFakePi becomes the second implementation
+                               rides cowork 11.1 (slot/execution identity)
+                               Comuki.TestFakePi becomes the second implementation
 ```
+
+**Wave 1 split.** Phase 1 (Baton) ships in three sub-waves: Phase 1a — production trigger on top of the existing one-shot path (steering endpoint + follow-up WorkItem via `comuki-injected-context.md`, works against today's pi runtime); Phase 1b — a 2-3 day pi session-mode spike (the flagship's decisive fork: GO → Phase 1c ships the live-session Translator that the spec deltas target; NO-GO → Phase 1c defers until the Instrument/ACP-harness era, and the Phase 1a follow-up-WorkItem path stays canonical); Phase 1c — live-session Translator (only after Phase 1b returns GO; `IHarness.Capabilities.LiveSession` becomes authoritative; `TurnInput` lands as a session turn). Wave 1 of this flow-run covers **Phase 1a + Phase 2 (Critic-foundation)**; Phase 1b starts as a separate run; Phase 1c is gated on the spike.
 
 Every phase is independently shippable behind a feature flag; rollback per phase is the existing "roll back the diff, leave the wire" — no data migration. The single-replica constraint (D11) is a known limitation across all eight phases.
 

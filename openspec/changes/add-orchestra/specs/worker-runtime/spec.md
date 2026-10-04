@@ -16,6 +16,11 @@ The Translator SHALL invoke the agent through the **harness abstraction** (`IHar
 - **WHEN** the Translator's harness resolver evaluates the harness
 - **THEN** the decision is `IHarness.Capabilities.LiveSession`; `TranslatorOptions.PiExecutable` is unchanged in shape but no longer read by the shell to choose between session and one-shot
 
+#### Scenario: One garbage line survives
+
+- **WHEN** the agent emits a non-JSON line mid-stream
+- **THEN** the run continues and the line surfaces as an unparseable event
+
 ### Requirement: Stream semantics — end on events completion
 
 One stream per connection, bound to one WorkerId. The call SHALL end when the worker completes its events enumeration (the worker's "I'm done" signal); commands flow orchestrator → worker only while events are still coming. When the events side finishes, the command pump is cancelled — no pending `MoveNextAsync` is left for dispose. A worker dropping the stream mid-events is an expected close path, not a fault; real event-pump faults propagate.

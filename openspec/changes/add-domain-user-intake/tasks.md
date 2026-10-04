@@ -28,16 +28,16 @@
 
 - [x] 5.1 Domain defaults test — new settings row has `Standard` and null JSON (extend `ProjectDomainShould`)
 - [x] 5.2 Domain Apply test — `Apply` mutates `DomainType` and `CustomDomainTypesJson` (extend `ProjectDomainShould`)
-- [ ] 5.3 Mapper test — view carries the new fields (extend `ProjectMapperShould`)
-- [ ] 5.4 Handler test — `UpdateSettingsHandler` passes new fields through to the store (extend `ProjectHandlersShould`)
+- [x] 5.3 Mapper test — view carries the new fields (extend `ProjectsMapperShould`; actual file name is plural — `ProjectsMapperShould.cs`, see PR #173 follow-up)
+- [x] 5.4 Handler test — `UpdateSettingsHandler` passes new fields through to the store (extend `ProjectHandlersShould`; new `UpdateSettingsPersistsAsync` asserts `view.DomainType = Custom` and `view.CustomDomainTypesJson = """{"code":"implement"}"""`, transitively proving the mapper pass-through + `settings.Received(1).SaveAsync`)
 - [x] 5.5 Resolver tests — `ProjectDomainTypeResolverShould` covers Standard / Custom / Hybrid / unknown / malformed JSON
-- [ ] 5.6 Validator tests — `UpdateSettingsValidatorShould` covers valid JSON, oversized JSON, malformed JSON for Custom/Hybrid
+- [x] 5.6 Validator tests — `UpdateSettingsValidatorShould` covers valid JSON, oversized JSON, malformed JSON for Custom/Hybrid (`AcceptCustomWithValidJson` / `AcceptHybridWithValidJson` / `RefuseAbsentJsonForCustom` [Theory null/""/"   "] / `RefuseOversizedJson` [Theory Custom+Hybrid, cap 8192] / `RefuseMalformedJson` [Theory Custom+Hybrid])
 - [x] 5.7 Architecture test — `Projects.Domain` still has no outer-layer refs (already covered); add an explicit assertion that `Projects.Application.DomainTypes` does not reference the engine or the migrator
 
 ## 6. Gates
 
-- [ ] 6.1 `dotnet build comuki.slnx -c Debug` → 0/0
-- [ ] 6.2 `dotnet format comuki.slnx --verify-no-changes --severity warn` → exit 0
-- [ ] 6.3 `dotnet run --project tests/Comuki.Architecture.Tests -c Debug --no-build` → 22+ green
-- [ ] 6.4 `dotnet run --project tests/unit/Comuki.Modules.Projects.Unit -c Debug --no-build` → green (49 baseline + new tests)
-- [ ] 6.5 (if FE touched) `cd dashboard && bun run typecheck && bun run lint && bun run test` — slice 1 does NOT touch the FE; record the skip
+- [ ] 6.1 `dotnet build comuki.slnx -c Debug` → 0/0 — **PRE-EXISTING BREAK on master**: 2× MSB3030 on `tests/unit/Comuki.Host.Brain.Unit/Comuki.Host.Brain.Unit.csproj` (lines 24–25 reference `deploy/hybrid/host.Dockerfile` and `deploy/hybrid/infra-dev.yaml`; the directory was deleted in 729a06b1 after the csproj was written in 67ac6e3d1). Out of scope for this change; recorded as inherited.
+- [x] 6.2 `dotnet format comuki.slnx --verify-no-changes --severity warn` → exit 0
+- [x] 6.3 `dotnet run --project tests/Comuki.Architecture.Tests -c Debug --no-build` → 55 total / 0 failed / 0 skipped (brief expected ~49; actual 55 from this run)
+- [x] 6.4 `dotnet run --project tests/unit/Comuki.Modules.Projects.Unit -c Debug --no-build` → 200 total / 0 failed / 0 skipped (includes the new domain-type mapper/handler/validator cases)
+- [x] 6.5 (if FE touched) `cd dashboard && bun run typecheck && bun run lint && bun run test` — slice 1 does NOT touch the FE; recorded as SKIPPED with rationale

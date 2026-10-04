@@ -10,6 +10,7 @@ export const Features = {
   InfraMemory: "infra-memory",
   MultiRepo: "multi-repo",
   ScaleAndIsolation: "scale-isolation",
+  Steering: "steering",
   WhiteLabel: "white-label",
   WorkerCommitAttribution: "worker-commit-attribution",
 } as const;

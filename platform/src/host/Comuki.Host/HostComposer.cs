@@ -264,9 +264,15 @@ internal static class HostComposer
         builder.Services.AddScoped<WorkersReadHandler>();
         builder.Services.AddScoped<IApproveRunPort, HostApproveRunAdapter>();
         builder.Services.AddScoped<ICancelRunPort, HostCancelRunAdapter>();
+        builder.Services.AddScoped<IExecutionIdResolver, ExecutionIdResolver>();
+        builder.Services.AddScoped<ISteerRunPort, HostSteerRunAdapter>();
         builder.Services.AddScoped<ChatRunStarter>();
         builder.Services.AddOptions<ChatWorkerDefaults>()
             .Bind(builder.Configuration.GetSection(ChatWorkerDefaults.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddOptions<SteeringWorkerDefaults>()
+            .Bind(builder.Configuration.GetSection(SteeringWorkerDefaults.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

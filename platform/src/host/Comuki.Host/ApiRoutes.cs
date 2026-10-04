@@ -41,6 +41,9 @@ public static class ApiRoutes
     /// <summary>One run by id — operator cancellation (tear the run down).</summary>
     public const string RunCancel = "/api/v1/runs/{runId:guid}/cancel";
 
+    /// <summary>One run by id — operator steer (add-orchestra §1 — Baton). Staged as a follow-up WorkItem on the no-LiveSession runtime today; the LiveSession branch lands in Phase 1c.</summary>
+    public const string RunSteer = "/api/v1/runs/{runId:guid}/steer";
+
     /// <summary>Base of the chat session surface (issue #5 slice B).</summary>
     public const string ChatSessions = "/api/v1/chat/sessions";
 

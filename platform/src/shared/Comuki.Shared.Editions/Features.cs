@@ -64,9 +64,23 @@ public static class Features
         "Control over the 'Generated-by: Comuki vX.Y.Z' worker-commit trailer (#165).",
         minimumRank: EditionTiers.Team.Rank);
 
+    /// <summary>
+    /// Live-session steering of in-flight runs (add-orchestra §1 — Baton).
+    /// The first production caller of <c>WorkerCommandHub</c>: the
+    /// <c>POST /api/v1/runs/{runId}/steer</c> endpoint requires this key,
+    /// and the registered gate lives on <c>RunsController.SteerAsync</c>
+    /// (the handler that resolves <c>runId → WorkItem → LeasedBy → WorkerId</c>
+    /// and either writes a follow-up WorkItem on the no-LiveSession
+    /// runtime or hands the typed turn to <c>WorkerCommandHub</c>).
+    /// </summary>
+    public static readonly Feature Steering = Feature.Define(
+        "steering",
+        "Live-session steering of in-flight runs (add-orchestra §1 — Baton).",
+        minimumRank: EditionTiers.Team.Rank);
+
     /// <summary>Every declared feature, sorted by key. Throws at type-init if two entries share a key.</summary>
     public static readonly IReadOnlyList<Feature> All = EditionCatalogGuard.EnsureUniqueSortedByKey(
-        [EnterpriseSso, ScaleAndIsolation, InfraMemory, BackgroundLlmWatchers, AgentEval, WhiteLabel, MultiRepo, WorkerCommitAttribution],
+        [EnterpriseSso, ScaleAndIsolation, InfraMemory, BackgroundLlmWatchers, AgentEval, WhiteLabel, MultiRepo, WorkerCommitAttribution, Steering],
         static feature => feature.Key.Value,
         catalogName: "Features");
 }

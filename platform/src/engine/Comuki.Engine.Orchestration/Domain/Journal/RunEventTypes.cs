@@ -101,4 +101,14 @@ public static class RunEventTypes
     /// version suffix; those do not) — do not confuse the two.
     /// </summary>
     public const string RunTerminatedV1 = "orchestration.run.terminated.v1";
+
+    /// <summary>
+    /// The host's <c>POST /api/v1/runs/{runId}/steer</c> handler staged
+    /// a follow-up research WorkItem (add-orchestra §1 — Baton,
+    /// Phase 1a no-LiveSession path). Payload carries the steer text
+    /// verbatim and the new work item's id; a follow-up is a Queued
+    /// work item, not a status change, so the timeline gets its own
+    /// <c>run_events</c> row instead of a <see cref="WorkItemStatusChanged"/>.
+    /// </summary>
+    public const string RunSteerFollowUpQueued = "run.steer_followup_queued";
 }

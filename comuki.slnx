@@ -104,6 +104,8 @@
     <Project Path="tests/unit/Comuki.Modules.Intake.Unit/Comuki.Modules.Intake.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Artifacts.Unit/Comuki.Modules.Artifacts.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Realtime/Comuki.Host.Unit.Realtime.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.RunResolver/Comuki.Host.Unit.RunResolver.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.Steer/Comuki.Host.Unit.Steer.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Scheduler.Unit/Comuki.Modules.Scheduler.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Verify.Unit/Comuki.Modules.Verify.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Knowledge.Unit/Comuki.Modules.Knowledge.Unit.csproj" />
@@ -153,6 +155,7 @@
     <Project Path="tests/integration/Comuki.Modules.Knowledge.Integration/Comuki.Modules.Knowledge.Integration.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Compute/Comuki.Host.Integration.Compute.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Editions/Comuki.Host.Integration.Editions.csproj" />
+    <Project Path="tests/integration/Comuki.Host.Integration.Steer/Comuki.Host.Integration.Steer.csproj" />
     <Project Path="tests/integration/Comuki.Host.Integration.Settings/Comuki.Host.Integration.Settings.csproj" />
     <Project Path="tests/integration/Comuki.EndToEnd.AgentLoop/Comuki.EndToEnd.AgentLoop.csproj" />
   </Folder>

@@ -12,10 +12,12 @@ namespace Comuki.Shared.Editions.Unit;
 /// </summary>
 public sealed class FeaturesCatalogShould
 {
-    [Fact(DisplayName = "Given the Features catalog, when All is enumerated, then it has exactly eight entries")]
-    public void CatalogHasEightEntries()
+    [Fact(DisplayName = "Given the Features catalog, when All is enumerated, then it has exactly nine entries")]
+    public void CatalogHasNineEntries()
     {
-        Features.All.Count.ShouldBe(8);
+        // Steering was added in openspec add-orchestra (Phase 1a) — the 9th entry.
+        // Update the count when adding a new feature key.
+        Features.All.Count.ShouldBe(9);
     }
 
     [Fact(DisplayName = "Given the Features catalog, when All is enumerated, then every entry's Key.Value is unique")]

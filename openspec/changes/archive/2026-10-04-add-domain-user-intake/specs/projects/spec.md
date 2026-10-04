@@ -114,32 +114,41 @@ budget gate.
 - **WHEN** settings are updated with soft and hard USD micros
 - **THEN** subsequent costs/budget reads observe the new caps without
   restart
-
 ### Requirement: REST surface
 
 Projects SHALL be served under `/api/v1/projects`: `POST /` (201 + view;
 409 slug conflict; 400 validation), `GET /` (`?includeArchived`), `GET
 /{projectId}` (404 unknown), `PATCH /{projectId}`, `DELETE /{projectId}`
 (archive, 204), `GET /{projectId}/settings`, `PUT /{projectId}/settings`
-(409 version conflict). The settings PUT body SHALL also accept
-`domainType` (optional; defaults to `Standard` when omitted) and
-`customDomainTypesJson` (optional; defaults to `null`), and the settings
-GET view SHALL expose both fields. Typed exceptions become ProblemDetails
-in one place; validation failures answer 400 with per-field errors.
-Unknown project ids answer 404 with the projectId extension.
+(409 version conflict). The create and PATCH bodies SHALL also accept
+the optional identity fields `icon`, `color` and `tags`, and every
+project view SHALL expose `icon`, `color` and `tags` (icon/colour
+nullable, tags a possibly-empty array) alongside the existing fields.
+The settings PUT body SHALL also accept `domainType` (optional; defaults
+to `Standard` when omitted) and `customDomainTypesJson` (optional;
+defaults to `null`), and the settings GET view SHALL expose both fields.
+Typed exceptions become ProblemDetails in one place; validation
+failures answer 400 with per-field errors. Unknown project ids answer
+404 with the projectId extension.
 
 #### Scenario: Unknown project
+
 - **WHEN** any project endpoint is called with an id that does not exist
 - **THEN** the answer is 404 `Project not found` with the requested id
   in the extensions
 
+#### Scenario: View carries identity fields
+
+- **WHEN** a caller GETs a project created before this change
+- **THEN** the view answers `icon: null`, `color: null` and `tags: []`
+
 #### Scenario: Settings read exposes domain-type fields
+
 - **WHEN** a caller GETs `/api/v1/projects/{projectId}/settings` for a
   project with `domainType = Hybrid` and a non-null
   `customDomainTypesJson`
 - **THEN** the response view carries both fields verbatim alongside the
   existing scale/budget/feature-flag fields
-
 ## ADAPTER Notes
 
 The resolver is a singleton — the mapping is pure (project settings in,

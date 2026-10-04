@@ -94,6 +94,8 @@ public sealed class ProjectsMapperShould
         view.ProxyEnabled.ShouldBeFalse();
         view.SoftBudgetUsdMicros.ShouldBeNull();
         view.HardBudgetUsdMicros.ShouldBeNull();
+        view.DomainType.ShouldBe(ProjectDomainType.Standard);
+        view.CustomDomainTypesJson.ShouldBeNull();
         view.Version.ShouldBe(1);
     }
 
@@ -102,7 +104,7 @@ public sealed class ProjectsMapperShould
     {
         var projectId = ProjectId.New();
         var settings = ProjectSettings.CreateDefaults(projectId, now);
-        settings.Apply(2, 16, 1800, true, true, false, true, 2_000_000, 10_000_000, ProjectDomainType.Standard, null, null, now.AddMinutes(5));
+        settings.Apply(2, 16, 1800, true, true, false, true, 2_000_000, 10_000_000, ProjectDomainType.Hybrid, /*lang=json,strict*/ """{"code":"implement","data":"data-pipeline"}""", null, now.AddMinutes(5));
 
         var view = mapper.ToView(settings);
 
@@ -115,6 +117,8 @@ public sealed class ProjectsMapperShould
         view.ProxyEnabled.ShouldBeTrue();
         view.SoftBudgetUsdMicros.ShouldBe(2_000_000);
         view.HardBudgetUsdMicros.ShouldBe(10_000_000);
+        view.DomainType.ShouldBe(ProjectDomainType.Hybrid);
+        view.CustomDomainTypesJson.ShouldBe(/*lang=json,strict*/ """{"code":"implement","data":"data-pipeline"}""");
         view.UpdatedAt.ShouldBe(now.AddMinutes(5));
         view.Version.ShouldBe(2);
     }

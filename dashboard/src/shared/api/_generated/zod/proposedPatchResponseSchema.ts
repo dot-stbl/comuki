@@ -3,18 +3,42 @@
  * Do not edit manually.
  */
 
+import { addedNodeDtoSchema } from "./addedNodeDtoSchema"
+import { reParameterizedNodeDtoSchema } from "./reParameterizedNodeDtoSchema"
+import { rewiredEdgeDtoSchema } from "./rewiredEdgeDtoSchema"
 import { z } from "zod/v4"
 
 /**
- * @description Response DTO for a proposed patch\r\n(`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\nThe chat surface has no publication path — the human publishes from\r\nStudio after reviewing the rendered diff.
+ * @description     Response DTO for a proposed patch\r\n    (`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\n    The chat surface has no publication path — the human publishes from\r\n    Studio after reviewing the rendered diff.\r\n\r\n    Carries the full semantic diff payload: per-bucket entries (added\r\nnodes, removed node ids, rewired edges, re-parameterized nodes) so\r\nStudio can render \"added 2, removed 1, rewired 1\" inline without\r\nre-running the diff computer. bool ProposedPatchResponse.Unchanged is true when\r\nthe patch was a no-op (validator catches obvious ones; the post-\r\napplication view catches the rest).
  */
 export const proposedPatchResponseSchema = z
   .object({
     patchId: z.string(),
     baseVersionId: z.string(),
     rationale: z.string(),
+    unchanged: z.boolean(),
     diffSummary: z.string(),
+    get addedNodes() {
+      return z.array(
+        addedNodeDtoSchema.describe("One node inserted by the patch.")
+      )
+    },
+    removedNodeIds: z.array(z.string()),
+    get rewiredEdges() {
+      return z.array(
+        rewiredEdgeDtoSchema.describe(
+          "One rewired edge — before (removed) and after (inserted)."
+        )
+      )
+    },
+    get reParameterizedNodes() {
+      return z.array(
+        reParameterizedNodeDtoSchema.describe(
+          "One re-parameterized node: per-parameter deltas."
+        )
+      )
+    },
   })
   .describe(
-    "Response DTO for a proposed patch\r\n(`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\nThe chat surface has no publication path — the human publishes from\r\nStudio after reviewing the rendered diff."
+    '    Response DTO for a proposed patch\r\n    (`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\n    The chat surface has no publication path — the human publishes from\r\n    Studio after reviewing the rendered diff.\r\n\r\n    Carries the full semantic diff payload: per-bucket entries (added\r\nnodes, removed node ids, rewired edges, re-parameterized nodes) so\r\nStudio can render "added 2, removed 1, rewired 1" inline without\r\nre-running the diff computer. bool ProposedPatchResponse.Unchanged is true when\r\nthe patch was a no-op (validator catches obvious ones; the post-\r\napplication view catches the rest).'
   )

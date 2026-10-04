@@ -1,0 +1,24 @@
+{
+  "required": ["patch", "approver", "context", "layeredProcedure"],
+  "type": "object",
+  "properties": {
+    "patch": {
+      "description": "The GraphPatch as authored by the brain (or operator).",
+      "x-readme-ref-name": "JsonElement"
+    },
+    "approver": {
+      "type": "string",
+      "description": "The human identity approving publication — must be distinct from the drafter."
+    },
+    "context": {
+      "description": "Policy context — kind allowlist, autonomy ceiling, budget maxima — the publication-surface validator reads.",
+      "x-readme-ref-name": "JsonElement"
+    },
+    "layeredProcedure": {
+      "description": "Layered merge result the publication service compiles from.",
+      "x-readme-ref-name": "JsonElement"
+    }
+  },
+  "description": "    Request DTO for the human-publish endpoint\r\n    (`POST /api/v1/procedures/{projectId}/{procedureKey}/publish`).\r\n    Carries the full publication payload — patch, layered procedure,\r\n    policy context, approver — because the wire shape is the only\r\n    stable contract between Studio and the host's publication service.\r\n\r\n    The brain cannot reach this endpoint; the brain drafts patches\r\n(POST /propose-patch) and the human publishes them. The\r\nin-process crown e2e (PHASE 3) calls IPublicationService.PublishAsync\r\ndirectly via DI; this wire endpoint exists for Studio and any future\r\nStudio-driven publishing UI.\r\n\r\n    The patch + layered procedure arrive as JsonElements\r\nbecause the domain types are not directly wire-serializable\r\n(records with private setters, nested record types the kubb\r\ngenerator cannot introspect). The host deserializes each element\r\nvia JsonSerializer on its way to the publication\r\nservice.",
+  "x-readme-ref-name": "PublicationRequestDto"
+}

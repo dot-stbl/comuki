@@ -17,7 +17,7 @@ export const getApiV1ProceduresVersionsVersionidPathParamsSchema = z.object({
 export const getApiV1ProceduresVersionsVersionid200Schema = z
   .lazy(() => procedureVersionResponseSchema)
   .describe(
-    "Response DTO for a compiled procedure version\r\n(`GET /api/v1/procedures/{projectId}/{procedureKey}` and\r\n`GET /api/v1/procedures/versions/{versionId}`). Carries only the\r\nidentity + provenance fields the dashboard renders — the compiled\r\ngraph itself stays server-side."
+    'Response DTO for a compiled procedure version\r\n(`GET /api/v1/procedures/{projectId}/{procedureKey}` and\r\n`GET /api/v1/procedures/versions/{versionId}`). Carries the\r\nidentity + provenance fields the dashboard renders, plus the\r\ncompiled graph the Studio canvas needs to render (the runtime pins\r\nthe version, Studio reads the graph through generated contracts;\r\ndesign decision 7: "Studio reads drafts and compiled versions\r\nthrough generated contracts (kubb), never mutating git").'
   )
 
 /**

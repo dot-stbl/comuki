@@ -1,0 +1,96 @@
+{
+  "required": [
+    "runId",
+    "pinnedVersionId",
+    "procedureKey",
+    "projectId",
+    "pinnedAt",
+    "eventCount",
+    "events",
+    "drift"
+  ],
+  "type": "object",
+  "properties": {
+    "runId": {
+      "type": "string",
+      "description": "The run the projection belongs to.",
+      "format": "uuid"
+    },
+    "pinnedVersionId": {
+      "type": ["null", "string"],
+      "description": "The content-addressed version id the run was bound to, or null when the\r\nrun never admitted against a procedure (unpinned default)."
+    },
+    "procedureKey": {
+      "type": ["null", "string"],
+      "description": "Stable key of the procedure the run rides, or null when unpinned."
+    },
+    "projectId": {
+      "type": ["null", "string"],
+      "description": "Project that owns the procedure.",
+      "format": "uuid"
+    },
+    "pinnedAt": {
+      "type": ["null", "string"],
+      "description": "When the pin was recorded (UTC, ISO 8601).",
+      "format": "date-time"
+    },
+    "eventCount": {
+      "pattern": "^-?(?:0|[1-9]\\d*)$",
+      "type": ["integer", "string"],
+      "description": "How many events the trace carries.",
+      "format": "int32"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "required": ["nodeId", "eventType", "detail", "at"],
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "The graph node (or version id for a pin event) the event relates to."
+          },
+          "eventType": {
+            "type": "string",
+            "description": "planned / started / completed / failed / gate_opened / gate_resolved / generation_opened / generation_exhausted / late_result / pin_recorded."
+          },
+          "detail": {
+            "type": "string",
+            "description": "Human-readable detail."
+          },
+          "at": {
+            "type": "string",
+            "description": "When the event was recorded (UTC, ISO 8601).",
+            "format": "date-time"
+          }
+        },
+        "description": "One trace event in the wire shape.",
+        "x-readme-ref-name": "TraceEventDto"
+      },
+      "description": "The trace's events (chronological) — server-side composed."
+    },
+    "drift": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "description": "Drift verdict between the compiled plan and the observed execution, or null.",
+          "required": ["isWithinPolicy", "summary"],
+          "type": "object",
+          "properties": {
+            "isWithinPolicy": {
+              "type": "boolean",
+              "description": "True when the observed drift stayed inside the declared tolerance."
+            },
+            "summary": {
+              "type": "string",
+              "description": "Human-readable summary."
+            }
+          },
+          "x-readme-ref-name": "DriftDto"
+        }
+      ]
+    }
+  },
+  "description": "Response DTO for `GET /api/v1/procedures/runs/{runId}/live` —\r\nthe dashboard's Live run mode reads this to render the pinned-version\r\nchrome, the path, and the drift verdict. Composed server-side from\r\nthe run's planned-vs-observed trace; the trace carries the pin\r\nmetadata (version, procedure key, project id, pinned at) seeded at\r\nadmission, so the projection is a single read. Null fields render\r\nat an empty state in Studio, not an HTTP error.",
+  "x-readme-ref-name": "ProcedureLiveResponse"
+}

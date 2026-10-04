@@ -1,0 +1,14 @@
+{
+  "required": ["fromNodeId", "fromPort", "toNodeId"],
+  "type": "object",
+  "properties": {
+    "fromNodeId": { "type": "string", "description": "The source node id." },
+    "fromPort": {
+      "type": "string",
+      "description": "The source kind's outcome port."
+    },
+    "toNodeId": { "type": "string", "description": "The destination node id." }
+  },
+  "description": "One typed-port wire between two nodes.",
+  "x-readme-ref-name": "ProcedureEdgeDto"
+}

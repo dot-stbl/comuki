@@ -17,16 +17,17 @@ public sealed class ProcedureTraceRecorderShould
     [Fact(DisplayName = "Given a pinned version, when Record runs, then the trace starts empty")]
     public void TraceStartsEmpty()
     {
-        var trace = ProcedureTraceRecorder.Record("v1");
+        var trace = ProcedureTraceRecorder.Record("v1", "checkout-flow", Guid.NewGuid(), DateTimeOffset.UtcNow);
 
         trace.PinnedVersionId.ShouldBe("v1");
+        trace.ProcedureKey.ShouldBe("checkout-flow");
         trace.Events.ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Given a trace, when Append runs, then a new trace is returned with the event added immutably")]
     public void AppendIsImmutable()
     {
-        var trace = ProcedureTraceRecorder.Record("v1");
+        var trace = ProcedureTraceRecorder.Record("v1", "checkout-flow", Guid.NewGuid(), DateTimeOffset.UtcNow);
         var firstEvent = new TraceEvent("intake", "started", "node started", DateTimeOffset.UtcNow);
 
         var withEvent = ProcedureTraceRecorder.Append(trace, firstEvent);

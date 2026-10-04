@@ -6,6 +6,7 @@ using Comuki.Modules.Procedures.Application.Patches.Drafting;
 using Comuki.Modules.Procedures.Application.Ports;
 using Comuki.Modules.Procedures.Application.ProcedureVersions;
 using Comuki.Modules.Procedures.Application.ProcedureVersions.Ledger;
+using Comuki.Modules.Procedures.Application.Runtime.Trace.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Comuki.Modules.Procedures.Application;
@@ -42,6 +43,7 @@ public static class ProceduresApplicationExtensions
         services.AddSingleton<IPublicationService, PublicationService>();
         services.AddSingleton<IAttemptPinResolver, AttemptPinResolver>();
         services.AddSingleton<IAttemptPinLedger, InMemoryAttemptPinLedger>();
+        services.AddSingleton<IProcedureTraceStore, InMemoryProcedureTraceStore>();
         return services;
     }
 }

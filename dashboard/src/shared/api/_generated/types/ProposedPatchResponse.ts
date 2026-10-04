@@ -3,8 +3,12 @@
  * Do not edit manually.
  */
 
+import type { AddedNodeDto } from "./AddedNodeDto"
+import type { ReParameterizedNodeDto } from "./ReParameterizedNodeDto"
+import type { RewiredEdgeDto } from "./RewiredEdgeDto"
+
 /**
- * @description Response DTO for a proposed patch\r\n(`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\nThe chat surface has no publication path — the human publishes from\r\nStudio after reviewing the rendered diff.
+ * @description     Response DTO for a proposed patch\r\n    (`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\n    The chat surface has no publication path — the human publishes from\r\n    Studio after reviewing the rendered diff.\r\n\r\n    Carries the full semantic diff payload: per-bucket entries (added\r\nnodes, removed node ids, rewired edges, re-parameterized nodes) so\r\nStudio can render \"added 2, removed 1, rewired 1\" inline without\r\nre-running the diff computer. bool ProposedPatchResponse.Unchanged is true when\r\nthe patch was a no-op (validator catches obvious ones; the post-\r\napplication view catches the rest).
  */
 export type ProposedPatchResponse = {
   /**
@@ -20,7 +24,27 @@ export type ProposedPatchResponse = {
    */
   rationale: string
   /**
+   * @type boolean
+   */
+  unchanged: boolean
+  /**
    * @type string
    */
   diffSummary: string
+  /**
+   * @type array
+   */
+  addedNodes: AddedNodeDto[]
+  /**
+   * @type array
+   */
+  removedNodeIds: string[]
+  /**
+   * @type array
+   */
+  rewiredEdges: RewiredEdgeDto[]
+  /**
+   * @type array
+   */
+  reParameterizedNodes: ReParameterizedNodeDto[]
 }

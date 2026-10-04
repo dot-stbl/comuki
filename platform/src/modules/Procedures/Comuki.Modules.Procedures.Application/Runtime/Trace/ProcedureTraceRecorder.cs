@@ -15,10 +15,17 @@ public static class ProcedureTraceRecorder
 {
     /// <summary>Starts a new trace for the given pinned version.</summary>
     /// <param name="pinnedVersionId">The version the run pinned.</param>
+    /// <param name="procedureKey">The procedure the run rides.</param>
+    /// <param name="projectId">The project that owns the procedure.</param>
+    /// <param name="pinnedAt">When the pin was recorded (UTC).</param>
     /// <returns>An empty trace.</returns>
-    public static ProcedureTrace Record(string pinnedVersionId)
+    public static ProcedureTrace Record(
+        string pinnedVersionId,
+        string procedureKey,
+        Guid projectId,
+        DateTimeOffset pinnedAt)
     {
-        return new ProcedureTrace(pinnedVersionId, []);
+        return new ProcedureTrace(pinnedVersionId, procedureKey, projectId, pinnedAt, []);
     }
 
     /// <summary>Appends an event immutably — returns a new trace.</summary>

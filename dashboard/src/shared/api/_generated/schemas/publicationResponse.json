@@ -1,0 +1,12 @@
+{
+  "required": ["versionId"],
+  "type": "object",
+  "properties": {
+    "versionId": {
+      "type": "string",
+      "description": "The content-addressed version id of the new compiled procedure."
+    }
+  },
+  "description": "Response DTO for the publish endpoint — the new compiled\r\n    version the publication produced, surfaced as the canonical\r\n    `ProcedureVersionResponse` so Studio can re-fetch the\r\n    published graph by id.",
+  "x-readme-ref-name": "PublicationResponse"
+}

@@ -1,12 +1,135 @@
 {
-  "required": ["patchId", "baseVersionId", "rationale", "diffSummary"],
+  "required": [
+    "patchId",
+    "baseVersionId",
+    "rationale",
+    "unchanged",
+    "diffSummary",
+    "addedNodes",
+    "removedNodeIds",
+    "rewiredEdges",
+    "reParameterizedNodes"
+  ],
   "type": "object",
   "properties": {
     "patchId": { "type": "string" },
     "baseVersionId": { "type": "string" },
     "rationale": { "type": "string" },
-    "diffSummary": { "type": "string" }
+    "unchanged": { "type": "boolean" },
+    "diffSummary": { "type": "string" },
+    "addedNodes": {
+      "type": "array",
+      "items": {
+        "required": ["id", "kindKey", "parameters"],
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Graph-local identifier." },
+          "kindKey": {
+            "type": "string",
+            "description": "Catalog kind the node instances."
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Per-kind parameter overrides."
+          }
+        },
+        "description": "One node inserted by the patch.",
+        "x-readme-ref-name": "AddedNodeDto"
+      }
+    },
+    "removedNodeIds": { "type": "array", "items": { "type": "string" } },
+    "rewiredEdges": {
+      "type": "array",
+      "items": {
+        "required": ["before", "after"],
+        "type": "object",
+        "properties": {
+          "before": {
+            "description": "The edge removed by the patch.",
+            "required": ["fromNodeId", "fromPort", "toNodeId"],
+            "type": "object",
+            "properties": {
+              "fromNodeId": {
+                "type": "string",
+                "description": "Source node id."
+              },
+              "fromPort": {
+                "type": "string",
+                "description": "Source outcome port."
+              },
+              "toNodeId": {
+                "type": "string",
+                "description": "Destination node id."
+              }
+            },
+            "x-readme-ref-name": "EdgeRefDto"
+          },
+          "after": {
+            "description": "The edge inserted by the patch.",
+            "required": ["fromNodeId", "fromPort", "toNodeId"],
+            "type": "object",
+            "properties": {
+              "fromNodeId": {
+                "type": "string",
+                "description": "Source node id."
+              },
+              "fromPort": {
+                "type": "string",
+                "description": "Source outcome port."
+              },
+              "toNodeId": {
+                "type": "string",
+                "description": "Destination node id."
+              }
+            },
+            "x-readme-ref-name": "EdgeRefDto"
+          }
+        },
+        "description": "One rewired edge — before (removed) and after (inserted).",
+        "x-readme-ref-name": "RewiredEdgeDto"
+      }
+    },
+    "reParameterizedNodes": {
+      "type": "array",
+      "items": {
+        "required": ["nodeId", "changes"],
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "Graph-local id of the re-parameterized node."
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "required": ["name", "before", "after"],
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Parameter key (kind-declared name)."
+                },
+                "before": {
+                  "type": ["null", "string"],
+                  "description": "Old value (null when added)."
+                },
+                "after": {
+                  "type": ["null", "string"],
+                  "description": "New value (null when removed)."
+                }
+              },
+              "description": "One parameter delta inside a re-parameterized node.",
+              "x-readme-ref-name": "ParameterChangeDto"
+            },
+            "description": "Per-parameter deltas from base to patched."
+          }
+        },
+        "description": "One re-parameterized node: per-parameter deltas.",
+        "x-readme-ref-name": "ReParameterizedNodeDto"
+      }
+    }
   },
-  "description": "Response DTO for a proposed patch\r\n(`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\nThe chat surface has no publication path — the human publishes from\r\nStudio after reviewing the rendered diff.",
+  "description": "    Response DTO for a proposed patch\r\n    (`POST /api/v1/procedures/{projectId}/{procedureKey}/propose-patch`).\r\n    The chat surface has no publication path — the human publishes from\r\n    Studio after reviewing the rendered diff.\r\n\r\n    Carries the full semantic diff payload: per-bucket entries (added\r\nnodes, removed node ids, rewired edges, re-parameterized nodes) so\r\nStudio can render \"added 2, removed 1, rewired 1\" inline without\r\nre-running the diff computer. bool ProposedPatchResponse.Unchanged is true when\r\nthe patch was a no-op (validator catches obvious ones; the post-\r\napplication view catches the rest).",
   "x-readme-ref-name": "ProposedPatchResponse"
 }

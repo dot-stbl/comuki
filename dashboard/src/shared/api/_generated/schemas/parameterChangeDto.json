@@ -1,0 +1,20 @@
+{
+  "required": ["name", "before", "after"],
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Parameter key (kind-declared name)."
+    },
+    "before": {
+      "type": ["null", "string"],
+      "description": "Old value (null when added)."
+    },
+    "after": {
+      "type": ["null", "string"],
+      "description": "New value (null when removed)."
+    }
+  },
+  "description": "One parameter delta inside a re-parameterized node.",
+  "x-readme-ref-name": "ParameterChangeDto"
+}

@@ -19,7 +19,8 @@
     "identity": "身份",
     "compute": "算力",
     "models": "模型",
-    "sections": "分区"
+    "sections": "分区",
+    "procedures": "procedures"
   },
   "crumb": {
     "platform": "平台",
@@ -51,7 +52,8 @@
     "run": "运行",
     "newTicket": "新建工单",
     "newApiKey": "新建 api 密钥",
-    "onboardRepo": "接入仓库"
+    "onboardRepo": "接入仓库",
+    "procedures": "procedures"
   },
   "topbar": {
     "home": "Comuki — 回首页",
@@ -179,6 +181,7 @@
     "source": "来源",
     "newTicket": "新建工单",
     "tasks": "任务",
-    "newTask": "新建任务"
+    "newTask": "新建任务",
+    "procedure": "procedure"
   }
 }

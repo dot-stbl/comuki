@@ -19,7 +19,8 @@
     "identity": "신원",
     "compute": "컴퓨트",
     "models": "모델",
-    "sections": "섹션"
+    "sections": "섹션",
+    "procedures": "procedures"
   },
   "crumb": {
     "platform": "플랫폼",
@@ -51,7 +52,8 @@
     "run": "런",
     "newTicket": "새 티켓",
     "newApiKey": "새 api 키",
-    "onboardRepo": "리포지토리 온보드"
+    "onboardRepo": "리포지토리 온보드",
+    "procedures": "procedures"
   },
   "topbar": {
     "home": "Comuki — 홈",
@@ -179,6 +181,7 @@
     "source": "소스",
     "newTicket": "새 티켓",
     "tasks": "태스크",
-    "newTask": "새 태스크"
+    "newTask": "새 태스크",
+    "procedure": "procedure"
   }
 }

@@ -19,7 +19,8 @@
     "identity": "Kimlik",
     "compute": "Hesaplama",
     "models": "Modeller",
-    "sections": "bölümler"
+    "sections": "bölümler",
+    "procedures": "procedures"
   },
   "crumb": {
     "platform": "platform",
@@ -51,7 +52,8 @@
     "run": "çalıştırma",
     "newTicket": "yeni iş",
     "newApiKey": "yeni api anahtarı",
-    "onboardRepo": "depo tanıt"
+    "onboardRepo": "depo tanıt",
+    "procedures": "procedures"
   },
   "topbar": {
     "home": "Comuki — ana sayfa",
@@ -179,6 +181,7 @@
     "source": "Kaynak",
     "newTicket": "Yeni iş",
     "tasks": "Görevler",
-    "newTask": "Yeni görev"
+    "newTask": "Yeni görev",
+    "procedure": "procedure"
   }
 }

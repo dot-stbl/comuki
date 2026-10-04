@@ -163,6 +163,18 @@ export const productNavSections: NavSection[] = [
         permission: "knowledge.view",
       },
       {
+        // Procedures — operator's view of a procedure in three panels
+        // (Studio / Live run / Replay). One rail row, named like the
+        // resource's domain. The single nav row hides the per-mode ?decision= story
+        // — operators switch modes inside the page, not by navigating away.
+        label: "Procedures",
+        labelKey: "nav.procedures",
+        href: "/procedures",
+        icon: RouteIcon,
+        exact: false,
+        permission: "procedures.view",
+      },
+      {
         label: "Settings",
         labelKey: "nav.settings",
         href: "/settings",

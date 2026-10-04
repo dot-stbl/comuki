@@ -19,7 +19,8 @@
     "identity": "アイデンティティ",
     "compute": "コンピュート",
     "models": "モデル",
-    "sections": "セクション"
+    "sections": "セクション",
+    "procedures": "procedures"
   },
   "crumb": {
     "platform": "プラットフォーム",
@@ -51,7 +52,8 @@
     "run": "実行",
     "newTicket": "新しいチケット",
     "newApiKey": "新しい api キー",
-    "onboardRepo": "リポジトリを接続"
+    "onboardRepo": "リポジトリを接続",
+    "procedures": "procedures"
   },
   "topbar": {
     "home": "Comuki — ホーム",
@@ -179,6 +181,7 @@
     "source": "ソース",
     "newTicket": "新しいチケット",
     "tasks": "タスク",
-    "newTask": "新しいタスク"
+    "newTask": "新しいタスク",
+    "procedure": "procedure"
   }
 }

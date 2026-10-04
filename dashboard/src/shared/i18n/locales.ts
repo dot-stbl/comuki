@@ -67,6 +67,7 @@ export const NAMESPACES: readonly string[] = [
   "compute",
   "home",
   "knowledge",
+  "procedures",
   "models",
   "observability",
   "verify",

@@ -50,7 +50,8 @@ describe("AppShellTwoPaneOuter — section buttons in the DOM", () => {
   })
 
   it("filters out sections the session cannot see", () => {
-    // A viewer keeps only Observe.
+    // A viewer holds runs.view and procedures.view — Observe (Live runs)
+    // and Configure (Procedures) survive, the other sections drop.
     const { container } = render(
       <TestSession roles={["viewer"]}>
         <AppShellTwoPaneOuter
@@ -62,8 +63,11 @@ describe("AppShellTwoPaneOuter — section buttons in the DOM", () => {
     )
 
     const buttons = container.querySelectorAll('[data-test="two-pane-section"]')
-    expect(buttons.length).toBe(1)
-    expect(buttons[0].getAttribute("aria-label")).toBe("Observe")
+    expect(buttons.length).toBe(2)
+    expect([...buttons].map((b) => b.getAttribute("aria-label"))).toEqual([
+      "Observe",
+      "Configure",
+    ])
   })
 
   it("renders an SVG icon inside each button", () => {

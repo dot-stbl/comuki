@@ -74,6 +74,13 @@ export interface ProcedureWorkbenchProps {
    * in; the component otherwise picks the mode the fixture declares.
    */
   readonly initialMode?: ProcedureMode
+  /**
+   * Optional mode-change callback. When the page is mounted under a
+   * route that reads the mode from the URL, this fires the parent's
+   * "navigate to new mode" handler so the back button + bookmarks
+   * track the panel the operator is on.
+   */
+  readonly onModeChange?: (next: ProcedureMode) => void
   /** Names the region for assistive tech. */
   readonly label?: string
   className?: string
@@ -732,6 +739,7 @@ export function ProcedureWorkbench({
   fixture,
   flow,
   initialMode,
+  onModeChange,
   label = "Procedure workbench",
   className,
 }: ProcedureWorkbenchProps) {
@@ -765,7 +773,16 @@ export function ProcedureWorkbench({
     >
       {studio ? <StudioHeader studio={studio} /> : null}
 
-      <ModeTabs selectedMode={selectedMode} onChange={setSelectedMode} />
+      <ModeTabs
+        selectedMode={selectedMode}
+        onChange={(next) => {
+          if (onModeChange) {
+            onModeChange(next)
+            return
+          }
+          setSelectedMode(next)
+        }}
+      />
 
       <div className={styles.body}>
         {selectedMode === "studio" && studio ? (

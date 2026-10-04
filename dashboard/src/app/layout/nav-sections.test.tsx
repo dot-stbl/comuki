@@ -48,16 +48,20 @@ function sectionsFor(roles: Role[], projectRoles?: Record<string, Role[]>) {
 }
 
 describe("the section tree, filtered by what the session may do", () => {
-  it("shows a viewer the one item and the one section it can use", () => {
-    expect(sectionsFor(["viewer"]).labels).toEqual(["Live runs"])
-    expect(sectionsFor(["viewer"]).sections).toEqual(["Observe"])
+  it("shows a viewer the items and the sections it can use", () => {
+    // A viewer holds runs.view and procedures.view — the workbench
+    // (Studio / Live run / Replay) is a read act, so it sits at the
+    // viewer tier. Configure surfaces with the Procedures row only;
+    // Sources / Knowledge / Settings remain gated to richer roles.
+    expect(sectionsFor(["viewer"]).labels).toEqual(["Live runs", "Procedures"])
+    expect(sectionsFor(["viewer"]).sections).toEqual(["Observe", "Configure"])
   })
 
   it("drops a section whose items all vanished", () => {
-    // A viewer holds runs.view and nothing else, so Intake and Configure lose
-    // every item they had — and a section heading standing over nothing is a
-    // worse artefact than the missing item.
-    expect(sectionsFor(["viewer"]).sections).toEqual(["Observe"])
+    // A viewer holds runs.view and procedures.view; the other items in
+    // Configure still gate, so Configure keeps just its Procedures row —
+    // and the section is not empty.
+    expect(sectionsFor(["viewer"]).sections).toEqual(["Observe", "Configure"])
   })
 
   it("opens intake and knowledge for a member, and still hides approvals", () => {

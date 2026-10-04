@@ -1,0 +1,9 @@
+{
+  "title": "Procedure {{procedureKey}}",
+  "description": "The procedure workbench — Studio / Live run / Replay panels for one procedure.",
+  "mode": {
+    "studio": "Studio",
+    "live": "Live run",
+    "replay": "Replay"
+  }
+}

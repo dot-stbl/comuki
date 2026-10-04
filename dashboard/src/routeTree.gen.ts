@@ -22,6 +22,7 @@ import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as ChatIndexRouteImport } from './routes/chat/index'
 import { Route as ChatInitRouteImport } from './routes/chat/init'
 import { Route as IdentityIndexRouteImport } from './routes/identity/index'
+import { Route as ProceduresProcedureKeyRouteImport } from './routes/procedures/$procedureKey'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects/$projectId'
 import { Route as ProjectsNewRouteImport } from './routes/projects/new'
@@ -104,6 +105,11 @@ const ChatInitRoute = ChatInitRouteImport.update({
 const IdentityIndexRoute = IdentityIndexRouteImport.update({
   id: '/identity/',
   path: '/identity/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProceduresProcedureKeyRoute = ProceduresProcedureKeyRouteImport.update({
+  id: '/procedures/$procedureKey',
+  path: '/procedures/$procedureKey',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/verify': typeof VerifyRoute
   '/chat/init': typeof ChatInitRoute
+  '/procedures/$procedureKey': typeof ProceduresProcedureKeyRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/new': typeof ProjectsNewRoute
   '/runs/$runId': typeof RunsRunIdRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/verify': typeof VerifyRoute
   '/chat/init': typeof ChatInitRoute
+  '/procedures/$procedureKey': typeof ProceduresProcedureKeyRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/new': typeof ProjectsNewRoute
   '/runs/$runId': typeof RunsRunIdRoute
@@ -278,6 +286,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/verify': typeof VerifyRoute
   '/chat/init': typeof ChatInitRoute
+  '/procedures/$procedureKey': typeof ProceduresProcedureKeyRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/projects/new': typeof ProjectsNewRoute
   '/runs/$runId': typeof RunsRunIdRoute
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/verify'
     | '/chat/init'
+    | '/procedures/$procedureKey'
     | '/projects/$projectId'
     | '/projects/new'
     | '/runs/$runId'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/verify'
     | '/chat/init'
+    | '/procedures/$procedureKey'
     | '/projects/$projectId'
     | '/projects/new'
     | '/runs/$runId'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/verify'
     | '/chat/init'
+    | '/procedures/$procedureKey'
     | '/projects/$projectId'
     | '/projects/new'
     | '/runs/$runId'
@@ -413,6 +425,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   VerifyRoute: typeof VerifyRoute
   ChatInitRoute: typeof ChatInitRoute
+  ProceduresProcedureKeyRoute: typeof ProceduresProcedureKeyRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   ProjectsNewRoute: typeof ProjectsNewRoute
   RunsRunIdRoute: typeof RunsRunIdRoute
@@ -526,6 +539,13 @@ declare module '@tanstack/react-router' {
       path: '/identity'
       fullPath: '/identity/'
       preLoaderRoute: typeof IdentityIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/procedures/$procedureKey': {
+      id: '/procedures/$procedureKey'
+      path: '/procedures/$procedureKey'
+      fullPath: '/procedures/$procedureKey'
+      preLoaderRoute: typeof ProceduresProcedureKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects/': {
@@ -669,6 +689,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   VerifyRoute: VerifyRoute,
   ChatInitRoute: ChatInitRoute,
+  ProceduresProcedureKeyRoute: ProceduresProcedureKeyRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   ProjectsNewRoute: ProjectsNewRoute,
   RunsRunIdRoute: RunsRunIdRoute,

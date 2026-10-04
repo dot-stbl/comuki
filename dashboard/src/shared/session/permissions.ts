@@ -39,6 +39,8 @@ export type Permission =
   | "settings.git"
   | "identity.manage"
   | "projects.view"
+  | "procedures.view"
+  | "projects.view"
   | "projects.create"
   | "projects.edit"
   | "compute.view"
@@ -85,9 +87,14 @@ const SCOPE: Record<Permission, "project" | "platform"> = {
   "models.view": "platform",
   "models.manage": "platform",
   "observability.view": "platform",
+  // Procedure workbench — read access to the Studio / Live run / Replay
+  // panels for a procedure. A procedure is project-scoped (the run
+  // binder records the pin per (project, procedureKey)) so reading
+  // the workbench is a project act.
+  "procedures.view": "project",
 }
 
-const VIEWER: Permission[] = ["runs.view"]
+const VIEWER: Permission[] = ["runs.view", "procedures.view"]
 
 const MEMBER: Permission[] = [
   ...VIEWER,

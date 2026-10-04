@@ -19,7 +19,8 @@
     "identity": "Tożsamość",
     "compute": "Obliczenia",
     "models": "Modele",
-    "sections": "sekcje"
+    "sections": "sekcje",
+    "procedures": "procedures"
   },
   "crumb": {
     "platform": "platforma",
@@ -51,7 +52,8 @@
     "run": "uruchomienie",
     "newTicket": "nowe zgłoszenie",
     "newApiKey": "nowy klucz api",
-    "onboardRepo": "podłącz repozytorium"
+    "onboardRepo": "podłącz repozytorium",
+    "procedures": "procedures"
   },
   "topbar": {
     "home": "Comuki — strona główna",
@@ -179,6 +181,7 @@
     "source": "Źródło",
     "newTicket": "Nowe zgłoszenie",
     "tasks": "Zadania",
-    "newTask": "Nowe zadanie"
+    "newTask": "Nowe zadanie",
+    "procedure": "procedure"
   }
 }

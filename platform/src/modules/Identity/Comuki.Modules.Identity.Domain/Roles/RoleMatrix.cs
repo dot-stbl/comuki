@@ -33,6 +33,7 @@ public static class RoleMatrix
                 IdentityRead, IdentityWrite,
                 SchedulerRead, SchedulerWrite,
                 ProcedureRead, ProcedureWrite,
+                ObservabilityRead,
                 PlatformAdmin,
             ],
             [Role.Operator] =
@@ -51,6 +52,7 @@ public static class RoleMatrix
                 ProjectRead,
                 SchedulerRead, SchedulerWrite,
                 ProcedureRead, ProcedureWrite,
+                ObservabilityRead,
             ],
             [Role.ProjectAdmin] =
             [
@@ -69,6 +71,7 @@ public static class RoleMatrix
                 IdentityRead,
                 SchedulerRead, SchedulerWrite,
                 ProcedureRead, ProcedureWrite,
+                ObservabilityRead,
             ],
             [Role.Approver] =
             [
@@ -81,6 +84,7 @@ public static class RoleMatrix
                 ProjectRead,
                 SchedulerRead,
                 ProcedureRead,
+                ObservabilityRead,
             ],
             [Role.Member] =
             [
@@ -96,6 +100,7 @@ public static class RoleMatrix
                 ProjectRead,
                 SchedulerRead,
                 ProcedureRead,
+                ObservabilityRead,
             ],
             [Role.Viewer] =
             [

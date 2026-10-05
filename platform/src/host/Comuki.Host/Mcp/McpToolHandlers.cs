@@ -7,6 +7,8 @@ using Comuki.Modules.Memory.Application.Ports;
 using Comuki.Modules.Memory.Domain.Facts.Kinds;
 using Comuki.Modules.Memory.Domain.Facts.Scopes;
 using Comuki.Modules.Memory.Domain.Facts.Sources;
+using Comuki.Modules.Observability.Application.Ports;
+using Comuki.Modules.Observability.Domain;
 using Comuki.Shared.Filtering.Ports;
 
 namespace Comuki.Host.Mcp;
@@ -25,6 +27,8 @@ namespace Comuki.Host.Mcp;
 /// <param name="learningCandidates">Learning-candidate store behind learning.suggest.</param>
 /// <param name="suggestRateLimiter">Per-worker suggest limiter for learning.suggest.</param>
 /// <param name="runsList">Runs list handler (read model projection).</param>
+/// <param name="logsQueryClient">VictoriaLogs query port (logs.search / logs.context).</param>
+/// <param name="metricsQueryClient">VictoriaMetrics query port (metrics.query / metrics.series).</param>
 /// <param name="clock">Clock for memory.note timestamps.</param>
 /// <param name="embedder">
 /// Optional embedding client — the same provider the knowledge module
@@ -40,6 +44,8 @@ public sealed class McpToolHandlers(
     ILearningCandidateStore learningCandidates,
     WorkerSuggestRateLimiter suggestRateLimiter,
     RunsListHandler runsList,
+    IVictoriaLogsQueryClient logsQueryClient,
+    IVictoriaMetricsQueryClient metricsQueryClient,
     TimeProvider clock,
     IEmbeddingClient? embedder = null)
 {
@@ -378,6 +384,262 @@ public sealed class McpToolHandlers(
                 JsonRpcEnvelope.ErrorCodes.InvalidParams,
                 "runs.get requires arguments.runId as a Guid string",
                 Data: null));
+    }
+
+    /// <summary>observability.logs.search — LogsQL over VictoriaLogs.</summary>
+    /// <param name="id">JSON-RPC request id.</param>
+    /// <param name="arguments">Parsed JSON arguments object.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task<JsonRpcResponse> ObservabilityLogsSearchAsync(
+        JsonElement? id,
+        JsonElement arguments,
+        CancellationToken cancellationToken)
+    {
+        var query = McpArgumentReaders.ReadString(arguments, "query");
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return InvalidParams(id, "observability.logs.search requires a non-empty arguments.query");
+        }
+
+        var fromUnixMs = McpArgumentReaders.ReadOptionalLong(arguments, "fromUnixMs");
+        var toUnixMs = McpArgumentReaders.ReadOptionalLong(arguments, "toUnixMs");
+        if (!ValidateTimeWindow(id, fromUnixMs, toUnixMs, out var windowError))
+        {
+            return windowError!;
+        }
+
+        var limit = ClampLimit(McpArgumentReaders.ReadOptionalInt(arguments, "limit"));
+        var explicitTraceId = McpArgumentReaders.ReadOptionalString(arguments, "traceId");
+
+        var logsQuery = new Modules.Observability.Domain.Logs.LogsQuery(
+            Query: query,
+            FromUnixMs: fromUnixMs,
+            ToUnixMs: toUnixMs,
+            Limit: limit,
+            TraceId: explicitTraceId);
+
+        IReadOnlyList<Modules.Observability.Domain.Logs.LogRow> rows;
+        try
+        {
+            rows = await logsQueryClient.SearchAsync(logsQuery, cancellationToken);
+        }
+        catch (VictoriaUnavailableException exception)
+        {
+            return VictoriaUnavailable(id, exception);
+        }
+
+        return JsonRpcResponse.Success(id, ToolResultFromRows(rows));
+    }
+
+    /// <summary>observability.logs.context — fetch the logs of a single trace id.</summary>
+    /// <param name="id">JSON-RPC request id.</param>
+    /// <param name="arguments">Parsed JSON arguments object.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task<JsonRpcResponse> ObservabilityLogsContextAsync(
+        JsonElement? id,
+        JsonElement arguments,
+        CancellationToken cancellationToken)
+    {
+        var traceId = McpArgumentReaders.ReadString(arguments, "traceId");
+        if (string.IsNullOrWhiteSpace(traceId))
+        {
+            return InvalidParams(id, "observability.logs.context requires a non-empty arguments.traceId");
+        }
+
+        var fromUnixMs = McpArgumentReaders.ReadOptionalLong(arguments, "fromUnixMs");
+        var toUnixMs = McpArgumentReaders.ReadOptionalLong(arguments, "toUnixMs");
+        if (!ValidateTimeWindow(id, fromUnixMs, toUnixMs, out var windowError))
+        {
+            return windowError!;
+        }
+
+        var limit = ClampLimit(McpArgumentReaders.ReadOptionalInt(arguments, "limit"));
+
+        IReadOnlyList<Modules.Observability.Domain.Logs.LogRow> rows;
+        try
+        {
+            rows = await logsQueryClient.ContextAsync(traceId, fromUnixMs, toUnixMs, limit, cancellationToken);
+        }
+        catch (VictoriaUnavailableException exception)
+        {
+            return VictoriaUnavailable(id, exception);
+        }
+
+        return JsonRpcResponse.Success(id, ToolResultFromRows(rows));
+    }
+
+    /// <summary>observability.metrics.query — PromQL instant or range query.</summary>
+    /// <param name="id">JSON-RPC request id.</param>
+    /// <param name="arguments">Parsed JSON arguments object.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task<JsonRpcResponse> ObservabilityMetricsQueryAsync(
+        JsonElement? id,
+        JsonElement arguments,
+        CancellationToken cancellationToken)
+    {
+        var query = McpArgumentReaders.ReadString(arguments, "query");
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return InvalidParams(id, "observability.metrics.query requires a non-empty arguments.query");
+        }
+
+        var time = McpArgumentReaders.ReadOptionalLong(arguments, "time");
+        var start = McpArgumentReaders.ReadOptionalLong(arguments, "start");
+        var end = McpArgumentReaders.ReadOptionalLong(arguments, "end");
+        var step = McpArgumentReaders.ReadOptionalLong(arguments, "step");
+
+        if ((time is null && (start is null || end is null || step is null))
+            || (time is not null && (start is not null || end is not null || step is not null)))
+        {
+            return InvalidParams(id, "observability.metrics.query requires either arguments.time (instant) or arguments.start+end+step (range), exclusively.");
+        }
+
+        if (start is not null && end is not null && end < start)
+        {
+            return InvalidParams(id, "observability.metrics.query rejects arguments.end < arguments.start");
+        }
+
+        var metricsQuery = time is not null
+            ? new Modules.Observability.Domain.Metrics.MetricsQuery(PromQl: query, TimeUnixMs: time)
+            : new Modules.Observability.Domain.Metrics.MetricsQuery(PromQl: query, FromUnixMs: start, ToUnixMs: end, StepUnixMs: step);
+
+        IReadOnlyList<Modules.Observability.Domain.Metrics.MetricSeries> series;
+        try
+        {
+            series = await metricsQueryClient.QueryAsync(metricsQuery, cancellationToken);
+        }
+        catch (VictoriaUnavailableException exception)
+        {
+            return VictoriaUnavailable(id, exception);
+        }
+
+        return JsonRpcResponse.Success(id, new ToolResult(
+            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(new
+            {
+                resultType = series.Count == 0 ? "empty" : (time is not null ? "vector" : "matrix"),
+                seriesCount = series.Count,
+                series = series.Select(static s => new
+                {
+                    labels = s.Labels,
+                    sampleCount = s.Samples.Count,
+                }),
+            }, JsonSerializerOptions.Web))],
+            IsError: false));
+    }
+
+    /// <summary>observability.metrics.series — list matching metric series for a label selector.</summary>
+    /// <param name="id">JSON-RPC request id.</param>
+    /// <param name="arguments">Parsed JSON arguments object.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task<JsonRpcResponse> ObservabilityMetricsSeriesAsync(
+        JsonElement? id,
+        JsonElement arguments,
+        CancellationToken cancellationToken)
+    {
+        var match = McpArgumentReaders.ReadString(arguments, "match");
+        if (string.IsNullOrWhiteSpace(match))
+        {
+            return InvalidParams(id, "observability.metrics.series requires a non-empty arguments.match");
+        }
+
+        IReadOnlyDictionary<string, IReadOnlyList<string>> labelKeys;
+        try
+        {
+            labelKeys = await metricsQueryClient.SeriesAsync(match, cancellationToken);
+        }
+        catch (VictoriaUnavailableException exception)
+        {
+            return VictoriaUnavailable(id, exception);
+        }
+
+        return JsonRpcResponse.Success(id, new ToolResult(
+            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(labelKeys, JsonSerializerOptions.Web))],
+            IsError: false));
+    }
+
+    /// <summary>Upper bound on the time-range inputs the observability tools accept.</summary>
+    private const long ObservabilityMaxRangeUnixMs = 7L * 24L * 60L * 60L * 1000L;
+
+    /// <summary>Upper bound for observability.* row-set windows (server caps at the same value).</summary>
+    private const int ObservabilityDefaultLimit = 100;
+
+    /// <summary>Upper bound for observability.* row-set windows (server caps at the same value).</summary>
+    private const int ObservabilityMaxLimit = 1000;
+
+    /// <summary>
+    /// Reject time windows that are inverted or exceed the platform's max
+    /// observability retention — the guard fires before any HTTP call so a
+    /// misconfigured client doesn't get to chew through a full VictoriaLogs
+    /// 30-day query only to be told the result is too big.
+    /// </summary>
+    private static bool ValidateTimeWindow(JsonElement? id, long? fromUnixMs, long? toUnixMs, out JsonRpcResponse? error)
+    {
+        error = null;
+        if (fromUnixMs is null || toUnixMs is null)
+        {
+            return true;
+        }
+
+        if (toUnixMs < fromUnixMs)
+        {
+            error = InvalidParams(id, "observability.* tools reject arguments.toUnixMs < arguments.fromUnixMs");
+            return false;
+        }
+
+        if (toUnixMs - fromUnixMs > ObservabilityMaxRangeUnixMs)
+        {
+            error = InvalidParams(id, $"observability.* tools reject time windows longer than {ObservabilityMaxRangeUnixMs / 86400000} days");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Clamp the row-limit to the documented [1, max] range, defaulting when absent.</summary>
+    private static int ClampLimit(int? requested)
+    {
+        var value = requested ?? ObservabilityDefaultLimit;
+        return Math.Clamp(value, 1, ObservabilityMaxLimit);
+    }
+
+    /// <summary>JSON-RPC -32602 (InvalidParams) envelope helper.</summary>
+    private static JsonRpcResponse InvalidParams(JsonElement? id, string message)
+    {
+        return JsonRpcResponse.Failure(id, JsonRpcEnvelope.ErrorCodes.InvalidParams, message, Data: null);
+    }
+
+    /// <summary>
+    /// Tool-level error envelope for <see cref="VictoriaUnavailableException"/>.
+    /// The exception's stable <c>observability.victoria_unavailable</c> code
+    /// is surfaced as the <c>message</c> string so clients branch on it
+    /// (mirrors <c>McpToolPermissionMap.PermissionDeniedCode</c>).
+    /// </summary>
+    private static JsonRpcResponse VictoriaUnavailable(JsonElement? id, VictoriaUnavailableException exception)
+    {
+        return JsonRpcResponse.Success(id, new ToolResult(
+            Content: [new ToolContentBlock("text",
+                $"{VictoriaUnavailableException.VictoriaUnavailableCode}: {exception.Endpoint} ({exception.Inner?.Message ?? "no response within the timeout"})")],
+            IsError: true));
+    }
+
+    /// <summary>Render a list of typed log rows as the tool payload (camelCase JSON, web options).</summary>
+    private static ToolResult ToolResultFromRows(IReadOnlyList<Modules.Observability.Domain.Logs.LogRow> rows)
+    {
+        return new(
+            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(new
+            {
+                count = rows.Count,
+                rows = rows.Select(static row => new
+                {
+                    timestamp = row.Timestamp,
+                    level = row.Level,
+                    messageTemplate = row.MessageTemplate,
+                    scopeJson = row.ScopeJson,
+                    traceId = row.TraceId,
+                    spanId = row.SpanId,
+                }),
+            }, JsonSerializerOptions.Web))],
+            IsError: false);
     }
 }
 

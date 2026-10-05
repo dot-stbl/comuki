@@ -131,6 +131,73 @@ internal static class McpToolCatalog
                     required = new[] { "runId" },
                 },
             },
+            new
+            {
+                name = "observability.logs.search",
+                description = "Search VictoriaLogs with a LogsQL query over the platform's log stream. The ambient OTel trace id is auto-appended unless an explicit traceId is provided; a window pair (fromUnixMs, toUnixMs) narrows the search to a time range; limit caps the row count.",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new Dictionary<string, object>
+                    {
+                        ["query"] = new { type = "string", description = "LogsQL expression (the text after _stream: or a free clause)." },
+                        ["fromUnixMs"] = new { type = "integer", description = "Optional inclusive lower bound on _time, unix milliseconds." },
+                        ["toUnixMs"] = new { type = "integer", description = "Optional inclusive upper bound on _time, unix milliseconds." },
+                        ["limit"] = new { type = "integer", description = "Maximum rows returned (default 100, max 1000)." },
+                        ["traceId"] = new { type = "string", description = "Explicit W3C trace id override; otherwise the ambient OTel trace id is used." },
+                    },
+                    required = new[] { "query" },
+                },
+            },
+            new
+            {
+                name = "observability.metrics.query",
+                description = "Run a PromQL instant or range query against VictoriaMetrics. Pass `time` for an instant query at that unix-ms, or pass `start` + `end` + `step` (unix-ms each) for a range query.",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new Dictionary<string, object>
+                    {
+                        ["query"] = new { type = "string", description = "PromQL expression." },
+                        ["time"] = new { type = "integer", description = "Instant-query evaluation time, unix ms." },
+                        ["start"] = new { type = "integer", description = "Range-query inclusive lower bound, unix ms." },
+                        ["end"] = new { type = "integer", description = "Range-query inclusive upper bound, unix ms." },
+                        ["step"] = new { type = "integer", description = "Range-query resolution, unix ms (e.g. 15000 for 15s)." },
+                    },
+                    required = new[] { "query" },
+                },
+            },
+            new
+            {
+                name = "observability.logs.context",
+                description = "Fetch the log rows whose trace_id matches a given W3C trace id. A faster path than the full search when the user already has a trace id (e.g. from a span error).",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new Dictionary<string, object>
+                    {
+                        ["traceId"] = new { type = "string", description = "W3C trace id (32-hex or 16-hex). Required." },
+                        ["fromUnixMs"] = new { type = "integer", description = "Optional inclusive lower bound on _time, unix ms." },
+                        ["toUnixMs"] = new { type = "integer", description = "Optional inclusive upper bound on _time, unix ms." },
+                        ["limit"] = new { type = "integer", description = "Maximum rows returned (default 100, max 1000)." },
+                    },
+                    required = new[] { "traceId" },
+                },
+            },
+            new
+            {
+                name = "observability.metrics.series",
+                description = "List the matching metric series for a label selector. Use to discover what label combinations exist for a metric before constructing a query.",
+                inputSchema = new
+                {
+                    type = "object",
+                    properties = new Dictionary<string, object>
+                    {
+                        ["match"] = new { type = "string", description = "Label selector in Prometheus form, e.g. {job=\"comuki-orchestrator\"} or {__name__=\"comuki.runs.queued\"}." },
+                    },
+                    required = new[] { "match" },
+                },
+            },
         };
 
         return JsonRpcResponse.Success(id, new { tools });

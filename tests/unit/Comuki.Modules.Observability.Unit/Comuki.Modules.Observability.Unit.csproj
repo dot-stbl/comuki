@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Modules.Observability.Unit</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\platform\src\modules\Observability\Comuki.Modules.Observability.Infrastructure\Comuki.Modules.Observability.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Observability\Comuki.Modules.Observability.Application\Comuki.Modules.Observability.Application.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Observability\Comuki.Modules.Observability.Domain\Comuki.Modules.Observability.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

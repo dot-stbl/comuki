@@ -49,6 +49,36 @@ internal static class McpArgumentReaders
         return Guid.TryParse(raw, out var parsed) ? parsed : null;
     }
 
+    /// <summary>Reads an optional long property; accepts numbers or numeric strings.</summary>
+    /// <param name="arguments"></param>
+    /// <param name="propertyName"></param>
+    public static long? ReadOptionalLong(JsonElement arguments, string propertyName)
+    {
+        if (arguments.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        foreach (var property in arguments.EnumerateObject())
+        {
+            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                if (property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt64(out var value))
+                {
+                    return value;
+                }
+
+                if (property.Value.ValueKind == JsonValueKind.String
+                    && long.TryParse(property.Value.GetString(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                {
+                    return parsed;
+                }
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>Reads an optional int property; accepts numbers or numeric strings.</summary>
     /// <param name="arguments"></param>
     /// <param name="propertyName"></param>

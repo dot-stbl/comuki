@@ -13,6 +13,7 @@ using Comuki.Modules.Memory.Domain.Facts.Kinds;
 using Comuki.Modules.Memory.Domain.Facts.Scopes;
 using Comuki.Modules.Memory.Domain.Facts.Sources;
 using Comuki.Modules.Memory.Domain.Ids;
+using Comuki.Modules.Observability.Application.Ports;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
@@ -347,6 +348,8 @@ public sealed class McpWorkerToolsShould
                 learningCandidates: learningCandidates ?? Substitute.For<ILearningCandidateStore>(),
                 suggestRateLimiter: new WorkerSuggestRateLimiter(TimeProvider.System),
                 runsList: NewRunsListHandler(),
+                logsQueryClient: Substitute.For<IVictoriaLogsQueryClient>(),
+                metricsQueryClient: Substitute.For<IVictoriaMetricsQueryClient>(),
                 clock: TimeProvider.System),
             permissionEvaluator: NewEvaluator(),
             logger: NullLogger<McpServer>.Instance);

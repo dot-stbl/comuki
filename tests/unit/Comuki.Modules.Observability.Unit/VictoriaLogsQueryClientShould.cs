@@ -130,7 +130,7 @@ public sealed class VictoriaLogsQueryClientShould
     /// body the typed client maps. The unit tests exercise the
     /// ambient-trace-id logic and don't need a full Refit surface —
     /// the body is what the typed client reads through
-    /// <see cref="VictoriaLogsQueryClient.MapResponse"/>; status and
+    /// <see cref="VictoriaLogsQueryHelpers.MapResponse"/>; status and
     /// headers stay neutral. The 5-arg
     /// <c>Refit.ApiResponse&lt;T&gt;</c> ctor is the one a test can
     /// actually wire — its 3-arg sibling demands an associated

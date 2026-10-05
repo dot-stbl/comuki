@@ -55,7 +55,7 @@ internal sealed class VictoriaMetricsQueryClient(
                     time: VictoriaMetricsQueryHelpers.ToUnixSeconds(query.Time),
                     cancellationToken);
 
-                return MapValues(VictoriaMetricsQueryHelpers.UnwrapEnvelope(envelope));
+                return VictoriaMetricsQueryHelpers.MapValues(VictoriaMetricsQueryHelpers.UnwrapEnvelope(envelope));
             }
 
             var step = VictoriaMetricsQueryHelpers.ToPrometheusDuration(query.Step ?? options.Value.ScrapeInterval);
@@ -66,7 +66,7 @@ internal sealed class VictoriaMetricsQueryClient(
                 step: step,
                 cancellationToken);
 
-            return MapValues(VictoriaMetricsQueryHelpers.UnwrapEnvelope(rangeEnvelope));
+            return VictoriaMetricsQueryHelpers.MapValues(VictoriaMetricsQueryHelpers.UnwrapEnvelope(rangeEnvelope));
         }
         catch (ApiException exception)
         {
@@ -96,7 +96,7 @@ internal sealed class VictoriaMetricsQueryClient(
         {
             var envelope = await api.SeriesAsync($"{{{labelSelector}}}", cancellationToken);
             var rows = VictoriaMetricsQueryHelpers.UnwrapEnvelope(envelope);
-            return AggregateLabelKeys(rows);
+            return VictoriaMetricsQueryHelpers.AggregateLabelKeys(rows);
         }
         catch (ApiException exception)
         {
@@ -110,123 +110,6 @@ internal sealed class VictoriaMetricsQueryClient(
         {
             throw new VictoriaUnavailableException("victoria-metrics", timeout);
         }
-    }
-
-    /// <summary>
-    /// Map the Prometheus envelope onto typed <see cref="MetricSeries"/>
-    /// rows. The wire shape is per-<see cref="PrometheusDataWire{TWire}.ResultType"/>:
-    /// instant (vector) carries a single <c>[ts, v]</c> pair in
-    /// <see cref="PrometheusValueWire.Value"/>; range (matrix) carries
-    /// a list of pairs in <see cref="PrometheusValueWire.Values"/>. We
-    /// pick the side that's present and parse samples off it.
-    /// Timestamps on the wire are unix <em>seconds</em> (Prometheus convention).
-    /// </summary>
-    private static IReadOnlyList<MetricSeries> MapValues(PrometheusResponseEnvelope<PrometheusValueWire> envelope)
-    {
-        if (envelope.Data?.Result is null || envelope.Data.Result.Count == 0)
-        {
-            return [];
-        }
-
-        var result = new List<MetricSeries>(envelope.Data.Result.Count);
-        foreach (var value in envelope.Data.Result)
-        {
-            var rawSamples = (IEnumerable<IReadOnlyList<object>>?)
-                (value.Values
-                 ?? (value.Value is null ? null : new[] { value.Value }));
-
-            if (rawSamples is null)
-            {
-                continue;
-            }
-
-            var samples = new List<MetricSample>();
-            foreach (var raw in rawSamples)
-            {
-                if (TryReadSample(raw, out var sample))
-                {
-                    samples.Add(sample);
-                }
-            }
-
-            result.Add(new MetricSeries(value.Metric.Labels, samples));
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Parse a single Prometheus <c>value</c> / <c>values</c> element.
-    /// The wire shape carries each sample as a 2-element array of
-    /// <c>[unixSec, value]</c> strings; we tolerate a one-element array
-    /// (scalar) for instant queries. Timestamps are unix seconds.
-    /// </summary>
-    private static bool TryReadSample(object raw, out MetricSample sample)
-    {
-        sample = default!;
-
-        if (raw is not JsonElement { ValueKind: JsonValueKind.Array } element)
-        {
-            return false;
-        }
-
-        if (element.GetArrayLength() < 2)
-        {
-            return false;
-        }
-
-        var unixElement = element[0];
-        var valueElement = element[1];
-        if (!unixElement.TryGetDouble(out var unixSeconds))
-        {
-            return false;
-        }
-
-        if (!valueElement.TryGetDouble(out var doubleValue))
-        {
-            return false;
-        }
-
-        var unixMs = (long)(unixSeconds * 1000d);
-        sample = new MetricSample(unixMs, doubleValue);
-        return true;
-    }
-
-    /// <summary>
-    /// Aggregate the per-series label rows into a <c>label-key → distinct
-    /// values</c> dictionary the dashboard observability page renders.
-    /// </summary>
-    private static IReadOnlyDictionary<string, IReadOnlyList<string>> AggregateLabelKeys(
-        IReadOnlyList<SeriesMatchWire> rows)
-    {
-        if (rows is null || rows.Count == 0)
-        {
-            return new Dictionary<string, IReadOnlyList<string>>();
-        }
-
-        var bucket = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        foreach (var row in rows)
-        {
-            foreach (var (key, value) in row.Labels)
-            {
-                if (!bucket.TryGetValue(key, out var values))
-                {
-                    values = new HashSet<string>(StringComparer.Ordinal);
-                    bucket[key] = values;
-                }
-                values.Add(value);
-            }
-        }
-
-        var snapshot = new Dictionary<string, IReadOnlyList<string>>(
-            bucket.Count, StringComparer.Ordinal);
-        foreach (var (key, values) in bucket)
-        {
-            var sorted = values.ToArray();
-            Array.Sort(sorted, StringComparer.Ordinal);
-            snapshot[key] = sorted;
-        }
-        return snapshot;
     }
 }
 
@@ -300,5 +183,122 @@ internal static class VictoriaMetricsQueryHelpers
             ? throw new HttpRequestException($"VictoriaMetrics returned HTTP {(int)response.StatusCode!.Value}.")
             : response.Content
               ?? throw new HttpRequestException("VictoriaMetrics returned an empty response body.");
+    }
+
+    /// <summary>
+    /// Map the Prometheus envelope onto typed <see cref="MetricSeries"/>
+    /// rows. The wire shape is per-<see cref="PrometheusDataWire{TWire}.ResultType"/>:
+    /// instant (vector) carries a single <c>[ts, v]</c> pair in
+    /// <see cref="PrometheusValueWire.Value"/>; range (matrix) carries
+    /// a list of pairs in <see cref="PrometheusValueWire.Values"/>. We
+    /// pick the side that's present and parse samples off it.
+    /// Timestamps on the wire are unix <em>seconds</em> (Prometheus convention).
+    /// </summary>
+    public static IReadOnlyList<MetricSeries> MapValues(PrometheusResponseEnvelope<PrometheusValueWire> envelope)
+    {
+        if (envelope.Data?.Result is null || envelope.Data.Result.Count == 0)
+        {
+            return [];
+        }
+
+        var result = new List<MetricSeries>(envelope.Data.Result.Count);
+        foreach (var value in envelope.Data.Result)
+        {
+            var rawSamples = (IEnumerable<IReadOnlyList<object>>?)
+                (value.Values
+                 ?? (value.Value is null ? null : new[] { value.Value }));
+
+            if (rawSamples is null)
+            {
+                continue;
+            }
+
+            var samples = new List<MetricSample>();
+            foreach (var raw in rawSamples)
+            {
+                if (TryReadSample(raw, out var sample))
+                {
+                    samples.Add(sample);
+                }
+            }
+
+            result.Add(new MetricSeries(value.Metric.Labels, samples));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Parse a single Prometheus <c>value</c> / <c>values</c> element.
+    /// The wire shape carries each sample as a 2-element array of
+    /// <c>[unixSec, value]</c> strings; we tolerate a one-element array
+    /// (scalar) for instant queries. Timestamps are unix seconds.
+    /// </summary>
+    public static bool TryReadSample(object raw, out MetricSample sample)
+    {
+        sample = default!;
+
+        if (raw is not JsonElement { ValueKind: JsonValueKind.Array } element)
+        {
+            return false;
+        }
+
+        if (element.GetArrayLength() < 2)
+        {
+            return false;
+        }
+
+        var unixElement = element[0];
+        var valueElement = element[1];
+        if (!unixElement.TryGetDouble(out var unixSeconds))
+        {
+            return false;
+        }
+
+        if (!valueElement.TryGetDouble(out var doubleValue))
+        {
+            return false;
+        }
+
+        var unixMs = (long)(unixSeconds * 1000d);
+        sample = new MetricSample(unixMs, doubleValue);
+        return true;
+    }
+
+    /// <summary>
+    /// Aggregate the per-series label rows into a <c>label-key → distinct
+    /// values</c> dictionary the dashboard observability page renders.
+    /// </summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> AggregateLabelKeys(
+        IReadOnlyList<SeriesMatchWire> rows)
+    {
+        if (rows is null || rows.Count == 0)
+        {
+            return new Dictionary<string, IReadOnlyList<string>>();
+        }
+
+        var bucket = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        foreach (var row in rows)
+        {
+            foreach (var (key, value) in row.Labels)
+            {
+                if (!bucket.TryGetValue(key, out var values))
+                {
+                    values = new HashSet<string>(StringComparer.Ordinal);
+                    bucket[key] = values;
+                }
+                values.Add(value);
+            }
+        }
+
+        var snapshot = new Dictionary<string, IReadOnlyList<string>>(
+            bucket.Count, StringComparer.Ordinal);
+        foreach (var (key, values) in bucket)
+        {
+            var sorted = values.ToArray();
+            Array.Sort(sorted, StringComparer.Ordinal);
+            snapshot[key] = sorted;
+        }
+        return snapshot;
     }
 }

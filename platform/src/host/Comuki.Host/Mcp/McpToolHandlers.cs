@@ -9,6 +9,8 @@ using Comuki.Modules.Memory.Domain.Facts.Scopes;
 using Comuki.Modules.Memory.Domain.Facts.Sources;
 using Comuki.Modules.Observability.Application.Ports;
 using Comuki.Modules.Observability.Domain;
+using Comuki.Modules.Observability.Domain.Logs;
+using Comuki.Modules.Observability.Domain.Metrics;
 using Comuki.Shared.Filtering.Ports;
 
 namespace Comuki.Host.Mcp;
@@ -97,17 +99,19 @@ public sealed class McpToolHandlers(
 
         // Worker callers never scope themselves: the project comes from the
         // lease the token maps to, a client-supplied projectId is ignored.
-        if (caller.Worker is { } worker)
-        {
-            return worker.ProjectId is not { } workerProject
+        return caller.Worker is { } worker
+            ? worker.ProjectId is not { } workerProject
                 ? JsonRpcResponse.Success(id, new ToolResult(
                     Content: [new ToolContentBlock("text", "knowledge.search is unavailable: no active work item, no project scope.")],
                     IsError: true))
-                : await McpKnowledgeSearch.SearchAsync(knowledgeSearcher, id, query, workerProject, arguments, cancellationToken);
-        }
-
-        var projectId = McpArgumentReaders.ReadOptionalGuid(arguments, "projectId");
-        return await McpKnowledgeSearch.SearchAsync(knowledgeSearcher, id, query, projectId, arguments, cancellationToken);
+                : await McpKnowledgeSearch.SearchAsync(knowledgeSearcher, id, query, workerProject, arguments, cancellationToken)
+            : await McpKnowledgeSearch.SearchAsync(
+            knowledgeSearcher,
+            id,
+            query,
+            McpArgumentReaders.ReadOptionalGuid(arguments, "projectId"),
+            arguments,
+            cancellationToken);
     }
 
     /// <summary>knowledge.ingest — chunked + embedded ingestion into pgvector.</summary>
@@ -134,8 +138,14 @@ public sealed class McpToolHandlers(
                 Data: null);
         }
 
-        var projectId = McpArgumentReaders.ReadOptionalGuid(arguments, "projectId");
-        var result = await knowledgeIngestor.IngestAsync(projectId, title, source, sourceRef, mimeType, text, cancellationToken);
+        var result = await knowledgeIngestor.IngestAsync(
+            McpArgumentReaders.ReadOptionalGuid(arguments, "projectId"),
+            title,
+            source,
+            sourceRef,
+            mimeType,
+            text,
+            cancellationToken);
 
         return JsonRpcResponse.Success(id, new ToolResult(
             Content: [new ToolContentBlock("text", JsonSerializer.Serialize(new
@@ -178,14 +188,12 @@ public sealed class McpToolHandlers(
                 Data: null);
         }
 
-        var topK = Math.Clamp(McpArgumentReaders.ReadOptionalInt(arguments, "topK") ?? RecallDefaultTopK, 1, RecallMaxTopK);
-
         var facts = await memoryStore.SearchAsync(
             new MemoryFactQuery(
                 Scope: MemoryScope.Project,
                 SubjectId: projectId.ToString(),
                 Embedding: await McpMemoryEmbeddings.TryEmbedAsync(embedder, query),
-                Limit: topK),
+                Limit: Math.Clamp(McpArgumentReaders.ReadOptionalInt(arguments, "topK") ?? RecallDefaultTopK, 1, RecallMaxTopK)),
             cancellationToken);
 
         var payload = facts.Count == 0
@@ -247,15 +255,13 @@ public sealed class McpToolHandlers(
                 IsError: true));
         }
 
-        var kind = McpArgumentReaders.ReadOptionalBool(arguments, "ephemeral") is true
-            ? MemoryFactKind.Ephemeral
-            : MemoryFactKind.Standing;
-
         var written = await memoryStore.WriteAsync(
             new MemoryFactWrite(
                 Scope: MemoryScope.Project,
                 SubjectId: projectId.ToString(),
-                Kind: kind,
+                Kind: McpArgumentReaders.ReadOptionalBool(arguments, "ephemeral") is true
+                    ? MemoryFactKind.Ephemeral
+                    : MemoryFactKind.Standing,
                 TopicKey: topic,
                 Text: text,
                 Source: MemorySource.Run,
@@ -332,9 +338,10 @@ public sealed class McpToolHandlers(
             clock.GetUtcNow(),
             cancellationToken);
 
-        var repeatNote = queued.RepeatCount > 1 ? $" — {queued.RepeatCount} workers have now suggested this" : string.Empty;
         return JsonRpcResponse.Success(id, new ToolResult(
-            Content: [new ToolContentBlock("text", $"queued '{queued.Topic}' for human review ({queued.Status}){repeatNote}")],
+            Content: [new ToolContentBlock(
+                "text",
+                $"queued '{queued.Topic}' for human review ({queued.Status}){(queued.RepeatCount > 1 ? $" — {queued.RepeatCount} workers have now suggested this" : string.Empty)}")],
             IsError: false));
     }
 
@@ -363,9 +370,8 @@ public sealed class McpToolHandlers(
 
         var query = new FilterQuery { Filter = clauses.Count > 0 ? string.Join(';', clauses) : null };
 
-        var page = await runsList.ListAsync(query, cancellationToken);
         return JsonRpcResponse.Success(id, new ToolResult(
-            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(page, JsonSerializerOptions.Web))],
+            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(await runsList.ListAsync(query, cancellationToken), JsonSerializerOptions.Web))],
             IsError: false));
     }
 
@@ -400,22 +406,22 @@ public sealed class McpToolHandlers(
         JsonElement arguments,
         CancellationToken cancellationToken)
     {
-        if (!TryParseLogSearch(id, arguments, out var query, out var error))
+        if (!McpObservabilityTools.TryParseLogSearch(id, arguments, out var query, out var error))
         {
             return error!;
         }
 
-        IReadOnlyList<Modules.Observability.Domain.Logs.LogRow> rows;
+        IReadOnlyList<LogRow> rows;
         try
         {
             rows = await logsQueryClient.SearchAsync(query, cancellationToken);
         }
         catch (VictoriaUnavailableException exception)
         {
-            return VictoriaUnavailable(id, exception);
+            return McpObservabilityTools.VictoriaUnavailable(id, exception);
         }
 
-        return JsonRpcResponse.Success(id, ToolResultFromRows(rows));
+        return JsonRpcResponse.Success(id, McpObservabilityTools.ToolResultFromRows(rows));
     }
 
     /// <summary>observability.logs.context — fetch the logs of a single trace id.</summary>
@@ -430,27 +436,30 @@ public sealed class McpToolHandlers(
         var traceId = McpArgumentReaders.ReadString(arguments, "traceId");
         if (string.IsNullOrWhiteSpace(traceId))
         {
-            return InvalidParams(id, "observability.logs.context requires a non-empty arguments.traceId");
+            return McpObservabilityTools.InvalidParams(id, "observability.logs.context requires a non-empty arguments.traceId");
         }
 
-        if (!TryReadWindow(id, arguments, out var from, out var to, out var error))
+        if (!McpObservabilityTools.TryReadWindow(id, arguments, out var from, out var to, out var error))
         {
             return error!;
         }
 
-        var limit = ClampLimit(McpArgumentReaders.ReadOptionalInt(arguments, "limit"));
-
-        IReadOnlyList<Modules.Observability.Domain.Logs.LogRow> rows;
+        IReadOnlyList<LogRow> rows;
         try
         {
-            rows = await logsQueryClient.ContextAsync(traceId, from, to, limit, cancellationToken);
+            rows = await logsQueryClient.ContextAsync(
+                traceId,
+                from,
+                to,
+                McpObservabilityTools.ClampLimit(McpArgumentReaders.ReadOptionalInt(arguments, "limit")),
+                cancellationToken);
         }
         catch (VictoriaUnavailableException exception)
         {
-            return VictoriaUnavailable(id, exception);
+            return McpObservabilityTools.VictoriaUnavailable(id, exception);
         }
 
-        return JsonRpcResponse.Success(id, ToolResultFromRows(rows));
+        return JsonRpcResponse.Success(id, McpObservabilityTools.ToolResultFromRows(rows));
     }
 
     /// <summary>observability.metrics.query — PromQL instant or range query.</summary>
@@ -465,7 +474,7 @@ public sealed class McpToolHandlers(
         var query = McpArgumentReaders.ReadString(arguments, "query");
         if (string.IsNullOrWhiteSpace(query))
         {
-            return InvalidParams(id, "observability.metrics.query requires a non-empty arguments.query");
+            return McpObservabilityTools.InvalidParams(id, "observability.metrics.query requires a non-empty arguments.query");
         }
 
         DateTimeOffset? time;
@@ -479,18 +488,18 @@ public sealed class McpToolHandlers(
         }
         catch (ArgumentException exception)
         {
-            return InvalidParams(id, $"observability.metrics.query {exception.Message}");
+            return McpObservabilityTools.InvalidParams(id, $"observability.metrics.query {exception.Message}");
         }
 
         if ((time is null && (start is null || end is null))
             || (time is not null && (start is not null || end is not null)))
         {
-            return InvalidParams(id, "observability.metrics.query requires either arguments.time (instant) or arguments.start+end (range), exclusively.");
+            return McpObservabilityTools.InvalidParams(id, "observability.metrics.query requires either arguments.time (instant) or arguments.start+end (range), exclusively.");
         }
 
         if (start is not null && end is not null && end < start)
         {
-            return InvalidParams(id, "observability.metrics.query rejects arguments.end < arguments.start");
+            return McpObservabilityTools.InvalidParams(id, "observability.metrics.query rejects arguments.end < arguments.start");
         }
 
         var step = McpArgumentReaders.ReadOptionalInt(arguments, "step") is { } stepValue
@@ -498,17 +507,17 @@ public sealed class McpToolHandlers(
             : (TimeSpan?)null;
 
         var metricsQuery = time is not null
-            ? new Modules.Observability.Domain.Metrics.MetricsQuery(PromQl: query, Time: time)
-            : new Modules.Observability.Domain.Metrics.MetricsQuery(PromQl: query, Start: start, End: end, Step: step);
+            ? new MetricsQuery(PromQl: query, Time: time)
+            : new MetricsQuery(PromQl: query, Start: start, End: end, Step: step);
 
-        IReadOnlyList<Modules.Observability.Domain.Metrics.MetricSeries> series;
+        IReadOnlyList<MetricSeries> series;
         try
         {
             series = await metricsQueryClient.QueryAsync(metricsQuery, cancellationToken);
         }
         catch (VictoriaUnavailableException exception)
         {
-            return VictoriaUnavailable(id, exception);
+            return McpObservabilityTools.VictoriaUnavailable(id, exception);
         }
 
         return JsonRpcResponse.Success(id, new ToolResult(
@@ -537,7 +546,7 @@ public sealed class McpToolHandlers(
         var match = McpArgumentReaders.ReadString(arguments, "match");
         if (string.IsNullOrWhiteSpace(match))
         {
-            return InvalidParams(id, "observability.metrics.series requires a non-empty arguments.match");
+            return McpObservabilityTools.InvalidParams(id, "observability.metrics.series requires a non-empty arguments.match");
         }
 
         IReadOnlyDictionary<string, IReadOnlyList<string>> labelKeys;
@@ -547,159 +556,12 @@ public sealed class McpToolHandlers(
         }
         catch (VictoriaUnavailableException exception)
         {
-            return VictoriaUnavailable(id, exception);
+            return McpObservabilityTools.VictoriaUnavailable(id, exception);
         }
 
         return JsonRpcResponse.Success(id, new ToolResult(
             Content: [new ToolContentBlock("text", JsonSerializer.Serialize(labelKeys, JsonSerializerOptions.Web))],
             IsError: false));
-    }
-
-    /// <summary>Upper bound on the time-range inputs the observability tools accept.</summary>
-    private static readonly TimeSpan observabilityMaxRange = TimeSpan.FromDays(7);
-
-    /// <summary>Default page size for observability.* row-set tools when the caller omits <c>limit</c>.</summary>
-    private const int ObservabilityDefaultLimit = 100;
-
-    /// <summary>Upper bound for observability.* row-set windows (server caps at the same value).</summary>
-    private const int ObservabilityMaxLimit = 1000;
-
-    /// <summary>
-    /// Parse the observability.logs.search arguments: the LogsQL body
-    /// (required), the optional time window (ISO 8601), and the optional
-    /// <c>limit</c> clamp. The window guard runs before any HTTP call so
-    /// a misconfigured client doesn't get to chew through a full
-    /// VictoriaLogs 30-day query only to be told the result is too big.
-    /// </summary>
-    private static bool TryParseLogSearch(
-        JsonElement? id,
-        JsonElement arguments,
-        out Modules.Observability.Domain.Logs.LogsQuery query,
-        out JsonRpcResponse? error)
-    {
-        var body = McpArgumentReaders.ReadString(arguments, "query");
-        if (string.IsNullOrWhiteSpace(body))
-        {
-            query = default!;
-            error = InvalidParams(id, "observability.logs.search requires a non-empty arguments.query");
-            return false;
-        }
-
-        if (!TryReadWindow(id, arguments, out var from, out var to, out error))
-        {
-            query = default!;
-            return false;
-        }
-
-        var limit = ClampLimit(McpArgumentReaders.ReadOptionalInt(arguments, "limit"));
-        var explicitTraceId = McpArgumentReaders.ReadOptionalString(arguments, "traceId");
-
-        query = new Modules.Observability.Domain.Logs.LogsQuery(
-            Query: body,
-            From: from,
-            To: to,
-            Limit: limit,
-            TraceId: explicitTraceId);
-        error = null;
-        return true;
-    }
-
-    /// <summary>
-    /// Read the ISO 8601 <c>from</c> / <c>to</c> window the observability
-    /// tools accept, validating the bounds in the clamp. A
-    /// non-parseable timestamp surfaces as a typed <c>-32602</c> failure
-    /// (the MCP error-mapping layer translates to
-    /// <c>code = observability.invalid_params</c>). An inverted or
-    /// over-long window surfaces the same way — no HTTP call is made
-    /// before the clamp fires.
-    /// </summary>
-    private static bool TryReadWindow(
-        JsonElement? id,
-        JsonElement arguments,
-        out DateTimeOffset? from,
-        out DateTimeOffset? to,
-        out JsonRpcResponse? error)
-    {
-        try
-        {
-            from = McpArgumentReaders.ReadOptionalIso8601(arguments, "from");
-            to = McpArgumentReaders.ReadOptionalIso8601(arguments, "to");
-        }
-        catch (ArgumentException exception)
-        {
-            from = null;
-            to = null;
-            error = InvalidParams(id, $"observability.* tools {exception.Message}");
-            return false;
-        }
-
-        if (from is null || to is null)
-        {
-            error = null;
-            return true;
-        }
-
-        if (to < from)
-        {
-            error = InvalidParams(id, "observability.* tools reject arguments.to < arguments.from");
-            return false;
-        }
-
-        if (to - from > observabilityMaxRange)
-        {
-            error = InvalidParams(id, $"observability.* tools reject time windows longer than {observabilityMaxRange.TotalDays:0} days");
-            return false;
-        }
-
-        error = null;
-        return true;
-    }
-
-    /// <summary>Clamp the row-limit to the documented [1, max] range, defaulting when absent.</summary>
-    private static int ClampLimit(int? requested)
-    {
-        var value = requested ?? ObservabilityDefaultLimit;
-        return Math.Clamp(value, 1, ObservabilityMaxLimit);
-    }
-
-    /// <summary>JSON-RPC -32602 (InvalidParams) envelope helper.</summary>
-    private static JsonRpcResponse InvalidParams(JsonElement? id, string message)
-    {
-        return JsonRpcResponse.Failure(id, JsonRpcEnvelope.ErrorCodes.InvalidParams, message, Data: null);
-    }
-
-    /// <summary>
-    /// Tool-level error envelope for <see cref="VictoriaUnavailableException"/>.
-    /// The exception's stable <c>observability.victoria_unavailable</c> code
-    /// is surfaced as the <c>message</c> string so clients branch on it
-    /// (mirrors <c>McpToolPermissionMap.PermissionDeniedCode</c>).
-    /// </summary>
-    private static JsonRpcResponse VictoriaUnavailable(JsonElement? id, VictoriaUnavailableException exception)
-    {
-        return JsonRpcResponse.Success(id, new ToolResult(
-            Content: [new ToolContentBlock("text",
-                $"{VictoriaUnavailableException.VictoriaUnavailableCode}: {exception.Endpoint} ({exception.InnerException?.Message ?? "no response within the timeout"})")],
-            IsError: true));
-    }
-
-    /// <summary>Render a list of typed log rows as the tool payload (camelCase JSON, web options).</summary>
-    private static ToolResult ToolResultFromRows(IReadOnlyList<Modules.Observability.Domain.Logs.LogRow> rows)
-    {
-        return new(
-            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(new
-            {
-                count = rows.Count,
-                rows = rows.Select(static row => new
-                {
-                    timestamp = row.Timestamp,
-                    level = row.Level,
-                    messageTemplate = row.MessageTemplate,
-                    scopeJson = row.ScopeJson,
-                    traceId = row.TraceId,
-                    spanId = row.SpanId,
-                }),
-            }, JsonSerializerOptions.Web))],
-            IsError: false);
     }
 }
 
@@ -719,10 +581,12 @@ file static class McpKnowledgeSearch
         JsonElement arguments,
         CancellationToken cancellationToken)
     {
-        var topK = McpArgumentReaders.ReadOptionalInt(arguments, "topK") ?? 5;
-        var minSimilarity = McpArgumentReaders.ReadOptionalFloat(arguments, "minSimilarity") ?? 0.5f;
-
-        var hits = await knowledgeSearcher.SearchAsync(query, projectId, topK, minSimilarity, cancellationToken);
+        var hits = await knowledgeSearcher.SearchAsync(
+            query,
+            projectId,
+            McpArgumentReaders.ReadOptionalInt(arguments, "topK") ?? 5,
+            McpArgumentReaders.ReadOptionalFloat(arguments, "minSimilarity") ?? 0.5f,
+            cancellationToken);
         var payload = hits.Select(static hit => new
         {
             chunkId = hit.ChunkId.ToString(),
@@ -762,5 +626,158 @@ file static class McpMemoryEmbeddings
             // "not configured": memory must keep working without embeddings
             return null;
         }
+    }
+}
+
+/// <summary>
+/// Observability-tool helpers: pure-function clamp / parse / envelope
+/// routines the four <c>observability.*</c> tool handlers share. Lives
+/// next to the handlers (file-scoped static class) per the canon — the
+/// helpers are stateless, the dispatch lives in the handler methods.
+/// </summary>
+file static class McpObservabilityTools
+{
+    /// <summary>Upper bound on the time-range inputs the observability tools accept.</summary>
+    public static readonly TimeSpan MaxRange = TimeSpan.FromDays(7);
+
+    /// <summary>Default page size for observability.* row-set tools when the caller omits <c>limit</c>.</summary>
+    public const int DefaultLimit = 100;
+
+    /// <summary>Upper bound for observability.* row-set windows (server caps at the same value).</summary>
+    public const int MaxLimit = 1000;
+
+    /// <summary>
+    /// Parse the observability.logs.search arguments: the LogsQL body
+    /// (required), the optional time window (ISO 8601), and the optional
+    /// <c>limit</c> clamp. The window guard runs before any HTTP call so
+    /// a misconfigured client doesn't get to chew through a full
+    /// VictoriaLogs 30-day query only to be told the result is too big.
+    /// </summary>
+    public static bool TryParseLogSearch(
+        JsonElement? id,
+        JsonElement arguments,
+        out LogsQuery query,
+        out JsonRpcResponse? error)
+    {
+        var body = McpArgumentReaders.ReadString(arguments, "query");
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            query = default!;
+            error = InvalidParams(id, "observability.logs.search requires a non-empty arguments.query");
+            return false;
+        }
+
+        if (!TryReadWindow(id, arguments, out var from, out var to, out error))
+        {
+            query = default!;
+            return false;
+        }
+
+        query = new LogsQuery(
+            Query: body,
+            From: from,
+            To: to,
+            Limit: ClampLimit(McpArgumentReaders.ReadOptionalInt(arguments, "limit")),
+            TraceId: McpArgumentReaders.ReadOptionalString(arguments, "traceId"));
+        error = null;
+        return true;
+    }
+
+    /// <summary>
+    /// Read the ISO 8601 <c>from</c> / <c>to</c> window the observability
+    /// tools accept, validating the bounds in the clamp. A
+    /// non-parseable timestamp surfaces as a typed <c>-32602</c> failure
+    /// (the MCP error-mapping layer translates to
+    /// <c>code = observability.invalid_params</c>). An inverted or
+    /// over-long window surfaces the same way — no HTTP call is made
+    /// before the clamp fires.
+    /// </summary>
+    public static bool TryReadWindow(
+        JsonElement? id,
+        JsonElement arguments,
+        out DateTimeOffset? from,
+        out DateTimeOffset? to,
+        out JsonRpcResponse? error)
+    {
+        try
+        {
+            from = McpArgumentReaders.ReadOptionalIso8601(arguments, "from");
+            to = McpArgumentReaders.ReadOptionalIso8601(arguments, "to");
+        }
+        catch (ArgumentException exception)
+        {
+            from = null;
+            to = null;
+            error = InvalidParams(id, $"observability.* tools {exception.Message}");
+            return false;
+        }
+
+        if (from is null || to is null)
+        {
+            error = null;
+            return true;
+        }
+
+        if (to < from)
+        {
+            error = InvalidParams(id, "observability.* tools reject arguments.to < arguments.from");
+            return false;
+        }
+
+        if (to - from > MaxRange)
+        {
+            error = InvalidParams(id, $"observability.* tools reject time windows longer than {MaxRange.TotalDays:0} days");
+            return false;
+        }
+
+        error = null;
+        return true;
+    }
+
+    /// <summary>Clamp the row-limit to the documented [1, max] range, defaulting when absent.</summary>
+    public static int ClampLimit(int? requested)
+    {
+        var value = requested ?? DefaultLimit;
+        return Math.Clamp(value, 1, MaxLimit);
+    }
+
+    /// <summary>JSON-RPC -32602 (InvalidParams) envelope helper.</summary>
+    public static JsonRpcResponse InvalidParams(JsonElement? id, string message)
+    {
+        return JsonRpcResponse.Failure(id, JsonRpcEnvelope.ErrorCodes.InvalidParams, message, Data: null);
+    }
+
+    /// <summary>
+    /// Tool-level error envelope for <see cref="VictoriaUnavailableException"/>.
+    /// The exception's stable <c>observability.victoria_unavailable</c> code
+    /// is surfaced as the <c>message</c> string so clients branch on it
+    /// (mirrors <c>McpToolPermissionMap.PermissionDeniedCode</c>).
+    /// </summary>
+    public static JsonRpcResponse VictoriaUnavailable(JsonElement? id, VictoriaUnavailableException exception)
+    {
+        return JsonRpcResponse.Success(id, new ToolResult(
+            Content: [new ToolContentBlock("text",
+                $"{VictoriaUnavailableException.VictoriaUnavailableCode}: {exception.Endpoint} ({exception.InnerException?.Message ?? "no response within the timeout"})")],
+            IsError: true));
+    }
+
+    /// <summary>Render a list of typed log rows as the tool payload (camelCase JSON, web options).</summary>
+    public static ToolResult ToolResultFromRows(IReadOnlyList<LogRow> rows)
+    {
+        return new(
+            Content: [new ToolContentBlock("text", JsonSerializer.Serialize(new
+            {
+                count = rows.Count,
+                rows = rows.Select(static row => new
+                {
+                    timestamp = row.Timestamp,
+                    level = row.Level,
+                    messageTemplate = row.MessageTemplate,
+                    scopeJson = row.ScopeJson,
+                    traceId = row.TraceId,
+                    spanId = row.SpanId,
+                }),
+            }, JsonSerializerOptions.Web))],
+            IsError: false);
     }
 }

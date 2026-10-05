@@ -1,3 +1,5 @@
+using FluentValidation;
+
 namespace Comuki.Host.Runs.Models;
 
 /// <summary>
@@ -13,4 +15,24 @@ public sealed class SteerRunRequest
 {
     /// <summary>The operator's steer text. Required; non-empty after trim.</summary>
     public string Text { get; init; } = string.Empty;
+}
+
+/// <summary>Validation of <see cref="SteerRunRequest"/>.</summary>
+public sealed class SteerRunRequestValidator : AbstractValidator<SteerRunRequest>
+{
+    /// <summary>
+    /// Rule: <c>Text</c> must be a non-empty, non-whitespace string —
+    /// a steer has no input to forward otherwise. The
+    /// <c>WithErrorCode("steer.text_required")</c> on the failure keeps
+    /// the wire contract identical to the previous controller-side
+    /// guard: a 400 <c>application/problem+json</c> whose
+    /// <c>extensions.code</c> is <c>steer.text_required</c>.
+    /// </summary>
+    public SteerRunRequestValidator()
+    {
+        RuleFor(static request => request.Text)
+            .NotEmpty()
+            .WithErrorCode("steer.text_required")
+            .WithMessage("the operator's steer text must be a non-empty string");
+    }
 }

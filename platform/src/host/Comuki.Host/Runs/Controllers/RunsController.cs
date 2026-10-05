@@ -6,6 +6,7 @@ using Comuki.Shared.Editions;
 using Comuki.Shared.Editions.Gating;
 using Comuki.Shared.Filtering.Ports;
 using Comuki.Shared.Kernel.Ids;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -127,6 +128,7 @@ public sealed class RunsController(
     /// </summary>
     /// <param name="runId">Run to steer.</param>
     /// <param name="request">Steer body — carries the operator's text.</param>
+    /// <param name="steerValidator"></param>
     /// <param name="cancellationToken"></param>
     [HttpPost("{runId:guid}/steer")]
     [RequiresFeature("steering")]
@@ -139,11 +141,12 @@ public sealed class RunsController(
     public async Task<ActionResult> SteerAsync(
         Guid runId,
         [FromBody] SteerRunRequest request,
+        [FromServices] IValidator<SteerRunRequest> steerValidator,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Text))
+        if (await RunsValidation.ValidateAsync(steerValidator, request, cancellationToken) is { } problem)
         {
-            return RunsProblems.SteerTextRequired();
+            return problem;
         }
 
         var result = await steer.SteerAsync(new RunId(runId), request.Text.Trim(), cancellationToken);
@@ -158,8 +161,9 @@ public sealed class RunsController(
 /// <summary>
 /// The 404 row of the runs value flow — a run the detail handler did not
 /// find is a result, not a thrown exception, so the row stays endpoint-local
-/// per the domain-error-contract scope. Same shape the retired
-/// <c>RunsProblems</c> always shipped.
+/// per the domain-error-contract scope. The 400 row for the steer
+/// endpoint moved to <see cref="RunsValidation"/> when the empty-text
+/// check became a FluentValidation rule on <see cref="SteerRunRequest"/>.
 /// </summary>
 public static class RunsProblems
 {
@@ -186,17 +190,45 @@ public static class RunsProblems
             ContentTypes = { "application/problem+json" },
         };
     }
+}
 
-    /// <summary>400 for the steer endpoint when the operator's text is empty / whitespace — the steer has no input to forward.</summary>
-    public static ActionResult SteerTextRequired()
+/// <summary>
+/// FluentValidation glue for the runs surface endpoints. Translates a
+/// validator failure into the canonical 400 <c>application/problem+json</c>
+/// shape, preserving the validator's <c>ValidationFailure.ErrorCode</c>
+/// as the wire-format <c>code</c> extension so the contract declared
+/// inside the validator (e.g. <c>steer.text_required</c>) survives the
+/// trip through the ASP.NET pipeline.
+/// </summary>
+file static class RunsValidation
+{
+    /// <summary>
+    /// Run the validator; return a 400 ProblemDetails on failure or
+    /// <c>null</c> on success. The first failure's <c>ErrorCode</c>
+    /// (set on the rule by <c>WithErrorCode(...)</c>) becomes the
+    /// <c>extensions.code</c> field — the same shape the controller-side
+    /// guard produced before the rule moved into the validator.
+    /// </summary>
+    public static async Task<ActionResult?> ValidateAsync<T>(
+        IValidator<T> validator,
+        T instance,
+        CancellationToken cancellationToken)
     {
+        var result = await validator.ValidateAsync(instance, cancellationToken);
+
+        if (result.IsValid)
+        {
+            return null;
+        }
+
+        var failure = result.Errors[0];
         var typed = TypedResults.Problem(
             title: "Steer text is required",
-            detail: "the operator's steer text must be a non-empty string",
+            detail: failure.ErrorMessage,
             statusCode: StatusCodes.Status400BadRequest,
             extensions: new Dictionary<string, object?>
             {
-                ["code"] = "steer.text_required",
+                ["code"] = failure.ErrorCode ?? "steer.text_required",
             });
 
         return new ObjectResult(typed.ProblemDetails)

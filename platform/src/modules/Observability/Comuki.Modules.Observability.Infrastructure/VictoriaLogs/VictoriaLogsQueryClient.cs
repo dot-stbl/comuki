@@ -37,11 +37,11 @@ internal sealed class VictoriaLogsQueryClient(
             var response = await api.QueryAsync(
                 effectiveQuery.Query,
                 effectiveQuery.Limit,
-                ToRfc3339(effectiveQuery.From),
-                ToRfc3339(effectiveQuery.To),
+                VictoriaLogsQueryHelpers.ToRfc3339(effectiveQuery.From),
+                VictoriaLogsQueryHelpers.ToRfc3339(effectiveQuery.To),
                 cancellationToken);
 
-            return MapResponse(logger, response);
+            return VictoriaLogsQueryHelpers.MapResponse(logger, response);
         }
         catch (ApiException exception)
         {
@@ -94,14 +94,59 @@ internal sealed class VictoriaLogsQueryClient(
     /// </summary>
     private static LogsQuery WithEffectiveTraceId(LogsQuery query)
     {
-        // An explicit LogsQuery.TraceId wins; otherwise the ambient
-        // OTel activity's TraceId threads through as a default
-        // LogsQL `trace_id:` clause. The append is idempotent so a
-        // caller-supplied clause doesn't double up.
+        return VictoriaLogsQueryHelpers.WithEffectiveTraceId(query);
+    }
+}
+
+/// <summary>
+/// File-static helpers for the <see cref="VictoriaLogsQueryClient"/>:
+/// trace-id clause composition, NDJSON-line parsing, RFC3339
+/// formatting, and optional-string reads all live here per
+/// <c>class-layout-and-tooling.md §1a</c> (no private methods on a
+/// typed query client). All helpers are stateless and pure.
+/// </summary>
+internal static class VictoriaLogsQueryHelpers
+{
+    /// <summary>
+    /// Apply the trace-id filter: an explicit <see cref="LogsQuery.TraceId"/>
+    /// wins; otherwise the ambient OTel activity's <see cref="Activity.TraceId"/>
+    /// threads through as a default <c>trace_id</c> LogsQL clause per
+    /// <c>specs/observability/spec.md</c> "Trace correlation by default".
+    /// The append is idempotent — repeated <c>trace_id:</c> clauses
+    /// collapse to a single filter so a caller-supplied override does
+    /// not double up.
+    /// </summary>
+    public static LogsQuery WithEffectiveTraceId(LogsQuery query)
+    {
         var effectiveTraceId = query.TraceId ?? Activity.Current?.TraceId.ToString();
         return effectiveTraceId is null
             ? query
-            : VictoriaLogsQueryHelpers.AppendTraceIdOnce(query, effectiveTraceId);
+            : AppendTraceIdOnce(query, effectiveTraceId);
+    }
+    /// <summary>
+    /// Build a LogsQL query body that pins a single W3C trace id —
+    /// the client-side emulation of the (non-existent) wire
+    /// <c>/select/logsql/context</c> endpoint. The id appears verbatim
+    /// on the wire (no encoding beyond what LogsQL needs — the API
+    /// accepts the bare hex string).
+    /// </summary>
+    public static string ComposeTraceIdClause(string traceId)
+    {
+        return $"trace_id:{traceId}";
+    }
+
+    /// <summary>
+    /// Idempotent append: a query already carrying the same
+    /// <c>trace_id:</c> needle is returned unchanged. The check is
+    /// <see cref="StringComparison.Ordinal"/> because LogsQL identifiers
+    /// are case-sensitive.
+    /// </summary>
+    public static LogsQuery AppendTraceIdOnce(LogsQuery query, string traceId)
+    {
+        var needle = ComposeTraceIdClause(traceId);
+        return query.Query.Contains(needle, StringComparison.Ordinal)
+            ? query
+            : query with { Query = $"{query.Query} {needle}", TraceId = traceId };
     }
 
     /// <summary>
@@ -111,11 +156,9 @@ internal sealed class VictoriaLogsQueryClient(
     /// project owns the parsing per <c>~/.agents/rules/csharp/code-shape.md</c>
     /// §"mappers own NDJSON"; a malformed line is logged and dropped,
     /// not raised (the spec-mandated "no page fails because of one
-    /// bad line" posture). The observable <c>_time</c> / <c>_msg</c> /
-    /// <c>_stream</c> fields plus optional <c>trace_id</c> / <c>span_id</c>
-    /// follow the documented VictoriaLogs JSON line shape.
+    /// bad line" posture).
     /// </summary>
-    internal static IReadOnlyList<LogRow> MapResponse(
+    public static IReadOnlyList<LogRow> MapResponse(
         ILogger logger,
         IApiResponse<string> response)
     {
@@ -149,7 +192,7 @@ internal sealed class VictoriaLogsQueryClient(
     /// <c>~/.agents/rules/csharp/json-and-ndjson.md</c> §4
     /// (a single malformed line is logged + dropped, never fails the page).
     /// </summary>
-    private static bool TryParseLine(ILogger logger, string line, out LogRow row)
+    public static bool TryParseLine(ILogger logger, string line, out LogRow row)
     {
         row = default!;
 
@@ -202,7 +245,7 @@ internal sealed class VictoriaLogsQueryClient(
     /// маскируется под успех"; we never silently substitute a
     /// sentinel like <see cref="DateTimeOffset.MinValue"/>.
     /// </summary>
-    private static DateTimeOffset ReadTimestamp(JsonElement rootElement, ILogger logger)
+    public static DateTimeOffset ReadTimestamp(JsonElement rootElement, ILogger logger)
     {
         if (!rootElement.TryGetProperty("_time", out var timeElement)
             || timeElement.ValueKind != JsonValueKind.String)
@@ -233,7 +276,7 @@ internal sealed class VictoriaLogsQueryClient(
     /// <see langword="null"/> when the bound is absent so the
     /// <c>time:</c> filter is omitted.
     /// </summary>
-    private static string? ToRfc3339(DateTimeOffset? value)
+    public static string? ToRfc3339(DateTimeOffset? value)
     {
         return value?.ToString("O", CultureInfo.InvariantCulture);
     }
@@ -243,45 +286,10 @@ internal sealed class VictoriaLogsQueryClient(
     /// or non-string (the typed shape treats <c>trace_id</c> / <c>span_id</c>
     /// as optional because not every record comes from an OTel activity).
     /// </summary>
-    private static string? ReadOptionalString(JsonElement rootElement, string name)
+    public static string? ReadOptionalString(JsonElement rootElement, string name)
     {
         return rootElement.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.String
             ? element.GetString()
             : null;
-    }
-}
-
-/// <summary>
-/// File-static helpers for the <see cref="VictoriaLogsQueryClient"/>:
-/// the <c>trace_id:</c> clause composition lives here per
-/// <c>class-layout-and-tooling.md §1a</c> (no private methods on a
-/// typed query client). Two helpers — both no-state, pure.
-/// </summary>
-internal static class VictoriaLogsQueryHelpers
-{
-    /// <summary>
-    /// Build a LogsQL query body that pins a single W3C trace id —
-    /// the client-side emulation of the (non-existent) wire
-    /// <c>/select/logsql/context</c> endpoint. The id appears verbatim
-    /// on the wire (no encoding beyond what LogsQL needs — the API
-    /// accepts the bare hex string).
-    /// </summary>
-    public static string ComposeTraceIdClause(string traceId)
-    {
-        return $"trace_id:{traceId}";
-    }
-
-    /// <summary>
-    /// Idempotent append: a query already carrying the same
-    /// <c>trace_id:</c> needle is returned unchanged. The check is
-    /// <see cref="StringComparison.Ordinal"/> because LogsQL identifiers
-    /// are case-sensitive.
-    /// </summary>
-    public static LogsQuery AppendTraceIdOnce(LogsQuery query, string traceId)
-    {
-        var needle = ComposeTraceIdClause(traceId);
-        return query.Query.Contains(needle, StringComparison.Ordinal)
-            ? query
-            : query with { Query = $"{query.Query} {needle}", TraceId = traceId };
     }
 }

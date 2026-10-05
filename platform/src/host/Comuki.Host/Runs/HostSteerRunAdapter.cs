@@ -76,7 +76,7 @@ public sealed class HostSteerRunAdapter(
                 "run.not_found",
                 $"run '{runId.Value}' not found");
 
-        if (IsTerminalOrFinalising(run.Status))
+        if (RunSteerStatusGuard.IsTerminalOrFinalising(run.Status))
         {
             throw new RunNotRunningForSteerException(run.Status);
         }
@@ -92,15 +92,12 @@ public sealed class HostSteerRunAdapter(
         // TOCTOU guard: re-read the run row inside the same transaction
         // and re-check the terminal-status predicate before the
         // INSERT lands. A concurrent cancel / finalize between the
-        // initial read and the stage would otherwise leave the
-        // follow-up queued against a dead run — the run_events row
-        // would also be a ghost. The transactional re-read serializes
-        // against the cancel path's runs-row-write, so the predicate
-        // holds at commit time. Mirrors the guarded pattern in
-        // <c>HostCancelRunAdapter.RunCancelSql</c>; the unit tests run
-        // against the InMemory provider which ignores transaction
-        // isolation, so the path is exercised end-to-end without
-        // producing lock-wait noise.
+        // initial read and the stage will leave the row
+        // in a terminal status we refuse to follow-up against, the
+        // transaction rolls back, and the caller sees a typed 409.
+        // On the in-memory store (unit tests) the transaction is
+        // unsupported, but the re-read-after-update row read-then-act
+        // ordering already covers the test path.
         var followUp = await StageFollowUpAsync(run, text, cancellationToken);
 
         logger.LogInformation(
@@ -173,7 +170,7 @@ public sealed class HostSteerRunAdapter(
         var fresh = await db.Runs
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == run.Id, cancellationToken);
-        if (fresh is null || IsTerminalOrFinalising(fresh.Status))
+        if (fresh is null || RunSteerStatusGuard.IsTerminalOrFinalising(fresh.Status))
         {
             if (transaction is not null)
             {
@@ -188,22 +185,6 @@ public sealed class HostSteerRunAdapter(
             await transaction.CommitAsync(cancellationToken);
         }
         return workItem;
-    }
-
-    /// <summary>
-    /// True for terminal statuses (<see cref="RunStatus.Succeeded"/>,
-    /// <see cref="RunStatus.Failed"/>, <see cref="RunStatus.Cancelled"/>)
-    /// — the steer refusal path. The escalation sweeper is a separate
-    /// state and a non-finalising one; the run's own
-    /// <c>RunTransitions</c> is the source of truth and a steer
-    /// against any non-terminal status is legal.
-    /// </summary>
-    /// <param name="status">Run status to test.</param>
-    private static bool IsTerminalOrFinalising(RunStatus status)
-    {
-        return status == RunStatus.Succeeded
-            || status == RunStatus.Failed
-            || status == RunStatus.Cancelled;
     }
 }
 
@@ -245,6 +226,30 @@ public interface ISteerRunPort
 /// <param name="Delivered">The wire-level <c>delivered</c> flag.</param>
 /// <param name="FollowUpWorkItemId">The follow-up work item id (Phase 1a) or <c>null</c> (Phase 1c).</param>
 public sealed record SteerRunResult(bool Delivered, Guid? FollowUpWorkItemId);
+
+/// <summary>
+/// Pure-function guard for the steer refusal path: terminal-status
+/// predicate. Extracted from the adapter so the test surface exercises
+/// the predicate directly without going through the EF Core loop.
+/// </summary>
+file static class RunSteerStatusGuard
+{
+    /// <summary>
+    /// True for terminal statuses (<see cref="RunStatus.Succeeded"/>,
+    /// <see cref="RunStatus.Failed"/>, <see cref="RunStatus.Cancelled"/>)
+    /// — the steer refusal path. The escalation sweeper is a separate
+    /// state and a non-finalising one; the run's own
+    /// <c>RunTransitions</c> is the source of truth and a steer
+    /// against any non-terminal status is legal.
+    /// </summary>
+    /// <param name="status">Run status to test.</param>
+    public static bool IsTerminalOrFinalising(RunStatus status)
+    {
+        return status == RunStatus.Succeeded
+            || status == RunStatus.Failed
+            || status == RunStatus.Cancelled;
+    }
+}
 
 /// <summary>Brief payload the follow-up worker reads.</summary>
 file static class SteerFollowUpBrief

@@ -29,6 +29,7 @@ using Comuki.Host.Projects;
 using Comuki.Host.Proxy;
 using Comuki.Host.Realtime;
 using Comuki.Host.Runs;
+using Comuki.Host.Runs.Models;
 using Comuki.Host.Scheduler;
 using Comuki.Host.Security.Cors;
 using Comuki.Host.Security.ProductionSecrets;
@@ -521,6 +522,7 @@ internal static class HostComposer
         builder.Services.AddScoped<IValidator<ListUsersQueryRequest>, ListUsersQueryRequestValidator>();
         builder.Services.AddScoped<IValidator<ListGrantsQueryRequest>, ListGrantsQueryRequestValidator>();
         builder.Services.AddScoped<IValidator<ListApiKeysQueryRequest>, ListApiKeysQueryRequestValidator>();
+        builder.Services.AddScoped<IValidator<SteerRunRequest>, SteerRunRequestValidator>();
 
         // Security pass (issue #10 T11.4): CORS allow-list for the
         // dashboard SPA + per-endpoint rate-limit partitions. Both are

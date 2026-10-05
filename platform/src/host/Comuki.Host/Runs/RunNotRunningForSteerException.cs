@@ -1,3 +1,4 @@
+using Comuki.Engine.Orchestration.Domain;
 using Comuki.Shared.Kernel.Exceptions;
 
 namespace Comuki.Host.Runs;
@@ -18,10 +19,10 @@ namespace Comuki.Host.Runs;
 /// decision endpoints.
 /// </remarks>
 /// <param name="current">Run's current status (PascalCase).</param>
-public sealed class RunNotRunningForSteerException(Engine.Orchestration.Domain.RunStatus current) : DomainException(ErrorCode, $"run is in {current} and cannot be steered — follow-up is refused")
+public sealed class RunNotRunningForSteerException(RunStatus current) : DomainException(ErrorCode, $"run is in {current} and cannot be steered — follow-up is refused")
 {
     private const string ErrorCode = "run.not_running";
 
     /// <summary>Current run status (PascalCase).</summary>
-    public Engine.Orchestration.Domain.RunStatus Current { get; } = current;
+    public RunStatus Current { get; } = current;
 }

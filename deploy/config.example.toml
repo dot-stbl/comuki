@@ -392,11 +392,13 @@ grpcPort = 17004
 # otlpEndpoint = "http://victoriametrics:8431"
 
 [telemetry.logsOtlpEndpoint]
-# MEL → OTLP/HTTP logs leg (VictoriaLogs receiver at :9428, the
-# /insert/opentelemetry/v1/logs path the OTel exporter appends to).
-# Unset = console-only, no log leg to VictoriaLogs. Independent of
-# [telemetry].otlpEndpoint: traces/metrics and logs can route to
-# different receivers (deploy ships VictoriaMetrics :8431 for gRPC and
+# MEL → OTLP/HTTP logs leg (VictoriaLogs receiver at :9428). The URL
+# MUST include the full receiver path (/insert/opentelemetry/v1/logs)
+# — the installer wires it to the OTel exporter verbatim and does
+# not append any signal segment. Unset = console-only, no log leg
+# to VictoriaLogs. Independent of [telemetry].otlpEndpoint: traces/
+# metrics and logs can route to different receivers (deploy ships
+# VictoriaMetrics :8431 for gRPC and
 # VictoriaLogs :9428 for HTTP — the OTel exporter shape, not a platform
 # choice).
 # logsOtlpEndpoint = "http://victoria-logs:9428/insert/opentelemetry/v1/logs"

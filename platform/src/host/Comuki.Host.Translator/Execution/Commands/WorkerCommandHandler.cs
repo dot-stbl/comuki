@@ -15,7 +15,12 @@ namespace Comuki.Host.Translator.Execution.Commands;
 /// arriving mid-exec is read on the next channel read instead of being
 /// queued behind a long-running operator shell (interactive shells are a
 /// separate bidi stream — this surface is for one-shot operator
-/// commands).
+/// commands). TurnInput is the live-session baton (add-orchestra
+/// Phase 1c — <c>specs/session/spec.md</c> Requirement "TurnInput is
+/// the authoritative session turn"); Phase 1c logs the receipt and
+/// drops empty-text turns (the actual session-mode stdin write is
+/// Phase 8 / Instrument work — <c>specs/harness-spi/spec.md</c>
+/// ADAPTER Notes).
 /// </summary>
 /// <param name="run"></param>
 /// <param name="workingDirectory"></param>
@@ -61,6 +66,11 @@ public sealed class WorkerCommandHandler(
             if (command.Exec is { } exec)
             {
                 await HandleExecAsync(exec, stoppingToken);
+            }
+
+            if (command.TurnInput is { } turn)
+            {
+                HandleTurnInput(turn);
             }
         }
     }
@@ -118,6 +128,43 @@ public sealed class WorkerCommandHandler(
                 run.Claimed.WorkItemId,
                 outcome.ExitCode);
         }
+    }
+
+    /// <summary>
+    /// Live-session baton (add-orchestra Phase 1c) — log the receipt and
+    /// drop the malformed (empty-text) turn; the actual session-mode
+    /// stdin write is Phase 8 / Instrument work
+    /// (<c>specs/harness-spi/spec.md</c> ADAPTER Notes). The refusal
+    /// shape mirrors <see cref="HandleExecAsync"/>'s: log warning,
+    /// return, the stream keeps consuming. The
+    /// <see cref="Shared.Kernel.Harness.HarnessCapabilities"/>
+    /// policy gate (LiveSession = true) is the orchestrator-side
+    /// check the steering endpoint runs; the worker accepts the
+    /// command regardless because the wire shape is symmetric — a
+    /// turn sent on a no-LiveSession harness degrades into the
+    /// follow-up WorkItem path on the orchestrator side, not here.
+    /// </summary>
+    /// <param name="turn">The session turn the orchestrator delivered.</param>
+    private void HandleTurnInput(Shared.Contracts.Grpc.TurnInput turn)
+    {
+        if (string.IsNullOrWhiteSpace(turn.Text))
+        {
+            logger.LogWarning(
+                "Refused turn input on work item {WorkItemId}: empty text",
+                run.Claimed.WorkItemId);
+            return;
+        }
+
+        // Phase 1c: the wire shape lands; the session-mode stdin write
+        // is Phase 8 (Instrument). Log the receipt at info so the
+        // journal reflects the operator's intent; a follow-up
+        // commit in the Instrument phase replaces this log with the
+        // call into the harness's session transport.
+        logger.LogInformation(
+            "Operator turn input on work item {WorkItemId} (role={Role}, text-length={TextLength})",
+            run.Claimed.WorkItemId,
+            turn.Role,
+            turn.Text.Length);
     }
 }
 

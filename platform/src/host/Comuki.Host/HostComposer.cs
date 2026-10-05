@@ -37,6 +37,7 @@ using Comuki.Host.Security.RateLimit;
 using Comuki.Host.Security.Tls;
 using Comuki.Host.Settings;
 using Comuki.Host.Workers;
+using Comuki.Host.Workers.Grpc;
 using Comuki.Host.Workers.Read;
 using Comuki.Modules.Artifacts.Application;
 using Comuki.Modules.Artifacts.Application.Packaging;
@@ -269,6 +270,15 @@ internal static class HostComposer
         builder.Services.AddScoped<IApproveRunPort, HostApproveRunAdapter>();
         builder.Services.AddScoped<ICancelRunPort, HostCancelRunAdapter>();
         builder.Services.AddScoped<IExecutionIdResolver, ExecutionIdResolver>();
+        // Phase 1c baton: the live-session path rides the
+        // IWorkerCommandPipe bidi channel; the resolver reads the
+        // active execution's harness to decide whether TurnInput is
+        // authoritative (Capabilities.LiveSession). The harness
+        // registry is populated at boot by HarnessRegistrar
+        // (per-Harness IHarness registrations).
+        builder.Services.AddSingleton<HarnessRegistry>();
+        builder.Services.AddSingleton<IRunHarnessResolver, RunHarnessResolver>();
+        builder.Services.AddSingleton<IWorkerCommandPipe, WorkerCommandHub>();
         builder.Services.AddScoped<ISteerRunPort, HostSteerRunAdapter>();
         builder.Services.AddScoped<ChatRunStarter>();
         builder.Services.AddOptions<ChatWorkerDefaults>()

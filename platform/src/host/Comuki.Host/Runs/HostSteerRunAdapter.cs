@@ -7,9 +7,12 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Projects;
+using Comuki.Host.Workers.Grpc;
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Shared.Bootstrap.Versioning;
+using Comuki.Shared.Contracts.Grpc;
 using Comuki.Shared.Kernel.Exceptions;
+using Comuki.Shared.Kernel.Harness;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
@@ -20,35 +23,55 @@ namespace Comuki.Host.Runs;
 
 /// <summary>
 /// Host-side <see cref="ISteerRunPort"/>: the operator-initiated steer
-/// (add-orchestra §1 — Baton, Phase 1a). The flow:
+/// (add-orchestra §1 — Baton). The flow:
 /// <list type="number">
 ///   <item>Resolves <c>runId</c> via <see cref="IExecutionIdResolver"/> —
 ///   the shared seam the run-cancel endpoint also uses (the spec's
 ///   "RunId-to-ExecutionId resolver is shared" requirement).</item>
 ///   <item>Refuses terminal / finalising runs with a 409
 ///   <c>run.not_running</c> — the follow-up never lands on a dead run.</item>
-///   <item>On the Phase 1a no-LiveSession runtime, stages a follow-up
-///   <see cref="WorkItem"/> on the same <see cref="Run"/>, carrying the
-///   operator's steer text as the brief (the same text the live worker's
-///   <c>comuki-injected-context.md</c> would have carried — Phase 1a
-///   follows the cowork 11.1 fallback "stage a new research WorkItem"
-///   when the runtime lacks live injection).</item>
+///   <item>Reads the live execution's harness through
+///   <see cref="IRunHarnessResolver"/> and reads
+///   <see cref="HarnessCapabilities.LiveSession"/>:
+///   <list type="bullet">
+///     <item><c>LiveSession = true</c> — Phase 1c canonical path. The
+///     operator's steer text rides the
+///     <see cref="IWorkerCommandPipe"/> bidi channel as a
+///     <see cref="TurnInput"/> command. The response is
+///     <c>{ delivered: true | false }</c>; a <c>false</c> delivery
+///     is non-fatal and the caller may retry
+///     (<c>specs/session/spec.md</c> scenarios "Steer lands on a
+///     live session" / "Steer misses without a live stream").</item>
+///     <item><c>LiveSession = false</c> — Phase 1a canonical path.
+///     Stages a follow-up <see cref="WorkItem"/> on the same
+///     <see cref="Run"/>, carrying the operator's steer text as
+///     the brief (the cowork 11.1 fallback "stage a new research
+///     WorkItem"). The response carries the same
+///     <c>delivered: true</c> shape with a <c>followUpWorkItemId</c>.</item>
+///   </list></item>
 /// </list>
 /// <para>
-/// The LiveSession branch lands in Phase 1c and rides the
-/// <c>IWorkerCommandPipe</c> bidi channel
-/// (<c>TrySendInjectContext</c>). The current runtime declares no
-/// <c>Capabilities.LiveSession</c> — every steer is no-LiveSession
-/// today, the bidi path is not yet wired. The resolver's
-/// <c>WorkerId?</c> outcome is informational: a non-null
-/// <c>WorkerId</c> means a worker is currently driving the run;
-/// <c>null</c> means the reaper will reclaim the lease. Either way
-/// the follow-up is staged — the steer must survive a worker restart.
+/// The bidi path lands in Phase 1c; the follow-up path is preserved
+/// for harnesses that declare <c>LiveSession = false</c> (today's
+/// runtime, and <c>TestFakeHarness</c> with the false case) — both
+/// branches are reachable through the same seam. The
+/// <see cref="IExecutionIdResolver"/> outcome is informational on the
+/// bidi path (a non-null <c>WorkerId</c> means a worker is currently
+/// driving the run; <c>null</c> means the reaper will reclaim the
+/// lease) and the missing-worker case answers
+/// <c>{ delivered: false }</c> per the spec.
 /// </para>
 /// </summary>
 /// <param name="db">Orchestration context of the current scope.</param>
 /// <param name="scopeAccessor">Ambient scope — declare system for the run.</param>
 /// <param name="resolver">Shared <c>runId → WorkerId</c> resolver.</param>
+/// <param name="harnessResolver">Resolver for the live execution's
+/// <see cref="IHarness"/> — the seam the <see cref="HarnessCapabilities"/>
+/// read rides on (Phase 1c).</param>
+/// <param name="commandPipe">Bidi command channel to the worker
+/// (Phase 1c — the <see cref="TurnInput"/>-on-the-gRPC-stream
+/// surface). The <c>TrySend*</c> shape returns <c>false</c> on a
+/// missing live stream (miss, not error).</param>
 /// <param name="defaults">Follow-up worker image / profiles-ref.</param>
 /// <param name="buildInformation">Build identity — pins the follow-up image to the running version.</param>
 /// <param name="clock">Wall-clock source for the follow-up stamp.</param>
@@ -58,6 +81,8 @@ public sealed class HostSteerRunAdapter(
     OrchestrationDbContext db,
     ISubjectScopeAccessor scopeAccessor,
     IExecutionIdResolver resolver,
+    IRunHarnessResolver harnessResolver,
+    IWorkerCommandPipe commandPipe,
     IOptions<SteeringWorkerDefaults> defaults,
     ComukiBuildInformation buildInformation,
     TimeProvider clock,
@@ -84,6 +109,28 @@ public sealed class HostSteerRunAdapter(
         }
 
         var liveWorker = await resolver.ResolveAsync(runId, cancellationToken);
+        var liveHarness = await harnessResolver.ResolveAsync(runId, cancellationToken);
+
+        // Phase 1c canonical path — the harness declares
+        // Capabilities.LiveSession = true, the bidi channel carries
+        // the operator's turn as a TurnInput command, the worker
+        // forwards it to the harness's session transport, and the
+        // harness's response replaces the accumulated text on the
+        // next run summary (per specs/session/spec.md Requirement
+        // "TurnInput is the authoritative session turn", scenario
+        // "Authoritative turn replaces accumulated text"). A
+        // TrySendTurnInput miss returns delivered:false — the
+        // worker has no live stream (the reaper owns the lease, or
+        // the worker dropped the gRPC stream between lease-mint and
+        // steer); the caller may retry.
+        if (liveHarness is { Capabilities.LiveSession: true })
+        {
+            return await SteerViaTurnInputAsync(
+                liveWorker,
+                runId,
+                text,
+                cancellationToken);
+        }
 
         // Phase 1a canonical path — no LiveSession capability, no bidi
         // delivery. Stage the follow-up regardless of whether a worker
@@ -103,12 +150,64 @@ public sealed class HostSteerRunAdapter(
         var followUp = await StageFollowUpAsync(run, text, cancellationToken);
 
         logger.LogInformation(
-            "Steer on run {RunId} staged follow-up work item {WorkItemId} (live worker was {WorkerState})",
+            "Steer on run {RunId} staged follow-up work item {WorkItemId} (live worker was {WorkerState}, harness live-session={LiveSession})",
             runId.Value,
             followUp.Id,
-            liveWorker is null ? "absent" : "present");
+            liveWorker is null ? "absent" : "present",
+            liveHarness is { Capabilities.LiveSession: true });
 
         return new SteerRunResult(true, followUp.Id);
+    }
+
+    /// <summary>
+    /// Sends the operator's turn through the bidi <see cref="TurnInput"/>
+    /// command and returns the wire-shape <see cref="SteerRunResult"/>.
+    /// A worker without a live stream answers
+    /// <c>{ delivered: false }</c>; a live worker answers
+    /// <c>{ delivered: true }</c> with no follow-up
+    /// <see cref="WorkItem"/> id. The spec's
+    /// <c>code = session.livesession_unavailable</c> 409 path is
+    /// reserved for the explicit, intentional no-LiveSession
+    /// declaration that Phase 8 / Instrument brings; today's
+    /// no-LiveSession runtime reaches the follow-up branch above
+    /// by default, not this one (the harness resolver returns
+    /// <c>null</c> when the run has no Running work item).
+    /// </summary>
+    /// <param name="liveWorker">Worker the resolver returned; <c>null</c>
+    /// when the reaper has reclaimed the lease.</param>
+    /// <param name="runId">Run being steered (already known to be non-terminal).</param>
+    /// <param name="text">Operator's steer text.</param>
+    /// <param name="cancellationToken">Token propagated to the bidi send.</param>
+    private Task<SteerRunResult> SteerViaTurnInputAsync(
+        WorkerId? liveWorker,
+        RunId runId,
+        string text,
+        CancellationToken cancellationToken)
+    {
+        if (liveWorker is not { } workerId)
+        {
+            logger.LogInformation(
+                "Steer on run {RunId} declined: harness declares LiveSession but the resolver saw no live worker (reaper owns the lease)",
+                runId.Value);
+            return Task.FromResult(new SteerRunResult(Delivered: false, FollowUpWorkItemId: null));
+        }
+
+        var delivered = commandPipe.TrySendTurnInput(
+            workerId,
+            new TurnInput
+            {
+                Text = text,
+                Role = "user",
+                Metadata = new Dictionary<string, string>(),
+            });
+
+        logger.LogInformation(
+            "Steer on run {RunId} tried bidi TurnInput on worker {WorkerId}: delivered={Delivered}",
+            runId.Value,
+            workerId.Value,
+            delivered);
+
+        return Task.FromResult(new SteerRunResult(Delivered: delivered, FollowUpWorkItemId: null));
     }
 
     /// <summary>

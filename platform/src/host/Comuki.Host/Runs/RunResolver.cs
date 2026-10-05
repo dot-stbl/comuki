@@ -68,26 +68,21 @@ public sealed class ExecutionIdResolver(
         // corruption; the resolver answers <c>null</c> defensively, the
         // operator endpoint surfaces it as the same "no live lease"
         // outcome, identical to a quiet worker.
-        var running = db.WorkItems
+        var leases = await db.WorkItems
             .AsNoTracking()
             .Where(item => item.RunId == runId
                 && item.Status == WorkItemStatus.Running
                 && item.LeasedBy != null)
-            .Select(item => item.LeasedBy);
+            .Select(item => item.LeasedBy)
+            .Take(2)
+            .ToListAsync(cancellationToken);
 
-        // The InMemory provider's <c>FirstOrDefaultAsync</c> on a
-        // <see cref="Guid"/>-projecting select returns
-        // <c>Guid.Empty</c>, not <c>null</c>, when the source is empty
-        // — that's not a nullable shape. Project onto
-        // <see cref="WorkerId"/>? explicitly so the seam's null
-        // contract holds for the unit and the integration paths alike.
-        var first = await running.FirstOrDefaultAsync(cancellationToken);
-        if (first is null)
+        return leases.Count switch
         {
-            return null;
-        }
-
-        var moreCount = await running.Skip(1).CountAsync(cancellationToken);
-        return moreCount == 0 ? first : null;
+            0 => null,
+            1 => leases[0],
+            // Two Running items under the same run → corruption.
+            _ => null,
+        };
     }
 }

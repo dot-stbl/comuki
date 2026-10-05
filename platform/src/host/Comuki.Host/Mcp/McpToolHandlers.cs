@@ -15,10 +15,14 @@ namespace Comuki.Host.Mcp;
 
 /// <summary>
 /// Per-tool handlers for the MCP JSON-RPC <c>tools/call</c> dispatcher.
-/// Extracted from <c>McpServer</c> so the dispatcher class holds only
-/// orchestration (per <c>class-layout-and-tooling.md §1a</c>). Each
-/// handler is a pure function over its inputs and the injected ports —
-/// no instance state, no side effects beyond the port calls.
+/// Each handler is a pure function over its inputs and the injected
+/// ports — no instance state, no side effects beyond the port calls.
+/// The observability handlers parse ISO 8601 timestamps from the JSON
+/// arguments at the validation clamp (per
+/// <c>specs/observability/spec.md</c> "accepts
+/// <c>{... from?: iso8601, to?: iso8601, ...}</c>"): the typed
+/// infrastructure client converts to unix-seconds (Prometheus) or
+/// RFC3339 (LogsQL <c>time</c> pipe) on the wire.
 /// </summary>
 /// <param name="knowledgeSearcher">Knowledge base search port.</param>
 /// <param name="knowledgeIngestor">Knowledge ingestion port.</param>
@@ -69,6 +73,7 @@ public sealed class McpToolHandlers(
 
     /// <summary>Upper bound for learning.suggest's proposedRule — the learning_candidates.proposed_rule column limit.</summary>
     public const int SuggestRuleMaxLength = 2000;
+
     /// <summary>knowledge.search — pgvector cosine similarity search. Worker callers are confined to their project.</summary>
     /// <param name="id">JSON-RPC request id.</param>
     /// <param name="arguments">Parsed JSON arguments object.</param>
@@ -395,33 +400,15 @@ public sealed class McpToolHandlers(
         JsonElement arguments,
         CancellationToken cancellationToken)
     {
-        var query = McpArgumentReaders.ReadString(arguments, "query");
-        if (string.IsNullOrWhiteSpace(query))
+        if (!TryParseLogSearch(id, arguments, out var query, out var error))
         {
-            return InvalidParams(id, "observability.logs.search requires a non-empty arguments.query");
+            return error!;
         }
-
-        var fromUnixMs = McpArgumentReaders.ReadOptionalLong(arguments, "fromUnixMs");
-        var toUnixMs = McpArgumentReaders.ReadOptionalLong(arguments, "toUnixMs");
-        if (!ValidateTimeWindow(id, fromUnixMs, toUnixMs, out var windowError))
-        {
-            return windowError!;
-        }
-
-        var limit = ClampLimit(McpArgumentReaders.ReadOptionalInt(arguments, "limit"));
-        var explicitTraceId = McpArgumentReaders.ReadOptionalString(arguments, "traceId");
-
-        var logsQuery = new Modules.Observability.Domain.Logs.LogsQuery(
-            Query: query,
-            FromUnixMs: fromUnixMs,
-            ToUnixMs: toUnixMs,
-            Limit: limit,
-            TraceId: explicitTraceId);
 
         IReadOnlyList<Modules.Observability.Domain.Logs.LogRow> rows;
         try
         {
-            rows = await logsQueryClient.SearchAsync(logsQuery, cancellationToken);
+            rows = await logsQueryClient.SearchAsync(query, cancellationToken);
         }
         catch (VictoriaUnavailableException exception)
         {
@@ -446,11 +433,9 @@ public sealed class McpToolHandlers(
             return InvalidParams(id, "observability.logs.context requires a non-empty arguments.traceId");
         }
 
-        var fromUnixMs = McpArgumentReaders.ReadOptionalLong(arguments, "fromUnixMs");
-        var toUnixMs = McpArgumentReaders.ReadOptionalLong(arguments, "toUnixMs");
-        if (!ValidateTimeWindow(id, fromUnixMs, toUnixMs, out var windowError))
+        if (!TryReadWindow(id, arguments, out var from, out var to, out var error))
         {
-            return windowError!;
+            return error!;
         }
 
         var limit = ClampLimit(McpArgumentReaders.ReadOptionalInt(arguments, "limit"));
@@ -458,7 +443,7 @@ public sealed class McpToolHandlers(
         IReadOnlyList<Modules.Observability.Domain.Logs.LogRow> rows;
         try
         {
-            rows = await logsQueryClient.ContextAsync(traceId, fromUnixMs, toUnixMs, limit, cancellationToken);
+            rows = await logsQueryClient.ContextAsync(traceId, from, to, limit, cancellationToken);
         }
         catch (VictoriaUnavailableException exception)
         {
@@ -483,15 +468,24 @@ public sealed class McpToolHandlers(
             return InvalidParams(id, "observability.metrics.query requires a non-empty arguments.query");
         }
 
-        var time = McpArgumentReaders.ReadOptionalLong(arguments, "time");
-        var start = McpArgumentReaders.ReadOptionalLong(arguments, "start");
-        var end = McpArgumentReaders.ReadOptionalLong(arguments, "end");
-        var step = McpArgumentReaders.ReadOptionalLong(arguments, "step");
-
-        if ((time is null && (start is null || end is null || step is null))
-            || (time is not null && (start is not null || end is not null || step is not null)))
+        DateTimeOffset? time;
+        DateTimeOffset? start;
+        DateTimeOffset? end;
+        try
         {
-            return InvalidParams(id, "observability.metrics.query requires either arguments.time (instant) or arguments.start+end+step (range), exclusively.");
+            time = McpArgumentReaders.ReadOptionalIso8601(arguments, "time");
+            start = McpArgumentReaders.ReadOptionalIso8601(arguments, "start");
+            end = McpArgumentReaders.ReadOptionalIso8601(arguments, "end");
+        }
+        catch (ArgumentException exception)
+        {
+            return InvalidParams(id, $"observability.metrics.query {exception.Message}");
+        }
+
+        if ((time is null && (start is null || end is null))
+            || (time is not null && (start is not null || end is not null)))
+        {
+            return InvalidParams(id, "observability.metrics.query requires either arguments.time (instant) or arguments.start+end (range), exclusively.");
         }
 
         if (start is not null && end is not null && end < start)
@@ -499,9 +493,13 @@ public sealed class McpToolHandlers(
             return InvalidParams(id, "observability.metrics.query rejects arguments.end < arguments.start");
         }
 
+        var step = McpArgumentReaders.ReadOptionalInt(arguments, "step") is { } stepValue
+            ? TimeSpan.FromSeconds(stepValue)
+            : (TimeSpan?)null;
+
         var metricsQuery = time is not null
-            ? new Modules.Observability.Domain.Metrics.MetricsQuery(PromQl: query, TimeUnixMs: time)
-            : new Modules.Observability.Domain.Metrics.MetricsQuery(PromQl: query, FromUnixMs: start, ToUnixMs: end, StepUnixMs: step);
+            ? new Modules.Observability.Domain.Metrics.MetricsQuery(PromQl: query, Time: time)
+            : new Modules.Observability.Domain.Metrics.MetricsQuery(PromQl: query, Start: start, End: end, Step: step);
 
         IReadOnlyList<Modules.Observability.Domain.Metrics.MetricSeries> series;
         try
@@ -558,40 +556,102 @@ public sealed class McpToolHandlers(
     }
 
     /// <summary>Upper bound on the time-range inputs the observability tools accept.</summary>
-    private const long ObservabilityMaxRangeUnixMs = 7L * 24L * 60L * 60L * 1000L;
+    private static readonly TimeSpan observabilityMaxRange = TimeSpan.FromDays(7);
 
-    /// <summary>Upper bound for observability.* row-set windows (server caps at the same value).</summary>
+    /// <summary>Default page size for observability.* row-set tools when the caller omits <c>limit</c>.</summary>
     private const int ObservabilityDefaultLimit = 100;
 
     /// <summary>Upper bound for observability.* row-set windows (server caps at the same value).</summary>
     private const int ObservabilityMaxLimit = 1000;
 
     /// <summary>
-    /// Reject time windows that are inverted or exceed the platform's max
-    /// observability retention — the guard fires before any HTTP call so a
-    /// misconfigured client doesn't get to chew through a full VictoriaLogs
-    /// 30-day query only to be told the result is too big.
+    /// Parse the observability.logs.search arguments: the LogsQL body
+    /// (required), the optional time window (ISO 8601), and the optional
+    /// <c>limit</c> clamp. The window guard runs before any HTTP call so
+    /// a misconfigured client doesn't get to chew through a full
+    /// VictoriaLogs 30-day query only to be told the result is too big.
     /// </summary>
-    private static bool ValidateTimeWindow(JsonElement? id, long? fromUnixMs, long? toUnixMs, out JsonRpcResponse? error)
+    private static bool TryParseLogSearch(
+        JsonElement? id,
+        JsonElement arguments,
+        out Modules.Observability.Domain.Logs.LogsQuery query,
+        out JsonRpcResponse? error)
     {
-        error = null;
-        if (fromUnixMs is null || toUnixMs is null)
+        var body = McpArgumentReaders.ReadString(arguments, "query");
+        if (string.IsNullOrWhiteSpace(body))
         {
+            query = default!;
+            error = InvalidParams(id, "observability.logs.search requires a non-empty arguments.query");
+            return false;
+        }
+
+        if (!TryReadWindow(id, arguments, out var from, out var to, out error))
+        {
+            query = default!;
+            return false;
+        }
+
+        var limit = ClampLimit(McpArgumentReaders.ReadOptionalInt(arguments, "limit"));
+        var explicitTraceId = McpArgumentReaders.ReadOptionalString(arguments, "traceId");
+
+        query = new Modules.Observability.Domain.Logs.LogsQuery(
+            Query: body,
+            From: from,
+            To: to,
+            Limit: limit,
+            TraceId: explicitTraceId);
+        error = null;
+        return true;
+    }
+
+    /// <summary>
+    /// Read the ISO 8601 <c>from</c> / <c>to</c> window the observability
+    /// tools accept, validating the bounds in the clamp. A
+    /// non-parseable timestamp surfaces as a typed <c>-32602</c> failure
+    /// (the MCP error-mapping layer translates to
+    /// <c>code = observability.invalid_params</c>). An inverted or
+    /// over-long window surfaces the same way — no HTTP call is made
+    /// before the clamp fires.
+    /// </summary>
+    private static bool TryReadWindow(
+        JsonElement? id,
+        JsonElement arguments,
+        out DateTimeOffset? from,
+        out DateTimeOffset? to,
+        out JsonRpcResponse? error)
+    {
+        try
+        {
+            from = McpArgumentReaders.ReadOptionalIso8601(arguments, "from");
+            to = McpArgumentReaders.ReadOptionalIso8601(arguments, "to");
+        }
+        catch (ArgumentException exception)
+        {
+            from = null;
+            to = null;
+            error = InvalidParams(id, $"observability.* tools {exception.Message}");
+            return false;
+        }
+
+        if (from is null || to is null)
+        {
+            error = null;
             return true;
         }
 
-        if (toUnixMs < fromUnixMs)
+        if (to < from)
         {
-            error = InvalidParams(id, "observability.* tools reject arguments.toUnixMs < arguments.fromUnixMs");
+            error = InvalidParams(id, "observability.* tools reject arguments.to < arguments.from");
             return false;
         }
 
-        if (toUnixMs - fromUnixMs > ObservabilityMaxRangeUnixMs)
+        if (to - from > observabilityMaxRange)
         {
-            error = InvalidParams(id, $"observability.* tools reject time windows longer than {ObservabilityMaxRangeUnixMs / 86400000} days");
+            error = InvalidParams(id, $"observability.* tools reject time windows longer than {observabilityMaxRange.TotalDays:0} days");
             return false;
         }
 
+        error = null;
         return true;
     }
 
@@ -618,7 +678,7 @@ public sealed class McpToolHandlers(
     {
         return JsonRpcResponse.Success(id, new ToolResult(
             Content: [new ToolContentBlock("text",
-                $"{VictoriaUnavailableException.VictoriaUnavailableCode}: {exception.Endpoint} ({exception.Inner?.Message ?? "no response within the timeout"})")],
+                $"{VictoriaUnavailableException.VictoriaUnavailableCode}: {exception.Endpoint} ({exception.InnerException?.Message ?? "no response within the timeout"})")],
             IsError: true));
     }
 

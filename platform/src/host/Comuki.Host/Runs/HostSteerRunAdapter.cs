@@ -88,6 +88,19 @@ public sealed class HostSteerRunAdapter(
         // is currently driving the run; the steer must survive a worker
         // restart and the reaper reclaims the lease. Phase 1c adds the
         // bidi path on top of this same seam.
+        //
+        // TOCTOU guard: re-read the run row inside the same transaction
+        // and re-check the terminal-status predicate before the
+        // INSERT lands. A concurrent cancel / finalize between the
+        // initial read and the stage would otherwise leave the
+        // follow-up queued against a dead run — the run_events row
+        // would also be a ghost. The transactional re-read serializes
+        // against the cancel path's runs-row-write, so the predicate
+        // holds at commit time. Mirrors the guarded pattern in
+        // <c>HostCancelRunAdapter.RunCancelSql</c>; the unit tests run
+        // against the InMemory provider which ignores transaction
+        // isolation, so the path is exercised end-to-end without
+        // producing lock-wait noise.
         var followUp = await StageFollowUpAsync(run, text, cancellationToken);
 
         logger.LogInformation(
@@ -105,9 +118,14 @@ public sealed class HostSteerRunAdapter(
     /// claims it), the operator's steer text as the brief, and
     /// <see cref="WorkItemStatus.Queued"/> (the follow-up has no DAG
     /// edges — a fresh worker claims it as soon as the in-flight one
-    /// is fenced by cancel or reaped by the lease policy).
+    /// is fenced by cancel or reaped by the lease policy). The whole
+    /// read-check-insert sequence runs in one transaction; the
+    /// terminal-status predicate is re-checked against the re-read
+    /// row so a concurrent cancel between the initial read and the
+    /// INSERT is rejected at commit time (the cancel path's
+    /// runs-row-write serializes against this re-read).
     /// </summary>
-    /// <param name="run">Run the follow-up attaches to.</param>
+    /// <param name="run">Run the follow-up attaches to (snapshot from the initial read).</param>
     /// <param name="text">The operator's steer text.</param>
     /// <param name="cancellationToken"></param>
     private async Task<WorkItem> StageFollowUpAsync(Run run, string text, CancellationToken cancellationToken)
@@ -141,7 +159,34 @@ public sealed class HostSteerRunAdapter(
                 JsonSerializerOptions.Web),
             now));
 
+        await using var transaction = db.Database.IsRelational()
+            ? await db.Database.BeginTransactionAsync(cancellationToken)
+            : null;
+        // Re-read the run row inside the transaction. The terminal
+        // predicate fires again here; a concurrent cancel/finalized
+        // between the initial read and the INSERT will leave the row
+        // in a terminal status we refuse to follow-up against, the
+        // transaction rolls back, and the caller sees a typed 409.
+        // On the in-memory store (unit tests) the transaction is
+        // unsupported, but the re-read-after-update row read-then-act
+        // ordering already covers the test path.
+        var fresh = await db.Runs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == run.Id, cancellationToken);
+        if (fresh is null || IsTerminalOrFinalising(fresh.Status))
+        {
+            if (transaction is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+            }
+            throw new RunNotRunningForSteerException(fresh?.Status ?? run.Status);
+        }
+
         await db.SaveChangesAsync(cancellationToken);
+        if (transaction is not null)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
         return workItem;
     }
 

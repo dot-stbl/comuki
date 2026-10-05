@@ -1,12 +1,19 @@
+using System.Globalization;
 using System.Text.Json;
 
 namespace Comuki.Host.Mcp;
 
 /// <summary>
 /// Argument readers for the MCP JSON-RPC <c>tools/call</c> dispatcher.
-/// Extracted from <c>McpServer</c> so the dispatcher class holds only
-/// orchestration. Each reader is a pure function over the parsed JSON
-/// arguments object — no state, no side effects.
+/// Each reader is a pure function over the parsed JSON arguments
+/// object — no state, no side effects. ISO 8601 timestamps are
+/// parsed with <see cref="DateTimeStyles.AssumeUniversal"/> +
+/// <see cref="DateTimeStyles.AdjustToUniversal"/> so an unzoned
+/// (<c>Z</c>-suffix-free) input is read as UTC, not local; the
+/// observability wire contract is RFC3339 per
+/// <c>specs/observability/spec.md</c>, and the typed clients convert to
+/// unix-seconds (Prometheus) or RFC3339 (LogsQL <c>time</c> pipe) as
+/// required.
 /// </summary>
 internal static class McpArgumentReaders
 {
@@ -49,7 +56,12 @@ internal static class McpArgumentReaders
         return Guid.TryParse(raw, out var parsed) ? parsed : null;
     }
 
-    /// <summary>Reads an optional long property; accepts numbers or numeric strings.</summary>
+    /// <summary>
+    /// Reads an optional long property; accepts numbers or numeric strings.
+    /// Integer <c>int?</c> callers go through the same path
+    /// (<see cref="ReadOptionalInt"/>) — checked-cast on the long result
+    /// so the wire shape stays one shape (numeric + numeric-string).
+    /// </summary>
     /// <param name="arguments"></param>
     /// <param name="propertyName"></param>
     public static long? ReadOptionalLong(JsonElement arguments, string propertyName)
@@ -69,7 +81,7 @@ internal static class McpArgumentReaders
                 }
 
                 if (property.Value.ValueKind == JsonValueKind.String
-                    && long.TryParse(property.Value.GetString(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                    && long.TryParse(property.Value.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
                 {
                     return parsed;
                 }
@@ -79,33 +91,13 @@ internal static class McpArgumentReaders
         return null;
     }
 
-    /// <summary>Reads an optional int property; accepts numbers or numeric strings.</summary>
+    /// <summary>Reads an optional int property; routed through <see cref="ReadOptionalLong"/> with a checked range check.</summary>
     /// <param name="arguments"></param>
     /// <param name="propertyName"></param>
     public static int? ReadOptionalInt(JsonElement arguments, string propertyName)
     {
-        if (arguments.ValueKind != JsonValueKind.Object)
-        {
-            return null;
-        }
-
-        foreach (var property in arguments.EnumerateObject())
-        {
-            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-            {
-                if (property.Value.ValueKind == JsonValueKind.Number && property.Value.TryGetInt32(out var value))
-                {
-                    return value;
-                }
-
-                if (property.Value.ValueKind == JsonValueKind.String && int.TryParse(property.Value.GetString(), out var parsed))
-                {
-                    return parsed;
-                }
-            }
-        }
-
-        return null;
+        var value = ReadOptionalLong(arguments, propertyName);
+        return value is null ? null : checked((int)value.Value);
     }
 
     /// <summary>Reads an optional bool property; accepts booleans or boolean strings.</summary>
@@ -163,7 +155,7 @@ internal static class McpArgumentReaders
                 }
 
                 if (property.Value.ValueKind == JsonValueKind.String
-                    && float.TryParse(property.Value.GetString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                    && float.TryParse(property.Value.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
                 {
                     return parsed;
                 }
@@ -171,5 +163,35 @@ internal static class McpArgumentReaders
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Reads an optional ISO 8601 timestamp property; returns <c>null</c>
+    /// when absent. Throws <see cref="ArgumentException"/> on a
+    /// non-empty value that fails the parse — the validation clamp the
+    /// brief mandates (<c>specs/observability/spec.md</c> "accepts
+    /// <c>{... from?: iso8601, to?: iso8601, ...}</c>"). The
+    /// invariant culture + <see cref="DateTimeStyles.AssumeUniversal"/>
+    /// + <see cref="DateTimeStyles.AdjustToUniversal"/> combination
+    /// makes the parse a pure UTC read: an unzoned input is
+    /// interpreted as UTC (the wire shape Victoria expects), not as
+    /// the host's local zone (the deployment baseline runs in UTC
+    /// anyway; the styles guard against a CI runner in a different
+    /// zone silently flipping the parsed value).
+    /// </summary>
+    /// <param name="arguments"></param>
+    /// <param name="propertyName"></param>
+    public static DateTimeOffset? ReadOptionalIso8601(JsonElement arguments, string propertyName)
+    {
+        var raw = ReadOptionalString(arguments, propertyName);
+        return string.IsNullOrWhiteSpace(raw)
+            ? null
+            : DateTimeOffset.TryParse(
+                    raw,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                    out var parsed)
+                ? parsed
+                : throw new ArgumentException($"arguments.{propertyName} must be an ISO 8601 timestamp (got: {raw}).", propertyName);
     }
 }

@@ -18,6 +18,31 @@ The platform SHALL compile typed, immutable Context Packs containing authority, 
 - **WHEN** Brain answers a simple current-status question
 - **THEN** the pack contains authoritative current state and relevant Decisions without loading the full Mission transcript
 
+### Requirement: Hybrid retrieval — lexical (PostgreSQL tsvector) + pgvector + RRF
+The Memory module's retrieval plane SHALL compose two complementary ranking signals and one fusion stage over the same `SourceRef` / candidate set:
+
+- **Lexical rank** — PostgreSQL `tsvector` (or `tsquery` + GIN index) over the candidate text fields (claim text, snippet, body excerpt). The `ts_rank` score SHALL be computed inside Postgres and SHALL degrade to zero (NOT an error) when no `tsvector` column is present for a source — lexical weight is then carried as `0` and the fusion degenerates to vector-only.
+- **Vector rank** — the existing pgvector cosine similarity over the same 1536-dim embedding column. When the embedding column is absent the platform returns `1/0 = +∞` (best) for every candidate so fusion degenerates to lexical-only and never silently drops semantic matches because pgvector is unprovisioned.
+- **Reciprocal Rank Fusion (RRF)** — the two rank lists SHALL be merged by `score = Σ 1/(k + rank_i)` per candidate, with a single `k = 60` (CORMOND/Cormack 2009 default) and equal per-list weight `w_lexical = w_vector = 1.0`. Sources that miss one rank list contribute only the other list's `1/(k + rank)`. The fused score SHALL be the final retrieval rank inside the Context Pack builder; the two raw `ts_rank` / cosine scores SHALL stay on the candidate as provenance so the manifest can display "why this evidence".
+- **Filter compatibility** — retrieval filters (visibility, scope, kind, freshness window, project/RBAC) MUST apply **before** both rank signals compute. Generation/version of the embedding/extractor MUST be pinned per request and reused on the candidate side; the fusion stage SHALL NOT mix generations.
+- **Search seam** — `Filtered` operators (`Comuki.Shared.Filtering`) SHALL NOT grow `tsvector`/cosine semantics; the hybrid retrieval lives behind the dedicated typed query/result seam (per task 7.9).
+
+#### Scenario: Both signals produce usable hits
+- **WHEN** the planner asks for `topK = 10` against a corpus with both `tsvector` and `embedding` columns populated
+- **THEN** the result contains up to 10 candidates, each carries `LexicalRank`, `VectorRank`, and `FusedScore`; ordering is by `FusedScore` desc; and the Context Pack manifest records the RRF `k` constant and the two per-list weights.
+
+#### Scenario: pgvector absent, lexical-only
+- **WHEN** the connected database has no `embedding` column for the source and the query has tokens
+- **THEN** every candidate has `VectorRank = 0` and `FusedScore = 1/(60 + LexicalRank)`; ordering matches `LexicalRank`; the manifest notes "vector back-end unavailable, lexical-only".
+
+#### Scenario: tsvector absent, vector-only
+- **WHEN** the connected database has no `tsvector` column for the source and the query has an embedding
+- **THEN** every candidate has `LexicalRank = 0` and `FusedScore = 1/(60 + VectorRank)`; ordering matches `VectorRank`; the manifest notes "lexical back-end unavailable, vector-only".
+
+#### Scenario: Mixed generations refused
+- **WHEN** the planner asks for an embedding generation `g2` against a candidate set whose members were embedded with `g1`
+- **THEN** the candidate set is reduced (or rejected) before fusion so a single `FusedScore` line never mixes `g1` and `g2` ranks.
+
 ### Requirement: Visibility before retrieval
 Access filtering SHALL happen before search, ranking, summary, citation, cache lookup, or pack compilation. Pack cache identity SHALL include actor access and policy revisions. Derived content inherits the strictest visibility of its inputs.
 

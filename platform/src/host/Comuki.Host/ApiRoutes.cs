@@ -16,6 +16,12 @@ public static class ApiRoutes
 
     public const string ProfileByKey = "/profiles/{key}";
 
+    /// <summary>Control-plane skill catalog — read-only metadata for the brain and the dashboard (task 25.2).</summary>
+    public const string Skills = "/skills";
+
+    /// <summary>One skill by key (the directory name, e.g. <c>citation-cleanup</c>).</summary>
+    public const string SkillByKey = "/skills/{key}";
+
     public const string ChatCommands = "/chat-commands";
 
     /// <summary>API root prefix of the versioned auth surface.</summary>

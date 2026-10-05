@@ -1,5 +1,6 @@
 using Comuki.Shared.Contracts.ControlPlane.ChatCommands;
 using Comuki.Shared.Contracts.ControlPlane.Profiles;
+using Comuki.Shared.Contracts.ControlPlane.Skills;
 
 namespace Comuki.Host.ControlPlane;
 
@@ -7,10 +8,10 @@ namespace Comuki.Host.ControlPlane;
 public static class ControlPlaneCatalogInstaller
 {
     /// <summary>
-    /// Registers <see cref="ControlPlaneCatalog"/> as a singleton and binds
-    /// both catalog ports to the same instance, so interface and concrete
-    /// resolutions share one catalog. Options come from the
-    /// <c>ControlPlane</c> section (<see cref="ControlPlaneCatalogOptions"/>).
+    /// Registers <see cref="ControlPlaneCatalog"/>, <see cref="SkillCatalog"/>,
+    /// and <see cref="ISkillCatalog"/> as singletons, plus the profile and
+    /// chat-command catalog ports. All three readers share the
+    /// <c>ControlPlane</c> options section (<see cref="ControlPlaneCatalogOptions"/>).
     /// </summary>
     /// <param name="services"></param>
     /// <param name="configuration"></param>
@@ -28,6 +29,10 @@ public static class ControlPlaneCatalogInstaller
             serviceProvider.GetRequiredService<ControlPlaneCatalog>());
         services.AddSingleton<IChatCommandCatalog>(static serviceProvider =>
             serviceProvider.GetRequiredService<ControlPlaneCatalog>());
+
+        services.AddSingleton<SkillCatalog>();
+        services.AddSingleton<ISkillCatalog>(static serviceProvider =>
+            serviceProvider.GetRequiredService<SkillCatalog>());
 
         return services;
     }

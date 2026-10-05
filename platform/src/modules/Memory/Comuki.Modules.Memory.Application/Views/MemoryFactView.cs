@@ -19,6 +19,21 @@ namespace Comuki.Modules.Memory.Application.Views;
 /// <param name="Source">Source key: chat | human | run | learning-approved.</param>
 /// <param name="CreatedBy">Who wrote the fact.</param>
 /// <param name="CreatedAt">When the fact was written.</param>
+/// <param name="LexicalRank">
+/// <c>ts_rank</c> score from the lexical (FTS) path of the store;
+/// zero when the FTS column is missing, the query was empty, or the
+/// cosine path was the only ranker that produced this row.
+/// </param>
+/// <param name="VectorRank">
+/// 1 − cosine distance from the vector (pgvector) path of the store;
+/// zero when the embedding column is missing, the search had no embedding,
+/// or the lexical path was the only ranker that produced this row.
+/// </param>
+/// <param name="FusedScore">
+/// Reciprocal Rank Fusion of the two lists with k=60 and per-list weight
+/// 1.0 (default — see <see cref="Ranking.MemoryHybridRanking"/>).
+/// Ordering on read is by this score descending.
+/// </param>
 public sealed record MemoryFactView(
     MemoryFactId Id,
     MemoryScope Scope,
@@ -28,4 +43,7 @@ public sealed record MemoryFactView(
     string Text,
     MemorySource Source,
     string CreatedBy,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    float LexicalRank = 0f,
+    float VectorRank = 0f,
+    float FusedScore = 0f);

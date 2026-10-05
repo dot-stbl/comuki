@@ -120,7 +120,16 @@ public sealed class EfMemoryStore(
     /// <inheritdoc />
     public async Task<IReadOnlyList<MemoryFactView>> SearchAsync(MemoryFactQuery query, CancellationToken cancellationToken = default)
     {
-        if (!MemoryFactScopeReachability.IsQueryReachable(scopeAccessor, query.Scope, query.SubjectId))
+        // Mission id is the strong-typed shape of the "subject" on a
+        // mission-scope fact. When the caller passes MissionId, the
+        // effective scope is forced to Mission and the effective subject
+        // id is the mission guid as a string — the existing scope / subject
+        // filter (LINQ + raw SQL) then narrows to one mission's rows.
+        // A query with both Scope != Mission and a non-null MissionId
+        // is contradictory: refuse before opening a context.
+        var effective = MemoryFactMissionQuery.Normalize(query);
+
+        if (!MemoryFactScopeReachability.IsQueryReachable(scopeAccessor, effective.Scope, effective.SubjectId))
         {
             // A restricted caller naming a project it is not assigned to,
             // or the user scope at all (no per-user identity axis exists
@@ -135,21 +144,75 @@ public sealed class EfMemoryStore(
         var now = clock.GetUtcNow();
         var cutoff = now - MemoryFactPolicy.EphemeralTtl;
 
-        if (query.Embedding is { } embedding
-            && await MemoryFactVectors.HasColumnAsync(db, cancellationToken))
+        // Hybrid retrieval: rank candidates by both lexical
+        // (ts_rank over the generated text_tsv column) and vector
+        // (1 − cosine distance over the pgvector embedding) when those
+        // paths are available, fused via RRF (k=60). Either path is
+        // optional — if the embedding column is missing, or the FTS
+        // column is missing, or the user supplied no embedding, the
+        // corresponding side returns zero and the other side wins.
+        // The freshness fallback at the bottom is the contract's hard
+        // floor — no embeddings and no FTS at all still returns
+        // ranked rows.
+        var lexicalRows = Array.Empty<MemoryFactView>();
+        var vectorRows = Array.Empty<MemoryFactView>();
+
+        // Gate the probes on at least one input: when both paths are
+        // guaranteed empty (no embedding, no text) the column-existence
+        // checks would be pure overhead. They also fail on the
+        // in-memory provider used by unit tests, which doesn't expose
+        // OpenConnectionAsync — the gate keeps the unit suite green.
+        if (query.Embedding is not null || !string.IsNullOrEmpty(query.Text))
         {
-            var byCosine = await MemoryFactVectors.TrySearchCosineAsync(db, embedding, query, cutoff, logger, cancellationToken);
-            if (byCosine is { Count: > 0 })
+            if (query.Embedding is { } embedding
+                && await MemoryFactVectors.HasColumnAsync(db, cancellationToken))
             {
-                await MemoryFactReadTracking.RegisterReadsAsync(db, byCosine.Select(static fact => fact.Id), now, cancellationToken);
-                return byCosine;
+                var byCosine = await MemoryFactVectors.TrySearchCosineAsync(db, embedding, MemoryFactMissionQuery.Effective(query, effective.Scope, effective.SubjectId), cutoff, logger, cancellationToken);
+                if (byCosine is { Count: > 0 })
+                {
+                    // The cosine SQL already populates VectorRank = 1 -
+                    // distance (MemoryFactSql.ReadView reads column 9); the
+                    // position in the list is the rank — RRF reads position,
+                    // the surfaced score is just for the manifest / display.
+                    vectorRows = [.. byCosine];
+                }
             }
+
+            if (await MemoryFactLexical.HasColumnAsync(db, cancellationToken))
+            {
+                // The lex path uses the user-supplied query text as
+                // plainto_tsquery input; the SQL fragment strips
+                // surrounding quotes and treats the rest as plain tokens.
+                // MemoryFactSql.LexicalQuery returns "" for a blank/empty
+                // query, in which case MemoryFactLexical.TrySearchLexicalAsync
+                // short-circuits and returns [] — the vector path stays
+                // the sole ranker.
+                var lexicalQueryText = !string.IsNullOrEmpty(query.Text)
+                    ? MemoryFactSql.LexicalQuery(query.Text)
+                    : string.Empty;
+                if (lexicalQueryText.Length > 0)
+                {
+                    var byLexical = await MemoryFactLexical.TrySearchLexicalAsync(
+                        db, lexicalQueryText, MemoryFactMissionQuery.Effective(query, effective.Scope, effective.SubjectId), logger, cancellationToken);
+                    if (byLexical is not null)
+                    {
+                        lexicalRows = [.. byLexical.Select(static row => row.View with { LexicalRank = row.LexicalRank })];
+                    }
+                }
+            }
+        }
+
+        if (lexicalRows.Length > 0 || vectorRows.Length > 0)
+        {
+            var fused = MemoryHybridRanking.Fuse(lexicalRows, vectorRows, limit: query.Limit);
+            await MemoryFactReadTracking.RegisterReadsAsync(db, fused.Select(static fact => fact.Id), now, cancellationToken);
+            return fused;
         }
 
         var visible = await MemoryFactQueries.LoadVisibleAsync(
             db,
-            query.Scope,
-            query.SubjectId,
+            effective.Scope,
+            effective.SubjectId,
             query.Kind,
             cutoff,
             query.Limit,
@@ -281,6 +344,14 @@ file static class MemoryFactScopeReachability
             MemoryScope.User => false,
             MemoryScope.Project when requestedSubjectId is { } subjectId
                 && Guid.TryParse(subjectId, out var projectId) => scope.Allows(new ProjectId(projectId)),
+            // Mission facts: a restricted caller (user / project-assigned) has
+            // no Mission axis on SubjectScope to validate against, so the
+            // safe default is "no mission access at all". An unrestricted
+            // system consumer may pass a mission id and read its rows;
+            // without a mission id the call is fail-closed at the SQL
+            // filter (subject_id is null) and the gate above refuses it
+            // preemptively.
+            MemoryScope.Mission when requestedSubjectId is null => false,
             _ => true,
         };
     }
@@ -367,10 +438,14 @@ file static class MemoryFactReadTracking
 }
 
 /// <summary>
-/// Raw ADO surface for the pgvector embedding column: attach, the
-/// availability probe and the cosine search. SQL text lives in
+/// Raw ADO surface for the pgvector embedding column: attach + the
+/// availability probe + the cosine search. SQL text lives in
 /// <see cref="MemoryFactSql"/>; parameters are always bound, never
-/// interpolated.
+/// interpolated. Shares <see cref="MemoryFactHybridSearch.ColumnExistsAsync"/>
+/// and <see cref="MemoryFactHybridSearch.ExecuteRankedAsync"/> with the
+/// lexical path — the two searches differ only in their
+/// path-specific parameters (vector + cutoff vs lexical query text) and
+/// in the trailing rank column they read.
 /// </summary>
 file static class MemoryFactVectors
 {
@@ -390,20 +465,9 @@ file static class MemoryFactVectors
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    public static async Task<bool> HasColumnAsync(MemoryDbContext db, CancellationToken cancellationToken)
+    public static Task<bool> HasColumnAsync(MemoryDbContext db, CancellationToken cancellationToken)
     {
-        await db.Database.OpenConnectionAsync(cancellationToken);
-        try
-        {
-            var connection = db.Database.GetDbConnection();
-            await using var command = connection.CreateCommand();
-            command.CommandText = MemoryFactSql.EmbeddingColumnExistsSql;
-            return await command.ExecuteScalarAsync(cancellationToken) is true;
-        }
-        finally
-        {
-            await db.Database.CloseConnectionAsync();
-        }
+        return MemoryFactHybridSearch.ColumnExistsAsync(db, MemoryFactSql.EmbeddingColumnExistsSql, cancellationToken);
     }
 
     public static async Task<IReadOnlyList<MemoryFactView>?> TrySearchCosineAsync(
@@ -414,57 +478,19 @@ file static class MemoryFactVectors
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            await db.Database.OpenConnectionAsync(cancellationToken);
-            try
+        return await MemoryFactHybridSearch.ExecuteRankedAsync(
+            db,
+            MemoryFactSql.CosineSearchSql,
+            (command, q) =>
             {
-                var connection = db.Database.GetDbConnection();
-                await using var command = connection.CreateCommand();
-                command.CommandText = MemoryFactSql.CosineSearchSql;
                 command.Parameters.Add(VectorParameter("vector", embedding));
                 command.Parameters.Add(new NpgsqlParameter("cutoff", ephemeralCutoff));
-                // Object-axis scoping — this query runs raw SQL outside
-                // EF's model, so MemoryDbContext's HasQueryFilter on
-                // MemoryFact cannot reach it; these two parameters
-                // reproduce the same rule directly (see MemoryFactSql.CosineSearchSql).
-                command.Parameters.Add(new NpgsqlParameter("unrestricted", NpgsqlTypes.NpgsqlDbType.Boolean)
-                {
-                    Value = db.ScopeUnrestricted,
-                });
-                command.Parameters.Add(new NpgsqlParameter("allowedProjectSubjectKeys", NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text)
-                {
-                    Value = db.ScopeProjectSubjectKeys,
-                });
-                command.Parameters.Add(FilterTextParameter(
-                    "scope", query.Scope is { } scope ? MemoryScopeKeys.Key(scope) : null));
-                command.Parameters.Add(FilterTextParameter(
-                    "subject", query.SubjectId is null ? null : MemoryFact.CanonicalKey(query.SubjectId)));
-                command.Parameters.Add(FilterTextParameter(
-                    "kind", query.Kind is { } kind ? MemoryFactKindKeys.Key(kind) : null));
-                command.Parameters.Add(new NpgsqlParameter("limit", query.Limit));
-
-                var rows = new List<MemoryFactView>();
-                await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                while (await reader.ReadAsync(cancellationToken))
-                {
-                    rows.Add(MemoryFactSql.ReadView(reader));
-                }
-
-                return rows;
-            }
-            finally
-            {
-                await db.Database.CloseConnectionAsync();
-            }
-        }
-        catch (PostgresException exception)
-        {
-            // the probe said the column exists but the query disagrees
-            // (migration drift) — memory answers via the fallback instead
-            logger.LogWarning(exception, "cosine search failed; falling back to freshness ranking");
-            return null;
-        }
+            },
+            static reader => MemoryFactSql.ReadView(reader),
+            query,
+            "cosine search failed; falling back to freshness ranking",
+            logger,
+            cancellationToken);
     }
 
     public static NpgsqlParameter VectorParameter(string name, float[] vector)
@@ -488,5 +514,283 @@ file static class MemoryFactVectors
         {
             Value = value is null ? DBNull.Value : value,
         };
+    }
+}
+
+/// <summary>
+/// Lexical-rank side of the hybrid retrieval: probes the
+/// <c>text_tsv</c> column's existence and runs the
+/// <see cref="MemoryFactSql.LexicalRankSql"/> query when it does.
+/// Shares <see cref="MemoryFactHybridSearch.ColumnExistsAsync"/> and
+/// <see cref="MemoryFactHybridSearch.ExecuteRankedAsync"/> with the
+/// vector path; differs only in the <c>@lexicalQuery</c> parameter and
+/// the <see cref="LexicalRankedRow"/> reader. The probe is the
+/// graceful-degradation gate: a fresh install that never applied the
+/// FTS migration has no <c>text_tsv</c> at all, and the SQL fragment
+/// would otherwise raise "column does not exist" — the caller
+/// substitutes zero on probe miss.
+/// </summary>
+file static class MemoryFactLexical
+{
+    public static Task<bool> HasColumnAsync(MemoryDbContext db, CancellationToken cancellationToken)
+    {
+        return MemoryFactHybridSearch.ColumnExistsAsync(db, MemoryFactSql.LexicalColumnExistsSql, cancellationToken);
+    }
+
+    public static async Task<IReadOnlyList<LexicalRankedRow>?> TrySearchLexicalAsync(
+        MemoryDbContext db,
+        string lexicalQuery,
+        MemoryFactQuery query,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        // Empty trimmed query: skip the round-trip — an empty tsquery
+        // matches no row anyway, and the caller treats an empty query
+        // as "no lexical signal" (zero rank for everything).
+        return lexicalQuery is ""
+            ? []
+            : await MemoryFactHybridSearch.ExecuteRankedAsync(
+            db,
+            MemoryFactSql.LexicalRankSql,
+            static (command, q) => command.Parameters.Add(
+                new NpgsqlParameter("lexicalQuery", NpgsqlTypes.NpgsqlDbType.Text) { Value = q }),
+            static reader => MemoryFactSql.ReadViewWithLexicalRank(reader),
+            query,
+            "lexical rank search failed; using zero lexical rank",
+            logger,
+            cancellationToken,
+            pathParameter: lexicalQuery);
+    }
+}
+
+/// <summary>
+/// Shared runner for the two halves of <see cref="EfMemoryStore"/>'s
+/// hybrid retrieval. Both <see cref="MemoryFactVectors"/> and
+/// <see cref="MemoryFactLexical"/> need to do the same dance: open the
+/// connection, build a <c>DbCommand</c>, bind the path-specific
+/// parameters, then bind the object-axis scope parameters (which run
+/// outside EF's <c>HasQueryFilter</c> and have to be reproduced directly
+/// here), then the narrowing <c>@scope</c> / <c>@subject</c> / <c>@kind</c>
+/// filters, then the LIMIT, then read rows of the right type until
+/// the reader runs dry. <see cref="ExecuteRankedAsync{T}"/> centralises
+/// that dance: callers pass the path-specific <see cref="NpgsqlParameter"/>
+///(s) plus a row reader, and the runner binds the rest exactly once.
+/// </summary>
+file static class MemoryFactHybridSearch
+{
+    /// <summary>
+    /// Probes one column-existence query. The cosine path and the
+    /// lexical path each call this with their own SQL constant; the
+    /// runner owns the connection / command / scalar / cleanup
+    /// mechanics exactly once.
+    /// </summary>
+    /// <param name="db">The context whose connection the probe runs on.</param>
+    /// <param name="probeSql">
+    /// Column-existence probe SQL — a constant from
+    /// <see cref="MemoryFactSql"/>, never user input. CA2100 is
+    /// suppressed for the same reason as in
+    /// <see cref="ExecuteRankedAsync{T}"/>.
+    /// </param>
+    /// <param name="cancellationToken">Cancellation for the probe.</param>
+    public static async Task<bool> ColumnExistsAsync(
+        MemoryDbContext db,
+        string probeSql,
+        CancellationToken cancellationToken)
+    {
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        try
+        {
+            var connection = db.Database.GetDbConnection();
+            await using var command = connection.CreateCommand();
+#pragma warning disable CA2100 // SQL injection — probeSql is always a constant from MemoryFactSql
+            command.CommandText = probeSql;
+#pragma warning restore CA2100
+            return await command.ExecuteScalarAsync(cancellationToken) is true;
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
+        }
+    }
+
+    /// <summary>
+    /// Runs one ranked search: binds the path-specific parameters
+    /// (<paramref name="addPathParameters"/>), the object-axis scope
+    /// parameters, the narrowing <c>@scope</c> / <c>@subject</c> /
+    /// <c>@kind</c> filters, and the <c>@limit</c>; reads rows through
+    /// <paramref name="readRow"/>; converts a <see cref="PostgresException"/>
+    /// into a warning log + null return so the search falls back to
+    /// freshness / zero-rank rather than failing the call. The
+    /// <paramref name="pathParameter"/> value, when supplied, gates the
+    /// call on a non-empty path-specific value (the lexical path uses
+    /// it to short-circuit on a blank query; the vector path passes
+    /// null because the gate is the caller-side null check on
+    /// <c>query.Embedding</c>).
+    /// </summary>
+    /// <param name="db">The context whose connection the command runs on.</param>
+    /// <param name="searchSql">
+    /// The path-specific ranked-search SQL — a constant from
+    /// <see cref="MemoryFactSql"/>, never user input. The CA2100
+    /// suppression below is justified because every caller passes one of
+    /// the two SQL constants and there is no user-input path.
+    /// </param>
+    /// <param name="addPathParameters">
+    /// Binds the path-specific parameters (vector + cutoff on the
+    /// cosine path; <c>@lexicalQuery</c> on the lexical path) onto the
+    /// command. Runs before the object-axis scope, narrowing filters,
+    /// and limit are bound.
+    /// </param>
+    /// <param name="readRow">Reads one row from the open reader; called for every result row.</param>
+    /// <param name="query">The query the path-specific parameters were derived from.</param>
+    /// <param name="failureLogMessage">
+    /// Format-string-friendly message for the warning log on
+    /// <see cref="PostgresException"/>; the exception itself is the
+    /// second log argument.
+    /// </param>
+    /// <param name="logger">Logger for the failure-path warning.</param>
+    /// <param name="cancellationToken">Cancellation for the connection and command.</param>
+    /// <param name="pathParameter">
+    /// Reserved for callers that need to short-circuit on a blank
+    /// path-specific value before opening a connection (the lexical
+    /// path). The vector path passes null because its gate lives in
+    /// the caller's null check on <c>query.Embedding</c>.
+    /// </param>
+    public static async Task<IReadOnlyList<T>?> ExecuteRankedAsync<T>(
+        MemoryDbContext db,
+        string searchSql,
+        Action<System.Data.Common.DbCommand, MemoryFactQuery> addPathParameters,
+        Func<System.Data.Common.DbDataReader, T> readRow,
+        MemoryFactQuery query,
+        string failureLogMessage,
+        ILogger logger,
+        CancellationToken cancellationToken,
+        string? pathParameter = null)
+    {
+        if (pathParameter is { Length: 0 })
+        {
+            return [];
+        }
+
+        try
+        {
+            await db.Database.OpenConnectionAsync(cancellationToken);
+            try
+            {
+                var connection = db.Database.GetDbConnection();
+                await using var command = connection.CreateCommand();
+#pragma warning disable CA2100 // SQL injection — searchSql is always a constant from MemoryFactSql
+                command.CommandText = searchSql;
+#pragma warning restore CA2100
+                addPathParameters(command, query);
+                BindObjectAxisScope(db, command);
+                BindNarrowingFilters(command, query);
+                command.Parameters.Add(new NpgsqlParameter("limit", query.Limit));
+
+                var rows = new List<T>();
+                await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    rows.Add(readRow(reader));
+                }
+
+                return rows;
+            }
+            finally
+            {
+                await db.Database.CloseConnectionAsync();
+            }
+        }
+        catch (PostgresException exception)
+        {
+            // the probe said the column exists but the query disagrees
+            // (migration drift) — the caller falls back to the other
+            // ranker (vector → freshness, lexical → zero rank).
+            logger.LogWarning(exception, "{Message}", failureLogMessage);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Object-axis scope parameters — these queries run raw SQL outside
+    /// EF's model, so <see cref="MemoryDbContext"/>'s
+    /// <c>HasQueryFilter</c> on <see cref="MemoryFact"/> cannot reach
+    /// them; these two parameters reproduce the same rule directly (see
+    /// <see cref="MemoryFactSql.CosineSearchSql"/> /
+    /// <see cref="MemoryFactSql.LexicalRankSql"/>). Bound here exactly
+    /// once per hybrid search.
+    /// </summary>
+    private static void BindObjectAxisScope(MemoryDbContext db, System.Data.Common.DbCommand command)
+    {
+        command.Parameters.Add(new NpgsqlParameter("unrestricted", NpgsqlTypes.NpgsqlDbType.Boolean)
+        {
+            Value = db.ScopeUnrestricted,
+        });
+        command.Parameters.Add(new NpgsqlParameter("allowedProjectSubjectKeys", NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text)
+        {
+            Value = db.ScopeProjectSubjectKeys,
+        });
+    }
+
+    /// <summary>
+    /// Narrowing filter parameters — <c>@scope</c> / <c>@subject</c> /
+    /// <c>@kind</c> widen on NULL; a typed null is required or the
+    /// statement dies with 42P08.
+    /// </summary>
+    private static void BindNarrowingFilters(System.Data.Common.DbCommand command, MemoryFactQuery query)
+    {
+        command.Parameters.Add(MemoryFactVectors.FilterTextParameter(
+            "scope", query.Scope is { } scope ? MemoryScopeKeys.Key(scope) : null));
+        command.Parameters.Add(MemoryFactVectors.FilterTextParameter(
+            "subject", query.SubjectId is null ? null : MemoryFact.CanonicalKey(query.SubjectId)));
+        command.Parameters.Add(MemoryFactVectors.FilterTextParameter(
+            "kind", query.Kind is { } kind ? MemoryFactKindKeys.Key(kind) : null));
+    }
+}
+
+/// <summary>
+/// Mission-scope plumbing for <see cref="MemoryFactQuery"/>. The query
+/// is the same shape for every other scope; mission facts are a
+/// strongly-typed pairing of <c>Scope = Mission</c> with a
+/// <c>MissionId = &lt;guid&gt;</c>. This helper collapses the
+/// strongly-typed surface into the (scope, subject) pair the rest of
+/// the store already speaks.
+/// </summary>
+file static class MemoryFactMissionQuery
+{
+    /// <summary>
+    /// Translates a <see cref="MemoryFactQuery"/> into the (scope, subject)
+    /// pair the rest of the store's filters narrow by. A query with a
+    /// non-null <c>MissionId</c> is forced to <c>Scope = Mission</c> with
+    /// <c>SubjectId = missionId</c> as a canonical string. A query with
+    /// <c>Scope = Mission</c> but no <c>MissionId</c> is left alone — the
+    /// pre-flight reachability check and the SQL filter handle the
+    /// fail-closed property.
+    /// </summary>
+    /// <param name="query"></param>
+    public static EffectiveFactScope Normalize(MemoryFactQuery query)
+    {
+        if (query.MissionId is { } missionId)
+        {
+            // Caller asked for a specific mission: scope is mission, the
+            // subject is the mission id. Any other subject id the caller
+            // passed in the same query is shadowed — the only way to read
+            // a mission is to name the mission.
+            return new EffectiveFactScope(MemoryScope.Mission, MemoryFact.CanonicalKey(missionId.ToString()));
+        }
+
+        return new EffectiveFactScope(query.Scope, query.SubjectId);
+    }
+
+    /// <summary>
+    /// Builds a fresh <see cref="MemoryFactQuery"/> with the effective
+    /// (scope, subject) pair plugged in. The vector and lexical paths
+    /// work from the strongly-typed query, so each call site re-derives
+    /// it after normalization — passing the original query would carry
+    /// the un-normalized scope / subject to the SQL filter and double the
+    /// narrowing.
+    /// </summary>
+    public static MemoryFactQuery Effective(MemoryFactQuery source, MemoryScope? effectiveScope, string? effectiveSubject)
+    {
+        return source with { Scope = effectiveScope, SubjectId = effectiveSubject };
     }
 }

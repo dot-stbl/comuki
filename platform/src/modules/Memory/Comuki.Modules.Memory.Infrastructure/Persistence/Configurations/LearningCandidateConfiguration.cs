@@ -61,6 +61,24 @@ public sealed class LearningCandidateConfiguration : IEntityTypeConfiguration<Le
         builder.Property(static candidate => candidate.RepeatCount)
             .HasColumnName("repeat_count");
 
+        builder.Property(static candidate => candidate.VerifyPassCount)
+            .HasColumnName("verify_pass_count");
+
+        builder.Property(static candidate => candidate.VerifyFailCount)
+            .HasColumnName("verify_fail_count");
+
+        builder.Property(static candidate => candidate.BuildGreenCount)
+            .HasColumnName("build_green_count");
+
+        builder.Property(static candidate => candidate.BuildRedCount)
+            .HasColumnName("build_red_count");
+
+        builder.Property(static candidate => candidate.TaskSucceededCount)
+            .HasColumnName("task_succeeded_count");
+
+        builder.Property(static candidate => candidate.TaskFailedCount)
+            .HasColumnName("task_failed_count");
+
         builder.Property(static candidate => candidate.Status)
             .HasColumnName("status")
             .HasConversion(MemoryKeyConverters.LearningStatusToKey)

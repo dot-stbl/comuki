@@ -4,6 +4,46 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { listSkills, readSkill } from "./loader"
 
+/**
+ * Task 25.5 (openspec/changes/add-mission-cowork §25.5) — guard test: the
+ * loader must never narrow a query by `trigger_when`. Today it does not have
+ * any selection logic at all (`listSkills` and `readSkill` return the raw
+ * catalog); this test pins the contract so a future commit that adds an
+ * auto-select path will fail this guard.
+ */
+describe("no auto-select on trigger_when (task 25.5)", () => {
+  test("listSkills returns every skill regardless of trigger_when", async () => {
+    const skills = await listSkills(skillsRoot)
+
+    // citation-cleanup has a trigger_when; git-workflow and deploy-runbook do not.
+    // All three must still be present — the loader must not pre-filter.
+    expect(skills.map((skill) => skill.name).sort()).toEqual([
+      "citation-cleanup",
+      "deploy-runbook",
+      "git-workflow",
+    ])
+  })
+
+  test("readSkill returns the skill even when its trigger_when is a free-text hint", async () => {
+    const skill = await readSkill(skillsRoot, "citation-cleanup")
+
+    expect(skill).not.toBeNull()
+    expect(skill?.triggerWhen).toBe(
+      "drafting a long-form document that needs citation cleanup"
+    )
+  })
+
+  test("the loader exports no auto-select helper (catalog stays a list, not a selector)", async () => {
+    // If a future commit adds a select-by-trigger helper, this fails by name.
+    // The intended surface is list/read — anything else belongs to the brain.
+    const exported = Object.keys(
+      await import("./loader")
+    ).sort()
+
+    expect(exported).toEqual(["listSkills", "readSkill"])
+  })
+})
+
 let skillsRoot: string
 
 beforeAll(async () => {
@@ -39,6 +79,25 @@ beforeAll(async () => {
     "utf8"
   )
 
+  await mkdir(join(skillsRoot, "citation-cleanup"))
+  await writeFile(
+    join(skillsRoot, "citation-cleanup", "SKILL.md"),
+    [
+      "---",
+      "name: citation-cleanup",
+      "description: Cleans up inline citations",
+      "trigger_when: drafting a long-form document that needs citation cleanup",
+      "validate_against:",
+      '  - "../../rules/citation-format.md"',
+      '  - { kind: knowledge, id: "doc/citation-style@v3" }',
+      "version: 1.2.0",
+      "---",
+      "",
+      "Strip duplicates, normalise.",
+    ].join("\n"),
+    "utf8"
+  )
+
   await mkdir(join(skillsRoot, "broken"))
   await writeFile(
     join(skillsRoot, "broken", "SKILL.md"),
@@ -64,6 +123,7 @@ describe("listSkills", () => {
     const skills = await listSkills(skillsRoot)
 
     expect(skills.map((skill) => skill.name)).toEqual([
+      "citation-cleanup",
       "deploy-runbook",
       "git-workflow",
     ])
@@ -76,6 +136,29 @@ describe("listSkills", () => {
     expect(gitWorkflow?.description).toBe("Safe branch and commit flow")
     expect(gitWorkflow?.body).toContain("## Steps")
     expect(gitWorkflow?.dirName).toBe("git-workflow")
+  })
+
+  test("skills without metadata default version to 0.1.0 and omit the new fields", async () => {
+    const skills = await listSkills(skillsRoot)
+    const gitWorkflow = skills.find((skill) => skill.name === "git-workflow")
+
+    expect(gitWorkflow?.version).toBe("0.1.0")
+    expect(gitWorkflow?.triggerWhen).toBeUndefined()
+    expect(gitWorkflow?.validateAgainst).toBeUndefined()
+  })
+
+  test("skills with full metadata expose trigger_when, validate_against and version", async () => {
+    const skills = await listSkills(skillsRoot)
+    const skill = skills.find((entry) => entry.name === "citation-cleanup")
+
+    expect(skill?.triggerWhen).toBe(
+      "drafting a long-form document that needs citation cleanup"
+    )
+    expect(skill?.validateAgainst).toEqual([
+      "../../rules/citation-format.md",
+      { kind: "knowledge", id: "doc/citation-style@v3" },
+    ])
+    expect(skill?.version).toBe("1.2.0")
   })
 })
 

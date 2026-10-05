@@ -16,6 +16,9 @@ public static class SourceKindKeys
     /// <summary>Key of <see cref="SourceKind.Url"/>.</summary>
     public const string Url = "url";
 
+    /// <summary>Key of <see cref="SourceKind.Wiki"/>.</summary>
+    public const string Wiki = "wiki";
+
     /// <summary>Maps a kind to its wire key.</summary>
     /// <param name="kind"></param>
     public static string Key(SourceKind kind)
@@ -25,6 +28,7 @@ public static class SourceKindKeys
             SourceKind.Git => Git,
             SourceKind.Upload => Upload,
             SourceKind.Url => Url,
+            SourceKind.Wiki => Wiki,
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
     }
@@ -38,6 +42,7 @@ public static class SourceKindKeys
             Git => SourceKind.Git,
             Upload => SourceKind.Upload,
             Url => SourceKind.Url,
+            Wiki => SourceKind.Wiki,
             _ => null,
         };
     }

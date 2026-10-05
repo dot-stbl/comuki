@@ -1,9 +1,10 @@
 using System.Diagnostics;
-using System.Linq.Expressions;
+using System.Net;
 using Comuki.Modules.Observability.Domain.Logs;
 using Comuki.Modules.Observability.Infrastructure.VictoriaLogs;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using Refit;
 using Xunit;
 
 namespace Comuki.Modules.Observability.Unit;
@@ -22,9 +23,10 @@ public sealed class VictoriaLogsQueryClientShould
     [Fact(DisplayName = "Given an explicit TraceId in the query, when SearchAsync, the body has that trace_id")]
     public async Task ExplicitTraceIdIsAppendedVerbatimAsync()
     {
+        const string explicitTrace = "explicit-trace-001";
         var api = Substitute.For<IVictoriaLogsApi>();
-        api.QueryAsync(Arg.Any<LogsQlQueryRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new LogQueryResponseEnvelope("success"));
+        api.QueryAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(NewResponse(""));
 
         using var _ = ActivityListenerStub.NoAmbient();
         var client = new VictoriaLogsQueryClient(
@@ -32,11 +34,14 @@ public sealed class VictoriaLogsQueryClientShould
             NullLogger<VictoriaLogsQueryClient>.Instance);
 
         await client.SearchAsync(
-            new LogsQuery(Query: "level:error", TraceId: "explicit-trace-001"),
+            new LogsQuery(Query: "level:error", TraceId: explicitTrace),
             CancellationToken.None);
 
         await api.Received(1).QueryAsync(
-            Arg.Is(QueryContains("trace_id:explicit-trace-001")),
+            Arg.Is<string>(static q => q.Contains("trace_id:" + explicitTrace)),
+            Arg.Any<int?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -44,11 +49,11 @@ public sealed class VictoriaLogsQueryClientShould
     [Fact(DisplayName = "Given ambient Activity.TraceId, when SearchAsync, the body has trace_id:ambient")]
     public async Task AmbientTraceIdIsAppendedAsync()
     {
-        var api = Substitute.For<IVictoriaLogsApi>();
-        api.QueryAsync(Arg.Any<LogsQlQueryRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new LogQueryResponseEnvelope("success"));
-
         const string AmbientId = "0123456789abcdef0123456789abcdef";
+        var api = Substitute.For<IVictoriaLogsApi>();
+        api.QueryAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(NewResponse(""));
+
         using var _ = ActivityListenerStub.WithTraceId(AmbientId);
 
         var client = new VictoriaLogsQueryClient(
@@ -60,7 +65,10 @@ public sealed class VictoriaLogsQueryClientShould
             CancellationToken.None);
 
         await api.Received(1).QueryAsync(
-            Arg.Is(QueryContains($"trace_id:{AmbientId}")),
+            Arg.Is<string>(static q => q.Contains("trace_id:" + AmbientId)),
+            Arg.Any<int?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -68,23 +76,26 @@ public sealed class VictoriaLogsQueryClientShould
     [Fact(DisplayName = "Given both ambient Activity.TraceId and explicit TraceId, when SearchAsync, the explicit wins")]
     public async Task ExplicitOverrideWinsOverAmbientAsync()
     {
+        const string explicitTrace = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        const string ambientTrace = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         var api = Substitute.For<IVictoriaLogsApi>();
-        api.QueryAsync(Arg.Any<LogsQlQueryRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new LogQueryResponseEnvelope("success"));
+        api.QueryAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(NewResponse(""));
 
-        using var ambient = ActivityListenerStub.WithTraceId("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        using var ambient = ActivityListenerStub.WithTraceId(ambientTrace);
         var client = new VictoriaLogsQueryClient(
             api,
             NullLogger<VictoriaLogsQueryClient>.Instance);
 
         await client.SearchAsync(
-            new LogsQuery(Query: "level:info", TraceId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
+            new LogsQuery(Query: "level:info", TraceId: explicitTrace),
             CancellationToken.None);
 
         await api.Received(1).QueryAsync(
-            Arg.Is<LogsQlQueryRequest>(static request =>
-                request.Query.Contains("trace_id:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb") &&
-                !request.Query.Contains("trace_id:aaaa")),
+            Arg.Is<string>(static q => q.Contains("trace_id:" + explicitTrace) && !q.Contains("trace_id:" + ambientTrace)),
+            Arg.Any<int?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -92,9 +103,10 @@ public sealed class VictoriaLogsQueryClientShould
     [Fact(DisplayName = "Given a query already containing trace_id, when SearchAsync, no duplicate")]
     public async Task IdempotentTraceAppendAsync()
     {
+        const string explicitTrace = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
         var api = Substitute.For<IVictoriaLogsApi>();
-        api.QueryAsync(Arg.Any<LogsQlQueryRequest>(), Arg.Any<CancellationToken>())
-            .Returns(new LogQueryResponseEnvelope("success"));
+        api.QueryAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(NewResponse(""));
 
         using var _ = ActivityListenerStub.NoAmbient();
         var client = new VictoriaLogsQueryClient(
@@ -102,36 +114,60 @@ public sealed class VictoriaLogsQueryClientShould
             NullLogger<VictoriaLogsQueryClient>.Instance);
 
         await client.SearchAsync(
-            new LogsQuery(Query: "level:warn trace_id:zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"),
+            new LogsQuery(Query: $"level:warn trace_id:{explicitTrace}"),
             CancellationToken.None);
 
         await api.Received(1).QueryAsync(
-            Arg.Is<LogsQlQueryRequest>(static request =>
-                request.Query.Replace("trace_id:", string.Empty).Length == request.Query.Length - "trace_id:".Length),
+            Arg.Is<string>(static q => CountOccurrences(q, "trace_id:") == 1),
+            Arg.Any<int?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
             Arg.Any<CancellationToken>());
     }
 
     /// <summary>
-    /// NSubstitute Arg.Is matcher: query string contains the given needle.
-    /// Returns an <see cref="Expression{TDelegate}"/> because
-    /// NSubstitute 5.x's <c>Arg.Is&lt;T&gt;</c> only accepts an
-    /// expression-tree predicate (not a plain <c>Func</c>). Plain C#
-    /// operators only — no <c>is</c> patterns, which the expression tree
-    /// compiler refuses.
+    /// Build a minimal <see cref="IApiResponse{T}"/> carrying the wire
+    /// body the typed client maps. The unit tests exercise the
+    /// ambient-trace-id logic and don't need a full Refit surface —
+    /// the body is what the typed client reads through
+    /// <see cref="VictoriaLogsQueryClient.MapResponse"/>; status and
+    /// headers stay neutral. The 5-arg
+    /// <c>Refit.ApiResponse&lt;T&gt;</c> ctor is the one a test can
+    /// actually wire — its 3-arg sibling demands an associated
+    /// <c>HttpRequestMessage</c> as a runtime invariant the Refit
+    /// pipeline upholds, so we pass the request explicitly.
     /// </summary>
-    private static Expression<Predicate<LogsQlQueryRequest>> QueryContains(string needle)
+    private static IApiResponse<string> NewResponse(string body)
     {
-        return request => request.Query != null && request.Query.Contains(needle);
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/select/logsql/query");
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            RequestMessage = request,
+        };
+        return new ApiResponse<string>(request, response, body, settings: null!, error: null);
+    }
+
+    private static int CountOccurrences(string haystack, string needle)
+    {
+        var count = 0;
+        var index = 0;
+        while ((index = haystack.IndexOf(needle, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += needle.Length;
+        }
+        return count;
     }
 
     /// <summary>
     /// Activity fixture stub: an xUnit v3 test must register an
     /// <see cref="ActivityListener"/> before <see cref="Activity.Current"/>
     /// is observable, and the listener must be disposed to keep
-    /// tests in the same process isolated. We use
-    /// <see cref="Activity.SetParentId(string)"/> — the documented
-    /// OTel API for adopting a trace context — because
-    /// <see cref="ActivityTraceId"/>'s ctor is internal.
+    /// tests in the same process isolated. We build an
+    /// <see cref="ActivityContext"/> with the requested
+    /// <see cref="ActivityTraceId"/> so <c>Activity.Current?.TraceId</c>
+    /// returns it (Activity.SetParentId only sets the parent context,
+    /// not the activity's own TraceId).
     /// </summary>
     private sealed class ActivityListenerStub : IDisposable
     {
@@ -155,11 +191,6 @@ public sealed class VictoriaLogsQueryClientShould
         {
             ActivitySource.AddActivityListener(listener);
             var source = new ActivitySource("observability.test");
-            // Activity.SetParentId only sets the parent context, NOT the
-            // activity's own TraceId — which is what the typed client
-            // threads onto the wire. Build an explicit ActivityContext
-            // with the requested TraceId so Activity.Current?.TraceId
-            // returns it.
             var activityTraceId = ActivityTraceId.CreateFromString(traceId);
             var activityContext = new ActivityContext(
                 activityTraceId, ActivitySpanId.CreateRandom(), ActivityTraceFlags.Recorded);

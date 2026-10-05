@@ -1,80 +1,44 @@
-using Comuki.Modules.Observability.Domain.Logs;
 using Refit;
 
 namespace Comuki.Modules.Observability.Infrastructure.VictoriaLogs;
 
 /// <summary>
-/// VictoriaLogs LogsQL/select HTTP surface. The path segments are
-/// relative to the base URL the
-/// <see cref="Application.Ports.IVictoriaEndpointResolver"/>
-/// hands the Refit client factory (compose's <c>victoria-logs</c> on
-/// <see cref="Endpoint.VictoriaPorts.LogsContainerPort"/>). The shape
-/// mirrors the public HTTP API at <c>/select/logsql/query</c> /
-/// <c>/select/logsql/context</c>; VictoriaLogs returns the matched log
-/// rows as an envelope-shaped JSON (<see cref="LogQueryResponseEnvelope"/>)
-/// the client maps onto typed <see cref="LogRow"/> records.
+/// VictoriaLogs LogsQL HTTP surface — the typed contract the
+/// <c>IVictoriaLogsQueryClient</c> uses. The path is relative to
+/// the base URL the host composition binds through
+/// <c>AddRefitClient&lt;IVictoriaLogsApi&gt;</c> (compose's
+/// <c>victoria-logs</c> on the port <c>ObservabilityOptions.DefaultLogsPort</c>).
+/// The wire shape mirrors the public HTTP API at
+/// <c>/select/logsql/query</c> (no <c>/select/logsql/context</c> endpoint
+/// exists in the API — trace-context lookup is a <c>logs.search</c> with
+/// the <c>trace_id</c> filter, per
+/// <c>~/.agents/rules/csharp/anti-patterns.md</c> §"Use the registry over
+/// the switch-sprawl"); the typed client returns the matched log rows
+/// as a raw NDJSON body the infrastructure mapper splits into typed
+/// <c>LogRow</c> records.
 /// </summary>
 internal interface IVictoriaLogsApi
 {
-    /// <summary>LogsQL search.</summary>
-    /// <param name="request">The query body (see <c>LogsQlQueryRequest</c> on the wire).</param>
+    /// <summary>
+    /// LogsQL search. Sends both query-arg and POST form-body variants
+    /// (the wire accepts either; Refit picks the GET form here because
+    /// <see cref="Domain.Logs.LogsQuery.Query"/>
+    /// is short-form). The response is the raw NDJSON body — the
+    /// infrastructure client splits it per
+    /// <c>~/.agents/rules/csharp/json-and-ndjson.md</c> §4 (a malformed
+    /// line is logged + dropped, never fails the page).
+    /// </summary>
+    /// <param name="query">LogsQL query body.</param>
+    /// <param name="limit">Optional cap on returned rows.</param>
+    /// <param name="start">Optional RFC3339 inclusive lower bound on <c>_time</c>.</param>
+    /// <param name="end">Optional RFC3339 exclusive upper bound on <c>_time</c>.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The wire-shaped response envelope the client maps onto <see cref="LogRow"/> records.</returns>
-    [Post("/select/logsql/query")]
-    public Task<LogQueryResponseEnvelope> QueryAsync(
-        [Body] LogsQlQueryRequest request,
-        CancellationToken cancellationToken);
-
-    /// <summary>Trace-context lookup.</summary>
-    /// <param name="traceId">W3C trace id.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The wire-shaped response envelope.</returns>
-    [Post("/select/logsql/context")]
-    public Task<LogQueryResponseEnvelope> ContextAsync(
-        [Body(BodySerializationMethod.Serialized)] TraceIdRequest traceId,
-        CancellationToken cancellationToken);
+    /// <returns>The raw NDJSON response body; <c>IApiResponse</c> carries the status code so a non-2xx surfaces as <see cref="ApiException"/>.</returns>
+    [Get("/select/logsql/query")]
+    public Task<IApiResponse<string>> QueryAsync(
+        [Query] string query,
+        [Query] int? limit = null,
+        [Query] string? start = null,
+        [Query] string? end = null,
+        CancellationToken cancellationToken = default);
 }
-
-/// <summary>
-/// POST body for <c>/select/logsql/query</c>. The endpoint accepts a
-/// form-urlencoded body in addition to JSON; the Refit <c>[Body]</c>
-/// annotation serialises this as JSON because <c>LogsQlQueryRequest</c>
-/// is a <c>JsonContent</c>-compatible record. <see cref="Query"/> is the
-/// LogsQL body; <see cref="Time"/> and <see cref="Limit"/> are the
-/// optional unix-ms window and row cap.
-/// </summary>
-internal sealed record LogsQlQueryRequest(
-    string Query,
-    string? Time = null,
-    int? Limit = null);
-
-/// <summary>POST body for <c>/select/logsql/context</c>.</summary>
-internal sealed record TraceIdRequest(string TraceId);
-
-/// <summary>
-/// Envelope for the LogsQL/select JSON response. The wire shape uses
-/// <see cref="LogRecordWire"/> records; the client maps each to a
-/// typed <see cref="LogRow"/>. The fields are nullable because some
-/// rows omit <c>trace_id</c> / <c>span_id</c> (logs without an OTel
-/// activity) and <c>_time</c> falls back to ISO-8601 wall-clock when
-/// the request did not scope by time.
-/// </summary>
-internal sealed record LogQueryResponseEnvelope(
-    string Status,
-    IReadOnlyList<LogRecordWire>? Records = null);
-
-/// <summary>
-/// One wire-shape log record. The shape follows what VictoriaLogs
-/// emits at <c>/select/logsql/query</c>: a UTC unix-ms
-/// <see cref="Time"/>, a <see cref="Level"/> label, an OTel-friendly
-/// <see cref="Message"/> body, the JSON-encoded <see cref="Fields"/>
-/// blob, and optional W3C trace/span ids. Field names match the
-/// VictoriaLogs HTTP API verbatim.
-/// </summary>
-internal sealed record LogRecordWire(
-    string Time,
-    string Level,
-    string Message,
-    string? Fields = null,
-    string? TraceId = null,
-    string? SpanId = null);

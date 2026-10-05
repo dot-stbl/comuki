@@ -12,17 +12,31 @@ namespace Comuki.Modules.Observability.Application.Options;
 /// is the resolution at which the typed <c>observability.metrics.query</c>
 /// client asks VictoriaMetrics for samples (range 5s–5m per the spec,
 /// 15s default). <see cref="LogsBaseUrl"/> and <see cref="MetricsBaseUrl"/>
-/// are operator overrides for the typed query clients' base URL —
-/// unset means the deploy stack's compose service name
-/// (<c>http://victoria-logs:9428</c> / <c>http://victoria-metrics:8428</c>)
-/// is used. <see cref="IValidatableObject.Validate"/> carries the
-/// cross-field rule that an override, if set, must be an http(s) URL
-/// (the <c>[Url]</c> attribute checks shape but not the scheme).
+/// are operator overrides: a missing entry resolves to the deploy
+/// stack's compose service name (<c>http://victoria-logs:9428</c> /
+/// <c>http://victoria-metrics:8428</c>) at composition time in the
+/// observability infrastructure extension, not in this type — so
+/// the un-initialised property is null and only post-compose sees a
+/// URL. <see cref="IValidatableObject.Validate"/> carries the
+/// cross-field rule that an override, if set, must be an http(s)
+/// URL (the <c>[Url]</c> attribute checks shape but not the scheme).
 /// </summary>
 public sealed class ObservabilityOptions : IValidatableObject
 {
     /// <summary>Configuration section: <c>Observability:Victoria</c>.</summary>
     public const string SectionName = "Observability:Victoria";
+
+    /// <summary>The compose service name the deploy stack binds the VictoriaLogs HTTP server to.</summary>
+    public const string DefaultLogsServiceName = "victoria-logs";
+
+    /// <summary>The compose service name the deploy stack binds the VictoriaMetrics HTTP server to.</summary>
+    public const string DefaultMetricsServiceName = "victoria-metrics";
+
+    /// <summary>The HTTP port VictoriaLogs serves /select/logsql/* on in the deploy compose stack.</summary>
+    public const int DefaultLogsPort = 9428;
+
+    /// <summary>The HTTP port VictoriaMetrics serves /api/v1/* on in the deploy compose stack.</summary>
+    public const int DefaultMetricsPort = 8428;
 
     /// <summary>Victoria retention. Optional — the deploy baseline owns the default.</summary>
     public string? RetentionPeriod { get; init; }
@@ -32,12 +46,10 @@ public sealed class ObservabilityOptions : IValidatableObject
         ErrorMessage = "Observability:Victoria:ScrapeInterval must be in the 5s..5m range (the spec-mandated bounds).")]
     public TimeSpan ScrapeInterval { get; init; } = TimeSpan.FromSeconds(15);
 
-    /// <summary>Optional operator override for the VictoriaLogs base URL (scheme + host + port).</summary>
-    [Url]
+    /// <summary>Operator override; null means "use the deploy stack's compose service name" — composition resolves the actual URL.</summary>
     public Uri? LogsBaseUrl { get; init; }
 
-    /// <summary>Optional operator override for the VictoriaMetrics base URL (scheme + host + port).</summary>
-    [Url]
+    /// <summary>Operator override; null means "use the deploy stack's compose service name" — composition resolves the actual URL.</summary>
     public Uri? MetricsBaseUrl { get; init; }
 
     /// <summary>

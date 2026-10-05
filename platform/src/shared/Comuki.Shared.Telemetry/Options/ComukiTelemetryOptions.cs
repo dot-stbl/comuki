@@ -36,9 +36,9 @@ public sealed class ComukiTelemetryOptions
     /// OTLP/HTTP endpoint for structured MEL logs (the VictoriaLogs
     /// receiver at <c>http://victoria-logs:9428/insert/opentelemetry/v1/logs</c>
     /// in the deploy stack). Null disables the log leg only; the
-    /// traces/metrics leg is independent. The URL MUST be the full
-    /// OTLP/HTTP path (the OTel exporter appends the signal segment
-    /// automatically), NOT a base URL.
+    /// traces/metrics leg is independent. The URL MUST include the
+    /// full receiver path (<c>/insert/opentelemetry/v1/logs</c>) — the
+    /// installer wires it to <c>OpenTelemetry.Exporter</c> verbatim.
     /// </summary>
     [Url]
     public Uri? LogsOtlpEndpoint { get; init; }

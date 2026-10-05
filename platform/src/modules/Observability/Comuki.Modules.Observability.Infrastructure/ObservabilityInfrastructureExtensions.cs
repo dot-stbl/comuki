@@ -1,55 +1,74 @@
+using Comuki.Modules.Observability.Application.Options;
 using Comuki.Modules.Observability.Application.Ports;
-using Comuki.Modules.Observability.Infrastructure.Endpoint;
 using Comuki.Modules.Observability.Infrastructure.VictoriaLogs;
 using Comuki.Modules.Observability.Infrastructure.VictoriaMetrics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Refit;
 
 namespace Comuki.Modules.Observability.Infrastructure;
 
 /// <summary>
-/// Composition entry point for the Observability module. Registers
-/// the <see cref="IVictoriaEndpointResolver"/>, the health-probe
-/// HttpClient, and the two typed query clients. Each typed client
-/// constructs its own Refit surface from a private HttpClient bound
-/// to the resolver's base URL at first resolution — this keeps the
-/// wire-level URL discovery inside the resolver (the single source of
-/// truth for the operator's <c>LogsBaseUrl</c> / <c>MetricsBaseUrl</c>
-/// overrides) and avoids the Refit <c>ConfigureHttpClient</c>
-/// overload that doesn't expose the service provider.
+/// Composition entry point for the Observability module. Registers the
+/// two typed query clients through the standard
+/// <c>AddRefitClient&lt;T&gt;().ConfigureHttpClient(...).AddStandardResilienceHandler()</c>
+/// pipeline (retry + circuit breaker + timeout), reading the base URLs
+/// from <see cref="ObservabilityOptions"/> which carries the
+/// compose-service-name defaults in its property initializers. The
+/// pattern mirrors the documented
+/// <c>Comuki.Host.Translator.Api.Registration.TranslatorApiExtensions.AddOrchestratorApi</c>
+/// — one Refit registration per surface, single setup surface, no
+/// hand-rolled <c>new HttpClient</c> in the typed clients. The
+/// bind-override path (operator-supplied <c>LogsBaseUrl</c> /
+/// <c>MetricsBaseUrl</c>) flows through
+/// <see cref="IOptions{TOptions}"/>; <see cref="ObservabilityOptions"/>
+/// property initializers carry the deploy-stack default so an absent
+/// config section still resolves at boot.
 /// </summary>
 public static class ObservabilityInfrastructureExtensions
 {
     /// <summary>
-    /// Registers the observability typed clients + endpoint resolver
-    /// + health probe HttpClient. The host composition calls this
-    /// after <c>AddObservabilityApplication</c>.
+    /// Registers the observability typed clients + the typed-options
+    /// binding. The host composition calls this after
+    /// <c>AddObservabilityApplication</c>.
     /// </summary>
     /// <param name="services">The host service collection.</param>
     /// <returns>The same <paramref name="services"/>, for chaining.</returns>
     public static IServiceCollection AddObservabilityInfrastructure(this IServiceCollection services)
     {
-        // The endpoint resolver is the seam between the typed
-        // ObservabilityOptions and the wire-level HTTP clients — it
-        // is the one place the resolve happens (singleton so the URL
-        // is stable for the process lifetime).
-        services.AddSingleton<IVictoriaEndpointResolver, VictoriaEndpointResolver>();
+        services
+            .AddRefitClient<IVictoriaLogsApi>()
+            .ConfigureHttpClient(static (serviceProvider, client) =>
+            {
+                var options = serviceProvider.GetRequiredService<IOptions<ObservabilityOptions>>().Value;
+                client.BaseAddress = ResolveLogsBaseUrl(options);
+            })
+            .AddStandardResilienceHandler();
 
-        // The health-probe HttpClient lives next to the resolver so
-        // a single named-client registration covers the probe wiring.
-        // No resilience: a single failing probe should fail the host's
-        // IHealthCheck with the raw status — circuit breakers around
-        // the probe would mask a real outage as a transient.
-        services.AddHttpClient(VictoriaEndpointResolver.HealthProbeHttpClient);
+        services
+            .AddRefitClient<IVictoriaMetricsApi>()
+            .ConfigureHttpClient(static (serviceProvider, client) =>
+            {
+                var options = serviceProvider.GetRequiredService<IOptions<ObservabilityOptions>>().Value;
+                client.BaseAddress = ResolveMetricsBaseUrl(options);
+            })
+            .AddStandardResilienceHandler();
 
-        // The two typed query clients. Both take the endpoint resolver
-        // (singleton) and construct a private HttpClient + Refit proxy
-        // at construction. The private HttpClient carries the
-        // resilience handler so the upstream's transient-failure
-        // policy applies uniformly to both the typed clients and the
-        // health probe.
         services.AddSingleton<IVictoriaLogsQueryClient, VictoriaLogsQueryClient>();
         services.AddSingleton<IVictoriaMetricsQueryClient, VictoriaMetricsQueryClient>();
 
         return services;
+    }
+
+    /// <summary>Default resolve: the operator override, or the deploy stack's compose service name.</summary>
+    private static Uri ResolveLogsBaseUrl(ObservabilityOptions options)
+    {
+        return options.LogsBaseUrl ?? new Uri($"http://{ObservabilityOptions.DefaultLogsServiceName}:{ObservabilityOptions.DefaultLogsPort}");
+    }
+
+    /// <summary>Default resolve: the operator override, or the deploy stack's compose service name.</summary>
+    private static Uri ResolveMetricsBaseUrl(ObservabilityOptions options)
+    {
+        return options.MetricsBaseUrl ?? new Uri($"http://{ObservabilityOptions.DefaultMetricsServiceName}:{ObservabilityOptions.DefaultMetricsPort}");
     }
 }

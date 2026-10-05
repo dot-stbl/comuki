@@ -84,7 +84,6 @@ public static class RoleMatrix
                 ProjectRead,
                 SchedulerRead,
                 ProcedureRead,
-                ObservabilityRead,
             ],
             [Role.Member] =
             [

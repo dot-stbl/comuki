@@ -25,16 +25,16 @@ public interface IVictoriaLogsQueryClient
     public Task<IReadOnlyList<LogRow>> SearchAsync(LogsQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Trace-context lookup: matching log rows + matching trace spans.
-    /// The MCP tool <c>observability.logs.context</c> projects its
-    /// <c>{traceId}</c> JSON body onto this method (the trace-span side
-    /// is currently a thin pass-through that returns rows only — the
-    /// span-shaped return lives in the infrastructure module when the
-    /// Critic-sweep ships the matching trace store).
+    /// Trace-context lookup. The MCP tool <c>observability.logs.context</c>
+    /// projects its <c>{traceId}</c> JSON body onto this method. The
+    /// wire has no <c>/select/logsql/context</c> endpoint — the typed
+    /// client routes the lookup as <see cref="SearchAsync"/> with a
+    /// <c>trace_id:{id}</c> clause appended to the query body
+    /// (client-side emulation per the brief).
     /// </summary>
     /// <param name="traceId">W3C trace id (32 hex chars).</param>
-    /// <param name="fromUnixMs">Optional inclusive lower bound on _time, unix ms.</param>
-    /// <param name="toUnixMs">Optional inclusive upper bound on _time, unix ms.</param>
+    /// <param name="from">Optional inclusive lower bound on <c>_time</c> (UTC wall clock).</param>
+    /// <param name="to">Optional exclusive upper bound on <c>_time</c> (UTC wall clock).</param>
     /// <param name="limit">Optional cap on returned rows.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Log rows emitted under the trace.</returns>
@@ -43,8 +43,8 @@ public interface IVictoriaLogsQueryClient
     /// </exception>
     public Task<IReadOnlyList<LogRow>> ContextAsync(
         string traceId,
-        long? fromUnixMs = null,
-        long? toUnixMs = null,
+        DateTimeOffset? from = null,
+        DateTimeOffset? to = null,
         int? limit = null,
         CancellationToken cancellationToken = default);
 }

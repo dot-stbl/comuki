@@ -328,18 +328,17 @@ internal static class HostComposer
         builder.Services.AddKnowledgePersistence(database.ConnectionString);
         builder.Services.AddKnowledgeInfrastructure(builder.Configuration);
 
-        // Observability module (add-orchestra wave 1): the typed VictoriaLogs
-        // + VictoriaMetrics query clients behind the four
-        // observability.* MCP tools. The application layer registers the
-        // IValidatable + IValidatableObject endpoint; the infrastructure
-        // layer registers the singleton endpoint resolver + the two
-        // query clients (each holding a private HttpClient bound to the
-        // resolver's base URL at construction). Validate-on-start is the
-        // host's job — typed options are bound in the host so a missing
-        // [observability.victoria] section fails the boot, not the first
-        // /api/v1/mcp dispatch. The typed endpoint binds only if the
-        // section is present; an absent section leaves the validator
-        // disabled and the MCP tools return VictoriaUnavailable.
+        // Observability module (add-orchestra wave 1): the typed
+        // VictoriaLogs + VictoriaMetrics query clients behind the four
+        // observability.* MCP tools. The application layer exposes the
+        // typed options; the infrastructure layer wires the two Refit
+        // clients through AddRefitClient with AddStandardResilienceHandler
+        // (the same pattern as the TranslatorApiExtensions). The
+        // typed endpoint binds only if the section is present; an absent
+        // section falls back to the deploy baseline (compose service
+        // names + port constants in ObservabilityOptions property
+        // initializers), so the MCP tools return VictoriaUnavailable when
+        // the deploy stack is unreachable, not when the section is missing.
         builder.Services.AddObservabilityApplication();
         builder.Services.AddObservabilityInfrastructure();
         builder.Services

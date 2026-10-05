@@ -1,28 +1,39 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
+using Comuki.Modules.Observability.Application.Options;
 using Comuki.Modules.Observability.Application.Ports;
 using Comuki.Modules.Observability.Domain;
 using Comuki.Modules.Observability.Domain.Metrics;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Refit;
 
 namespace Comuki.Modules.Observability.Infrastructure.VictoriaMetrics;
 
 /// <summary>
 /// Refit-backed <see cref="IVictoriaMetricsQueryClient"/> implementation.
-/// The client threads the ambient OTel activity's
-/// <see cref="Activity.TraceId"/> as the Prometheus
-/// <c>trace_id</c> query parameter when the caller does not pass an
-/// explicit <see cref="MetricsQuery.TraceId"/>; an explicit override
-/// always wins per <c>specs/observability/spec.md</c> "Trace correlation
-/// threads through the typed clients". Transport-layer failures are
-/// translated to a typed <see cref="VictoriaUnavailableException"/> at
-/// the public port boundary so the MCP error-mapper can branch on the
-/// stable <c>observability.victoria_unavailable</c> code.
+/// The Refit surface is registered by the composition root through
+/// <c>AddRefitClient&lt;IVictoriaMetricsApi&gt;().ConfigureHttpClient(...).AddStandardResilienceHandler()</c>;
+/// the typed client receives the Refit-generated proxy through DI. The
+/// Prometheus HTTP API expects unix <em>seconds</em> for
+/// <c>time</c>/<c>start</c>/<c>end</c> and Prometheus <c>duration</c>
+/// strings for <c>step</c> — the typed client converts the typed
+/// <see cref="DateTimeOffset"/> inputs to seconds, picks a default
+/// <c>step</c> from <see cref="ObservabilityOptions.ScrapeInterval"/>
+/// when absent, and threads the ambient OTel activity's
+/// <see cref="Activity.TraceId"/> as a log-line trace annotation
+/// (the metrics surface does not have a wire-level trace filter —
+/// Prometheus has no equivalent of the LogsQL <c>trace_id:</c> clause;
+/// the trace shows in the call-site logger only). Transport-layer
+/// failures are translated to a typed
+/// <see cref="VictoriaUnavailableException"/> at the public port
+/// boundary so the MCP error-mapper can branch on the stable
+/// <c>observability.victoria_unavailable</c> code.
 /// </summary>
 internal sealed class VictoriaMetricsQueryClient(
     IVictoriaMetricsApi api,
+    IOptions<ObservabilityOptions> options,
     ILogger<VictoriaMetricsQueryClient> logger) : IVictoriaMetricsQueryClient
 {
     /// <inheritdoc />
@@ -30,45 +41,36 @@ internal sealed class VictoriaMetricsQueryClient(
         MetricsQuery query,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(query);
+        var explicitTraceId = VictoriaMetricsQueryHelpers.EffectiveTraceId(query.TraceId);
+        logger.LogDebug(
+            "executing PromQL query {PromQl} (trace {TraceId})",
+            query.PromQl, explicitTraceId ?? "ambient");
 
-        var isInstant = query.TimeUnixMs is not null;
-        var ambientTraceId = AmbientTraceIdOrNull(query.TraceId);
         try
         {
-            if (isInstant)
+            if (query.Time is not null)
             {
-                using var _ = ActivityScope(ambientTraceId, log =>
-                    logger.LogDebug(
-                        "executing PromQL instant {PromQl} at {Time} trace {TraceId}",
-                        log.Query, log.Time, log.TraceId));
-
                 var envelope = await api.QueryAsync(
                     query: query.PromQl,
-                    time: query.TimeUnixMs!.Value.ToString(CultureInfo.InvariantCulture),
-                    cancellationToken).ConfigureAwait(false);
+                    time: VictoriaMetricsQueryHelpers.ToUnixSeconds(query.Time),
+                    cancellationToken);
 
-                return MapValues(envelope);
+                return MapValues(VictoriaMetricsQueryHelpers.UnwrapEnvelope(envelope));
             }
 
-            var step = (query.StepUnixMs ?? FallbackStepMs()).ToString(CultureInfo.InvariantCulture);
-            using var __ = ActivityScope(ambientTraceId, log =>
-                logger.LogDebug(
-                    "executing PromQL range {PromQl} over [{From}..{To}] step {Step}ms trace {TraceId}",
-                    log.Query, log.From, log.To, log.Step, log.TraceId));
-
+            var step = VictoriaMetricsQueryHelpers.ToPrometheusDuration(query.Step ?? options.Value.ScrapeInterval);
             var rangeEnvelope = await api.QueryRangeAsync(
                 query: query.PromQl,
-                start: query.FromUnixMs!.Value.ToString(CultureInfo.InvariantCulture),
-                end: query.ToUnixMs!.Value.ToString(CultureInfo.InvariantCulture),
+                start: VictoriaMetricsQueryHelpers.ToUnixSeconds(query.Start),
+                end: VictoriaMetricsQueryHelpers.ToUnixSeconds(query.End),
                 step: step,
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
 
-            return MapValues(rangeEnvelope);
+            return MapValues(VictoriaMetricsQueryHelpers.UnwrapEnvelope(rangeEnvelope));
         }
-        catch (ApiException api)
+        catch (ApiException exception)
         {
-            throw new VictoriaUnavailableException("victoria-metrics", api);
+            throw new VictoriaUnavailableException("victoria-metrics", exception);
         }
         catch (HttpRequestException transport)
         {
@@ -92,12 +94,13 @@ internal sealed class VictoriaMetricsQueryClient(
 
         try
         {
-            var rows = await api.SeriesAsync($"{{{labelSelector}}}", cancellationToken).ConfigureAwait(false);
+            var envelope = await api.SeriesAsync($"{{{labelSelector}}}", cancellationToken);
+            var rows = VictoriaMetricsQueryHelpers.UnwrapEnvelope(envelope);
             return AggregateLabelKeys(rows);
         }
-        catch (ApiException api)
+        catch (ApiException exception)
         {
-            throw new VictoriaUnavailableException("victoria-metrics", api);
+            throw new VictoriaUnavailableException("victoria-metrics", exception);
         }
         catch (HttpRequestException transport)
         {
@@ -109,28 +112,16 @@ internal sealed class VictoriaMetricsQueryClient(
         }
     }
 
-    /// <summary>Default resolution when the caller doesn't supply a step.</summary>
-    private static long FallbackStepMs()
-    {
-        return 15_000;
-    }
-
     /// <summary>
-    /// Resolve the trace id the call threads onto the wire. Explicit
-    /// <see cref="MetricsQuery.TraceId"/> wins; otherwise the ambient
-    /// OTel activity's <see cref="Activity.TraceId"/> is used. Returns
-    /// <see langword="null"/> when neither is set — the HTTP client then
-    /// propagates no W3C traceparent header (per the
-    /// "Explicit trace id override" scenario of the spec).
+    /// Map the Prometheus envelope onto typed <see cref="MetricSeries"/>
+    /// rows. The wire shape is per-<see cref="PrometheusDataWire{TWire}.ResultType"/>:
+    /// instant (vector) carries a single <c>[ts, v]</c> pair in
+    /// <see cref="PrometheusValueWire.Value"/>; range (matrix) carries
+    /// a list of pairs in <see cref="PrometheusValueWire.Values"/>. We
+    /// pick the side that's present and parse samples off it.
+    /// Timestamps on the wire are unix <em>seconds</em> (Prometheus convention).
     /// </summary>
-    private static string? AmbientTraceIdOrNull(string? explicitTraceId)
-    {
-        return explicitTraceId ?? Activity.Current?.TraceId.ToString();
-    }
-
-    /// <summary>Map the Prometheus envelope onto typed <see cref="MetricSeries"/> rows.</summary>
-    private static IReadOnlyList<MetricSeries> MapValues(
-        PrometheusResponseEnvelope<PrometheusValueWire> envelope)
+    private static IReadOnlyList<MetricSeries> MapValues(PrometheusResponseEnvelope<PrometheusValueWire> envelope)
     {
         if (envelope.Data?.Result is null || envelope.Data.Result.Count == 0)
         {
@@ -140,11 +131,6 @@ internal sealed class VictoriaMetricsQueryClient(
         var result = new List<MetricSeries>(envelope.Data.Result.Count);
         foreach (var value in envelope.Data.Result)
         {
-            // The wire shape is per-ResultType: instant (vector) carries
-            // a single <c>[ts, v]</c> pair in <see cref="PrometheusValueWire.Value"/>;
-            // range (matrix) carries a list of pairs in
-            // <see cref="PrometheusValueWire.Values"/>. We pick the side
-            // that's present and parse samples off it.
             var rawSamples = (IEnumerable<IReadOnlyList<object>>?)
                 (value.Values
                  ?? (value.Value is null ? null : new[] { value.Value }));
@@ -165,14 +151,15 @@ internal sealed class VictoriaMetricsQueryClient(
 
             result.Add(new MetricSeries(value.Metric.Labels, samples));
         }
+
         return result;
     }
 
     /// <summary>
     /// Parse a single Prometheus <c>value</c> / <c>values</c> element.
     /// The wire shape carries each sample as a 2-element array of
-    /// <c>[unixMs, value]</c> strings; we tolerate a one-element array
-    /// (scalar) for instant queries.
+    /// <c>[unixSec, value]</c> strings; we tolerate a one-element array
+    /// (scalar) for instant queries. Timestamps are unix seconds.
     /// </summary>
     private static bool TryReadSample(object raw, out MetricSample sample)
     {
@@ -190,29 +177,24 @@ internal sealed class VictoriaMetricsQueryClient(
 
         var unixElement = element[0];
         var valueElement = element[1];
-        if (!unixElement.TryGetInt64(out var unixMs))
+        if (!unixElement.TryGetDouble(out var unixSeconds))
         {
             return false;
         }
 
         if (!valueElement.TryGetDouble(out var doubleValue))
         {
-            // Prometheus carries non-numeric values as the literal string
-            // "NaN" — we drop those samples (the typed shape has no
-            // non-numeric representation).
             return false;
         }
 
+        var unixMs = (long)(unixSeconds * 1000d);
         sample = new MetricSample(unixMs, doubleValue);
         return true;
     }
 
     /// <summary>
-    /// Aggregate the per-series label rows into a <c>label-key → distinct values</c>
-    /// dictionary the dashboard observability page renders. The wire
-    /// shape is a flat array of label dictionaries; we collapse them
-    /// in O(N) without allocating intermediate sets beyond a single
-    /// pass.
+    /// Aggregate the per-series label rows into a <c>label-key → distinct
+    /// values</c> dictionary the dashboard observability page renders.
     /// </summary>
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> AggregateLabelKeys(
         IReadOnlyList<SeriesMatchWire> rows)
@@ -246,27 +228,77 @@ internal sealed class VictoriaMetricsQueryClient(
         }
         return snapshot;
     }
+}
 
+/// <summary>
+/// File-static helpers for the <see cref="VictoriaMetricsQueryClient"/>:
+/// wire-format conversion + envelope unwrap live here per
+/// <c>class-layout-and-tooling.md §1a</c> (no private methods on the
+/// typed client). All pure functions; no I/O.
+/// </summary>
+internal static class VictoriaMetricsQueryHelpers
+{
     /// <summary>
-    /// Run <paramref name="configure"/> with the structured-log record
-    /// already filled in. The <see cref="ActivityScope"/> is a no-op
-    /// placeholder — the trace id is captured in the log line directly
-    /// (<c>{TraceId}</c> placeholder) rather than a child activity,
-    /// because the typed client is a query proxy and does not own the
-    /// caller's trace. Keeping the helper means the call-sites do not
-    /// need <c>if (traceId is not null) { ... }</c> blocks: the helper
-    /// accepts null and yields a no-op.
+    /// Convert a <see cref="DateTimeOffset"/> to Prometheus' wire format
+    /// (unix seconds, fixed-point). Prometheus expects a fractional
+    /// seconds string per
+    /// <see href="https://prometheus.io/docs/prometheus/latest/querying/api/#time-series-selectors"/>
+    /// — the typed client produces the canonical
+    /// <c>"&lt;seconds&gt;.&lt;fraction&gt;"</c> shape with invariant
+    /// culture (the wire format is locale-independent). <see langword="null"/>
+    /// when the bound is absent so the query-arg is omitted.
     /// </summary>
-    private static IDisposable? ActivityScope(string? traceId, Action<PromScopeLog> configure)
+    public static string ToUnixSeconds(DateTimeOffset? value)
     {
-        if (traceId is null)
-        {
-            return null;
-        }
-
-        configure(new PromScopeLog(string.Empty, default, default, default, default, traceId));
-        return null;
+        return value is null
+            ? string.Empty
+            : (value.Value.ToUnixTimeMilliseconds() / 1000d).ToString("0.###", CultureInfo.InvariantCulture);
     }
 
-    private readonly record struct PromScopeLog(string Query, long From, long To, long Step, long Time, string TraceId);
+    /// <summary>
+    /// Format a <see cref="TimeSpan"/> as a Prometheus duration string
+    /// (the wire-accepted shorthand that avoids needing to send
+    /// <c>step=15</c> as a unix-seconds float). The shape is the
+    /// documented <c>"15s"</c>, <c>"5m"</c> form per the Prometheus
+    /// parsing reference.
+    /// </summary>
+    public static string ToPrometheusDuration(TimeSpan step)
+    {
+        return step.TotalHours >= 1d
+        ? $"{(int)step.TotalHours}h"
+        : step.TotalMinutes >= 1d
+            ? $"{(int)step.TotalMinutes}m"
+            : step.TotalSeconds < 1d
+                ? "1s"
+                : $"{(int)step.TotalSeconds}s";
+    }
+
+    /// <summary>
+    /// Pick the trace id the call threads onto the log line. Explicit
+    /// override wins; otherwise the ambient OTel activity's
+    /// <see cref="Activity.TraceId"/> is used. Returns <see langword="null"/>
+    /// when neither is set — the Prometheus HTTP API has no
+    /// trace-level filter, so the trace shows in the log only.
+    /// </summary>
+    public static string? EffectiveTraceId(string? explicitTraceId)
+    {
+        return explicitTraceId ?? Activity.Current?.TraceId.ToString();
+    }
+
+    /// <summary>
+    /// Unwrap an <see cref="IApiResponse{T}"/> to its body or raise a
+    /// transport-level exception. Prometheus endpoints respond with
+    /// HTTP 200 even when <c>"status":"error"</c> — the typed client
+    /// surfaces HTTP non-2xx as <see cref="HttpRequestException"/> so
+    /// the upstream caller can branch on the typed
+    /// <see cref="VictoriaUnavailableException"/> at the public port
+    /// boundary.
+    /// </summary>
+    public static TResponse UnwrapEnvelope<TResponse>(IApiResponse<TResponse> response)
+    {
+        return !response.IsSuccessStatusCode
+            ? throw new HttpRequestException($"VictoriaMetrics returned HTTP {(int)response.StatusCode!.Value}.")
+            : response.Content
+              ?? throw new HttpRequestException("VictoriaMetrics returned an empty response body.");
+    }
 }

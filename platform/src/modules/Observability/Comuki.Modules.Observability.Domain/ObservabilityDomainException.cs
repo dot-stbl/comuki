@@ -10,7 +10,8 @@ namespace Comuki.Modules.Observability.Domain;
 /// application-layer code never depends on infrastructure-layer packages
 /// (e.g. Refit / HTTP) just to surface a failure.
 /// </summary>
-public abstract class ObservabilityDomainException(string code, string message) : Exception(message)
+public abstract class ObservabilityDomainException(string code, string message, Exception? inner = null)
+    : Exception(message, inner)
 {
     /// <summary>The stable machine-readable code; consumers branch on this string.</summary>
     public string Code { get; } = code;

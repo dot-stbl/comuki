@@ -128,13 +128,17 @@ internal static class VictoriaMetricsQueryHelpers
     /// <see href="https://prometheus.io/docs/prometheus/latest/querying/api/#time-series-selectors"/>
     /// — the typed client produces the canonical
     /// <c>"&lt;seconds&gt;.&lt;fraction&gt;"</c> shape with invariant
-    /// culture (the wire format is locale-independent). <see langword="null"/>
-    /// when the bound is absent so the query-arg is omitted.
+    /// culture (the wire format is locale-independent). Returns
+    /// <see langword="null"/> when the bound is absent so the Refit
+    /// <c>[Query] string?</c> parameter omits the query-arg entirely
+    /// (sending <c>string.Empty</c> produces <c>start=&amp;end=</c> on
+    /// the wire, which is a malformed query, not a "no bound" signal).
     /// </summary>
-    public static string ToUnixSeconds(DateTimeOffset? value)
+    /// <param name="value">Bound to format; <see langword="null"/> when the caller did not supply a window.</param>
+    public static string? ToUnixSeconds(DateTimeOffset? value)
     {
         return value is null
-            ? string.Empty
+            ? null
             : (value.Value.ToUnixTimeMilliseconds() / 1000d).ToString("0.###", CultureInfo.InvariantCulture);
     }
 
@@ -171,18 +175,39 @@ internal static class VictoriaMetricsQueryHelpers
     /// <summary>
     /// Unwrap an <see cref="IApiResponse{T}"/> to its body or raise a
     /// transport-level exception. Prometheus endpoints respond with
-    /// HTTP 200 even when <c>"status":"error"</c> — the typed client
-    /// surfaces HTTP non-2xx as <see cref="HttpRequestException"/> so
-    /// the upstream caller can branch on the typed
-    /// <see cref="VictoriaUnavailableException"/> at the public port
-    /// boundary.
+    /// HTTP 200 even when <c>"status":"error"</c> — a real failure
+    /// mode the wire contract documents (e.g. parse errors in the
+    /// PromQL expression, an unknown series, an unreachable storage
+    /// node) — and the typed client threads that case as
+    /// <see cref="VictoriaUnavailableException"/> so the upstream
+    /// caller can branch on the typed boundary the same way it
+    /// branches on a transport-level timeout.
     /// </summary>
     public static TResponse UnwrapEnvelope<TResponse>(IApiResponse<TResponse> response)
     {
-        return !response.IsSuccessStatusCode
-            ? throw new HttpRequestException($"VictoriaMetrics returned HTTP {(int)response.StatusCode!.Value}.")
-            : response.Content
-              ?? throw new HttpRequestException("VictoriaMetrics returned an empty response body.");
+        // boundary: HttpResponseMessage.StatusCode is non-null on a constructed response
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"VictoriaMetrics returned HTTP {(int)response.StatusCode!.Value}.");
+        }
+
+        var body = response.Content
+            ?? throw new HttpRequestException("VictoriaMetrics returned an empty response body.");
+
+        // A 200 response with status="error" is a typed Prometheus failure —
+        // surface it as a VictoriaUnavailableException so the MCP error
+        // mapper turns it into the same `observability.victoria_unavailable`
+        // ProblemDetails the transport-level failure already produces.
+        if (body is PrometheusResponseEnvelope<PrometheusValueWire> envelope
+            && !string.Equals(envelope.Status, "success", StringComparison.Ordinal))
+        {
+            var message = envelope.Error is null
+                ? "VictoriaMetrics returned status=error with no error message."
+                : $"VictoriaMetrics returned status=error: {envelope.Error}";
+            throw new VictoriaUnavailableException("victoria-metrics", new HttpRequestException(message));
+        }
+
+        return body;
     }
 
     /// <summary>

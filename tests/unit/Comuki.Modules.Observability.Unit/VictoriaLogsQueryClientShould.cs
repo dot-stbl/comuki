@@ -5,6 +5,7 @@ using Comuki.Modules.Observability.Infrastructure.VictoriaLogs;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Refit;
+using Shouldly;
 using Xunit;
 
 namespace Comuki.Modules.Observability.Unit;
@@ -119,6 +120,108 @@ public sealed class VictoriaLogsQueryClientShould
 
         await api.Received(1).QueryAsync(
             Arg.Is<string>(static q => CountOccurrences(q, "trace_id:") == 1),
+            Arg.Any<int?>(),
+            Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>NDJSON-edge: a missing <c>_time</c> drops the line, the rest of the page lives.</summary>
+    [Fact(DisplayName = "Given an NDJSON body with a row missing _time, when SearchAsync, that row is dropped and the remaining rows still come back")]
+    public async Task MissingTimeDropsLineAndPreservesOthersAsync()
+    {
+        const string good = /*lang=json,strict*/ "{\"_time\":\"2026-09-23T10:00:00Z\",\"_msg\":\"hello\",\"level\":\"info\"}";
+        const string noTime = /*lang=json,strict*/ "{\"_msg\":\"no-time\"}";
+        var api = Substitute.For<IVictoriaLogsApi>();
+        api.QueryAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(NewResponse($"{good}\n{noTime}\n{good}"));
+
+        using var listener = ActivityListenerStub.NoAmbient();
+        var client = new VictoriaLogsQueryClient(
+            api,
+            NullLogger<VictoriaLogsQueryClient>.Instance);
+
+        var rows = await client.SearchAsync(
+            new LogsQuery(Query: "_stream:ops"),
+            CancellationToken.None);
+
+        rows.Count.ShouldBe(2);
+        rows.ShouldAllBe(static r => r.MessageTemplate == "hello");
+    }
+
+    /// <summary>NDJSON-edge: a malformed <c>_time</c> drops the line — we never substitute a sentinel timestamp.</summary>
+    [Fact(DisplayName = "Given an NDJSON body with a row carrying a malformed _time, when SearchAsync, that row is dropped and the remaining rows still come back")]
+    public async Task MalformedTimeDropsLineAndPreservesOthersAsync()
+    {
+        const string good = /*lang=json,strict*/ "{\"_time\":\"2026-09-23T10:00:00Z\",\"_msg\":\"hello\",\"level\":\"info\"}";
+        const string badTime = /*lang=json,strict*/ "{\"_time\":\"not-a-timestamp\",\"_msg\":\"bad-time\"}";
+        var api = Substitute.For<IVictoriaLogsApi>();
+        api.QueryAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(NewResponse($"{good}\n{badTime}\n{good}"));
+
+        using var listener = ActivityListenerStub.NoAmbient();
+        var client = new VictoriaLogsQueryClient(
+            api,
+            NullLogger<VictoriaLogsQueryClient>.Instance);
+
+        var rows = await client.SearchAsync(
+            new LogsQuery(Query: "_stream:ops"),
+            CancellationToken.None);
+
+        rows.Count.ShouldBe(2);
+        rows.ShouldAllBe(static r => r.MessageTemplate == "hello");
+    }
+
+    /// <summary>NDJSON-edge: a non-JSON line is dropped, the rest of the page lives.</summary>
+    [Fact(DisplayName = "Given an NDJSON body with a garbage line, when SearchAsync, that line is dropped and the remaining rows still come back")]
+    public async Task GarbageLineDropsAndPreservesOthersAsync()
+    {
+        const string good = /*lang=json,strict*/ "{\"_time\":\"2026-09-23T10:00:00Z\",\"_msg\":\"hello\",\"level\":\"info\"}";
+        const string garbage = "this is not json {";
+        var api = Substitute.For<IVictoriaLogsApi>();
+        api.QueryAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(NewResponse($"{good}\n{garbage}\n{good}"));
+
+        using var listener = ActivityListenerStub.NoAmbient();
+        var client = new VictoriaLogsQueryClient(
+            api,
+            NullLogger<VictoriaLogsQueryClient>.Instance);
+
+        var rows = await client.SearchAsync(
+            new LogsQuery(Query: "_stream:ops"),
+            CancellationToken.None);
+
+        rows.Count.ShouldBe(2);
+        rows.ShouldAllBe(static r => r.MessageTemplate == "hello");
+    }
+
+    /// <summary>
+    /// <c>ContextAsync</c> must NOT bolt a second <c>trace_id:</c> clause onto
+    /// the explicit one when an ambient Activity carries a different
+    /// trace id (the previous shape appended <c>trace_id:&lt;ambient&gt;</c>
+    /// on top of the explicit <c>trace_id:&lt;explicit&gt;</c>, which
+    /// LogsQL evaluates as a logical AND and yields an empty result set).
+    /// </summary>
+    [Fact(DisplayName = "Given ContextAsync with an explicit traceId + ambient Activity carrying a different trace id, when the request lands, the wire carries exactly one (the explicit) trace_id clause")]
+    public async Task ContextAsyncExplicitTraceWinsOverAmbientAsync()
+    {
+        const string explicitTrace = "11111111111111111111111111111111";
+        const string ambientTrace = "22222222222222222222222222222222";
+        var api = Substitute.For<IVictoriaLogsApi>();
+        api.QueryAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(NewResponse(""));
+
+        using var ambient = ActivityListenerStub.WithTraceId(ambientTrace);
+        var client = new VictoriaLogsQueryClient(
+            api,
+            NullLogger<VictoriaLogsQueryClient>.Instance);
+
+        await client.ContextAsync(explicitTrace, from: null, to: null, limit: null, cancellationToken: CancellationToken.None);
+
+        await api.Received(1).QueryAsync(
+            Arg.Is<string>(static q => CountOccurrences(q, "trace_id:") == 1
+                                       && q.Contains("trace_id:" + explicitTrace)
+                                       && !q.Contains("trace_id:" + ambientTrace)),
             Arg.Any<int?>(),
             Arg.Any<string?>(),
             Arg.Any<string?>(),

@@ -74,11 +74,19 @@ internal sealed class VictoriaLogsQueryClient(
         // lookup as logs.search with `trace_id:<id>` appended to the
         // query body per the brief. Time/limit are independent of the
         // trace-id and apply as ordinary LogsQL filters.
+        //
+        // The explicit TraceId is set on the composed query so the
+        // ambient-trace append in WithEffectiveTraceId is a no-op
+        // (the explicit clause already lives in the body and the
+        // idempotent append would otherwise bolt on a second
+        // trace_id:<ambient> clause, ANDed by LogsQL into an empty
+        // result set).
         var composed = new LogsQuery(
             Query: VictoriaLogsQueryHelpers.ComposeTraceIdClause(traceId),
             From: from,
             To: to,
-            Limit: limit);
+            Limit: limit,
+            TraceId: traceId);
 
         return await SearchAsync(composed, cancellationToken);
     }
@@ -164,6 +172,7 @@ internal static class VictoriaLogsQueryHelpers
     {
         if (!response.IsSuccessStatusCode)
         {
+            // boundary: HttpResponseMessage.StatusCode is non-null on a constructed response
             throw new HttpRequestException(
                 $"VictoriaLogs returned HTTP {(int)response.StatusCode!.Value}.");
         }
@@ -191,6 +200,10 @@ internal static class VictoriaLogsQueryHelpers
     /// lines are logged at <c>Debug</c> and dropped per
     /// <c>~/.agents/rules/csharp/json-and-ndjson.md</c> §4
     /// (a single malformed line is logged + dropped, never fails the page).
+    /// A missing or malformed <c>_time</c> drops the line too — we never
+    /// substitute a sentinel timestamp, per
+    /// <c>~/.agents/rules/csharp/error-mapping.md</c> §"отказ не
+    /// маскируется под успех".
     /// </summary>
     public static bool TryParseLine(ILogger logger, string line, out LogRow row)
     {
@@ -216,7 +229,14 @@ internal static class VictoriaLogsQueryHelpers
             }
 
             var rootElement = document.RootElement;
-            var timestamp = ReadTimestamp(rootElement, logger);
+            if (!TryReadTimestamp(rootElement, logger, out var timestamp))
+            {
+                // TryReadTimestamp already logged the specific reason
+                // (missing / non-string / unparseable) at Debug; the line
+                // is dropped and the page keeps draining.
+                return false;
+            }
+
             var messageTemplate = ReadOptionalString(rootElement, "_msg") ?? string.Empty;
             var level = ReadOptionalString(rootElement, "level") ?? string.Empty;
             var stream = ReadOptionalString(rootElement, "_stream");
@@ -240,18 +260,21 @@ internal static class VictoriaLogsQueryHelpers
 
     /// <summary>
     /// Parse <c>_time</c> as RFC3339 UTC. A missing / malformed
-    /// <c>_time</c> drops the record with a debug entry per
-    /// <c>~/.agents/rules/csharp/error-mapping.md</c> §"отказ не
-    /// маскируется под успех"; we never silently substitute a
-    /// sentinel like <see cref="DateTimeOffset.MinValue"/>.
+    /// <c>_time</c> returns <see langword="false"/> so the caller drops
+    /// the line; the helper logs the specific reason at <c>Debug</c>.
+    /// We never substitute a sentinel like <see cref="DateTimeOffset.MinValue"/> —
+    /// the absence of a timestamp is a wire-contract violation, not a
+    /// recoverable input.
     /// </summary>
-    public static DateTimeOffset ReadTimestamp(JsonElement rootElement, ILogger logger)
+    public static bool TryReadTimestamp(JsonElement rootElement, ILogger logger, out DateTimeOffset timestamp)
     {
+        timestamp = default;
+
         if (!rootElement.TryGetProperty("_time", out var timeElement)
             || timeElement.ValueKind != JsonValueKind.String)
         {
             logger.LogDebug("victoria logs ndjson line missing _time; dropping it");
-            return default;
+            return false;
         }
 
         var raw = timeElement.GetString();
@@ -260,13 +283,13 @@ internal static class VictoriaLogsQueryHelpers
                 raw,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-                out var parsed))
+                out timestamp))
         {
             logger.LogDebug("victoria logs ndjson line has malformed _time '{Raw}'; dropping it", raw);
-            return default;
+            return false;
         }
 
-        return parsed;
+        return true;
     }
 
     /// <summary>

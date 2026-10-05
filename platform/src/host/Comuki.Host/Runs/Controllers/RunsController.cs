@@ -144,7 +144,11 @@ public sealed class RunsController(
         [FromServices] IValidator<SteerRunRequest> steerValidator,
         CancellationToken cancellationToken = default)
     {
-        if (await RunsValidation.ValidateAsync(steerValidator, request, cancellationToken) is { } problem)
+        if (await RunsValidation.ValidateSteerAsync(
+                steerValidator, request,
+                problemTitle: "Steer text is required",
+                defaultCode: "steer.text_required",
+                cancellationToken) is { } problem)
         {
             return problem;
         }
@@ -203,18 +207,26 @@ public static class RunsProblems
 file static class RunsValidation
 {
     /// <summary>
-    /// Run the validator; return a 400 ProblemDetails on failure or
-    /// <c>null</c> on success. The first failure's <c>ErrorCode</c>
-    /// (set on the rule by <c>WithErrorCode(...)</c>) becomes the
-    /// <c>extensions.code</c> field — the same shape the controller-side
-    /// guard produced before the rule moved into the validator.
+    /// Run the steer request validator; return a 400 ProblemDetails on
+    /// failure or <c>null</c> on success. The first failure's
+    /// <c>ErrorCode</c> (set on the rule by <c>WithErrorCode(...)</c>)
+    /// becomes the <c>extensions.code</c> field — the same shape the
+    /// controller-side guard produced before the rule moved into the
+    /// validator.
     /// </summary>
-    public static async Task<ActionResult?> ValidateAsync<T>(
-        IValidator<T> validator,
-        T instance,
+    /// <param name="validator">FluentValidation validator for <see cref="SteerRunRequest"/>.</param>
+    /// <param name="request">The steer request body to validate.</param>
+    /// <param name="problemTitle">Human-readable title for the 400 envelope; typically a one-liner naming the missing field.</param>
+    /// <param name="defaultCode">Wire-format <c>code</c> extension when the validator didn't tag the failure with its own <c>ErrorCode</c>.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public static async Task<ActionResult?> ValidateSteerAsync(
+        IValidator<SteerRunRequest> validator,
+        SteerRunRequest request,
+        string problemTitle,
+        string defaultCode,
         CancellationToken cancellationToken)
     {
-        var result = await validator.ValidateAsync(instance, cancellationToken);
+        var result = await validator.ValidateAsync(request, cancellationToken);
 
         if (result.IsValid)
         {
@@ -223,12 +235,12 @@ file static class RunsValidation
 
         var failure = result.Errors[0];
         var typed = TypedResults.Problem(
-            title: "Steer text is required",
+            title: problemTitle,
             detail: failure.ErrorMessage,
             statusCode: StatusCodes.Status400BadRequest,
             extensions: new Dictionary<string, object?>
             {
-                ["code"] = failure.ErrorCode ?? "steer.text_required",
+                ["code"] = failure.ErrorCode ?? defaultCode,
             });
 
         return new ObjectResult(typed.ProblemDetails)

@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text.Json;
 using Comuki.Engine.Compute.Options;
 using Comuki.Engine.Orchestration.Domain;
@@ -12,6 +13,7 @@ using Comuki.Shared.Kernel.Exceptions;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host.Runs;
@@ -116,15 +118,22 @@ public sealed class HostSteerRunAdapter(
     /// <see cref="WorkItemStatus.Queued"/> (the follow-up has no DAG
     /// edges — a fresh worker claims it as soon as the in-flight one
     /// is fenced by cancel or reaped by the lease policy). The whole
-    /// read-check-insert sequence runs in one transaction; the
-    /// terminal-status predicate is re-checked against the re-read
-    /// row so a concurrent cancel between the initial read and the
-    /// INSERT is rejected at commit time (the cancel path's
-    /// runs-row-write serializes against this re-read).
+    /// read-check-insert sequence runs in one transaction; on the
+    /// relational path the run row is locked with
+    /// <c>SELECT ... FOR UPDATE</c> so a concurrent cancel / finalize
+    /// between the initial read and the INSERT serializes against
+    /// the lock and rolls the steer transaction back with a typed
+    /// 409 <c>run.not_running</c> — the same seam the cancel path
+    /// uses. On the in-memory store (unit tests) the transaction is
+    /// unsupported, but the read-then-act row-level check the
+    /// <c>SELECT FOR UPDATE</c> runs is the same one the in-memory
+    /// branch falls back to (a fresh re-read inside the run-followup
+    /// path), so both branches share the predicate and the
+    /// refuse-on-terminal-status rule.
     /// </summary>
     /// <param name="run">Run the follow-up attaches to (snapshot from the initial read).</param>
     /// <param name="text">The operator's steer text.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Token propagated to <see cref="EnvClassResolver.ResolveAsync"/> and the EF SaveChanges / commit.</param>
     private async Task<WorkItem> StageFollowUpAsync(Run run, string text, CancellationToken cancellationToken)
     {
         var now = clock.GetUtcNow();
@@ -159,24 +168,39 @@ public sealed class HostSteerRunAdapter(
         await using var transaction = db.Database.IsRelational()
             ? await db.Database.BeginTransactionAsync(cancellationToken)
             : null;
-        // Re-read the run row inside the transaction. The terminal
-        // predicate fires again here; a concurrent cancel/finalized
-        // between the initial read and the INSERT will leave the row
-        // in a terminal status we refuse to follow-up against, the
-        // transaction rolls back, and the caller sees a typed 409.
-        // On the in-memory store (unit tests) the transaction is
-        // unsupported, but the re-read-after-update row read-then-act
-        // ordering already covers the test path.
-        var fresh = await db.Runs
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Id == run.Id, cancellationToken);
-        if (fresh is null || RunSteerStatusGuard.IsTerminalOrFinalising(fresh.Status))
+
+        // The relational path locks the run row with SELECT ... FOR UPDATE
+        // so a concurrent cancel / finalize between the initial read
+        // and the INSERT serializes against the same row lock the
+        // cancel path acquires. The predicate fires again on the
+        // re-read; a terminal status raises a typed 409 and the
+        // transaction rolls back. The in-memory branch (unit tests
+        // use the InMemory provider) can't host a transaction, so
+        // it falls back to a no-tracking re-read — the predicate is
+        // the same one, the rejection path is the same, and the test
+        // surface (in-memory, single-call) does not exercise
+        // cross-call concurrency.
+        RunStatus observedStatus;
+        if (db.Database.IsRelational())
+        {
+            observedStatus = await SteerSql.LockRunStatusAsync(transaction!, run.Id, cancellationToken);
+        }
+        else
+        {
+            var fresh = await db.Runs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == run.Id, cancellationToken) ?? throw new RunNotRunningForSteerException(run.Status);
+            observedStatus = fresh.Status;
+        }
+
+        if (RunSteerStatusGuard.IsTerminalOrFinalising(observedStatus))
         {
             if (transaction is not null)
             {
                 await transaction.RollbackAsync(cancellationToken);
             }
-            throw new RunNotRunningForSteerException(fresh?.Status ?? run.Status);
+
+            throw new RunNotRunningForSteerException(observedStatus);
         }
 
         await db.SaveChangesAsync(cancellationToken);
@@ -184,6 +208,7 @@ public sealed class HostSteerRunAdapter(
         {
             await transaction.CommitAsync(cancellationToken);
         }
+
         return workItem;
     }
 }
@@ -207,7 +232,7 @@ public interface ISteerRunPort
     /// </summary>
     /// <param name="runId">Run to steer.</param>
     /// <param name="text">The operator's steer text.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Token propagated to the resolver, the journal, and the FOR UPDATE / SaveChanges / commit.</param>
     /// <exception cref="ProviderNotFoundException">The run does not exist or is out of scope.</exception>
     /// <exception cref="RunDecisionConflictException">The run is in a terminal status.</exception>
     public Task<SteerRunResult> SteerAsync(
@@ -271,3 +296,70 @@ file sealed record SteerFollowUpGoal(string Goal, string Source);
 /// <param name="Text">The operator's steer text.</param>
 /// <param name="FollowUpWorkItemId">The id of the queued follow-up work item.</param>
 internal sealed record RunSteerFollowUpPayload(string Text, Guid FollowUpWorkItemId);
+
+/// <summary>
+/// Steer-side counterpart of <c>HostCancelRunAdapter.RunCancelSql</c>:
+/// locks the run row with <c>SELECT ... FOR UPDATE</c> on the relational path
+/// so a concurrent cancel / finalize that flips the run to a
+/// terminal status between the adapter's initial read and the
+/// follow-up insert serializes against the same row lock the
+/// cancel path acquires. Status literals are the
+/// PascalCase <see cref="RunStatus"/> names EF's
+/// <c>HasConversion&lt;string&gt;</c> stores, sourced via
+/// <c>nameof</c> so a status rename fails the build instead of
+/// silently going stale. The helper runs on the transaction's own
+/// connection so the lock survives the commit boundary.
+/// </summary>
+file static class SteerSql
+{
+    /// <summary>Locks the @runId row for the rest of the transaction and returns
+    /// its current <see cref="RunStatus"/> — the predicate the steer
+    /// refusal path runs against.</summary>
+    public const string LockRunStatusSql =
+        "SELECT status FROM " + OrchestrationDatabase.Schema + "." + OrchestrationDatabase.Runs + " "
+        + "WHERE id = @runId "
+        + "FOR UPDATE";
+
+    /// <summary>Creates a prepared lock-runs-row command on the transaction's
+    /// connection. The lock is held for the rest of the transaction; the
+    /// outer <c>SteerAsync</c> branch is responsible for commit / rollback.</summary>
+    /// <param name="transaction">Live transaction whose connection the command runs on.</param>
+    /// <param name="runId">Run the steer is targeting.</param>
+    public static DbCommand CreateLockRunStatusCommand(DbTransaction transaction, RunId runId)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = LockRunStatusSql;
+        AddParameter(command, "@runId", runId.Value);
+        return command;
+    }
+
+    /// <summary>Adds one typed parameter (Npgsql infers uuid from the CLR value).</summary>
+    /// <param name="command">Command the parameter is added to.</param>
+    /// <param name="name">Parameter name including the <c>@</c> prefix.</param>
+    /// <param name="value">Parameter value (uuid / text / timestamptz).</param>
+    public static void AddParameter(DbCommand command, string name, object value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
+    }
+
+    /// <summary>Locks the run row and returns its <see cref="RunStatus"/>.</summary>
+    /// <param name="transaction">Live transaction the lock is held in.</param>
+    /// <param name="runId">Run the steer is targeting.</param>
+    /// <param name="cancellationToken">Token forwarded to <see cref="DbCommand.ExecuteScalarAsync(CancellationToken)"/>.</param>
+    public static async Task<RunStatus> LockRunStatusAsync(
+        IDbContextTransaction transaction,
+        RunId runId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = CreateLockRunStatusCommand(transaction.GetDbTransaction(), runId);
+        var raw = await command.ExecuteScalarAsync(cancellationToken);
+        // boundary: Npgsql materialises the varchar column as a CLR string
+        var status = (raw as string) ?? raw?.ToString()
+            ?? throw new InvalidOperationException("runs row returned a null status");
+        return RunStatus.FromWire(status);
+    }
+}

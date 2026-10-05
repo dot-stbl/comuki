@@ -41,7 +41,7 @@ public static class ObservabilityInfrastructureExtensions
             .ConfigureHttpClient(static (serviceProvider, client) =>
             {
                 var options = serviceProvider.GetRequiredService<IOptions<ObservabilityOptions>>().Value;
-                client.BaseAddress = ResolveLogsBaseUrl(options);
+                client.BaseAddress = ObservabilityBaseUrl.ResolveLogs(options);
             })
             .AddStandardResilienceHandler();
 
@@ -50,7 +50,7 @@ public static class ObservabilityInfrastructureExtensions
             .ConfigureHttpClient(static (serviceProvider, client) =>
             {
                 var options = serviceProvider.GetRequiredService<IOptions<ObservabilityOptions>>().Value;
-                client.BaseAddress = ResolveMetricsBaseUrl(options);
+                client.BaseAddress = ObservabilityBaseUrl.ResolveMetrics(options);
             })
             .AddStandardResilienceHandler();
 
@@ -59,16 +59,30 @@ public static class ObservabilityInfrastructureExtensions
 
         return services;
     }
+}
 
+/// <summary>
+/// Base-URL resolution for the two Refit clients — operator override
+/// wins, otherwise the deploy stack's compose service name is the
+/// default. Lives in a <c>file static class</c> per
+/// <c>class-layout-and-tooling.md §1a</c> (no private helpers on the
+/// installer).
+/// </summary>
+file static class ObservabilityBaseUrl
+{
     /// <summary>Default resolve: the operator override, or the deploy stack's compose service name.</summary>
-    private static Uri ResolveLogsBaseUrl(ObservabilityOptions options)
+    /// <param name="options">Bound observability options.</param>
+    public static Uri ResolveLogs(ObservabilityOptions options)
     {
-        return options.LogsBaseUrl ?? new Uri($"http://{ObservabilityOptions.DefaultLogsServiceName}:{ObservabilityOptions.DefaultLogsPort}");
+        return options.LogsBaseUrl
+            ?? new Uri($"http://{ObservabilityOptions.DefaultLogsServiceName}:{ObservabilityOptions.DefaultLogsPort}");
     }
 
     /// <summary>Default resolve: the operator override, or the deploy stack's compose service name.</summary>
-    private static Uri ResolveMetricsBaseUrl(ObservabilityOptions options)
+    /// <param name="options">Bound observability options.</param>
+    public static Uri ResolveMetrics(ObservabilityOptions options)
     {
-        return options.MetricsBaseUrl ?? new Uri($"http://{ObservabilityOptions.DefaultMetricsServiceName}:{ObservabilityOptions.DefaultMetricsPort}");
+        return options.MetricsBaseUrl
+            ?? new Uri($"http://{ObservabilityOptions.DefaultMetricsServiceName}:{ObservabilityOptions.DefaultMetricsPort}");
     }
 }

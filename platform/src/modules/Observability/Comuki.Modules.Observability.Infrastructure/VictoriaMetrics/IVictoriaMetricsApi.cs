@@ -24,7 +24,7 @@ internal interface IVictoriaMetricsApi
     /// not milliseconds; the typed client converts.
     /// </summary>
     /// <param name="query">URL-encoded PromQL expression (Refit escapes it for us).</param>
-    /// <param name="time">Optional unix-seconds evaluation timestamp.</param>
+    /// <param name="time">Optional unix-seconds evaluation timestamp; <see langword="null"/> omits the <c>time</c> query-arg (server default = "now").</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The wire-shaped Prometheus response envelope.</returns>
     [Get("/api/v1/query")]
@@ -43,17 +43,17 @@ internal interface IVictoriaMetricsApi
     /// absent.
     /// </summary>
     /// <param name="query">URL-encoded PromQL expression.</param>
-    /// <param name="start">unix-seconds inclusive lower bound.</param>
-    /// <param name="end">unix-seconds inclusive upper bound.</param>
-    /// <param name="step">Resolution of the returned matrix (Prometheus duration or unix seconds).</param>
+    /// <param name="start">unix-seconds inclusive lower bound; <see langword="null"/> omits the <c>start</c> query-arg.</param>
+    /// <param name="end">unix-seconds inclusive upper bound; <see langword="null"/> omits the <c>end</c> query-arg.</param>
+    /// <param name="step">Resolution of the returned matrix (Prometheus duration or unix seconds); <see langword="null"/> omits the <c>step</c> query-arg (server default).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The wire-shaped Prometheus response envelope.</returns>
     [Get("/api/v1/query_range")]
     public Task<IApiResponse<PrometheusResponseEnvelope<PrometheusValueWire>>> QueryRangeAsync(
         [Query] string query,
-        [Query] string start,
-        [Query] string end,
-        [Query] string step,
+        [Query] string? start = null,
+        [Query] string? end = null,
+        [Query] string? step = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>Series / label-set lookup.</summary>
@@ -68,14 +68,21 @@ internal interface IVictoriaMetricsApi
 
 /// <summary>
 /// Prometheus HTTP envelope shape: <c>status</c> + the <c>data</c>
-/// payload. <typeparamref name="TWire"/> is the per-endpoint typed
-/// payload (matrix values, instant values, etc.). The infrastructure
-/// branch rejects on a non-<c>"success"</c> status string (the wire
-/// contract documents both).
+/// payload, plus <c>error</c>/<c>errorType</c> when the query side
+/// rejects the request. <typeparamref name="TWire"/> is the
+/// per-endpoint typed payload (matrix values, instant values, etc.).
+/// The infrastructure branch rejects on a non-<c>"success"</c>
+/// status string — the wire contract documents both shapes, and
+/// HTTP 200 with <c>status:"error"</c> is a real failure mode
+/// (Prometheus returns 200 with the typed error envelope rather than
+/// raising an HTTP error), so the typed client threads the message
+/// through <see cref="Domain.VictoriaUnavailableException"/>.
 /// </summary>
 internal sealed record PrometheusResponseEnvelope<TWire>(
     string Status,
-    PrometheusDataWire<TWire>? Data);
+    PrometheusDataWire<TWire>? Data,
+    string? Error = null,
+    string? ErrorType = null);
 
 /// <summary>The Prometheus <c>data</c> field: <c>resultType</c> + payload.</summary>
 internal sealed record PrometheusDataWire<TWire>(

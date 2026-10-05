@@ -18,8 +18,8 @@ namespace Comuki.Host.Mcp;
 internal static class McpArgumentReaders
 {
     /// <summary>Reads a required string property; returns <see cref="string.Empty"/> when absent or non-string.</summary>
-    /// <param name="arguments"></param>
-    /// <param name="propertyName"></param>
+    /// <param name="arguments">Parsed JSON-RPC <c>tools/call</c> arguments object.</param>
+    /// <param name="propertyName">Name of the property the tool's JSON schema marks as required.</param>
     public static string ReadString(JsonElement arguments, string propertyName)
     {
         if (arguments.ValueKind != JsonValueKind.Object)
@@ -39,8 +39,8 @@ internal static class McpArgumentReaders
     }
 
     /// <summary>Reads an optional string property; returns <c>null</c> when absent or whitespace.</summary>
-    /// <param name="arguments"></param>
-    /// <param name="propertyName"></param>
+    /// <param name="arguments">Parsed JSON-RPC <c>tools/call</c> arguments object.</param>
+    /// <param name="propertyName">Property name to read; case-insensitive match against the wire JSON keys.</param>
     public static string? ReadOptionalString(JsonElement arguments, string propertyName)
     {
         var value = ReadString(arguments, propertyName);
@@ -48,8 +48,8 @@ internal static class McpArgumentReaders
     }
 
     /// <summary>Reads an optional Guid property; returns <c>null</c> when absent or unparseable.</summary>
-    /// <param name="arguments"></param>
-    /// <param name="propertyName"></param>
+    /// <param name="arguments">Parsed JSON-RPC <c>tools/call</c> arguments object.</param>
+    /// <param name="propertyName">Property name carrying the Guid string (e.g. <c>projectId</c>).</param>
     public static Guid? ReadOptionalGuid(JsonElement arguments, string propertyName)
     {
         var raw = ReadOptionalString(arguments, propertyName);
@@ -62,8 +62,8 @@ internal static class McpArgumentReaders
     /// (<see cref="ReadOptionalInt"/>) — checked-cast on the long result
     /// so the wire shape stays one shape (numeric + numeric-string).
     /// </summary>
-    /// <param name="arguments"></param>
-    /// <param name="propertyName"></param>
+    /// <param name="arguments">Parsed JSON-RPC <c>tools/call</c> arguments object.</param>
+    /// <param name="propertyName">Property name carrying the numeric value (e.g. <c>limit</c>).</param>
     public static long? ReadOptionalLong(JsonElement arguments, string propertyName)
     {
         if (arguments.ValueKind != JsonValueKind.Object)
@@ -92,8 +92,8 @@ internal static class McpArgumentReaders
     }
 
     /// <summary>Reads an optional int property; routed through <see cref="ReadOptionalLong"/> with a checked range check.</summary>
-    /// <param name="arguments"></param>
-    /// <param name="propertyName"></param>
+    /// <param name="arguments">Parsed JSON-RPC <c>tools/call</c> arguments object.</param>
+    /// <param name="propertyName">Property name carrying the int value (e.g. <c>topK</c>).</param>
     public static int? ReadOptionalInt(JsonElement arguments, string propertyName)
     {
         var value = ReadOptionalLong(arguments, propertyName);
@@ -101,8 +101,8 @@ internal static class McpArgumentReaders
     }
 
     /// <summary>Reads an optional bool property; accepts booleans or boolean strings.</summary>
-    /// <param name="arguments"></param>
-    /// <param name="propertyName"></param>
+    /// <param name="arguments">Parsed JSON-RPC <c>tools/call</c> arguments object.</param>
+    /// <param name="propertyName">Property name carrying the boolean value (e.g. <c>ephemeral</c>).</param>
     public static bool? ReadOptionalBool(JsonElement arguments, string propertyName)
     {
         if (arguments.ValueKind != JsonValueKind.Object)
@@ -136,8 +136,8 @@ internal static class McpArgumentReaders
     }
 
     /// <summary>Reads an optional float property; accepts numbers or numeric strings (invariant culture).</summary>
-    /// <param name="arguments"></param>
-    /// <param name="propertyName"></param>
+    /// <param name="arguments">Parsed JSON-RPC <c>tools/call</c> arguments object.</param>
+    /// <param name="propertyName">Property name carrying the float value (e.g. <c>minSimilarity</c>).</param>
     public static float? ReadOptionalFloat(JsonElement arguments, string propertyName)
     {
         if (arguments.ValueKind != JsonValueKind.Object)
@@ -179,8 +179,8 @@ internal static class McpArgumentReaders
     /// anyway; the styles guard against a CI runner in a different
     /// zone silently flipping the parsed value).
     /// </summary>
-    /// <param name="arguments"></param>
-    /// <param name="propertyName"></param>
+    /// <param name="arguments">Parsed JSON-RPC <c>tools/call</c> arguments object.</param>
+    /// <param name="propertyName">Property name carrying the ISO 8601 string (e.g. <c>from</c>, <c>to</c>).</param>
     public static DateTimeOffset? ReadOptionalIso8601(JsonElement arguments, string propertyName)
     {
         var raw = ReadOptionalString(arguments, propertyName);

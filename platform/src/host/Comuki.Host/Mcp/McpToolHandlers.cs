@@ -24,7 +24,10 @@ namespace Comuki.Host.Mcp;
 /// <c>specs/observability/spec.md</c> "accepts
 /// <c>{... from?: iso8601, to?: iso8601, ...}</c>"): the typed
 /// infrastructure client converts to unix-seconds (Prometheus) or
-/// RFC3339 (LogsQL <c>time</c> pipe) on the wire.
+/// RFC3339 (LogsQL <c>time</c> pipe) on the wire. The wire names
+/// (<c>promql</c>, <c>labelSelector</c>, <c>from</c>, <c>to</c>, <c>limit</c>,
+/// <c>traceId</c>) come from the spec — the catalog schema and the
+/// handler readers must agree on every name, end-to-end.
 /// </summary>
 /// <param name="knowledgeSearcher">Knowledge base search port.</param>
 /// <param name="knowledgeIngestor">Knowledge ingestion port.</param>
@@ -471,44 +474,41 @@ public sealed class McpToolHandlers(
         JsonElement arguments,
         CancellationToken cancellationToken)
     {
-        var query = McpArgumentReaders.ReadString(arguments, "query");
-        if (string.IsNullOrWhiteSpace(query))
+        var promql = McpArgumentReaders.ReadString(arguments, "promql");
+        if (string.IsNullOrWhiteSpace(promql))
         {
-            return McpObservabilityTools.InvalidParams(id, "observability.metrics.query requires a non-empty arguments.query");
+            return McpObservabilityTools.InvalidParams(id, "observability.metrics.query requires a non-empty arguments.promql");
         }
 
-        DateTimeOffset? time;
-        DateTimeOffset? start;
-        DateTimeOffset? end;
+        DateTimeOffset? from;
+        DateTimeOffset? to;
         try
         {
-            time = McpArgumentReaders.ReadOptionalIso8601(arguments, "time");
-            start = McpArgumentReaders.ReadOptionalIso8601(arguments, "start");
-            end = McpArgumentReaders.ReadOptionalIso8601(arguments, "end");
+            from = McpArgumentReaders.ReadOptionalIso8601(arguments, "from");
+            to = McpArgumentReaders.ReadOptionalIso8601(arguments, "to");
         }
         catch (ArgumentException exception)
         {
             return McpObservabilityTools.InvalidParams(id, $"observability.metrics.query {exception.Message}");
         }
 
-        if ((time is null && (start is null || end is null))
-            || (time is not null && (start is not null || end is not null)))
+        // Per the spec the wire contract is a single {promql, from?, to?} shape;
+        // the dispatch collapses to instant-vs-range by presence:
+        //   from==null && to==null  -> instant at the server's now
+        //   from==null xor to==null -> instant at the one bound
+        //   both set && from<=to    -> range (step is taken from ObservabilityOptions.ScrapeInterval)
+        //   both set && from>to      -> reject (the same window-validation rule as logs.*)
+        // The result type reported to the caller ("vector" / "matrix") is derived
+        // from the dispatch shape, not from a separate arg.
+        if (from is not null && to is not null && to < from)
         {
-            return McpObservabilityTools.InvalidParams(id, "observability.metrics.query requires either arguments.time (instant) or arguments.start+end (range), exclusively.");
+            return McpObservabilityTools.InvalidParams(id, "observability.metrics.query rejects arguments.to < arguments.from");
         }
 
-        if (start is not null && end is not null && end < start)
-        {
-            return McpObservabilityTools.InvalidParams(id, "observability.metrics.query rejects arguments.end < arguments.start");
-        }
-
-        var step = McpArgumentReaders.ReadOptionalInt(arguments, "step") is { } stepValue
-            ? TimeSpan.FromSeconds(stepValue)
-            : (TimeSpan?)null;
-
-        var metricsQuery = time is not null
-            ? new MetricsQuery(PromQl: query, Time: time)
-            : new MetricsQuery(PromQl: query, Start: start, End: end, Step: step);
+        var isRange = from is not null && to is not null;
+        var metricsQuery = isRange
+            ? new MetricsQuery(PromQl: promql, Start: from, End: to)
+            : new MetricsQuery(PromQl: promql, Time: from ?? to);
 
         IReadOnlyList<MetricSeries> series;
         try
@@ -523,7 +523,7 @@ public sealed class McpToolHandlers(
         return JsonRpcResponse.Success(id, new ToolResult(
             Content: [new ToolContentBlock("text", JsonSerializer.Serialize(new
             {
-                resultType = series.Count == 0 ? "empty" : (time is not null ? "vector" : "matrix"),
+                resultType = series.Count == 0 ? "empty" : (isRange ? "matrix" : "vector"),
                 seriesCount = series.Count,
                 series = series.Select(static s => new
                 {
@@ -543,16 +543,16 @@ public sealed class McpToolHandlers(
         JsonElement arguments,
         CancellationToken cancellationToken)
     {
-        var match = McpArgumentReaders.ReadString(arguments, "match");
-        if (string.IsNullOrWhiteSpace(match))
+        var labelSelector = McpArgumentReaders.ReadString(arguments, "labelSelector");
+        if (string.IsNullOrWhiteSpace(labelSelector))
         {
-            return McpObservabilityTools.InvalidParams(id, "observability.metrics.series requires a non-empty arguments.match");
+            return McpObservabilityTools.InvalidParams(id, "observability.metrics.series requires a non-empty arguments.labelSelector");
         }
 
         IReadOnlyDictionary<string, IReadOnlyList<string>> labelKeys;
         try
         {
-            labelKeys = await metricsQueryClient.SeriesAsync(match, cancellationToken);
+            labelKeys = await metricsQueryClient.SeriesAsync(labelSelector, cancellationToken);
         }
         catch (VictoriaUnavailableException exception)
         {
@@ -573,6 +573,12 @@ public sealed class McpToolHandlers(
 /// </summary>
 file static class McpKnowledgeSearch
 {
+    /// <summary>Default page size for <c>knowledge.search</c> when the caller omits <c>topK</c>.</summary>
+    public const int DefaultTopK = 5;
+
+    /// <summary>Default cosine-similarity floor for <c>knowledge.search</c> when the caller omits <c>minSimilarity</c>.</summary>
+    public const float DefaultMinSimilarity = 0.5f;
+
     public static async Task<JsonRpcResponse> SearchAsync(
         IKnowledgeSearcher knowledgeSearcher,
         JsonElement? id,
@@ -584,8 +590,8 @@ file static class McpKnowledgeSearch
         var hits = await knowledgeSearcher.SearchAsync(
             query,
             projectId,
-            McpArgumentReaders.ReadOptionalInt(arguments, "topK") ?? 5,
-            McpArgumentReaders.ReadOptionalFloat(arguments, "minSimilarity") ?? 0.5f,
+            McpArgumentReaders.ReadOptionalInt(arguments, "topK") ?? DefaultTopK,
+            McpArgumentReaders.ReadOptionalFloat(arguments, "minSimilarity") ?? DefaultMinSimilarity,
             cancellationToken);
         var payload = hits.Select(static hit => new
         {

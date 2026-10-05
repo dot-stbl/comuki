@@ -6,7 +6,7 @@ namespace Comuki.Host.Mcp;
 /// Static catalogue of MCP tools exposed by <see cref="McpServer"/>.
 /// Extracted from <c>McpServer.ListToolsAsync</c> so the dispatcher class
 /// holds only orchestration (per <c>class-layout-and-tooling.md §1a</c>).
-/// The shape follows the JSON-RPC 2.0 <c>tools/list</c> convention — six
+/// The shape follows the JSON-RPC 2.0 <c>tools/list</c> convention — eleven
 /// tools, each with a JSON Schema for its arguments. The catalogue is
 /// static and caller-agnostic; who may call what is the gates' job
 /// (<see cref="McpToolPermissionMap"/> for subjects,
@@ -134,15 +134,15 @@ internal static class McpToolCatalog
             new
             {
                 name = "observability.logs.search",
-                description = "Search VictoriaLogs with a LogsQL query over the platform's log stream. The ambient OTel trace id is auto-appended unless an explicit traceId is provided; a window pair (fromUnixMs, toUnixMs) narrows the search to a time range; limit caps the row count.",
+                description = "Search VictoriaLogs with a LogsQL query over the platform's log stream. The ambient OTel trace id is auto-appended unless an explicit traceId is provided; a window pair (from, to) narrows the search to a time range; limit caps the row count.",
                 inputSchema = new
                 {
                     type = "object",
                     properties = new Dictionary<string, object>
                     {
                         ["query"] = new { type = "string", description = "LogsQL expression (the text after _stream: or a free clause)." },
-                        ["fromUnixMs"] = new { type = "integer", description = "Optional inclusive lower bound on _time, unix milliseconds." },
-                        ["toUnixMs"] = new { type = "integer", description = "Optional inclusive upper bound on _time, unix milliseconds." },
+                        ["from"] = new { type = "string", description = "Optional inclusive lower bound on _time, ISO 8601 (e.g. 2026-04-12T07:00:00Z)." },
+                        ["to"] = new { type = "string", description = "Optional exclusive upper bound on _time, ISO 8601." },
                         ["limit"] = new { type = "integer", description = "Maximum rows returned (default 100, max 1000)." },
                         ["traceId"] = new { type = "string", description = "Explicit W3C trace id override; otherwise the ambient OTel trace id is used." },
                     },
@@ -152,33 +152,31 @@ internal static class McpToolCatalog
             new
             {
                 name = "observability.metrics.query",
-                description = "Run a PromQL instant or range query against VictoriaMetrics. Pass `time` for an instant query at that unix-ms, or pass `start` + `end` + `step` (unix-ms each) for a range query.",
+                description = "Run a PromQL query against VictoriaMetrics. With neither from nor to the call is an instant query at the server's now. With one of from/to the call is an instant at that ISO 8601 timestamp. With both from and to the call is a range query (step is taken from the platform's configured scrape interval).",
                 inputSchema = new
                 {
                     type = "object",
                     properties = new Dictionary<string, object>
                     {
-                        ["query"] = new { type = "string", description = "PromQL expression." },
-                        ["time"] = new { type = "integer", description = "Instant-query evaluation time, unix ms." },
-                        ["start"] = new { type = "integer", description = "Range-query inclusive lower bound, unix ms." },
-                        ["end"] = new { type = "integer", description = "Range-query inclusive upper bound, unix ms." },
-                        ["step"] = new { type = "integer", description = "Range-query resolution, unix ms (e.g. 15000 for 15s)." },
+                        ["promql"] = new { type = "string", description = "PromQL expression." },
+                        ["from"] = new { type = "string", description = "Lower bound on the time window, ISO 8601. Omit for an instant query at to (or at the server's now if to is also absent)." },
+                        ["to"] = new { type = "string", description = "Upper bound on the time window, ISO 8601. Omit for an instant query at from (or at the server's now if from is also absent)." },
                     },
-                    required = new[] { "query" },
+                    required = new[] { "promql" },
                 },
             },
             new
             {
                 name = "observability.logs.context",
-                description = "Fetch the log rows whose trace_id matches a given W3C trace id. A faster path than the full search when the user already has a trace id (e.g. from a span error).",
+                description = "Fetch the log rows whose trace_id matches a given W3C trace id. A faster path than the full search when the user already has a trace id (e.g. from a span error). The optional from/to/limit window narrows the trace-scoped query to a time range.",
                 inputSchema = new
                 {
                     type = "object",
                     properties = new Dictionary<string, object>
                     {
                         ["traceId"] = new { type = "string", description = "W3C trace id (32-hex or 16-hex). Required." },
-                        ["fromUnixMs"] = new { type = "integer", description = "Optional inclusive lower bound on _time, unix ms." },
-                        ["toUnixMs"] = new { type = "integer", description = "Optional inclusive upper bound on _time, unix ms." },
+                        ["from"] = new { type = "string", description = "Optional inclusive lower bound on _time, ISO 8601." },
+                        ["to"] = new { type = "string", description = "Optional exclusive upper bound on _time, ISO 8601." },
                         ["limit"] = new { type = "integer", description = "Maximum rows returned (default 100, max 1000)." },
                     },
                     required = new[] { "traceId" },
@@ -193,9 +191,9 @@ internal static class McpToolCatalog
                     type = "object",
                     properties = new Dictionary<string, object>
                     {
-                        ["match"] = new { type = "string", description = "Label selector in Prometheus form, e.g. {job=\"comuki-orchestrator\"} or {__name__=\"comuki.runs.queued\"}." },
+                        ["labelSelector"] = new { type = "string", description = "Label selector in Prometheus form, e.g. job=\"comuki-orchestrator\" or __name__=\"comuki.runs.queued\" (the { } wrapping is added on the wire)." },
                     },
-                    required = new[] { "match" },
+                    required = new[] { "labelSelector" },
                 },
             },
         };

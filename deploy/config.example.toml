@@ -391,6 +391,40 @@ grpcPort = 17004
 # unset = no OTel SDK.
 # otlpEndpoint = "http://victoriametrics:8431"
 
+[telemetry.logsOtlpEndpoint]
+# MEL → OTLP/HTTP logs leg (VictoriaLogs receiver at :9428). The URL
+# MUST include the full receiver path (/insert/opentelemetry/v1/logs)
+# — the installer wires it to the OTel exporter verbatim and does
+# not append any signal segment. Unset = console-only, no log leg
+# to VictoriaLogs. Independent of [telemetry].otlpEndpoint: traces/
+# metrics and logs can route to different receivers (deploy ships
+# VictoriaMetrics :8431 for gRPC and
+# VictoriaLogs :9428 for HTTP — the OTel exporter shape, not a platform
+# choice).
+# logsOtlpEndpoint = "http://victoria-logs:9428/insert/opentelemetry/v1/logs"
+
+[observability.victoria]
+# Operator-facing knobs for the Victoria stack behind the
+# observability.* MCP tools (add-orchestra Phase 2 / Critic-foundation).
+# The MCP tools require [observability.victoria] only as a contract
+# (the typed [observability:read] permission is the actual gate);
+# an absent section keeps the tools denied with
+# observability.victoria_unavailable. The deploy-side
+# --retentionPeriod is owned by deploy/docker-compose.yml and is NOT
+# lowerable from this file — the operator-facing knob here is purely
+# the typed options surface.
+# VictoriaLogs / VictoriaMetrics base URL overrides (unset means the
+# deploy compose service name: http://victoria-logs:9428 /
+# http://victoria-metrics:8428).
+# logsBaseUrl = "http://victoria-logs:9428"
+# metricsBaseUrl = "http://victoria-metrics:8428"
+# PromQL range-query resolution (5s..5m, default 15s).
+# scrapeInterval = "00:00:15"
+# Optional retention override (e.g. "30d"); the deploy baseline
+# owns --retentionPeriod=1 and an explicit override is a deploy-level
+# concern, not a code-level default.
+# retentionPeriod = "30d"
+
 [verify.verifier]
 # Generic-command verifier (issue #11 sub-slice; GH #47 tracks the
 # follow-up container-isolated runner). The worker polls

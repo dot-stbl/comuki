@@ -61,6 +61,9 @@
     <ProjectReference Include="..\..\modules\Knowledge\Comuki.Modules.Knowledge.Infrastructure\Comuki.Modules.Knowledge.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Memory\Comuki.Modules.Memory.Application\Comuki.Modules.Memory.Application.csproj" />
     <ProjectReference Include="..\..\modules\Memory\Comuki.Modules.Memory.Infrastructure\Comuki.Modules.Memory.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Observability\Comuki.Modules.Observability.Application\Comuki.Modules.Observability.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Observability\Comuki.Modules.Observability.Domain\Comuki.Modules.Observability.Domain.csproj" />
+    <ProjectReference Include="..\..\modules\Observability\Comuki.Modules.Observability.Infrastructure\Comuki.Modules.Observability.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Application\Comuki.Modules.Projects.Application.csproj" />
     <ProjectReference Include="..\..\modules\Projects\Comuki.Modules.Projects.Infrastructure\Comuki.Modules.Projects.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Scheduler\Comuki.Modules.Scheduler.Application\Comuki.Modules.Scheduler.Application.csproj" />

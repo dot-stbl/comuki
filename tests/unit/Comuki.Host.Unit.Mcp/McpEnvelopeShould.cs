@@ -8,6 +8,7 @@ using Comuki.Modules.Identity.Domain.Subjects;
 using Comuki.Modules.Knowledge.Application;
 using Comuki.Modules.Memory.Application.Learning;
 using Comuki.Modules.Memory.Application.Ports;
+using Comuki.Modules.Observability.Application.Ports;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
@@ -253,6 +254,8 @@ public sealed class McpEnvelopeShould
             learningCandidates: Substitute.For<ILearningCandidateStore>(),
             suggestRateLimiter: new WorkerSuggestRateLimiter(TimeProvider.System),
             runsList: NewRunsListHandler(),
+            logsQueryClient: Substitute.For<IVictoriaLogsQueryClient>(),
+            metricsQueryClient: Substitute.For<IVictoriaMetricsQueryClient>(),
             clock: TimeProvider.System);
     }
 

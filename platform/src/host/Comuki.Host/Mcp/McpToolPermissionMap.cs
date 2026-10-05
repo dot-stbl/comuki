@@ -20,12 +20,18 @@ internal static class McpToolPermissionMap
 
     private static readonly PermissionKey runRead = new("run:read");
 
+    private static readonly PermissionKey observabilityRead = new("observability:read");
+
     private static readonly Dictionary<string, PermissionKey> requiredByTool = new(StringComparer.Ordinal)
     {
         ["knowledge.search"] = knowledgeRead,
         ["knowledge.ingest"] = knowledgeWrite,
         ["runs.list"] = runRead,
         ["runs.get"] = runRead,
+        ["observability.logs.search"] = observabilityRead,
+        ["observability.metrics.query"] = observabilityRead,
+        ["observability.logs.context"] = observabilityRead,
+        ["observability.metrics.series"] = observabilityRead,
     };
 
     /// <summary>

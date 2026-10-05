@@ -98,4 +98,12 @@ public static class Permissions
 
     /// <summary>Platform-level administration (everything else is scoped below it).</summary>
     public static readonly PermissionKey PlatformAdmin = new("platform:admin");
+
+    /// <summary>
+    /// Read the observability contour: search VictoriaLogs, query
+    /// VictoriaMetrics, fetch a trace-context window, list metric series.
+    /// The MCP surface exposes four tools under this single permission
+    /// (per <c>specs/observability/spec.md</c>).
+    /// </summary>
+    public static readonly PermissionKey ObservabilityRead = new("observability:read");
 }

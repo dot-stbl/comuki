@@ -16,6 +16,7 @@ registry drifts from this matrix. Hand-edits are overwritten on the next Debug b
 | infra-memory | Infrastructure memory: cross-run operational knowledge beyond the Community baseline. | no | team |
 | multi-repo | Attach more than one repository / create more than one project per workspace (#163). | no | team |
 | scale-isolation | Kubernetes compute, worker pools / isolation classes (#100), autoscaling, HA / backplane (#101). | no | team |
+| steering | Live-session steering of in-flight runs (add-orchestra §1 — Baton). | no | team |
 | white-label | White-label branding across the dashboard and generated reports. | no | team |
 | worker-commit-attribution | Control over the 'Generated-by: Comuki vX.Y.Z' worker-commit trailer (#165). | no | team |
 

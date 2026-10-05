@@ -153,7 +153,14 @@ services:
 
   victoria-logs:
     # Append-only log store for OTel logs (per stack.md §06).
-    image: victoriametrics/victoria-logs:v0.8.0
+    # v0.8.0 has no OTLP /insert/opentelemetry/v1/logs receiver — the
+    # MEL exporter (publishes to http://victoria-logs:9428/insert/opentelemetry/v1/logs
+    # per deploy/config.example.toml) writes to a void. The OTLP
+    # receiver landed in v1.40.0+; v1.50.0 is the current 1.x stable.
+    # CLI flags --storageDataPath / --retentionPeriod unchanged across
+    # the 0.x → 1.x line; retention stays at 1 (month), the platform
+    # baseline (deploy/oss/.../composition baseline).
+    image: victoriametrics/victoria-logs:v1.50.0
     container_name: comuki-victoria-logs
     restart: unless-stopped
     command:

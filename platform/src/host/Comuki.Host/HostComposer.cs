@@ -29,6 +29,7 @@ using Comuki.Host.Projects;
 using Comuki.Host.Proxy;
 using Comuki.Host.Realtime;
 using Comuki.Host.Runs;
+using Comuki.Host.Runs.Models;
 using Comuki.Host.Scheduler;
 using Comuki.Host.Security.Cors;
 using Comuki.Host.Security.ProductionSecrets;
@@ -59,6 +60,9 @@ using Comuki.Modules.Knowledge.Infrastructure;
 using Comuki.Modules.Memory.Application;
 using Comuki.Modules.Memory.Infrastructure;
 using Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
+using Comuki.Modules.Observability.Application;
+using Comuki.Modules.Observability.Application.Options;
+using Comuki.Modules.Observability.Infrastructure;
 using Comuki.Modules.Procedures.Application;
 using Comuki.Modules.Procedures.Infrastructure;
 using Comuki.Modules.Projects.Application;
@@ -264,9 +268,15 @@ internal static class HostComposer
         builder.Services.AddScoped<WorkersReadHandler>();
         builder.Services.AddScoped<IApproveRunPort, HostApproveRunAdapter>();
         builder.Services.AddScoped<ICancelRunPort, HostCancelRunAdapter>();
+        builder.Services.AddScoped<IExecutionIdResolver, ExecutionIdResolver>();
+        builder.Services.AddScoped<ISteerRunPort, HostSteerRunAdapter>();
         builder.Services.AddScoped<ChatRunStarter>();
         builder.Services.AddOptions<ChatWorkerDefaults>()
             .Bind(builder.Configuration.GetSection(ChatWorkerDefaults.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        builder.Services.AddOptions<SteeringWorkerDefaults>()
+            .Bind(builder.Configuration.GetSection(SteeringWorkerDefaults.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -318,6 +328,25 @@ internal static class HostComposer
         builder.Services.AddKnowledgeApplication();
         builder.Services.AddKnowledgePersistence(database.ConnectionString);
         builder.Services.AddKnowledgeInfrastructure(builder.Configuration);
+
+        // Observability module (add-orchestra wave 1): the typed
+        // VictoriaLogs + VictoriaMetrics query clients behind the four
+        // observability.* MCP tools. The application layer exposes the
+        // typed options; the infrastructure layer wires the two Refit
+        // clients through AddRefitClient with AddStandardResilienceHandler
+        // (the same pattern as the TranslatorApiExtensions). The
+        // typed endpoint binds only if the section is present; an absent
+        // section falls back to the deploy baseline (compose service
+        // names + port constants in ObservabilityOptions property
+        // initializers), so the MCP tools return VictoriaUnavailable when
+        // the deploy stack is unreachable, not when the section is missing.
+        builder.Services.AddObservabilityApplication();
+        builder.Services.AddObservabilityInfrastructure();
+        builder.Services
+            .AddOptions<ObservabilityOptions>()
+            .Bind(builder.Configuration.GetSection(ObservabilityOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // MCP server (S10 #9): JSON-RPC 2.0 over /api/v1/mcp. The
         // dispatcher and its tool handlers are Scoped — resolved once
@@ -493,6 +522,7 @@ internal static class HostComposer
         builder.Services.AddScoped<IValidator<ListUsersQueryRequest>, ListUsersQueryRequestValidator>();
         builder.Services.AddScoped<IValidator<ListGrantsQueryRequest>, ListGrantsQueryRequestValidator>();
         builder.Services.AddScoped<IValidator<ListApiKeysQueryRequest>, ListApiKeysQueryRequestValidator>();
+        builder.Services.AddScoped<IValidator<SteerRunRequest>, SteerRunRequestValidator>();
 
         // Security pass (issue #10 T11.4): CORS allow-list for the
         // dashboard SPA + per-endpoint rate-limit partitions. Both are

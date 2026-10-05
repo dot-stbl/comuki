@@ -17,6 +17,7 @@ but the operational primitives are the same.
 - [Backup](#backup)
 - [Restore](#restore)
 - [Upgrade](#upgrade)
+- [Baton — live-session steering](#baton--live-session-steering)
 - [Troubleshooting](#troubleshooting)
 - [Performance](#performance)
 
@@ -170,7 +171,7 @@ artifacts:
   in [`database-schemas.md`](./database-schemas.md).
 - **MinIO `mc mirror` of the `comuki-run-bundles` bucket** — every
   `{projectId}/{runId}/{brief,result,pins}.json` triple the
-  `RunArtifactPackager` ever wrote. v1 retention = "never delete";
+  `RunArtifactPackager` ever wrote.   v1 retention = "never delete";
   the bucket keeps everything.
 
 The bootstrap admin password and OIDC client secrets are **not**
@@ -179,6 +180,45 @@ storage (Kubernetes Secret, HashiCorp Vault, AWS Secrets Manager) is
 already replicated. If the deployment uses `appsettings.json` for
 secrets, that file is a sensitive artifact and deserves the same
 treatment as the database dump.
+
+## Baton — live-session steering
+
+> **Single-replica constraint (D11, `add-orchestra` design §11).**
+> The steering endpoint (`POST /api/v1/runs/{runId}/steer`) and the
+> `WorkerCommandHub` it dispatches into are in-process and
+> single-replica. A second Host replica would silently miss the
+> injection turn and the operator would see "I sent a steer, nothing
+> happened". Run the host with **`replicas: 1`** until the
+> multi-replica coordinator ships (design D11 records the seam
+> contract for that work; runtime is a separate change).
+
+The steering endpoint lets the operator redirect an in-flight run
+mid-flight. On the Phase 1a no-LiveSession runtime (the
+`Capabilities.LiveSession` field lands with Phase 1c / 8), the
+handler stages a follow-up research WorkItem on the same run —
+the steer text becomes the follow-up's brief, and a fresh worker
+claims it as soon as the in-flight lease is fenced or reaped.
+Terminal runs answer 409 `run.not_running`; unknown runs answer
+404 `run.not_found`; Community deployments answer 403
+`edition.feature_unavailable`.
+
+When the steer is staged, a `run.steer_followup_queued`
+`run_events` row is appended with the steer text and the follow-up
+id — the dashboard timeline reads it off the run events, the
+follow-up itself is a Queued work item, not a status change.
+
+### `replicas: 2` deploys go Unhealthy on `comuki.orchestra.single_replica`
+
+The single-replica check is wired in the host's
+`comuki.orchestra.single_replica` health probe (the
+production-side wiring rides the per-phase gate in the
+`add-orchestra` design's §10.7). **Cause:** `replicas: 2` in
+the compose / Helm values / Kustomize file — a second host process
+would silently miss the bidi delivery.
+
+**Fix:** roll the host back to `replicas: 1` until the
+multi-replica coordinator lands. The `comuki.orchestra.single_replica`
+check recovers on the next health probe (~ every 10s).
 
 ## Restore
 

@@ -144,6 +144,10 @@ file static class McpToolCallDispatch
                 "learning.suggest" => await toolHandlers.LearningSuggestAsync(id, arguments, caller, cancellationToken),
                 "runs.list" => await toolHandlers.RunsListAsync(id, arguments, cancellationToken),
                 "runs.get" => await McpToolHandlers.RunsGetAsync(id, arguments),
+                "observability.logs.search" => await toolHandlers.ObservabilityLogsSearchAsync(id, arguments, cancellationToken),
+                "observability.metrics.query" => await toolHandlers.ObservabilityMetricsQueryAsync(id, arguments, cancellationToken),
+                "observability.logs.context" => await toolHandlers.ObservabilityLogsContextAsync(id, arguments, cancellationToken),
+                "observability.metrics.series" => await toolHandlers.ObservabilityMetricsSeriesAsync(id, arguments, cancellationToken),
                 _ => JsonRpcResponse.Failure(
                     id,
                     JsonRpcEnvelope.ErrorCodes.MethodNotFound,

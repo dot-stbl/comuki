@@ -20,16 +20,21 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Verification;
 public static class VerificationHostExtensions
 {
     /// <summary>
-    /// Wires the verification scaffolding: the EF-backed record store,
-    /// the singleton provider registry, the scoped evaluation service
-    /// and the <see cref="VerificationOptions"/> binding. The
+    /// Wires the verification scaffolding the engine owns: the
+    /// <see cref="VerificationOptions"/> binding, the EF-backed record
+    /// store, the scoped evaluation service, the singleton provider
+    /// registry, and a default
+    /// <see cref="IProjectVerificationSettings"/> so the engine
+    /// composition validates on its own (the host's
+    /// <c>ProjectVerificationSettingsAdapter</c> overrides this default
+    /// — the last singleton registration for the port wins). The
     /// platform-shipped first provider (the Verify module's
     /// GenericCommandGateProvider, wired by the host) and any
     /// operator-written provider go through
     /// <see cref="AddVerificationGateProvider{T}"/> below.
     /// </summary>
-    /// <param name="services">The host's service collection.</param>
-    /// <param name="configuration">The host configuration (binds <c>Orchestration:Verification</c>).</param>
+    /// <param name="services">The service collection the engine composition builds.</param>
+    /// <param name="configuration">Configuration (binds <c>Orchestration:Verification</c>).</param>
     public static IServiceCollection AddOrchestrationVerificationCore(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -42,6 +47,7 @@ public static class VerificationHostExtensions
         services.AddScoped<IVerificationRecordStore, VerificationRecordStoreEf>();
         services.AddScoped<VerificationEvaluationService>();
         services.TryAddSingleton<IVerificationProviderRegistry, VerificationProviderRegistry>();
+        services.AddSingleton<IProjectVerificationSettings, DefaultProjectVerificationSettings>();
         return services;
     }
 

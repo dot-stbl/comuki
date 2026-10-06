@@ -178,33 +178,4 @@ public sealed class MergeBatch
         AbandonedAt = now;
         AbandonedReason = reason;
     }
-
-    /// <summary>
-    /// Internal reconstitute for the EF store. Not part of the public
-    /// domain API; the store is the only caller.
-    /// </summary>
-    internal static MergeBatch Reconstitute(
-        Guid id,
-        string name,
-        RunId? runId,
-        IReadOnlyList<string> pullRequestUrls,
-        MergeBatchStatus status,
-        DateTimeOffset createdAt,
-        DateTimeOffset? mergedAt,
-        DateTimeOffset? abandonedAt,
-        string? abandonedReason)
-    {
-        return new MergeBatch
-        {
-            Id = id,
-            Name = name,
-            RunId = runId,
-            PullRequestUrls = pullRequestUrls,
-            Status = status,
-            CreatedAt = createdAt,
-            MergedAt = mergedAt,
-            AbandonedAt = abandonedAt,
-            AbandonedReason = abandonedReason,
-        };
-    }
 }

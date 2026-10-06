@@ -201,6 +201,10 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                     b.HasIndex("ProjectId")
                         .HasDatabaseName("ix_merge_queue_project_id");
 
+                    b.HasIndex("RunId")
+                        .HasDatabaseName("ix_merge_queue_run_id")
+                        .HasFilter("run_id IS NOT NULL");
+
                     b.HasIndex("Status", "EnqueuedAt")
                         .HasDatabaseName("ix_merge_queue_status_enqueued_at");
 

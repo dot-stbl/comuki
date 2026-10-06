@@ -1,3 +1,4 @@
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -21,7 +22,7 @@ namespace Comuki.Modules.Verify.Infrastructure.Migrations
                 name: "ix_generic_command_runs_project_work_item",
                 schema: "verify",
                 table: "generic_command_runs",
-                columns: ["project_id", "work_item_id"],
+                columns: new[] { "project_id", "work_item_id" },
                 filter: "work_item_id IS NOT NULL");
         }
 

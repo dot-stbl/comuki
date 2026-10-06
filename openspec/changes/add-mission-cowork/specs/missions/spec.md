@@ -40,6 +40,17 @@ Mission content SHALL be visible only to active participants and time-bounded au
 - **WHEN** a project member requests a private Mission id without membership
 - **THEN** the response is not found and no related data is disclosed through another surface
 
+### Requirement: Mission-scoped memory and swarm blackboard
+A Mission SHALL have a private memory plane (a `Mission` scope in the `memory` capability, per the corresponding ADDED requirement) and a private swarm blackboard (per the `memory` capability's "Swarm blackboard — durable side" and `realtime`'s "Swarm blackboard — realtime transport" requirements). Both planes are visible to active participants and the Mission's Brain operation; nothing leaks across Mission boundaries; the realtime side rides on the existing `IRealtimeBackplane` and never consumes Mission stream sequence.
+
+#### Scenario: Cross-Mission leak attempt
+- **WHEN** a worker in Mission `M1` subscribes to the swarm blackboard and a write happens in Mission `M2`
+- **THEN** `M1`'s worker receives no event and no durable row is returned to `M1` under `Scope = Mission, SubjectId = M1`.
+
+#### Scenario: Mission completion deletes Mission-scoped memory
+- **WHEN** Mission `M` becomes terminal (`Completed` or `Cancelled`)
+- **THEN** Mission-scoped facts and `BlackboardFinding` rows whose subject is `M` become eligible for the same retention/crypto-shred path that the `data-lifecycle` capability already governs for Mission evidence generations; nothing about `M`'s memory survives `M` except the minimal audit metadata.
+
 ### Requirement: Invitations and audit access
 Invitations SHALL follow `Pending`, `Accepted`, `Rejected`, `Revoked`, or `Expired`, carry inviter, role, reason, and TTL, and expose only a safe preview before acceptance. Mentioning a non-participant creates an invitation request. A project administrator MAY open a short read-only audit session after step-up authentication and a mandatory reason; participants are notified and the access is durably recorded.
 

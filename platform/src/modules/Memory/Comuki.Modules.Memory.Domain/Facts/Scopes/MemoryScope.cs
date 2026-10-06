@@ -11,4 +11,11 @@ public enum MemoryScope
 
     /// <summary>Platform-wide facts.</summary>
     Global = 3,
+
+    /// <summary>
+    ///     Facts scoped to one mission. Mission facts are visible only to a
+    ///     caller that supplies the participating mission id via the query
+    ///     port — without it, the query filter excludes the row (fail-closed).
+    /// </summary>
+    Mission = 4,
 }

@@ -20,6 +20,26 @@ Each execution slot SHALL open an independently authenticated command/event stre
 - **WHEN** one slot finishes its event stream after sending the final StageReport
 - **THEN** that slot's command loop ends and its stream closes without affecting sibling slots
 
+### Requirement: Ephemeral worker tier
+The WorkerRuntime SHALL admit a second tier of execution slots, `ephemeral`, alongside the existing slot tier. An ephemeral slot is identical in wire contract to a regular slot (claim, heartbeat, complete, fail on the same `IWorkerRuntime` surface; same event/command envelopes) but differs in lifecycle and storage:
+
+- **Lifecycle** — an ephemeral slot is created per Mission (not per WorkItem) and is recycled across multiple WorkItems inside that Mission until the Mission terminates or the slot's container tears down. The slot's identity carries the parent `MissionId` in addition to the existing `ExecutionId` / fencing generation.
+- **Scratch space** — each ephemeral slot owns a writable `/work/scratch/<executionId>/` directory inside its container, isolated from sibling slots on the same host. The scratch space persists across the slot's WorkItems until container teardown. A `Stop` on the slot destroys the scratch region.
+- **ExecutionRequest origin** — the `ExecutionRequest.Origin` (per `add-durable-brain-operations`) MAY be `BrainResearch` for ephemeral slots; this is the only tier where the origin can be a Brain research operation that does not produce a user-visible WorkTask on its own.
+- **Flush contract** — on successful WorkItem completion the slot SHALL flush designated `EphemeralNote` records into the platform Memory module under the parent Mission's scope (per the `memory` capability's "Ephemeral tier flush to platform memory" requirement). A flush failure SHALL NOT block terminal WorkItem publication but is reported via the WorkItem's `flushSummary`.
+
+#### Scenario: Slot recycles within a Mission
+- **WHEN** an ephemeral slot completes WorkItem `A` in Mission `M` and Brain issues another research request against `M`
+- **THEN** the same ephemeral slot (same `WorkerHostId`, `SlotId`, parent `MissionId`) handles the next item without a fresh container; the scratch space from `A` is preserved between the two executions.
+
+#### Scenario: Stop wipes scratch
+- **WHEN** an ephemeral slot receives `Stop` mid-Mission
+- **THEN** the slot's scratch directory is wiped; the WorkItem's terminal outcome is reported as `cancelled`; any unflushed `EphemeralNote` content is lost (a structured log entry names the lost fingerprints, mirroring `memory`'s "Lease lost before flush").
+
+#### Scenario: Ephemeral slot cannot escape its Mission
+- **WHEN** an ephemeral slot's slot worker is asked to handle a WorkItem whose Mission does not match the slot's parent `MissionId`
+- **THEN** the claim is rejected with `409 work-item.mission-mismatch` (alongside the existing `409 work-item.not-owner`); the slot continues serving its own Mission.
+
 ### Requirement: Worker REST surface
 The worker REST surface SHALL claim, heartbeat, complete, and fail on behalf of one authenticated execution slot. Claim results and subsequent mutations SHALL carry an execution id and fencing generation. Ownership is derived from the host/slot credential and server assignment; a slot cannot claim another slot's identity.
 

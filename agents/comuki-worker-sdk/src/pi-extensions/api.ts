@@ -58,10 +58,7 @@ export interface PiExtensionApi {
     handler: (
       event: PiToolCallEvent,
       ctx: PiExtensionContext
-    ) =>
-      | PiToolCallResult
-      | undefined
-      | Promise<PiToolCallResult | undefined>
+    ) => PiToolCallResult | undefined | Promise<PiToolCallResult | undefined>
   ): () => void
   on(
     event: "resources_discover",

@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises"
 import { join } from "node:path"
-import { parseRuleDoc } from "@comuki/agent-core"
+import { type YamlishValidateAgainst, parseRuleDoc } from "@comuki/agent-core"
 
 /**
  * Loader for skill directories in the control-plane layout:
@@ -8,6 +8,13 @@ import { parseRuleDoc } from "@comuki/agent-core"
  * a `name` / `description` frontmatter (the same document format as rule
  * docs, parsed by agent-core). Skills without valid frontmatter are skipped,
  * not fatal — one broken skill must not hide the rest of the catalog.
+ *
+ * Task 25.2 (openspec/changes/add-mission-cowork §25.2): the loader
+ * surfaces the optional `trigger_when` / `validate_against` / `version`
+ * frontmatter fields alongside `name` / `description` / `body` so the brain
+ * and the worker SDK can see the full metadata. The values pass through
+ * unchanged from the parser — no SourceRef resolution here, the brain
+ * interprets them.
  */
 
 export interface SkillDoc {
@@ -15,6 +22,9 @@ export interface SkillDoc {
   readonly description: string
   readonly body: string
   readonly dirName: string
+  readonly triggerWhen?: string | string[]
+  readonly validateAgainst?: YamlishValidateAgainst
+  readonly version: string
 }
 
 /** Lists every valid skill directly under `skillsDir`, sorted by name. */
@@ -57,5 +67,8 @@ export async function readSkill(
     description: rule.description,
     body: rule.body,
     dirName,
+    triggerWhen: rule.triggerWhen,
+    validateAgainst: rule.validateAgainst,
+    version: rule.version,
   }
 }

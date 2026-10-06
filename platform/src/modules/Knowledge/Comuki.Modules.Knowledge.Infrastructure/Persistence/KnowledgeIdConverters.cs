@@ -18,4 +18,14 @@ public static class KnowledgeIdConverters
     public static readonly ValueConverter<MemoryEmbeddingId, Guid> MemoryEmbeddingIdToUuid = new(
         static id => id.Value,
         static value => new MemoryEmbeddingId(value));
+
+    /// <summary><see cref="WikiPageId"/> uuid converter (nullable: only Wiki documents carry a value).</summary>
+    public static readonly ValueConverter<WikiPageId?, Guid?> NullableWikiPageIdToUuid = new(
+        static id => id.HasValue ? id.Value.Value : null,
+        static value => value.HasValue ? new WikiPageId(value.Value) : null);
+
+    /// <summary><see cref="WikiPageId"/> uuid converter for the owned link-graph elements.</summary>
+    public static readonly ValueConverter<WikiPageId, Guid> WikiPageIdToUuid = new(
+        static id => id.Value,
+        static value => new WikiPageId(value));
 }

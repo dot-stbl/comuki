@@ -32,12 +32,8 @@ export function createSkillsExtension(
 ): ExtensionFactory {
   const skillsRoot = options.skillsRoot
 
-  return async function skillsExtension(
-    api: PiExtensionApi
-  ): Promise<void> {
-    api.on("resources_discover", (event) =>
-      discoverSkills(event, skillsRoot)
-    )
+  return async function skillsExtension(api: PiExtensionApi): Promise<void> {
+    api.on("resources_discover", (event) => discoverSkills(event, skillsRoot))
   }
 }
 

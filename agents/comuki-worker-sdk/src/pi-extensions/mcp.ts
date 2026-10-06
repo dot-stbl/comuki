@@ -14,11 +14,7 @@
  * always reads `COMUKI_MCP_URL` (and `COMUKI_MCP_TOKEN`) at construction
  * time — exactly once, before pi registers the server.
  */
-import type {
-  ExtensionFactory,
-  PiExtensionApi,
-  PiMcpServerConfig,
-} from "./api"
+import type { ExtensionFactory, PiExtensionApi, PiMcpServerConfig } from "./api"
 
 export interface McpExtensionEnv {
   readonly COMUKI_MCP_URL?: string | undefined
@@ -53,7 +49,8 @@ export function readMcpConfig(env: McpExtensionEnv): {
   const rawToken = env.COMUKI_MCP_TOKEN?.trim()
   return {
     url: rawUrl,
-    token: rawToken === undefined || rawToken.length === 0 ? undefined : rawToken,
+    token:
+      rawToken === undefined || rawToken.length === 0 ? undefined : rawToken,
   }
 }
 

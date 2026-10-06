@@ -38,6 +38,24 @@ public sealed class LearningCandidate
     /// <summary>How many times the signal repeated; each sighting increments.</summary>
     public int RepeatCount { get; private set; }
 
+    /// <summary>Number of verify runs that passed against the candidate's rule — feeds the learning decision.</summary>
+    public int VerifyPassCount { get; private set; }
+
+    /// <summary>Number of verify runs that failed against the candidate's rule.</summary>
+    public int VerifyFailCount { get; private set; }
+
+    /// <summary>Number of build runs that came back green for the project after the rule was proposed.</summary>
+    public int BuildGreenCount { get; private set; }
+
+    /// <summary>Number of build runs that came back red for the project after the rule was proposed.</summary>
+    public int BuildRedCount { get; private set; }
+
+    /// <summary>Number of worker tasks that the rule's project completed successfully.</summary>
+    public int TaskSucceededCount { get; private set; }
+
+    /// <summary>Number of worker tasks that the rule's project failed.</summary>
+    public int TaskFailedCount { get; private set; }
+
     /// <summary>Review state: pending until a human decides.</summary>
     public LearningStatus Status { get; private set; }
 
@@ -85,6 +103,12 @@ public sealed class LearningCandidate
                 ProposedRule = proposedRule.Trim(),
                 SourceRef = sourceRef.Trim(),
                 RepeatCount = 1,
+                VerifyPassCount = 0,
+                VerifyFailCount = 0,
+                BuildGreenCount = 0,
+                BuildRedCount = 0,
+                TaskSucceededCount = 0,
+                TaskFailedCount = 0,
                 Status = LearningStatus.Pending,
                 DecisionReason = null,
                 CreatedAt = now,

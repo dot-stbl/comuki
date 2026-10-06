@@ -54,7 +54,10 @@ describe("readMcpConfig", () => {
 
   test("ignores a blank token", () => {
     expect(
-      readMcpConfig({ COMUKI_MCP_URL: "http://mcp/mcp", COMUKI_MCP_TOKEN: "  " })
+      readMcpConfig({
+        COMUKI_MCP_URL: "http://mcp/mcp",
+        COMUKI_MCP_TOKEN: "  ",
+      })
     ).toEqual({ url: "http://mcp/mcp", token: undefined })
   })
 
@@ -105,7 +108,9 @@ describe("createMcpExtension", () => {
 
     expect(registrations).toHaveLength(1)
     expect(registrations[0]?.config.url).toBe("http://mcp/mcp")
-    expect(registrations[0]?.config.headers?.authorization).toBe("Bearer secret-token")
+    expect(registrations[0]?.config.headers?.authorization).toBe(
+      "Bearer secret-token"
+    )
   })
 
   test("omits the Authorization entry when no token is provided", () => {

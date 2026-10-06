@@ -89,7 +89,9 @@ function makeHarness(): Harness {
 
   const trigger = async (): Promise<PiResourcesDiscoverResult | undefined> => {
     if (handler === undefined) {
-      throw new Error("skills extension did not register a resources_discover handler")
+      throw new Error(
+        "skills extension did not register a resources_discover handler"
+      )
     }
     return handler({ cwd: "/work", reason: "startup" }, { hasUI: false })
   }
@@ -130,7 +132,9 @@ describe("createSkillsExtension", () => {
     const result = await runSkills()
 
     expect(result?.skillPaths).toBeDefined()
-    const names = (result?.skillPaths ?? []).map((p) => p.split(/[\\/]/).pop() ?? "")
+    const names = (result?.skillPaths ?? []).map(
+      (p) => p.split(/[\\/]/).pop() ?? ""
+    )
     // Sorted by skill name in listSkills, but path order mirrors that sort.
     expect(names).toEqual(["deploy", "git-workflow"])
   })
@@ -316,13 +320,7 @@ describe("createSkillsExtension", () => {
       await mkdir(join(partialRoot, "name-only"))
       await writeFile(
         join(partialRoot, "name-only", "SKILL.md"),
-        [
-          "---",
-          "name: name-only",
-          "---",
-          "",
-          "Body.",
-        ].join("\n"),
+        ["---", "name: name-only", "---", "", "Body."].join("\n"),
         "utf8"
       )
 

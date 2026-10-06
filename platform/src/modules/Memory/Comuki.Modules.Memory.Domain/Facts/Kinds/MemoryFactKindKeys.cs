@@ -9,6 +9,9 @@ public static class MemoryFactKindKeys
     /// <summary>Key of <see cref="MemoryFactKind.Ephemeral"/>.</summary>
     public const string Ephemeral = "ephemeral";
 
+    /// <summary>Key of <see cref="MemoryFactKind.BlackboardFinding"/>.</summary>
+    public const string BlackboardFinding = "blackboard-finding";
+
     /// <summary>Maps a kind to its wire key.</summary>
     /// <param name="kind"></param>
     public static string Key(MemoryFactKind kind)
@@ -17,6 +20,7 @@ public static class MemoryFactKindKeys
         {
             MemoryFactKind.Standing => Standing,
             MemoryFactKind.Ephemeral => Ephemeral,
+            MemoryFactKind.BlackboardFinding => BlackboardFinding,
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
     }
@@ -29,6 +33,7 @@ public static class MemoryFactKindKeys
         {
             Standing => MemoryFactKind.Standing,
             Ephemeral => MemoryFactKind.Ephemeral,
+            BlackboardFinding => MemoryFactKind.BlackboardFinding,
             _ => null,
         };
     }

@@ -28,7 +28,10 @@ namespace Comuki.Shared.Contracts.Grpc;
 ///   <item><see cref="Metadata"/> is a free-form transport for
 ///   harness-specific hints (e.g. <c>as: steer</c> vs <c>as:
 ///   follow_up</c>); the worker treats it as opaque and threads it to
-///   the harness's session transport.</item>
+///   the harness's session transport. <see cref="Dictionary{TKey,TValue}"/>
+///   (not <see cref="IReadOnlyDictionary{TKey,TValue}"/>) — the concrete
+///   type is what protobuf-net serializes; the read-only interface
+///   wouldn't survive the protobuf-net roundtrip.</item>
 /// </list>
 /// </remarks>
 [ProtoContract]
@@ -56,5 +59,5 @@ public sealed record TurnInput
     /// worker; threaded to the harness's session transport verbatim.
     /// </summary>
     [ProtoMember(3)]
-    public IReadOnlyDictionary<string, string> Metadata { get; init; } = new Dictionary<string, string>();
+    public Dictionary<string, string> Metadata { get; init; } = [];
 }

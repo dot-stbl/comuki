@@ -2,14 +2,14 @@
 
 ### Requirement: Agent invocation and stream parsing
 
-The Translator SHALL invoke the agent through the **harness abstraction** (`IHarness`, `harness-spi` capability). pi declares `Capabilities.LiveSession = true` and is spawned in **session mode** (`pi --mode json` with an in-process session transport that delivers `TurnInput` commands as session turns). The v1.x one-shot `pi -p BRIEF --no-session` invocation is **removed** with this change — every `PiHarness.StartAsync` runs pi as `pi --mode json` (no `--no-session` flag), and the in-process session transport is the only path for `TurnInput` to reach pi. The Translator does not consult `TranslatorOptions.PiExecutable` for the session question; the decision lives in `IHarness.Capabilities.LiveSession`. Stream-json event parsing (deltas, authoritative assistant text, tool invocations) remains the wire contract; the harness parses each `stream-json` line into the canonical event record.
+The Translator SHALL invoke the agent through the **harness abstraction** (`IHarness`, `harness-spi` capability). pi declares `Capabilities.LiveSession = true` and is spawned in **session mode** (`pi --mode rpc` — JSON-RPC over stdin/stdout, per `openspec/changes/add-orchestra/spike-1b-report.md`) with an in-process session transport that delivers `TurnInput` commands as session turns. The `--no-session` flag is still passed (persistence-off, the process is ephemeral — one worker cycle from prompt to stdin close); the v1.x one-shot `pi -p BRIEF --no-session` invocation is **removed** with this change — every `IHarnessRuntime.StartSessionAsync` runs pi as `pi --mode rpc --no-session`, and the in-process session transport is the only path for `TurnInput` to reach pi. The Translator does not consult `TranslatorOptions.PiExecutable` for the session question; the decision lives in `IHarness.Capabilities.LiveSession`. Stream-json event parsing (deltas, authoritative assistant text, tool invocations) remains the wire contract; the harness parses each `stream-json` line into the canonical event record.
 
-> **Coordination note (2026-10-04).** The v1.x one-shot `pi -p BRIEF --no-session` invocation is the v1.x path; this change is the v2 path (session mode). The capability's existing text (this section's MODIFIED block) is preserved in v1.x `WorkerId` terminology on the surrounding requirements; the v2 session-mode invocation lives in this block and rides the harness abstraction (the `harness-spi` capability). The session-mode decision is `IHarness.Capabilities.LiveSession` — never a Translator flag, never a per-call override.
+> **Coordination note (2026-10-04).** The v1.x one-shot `pi -p BRIEF --no-session` invocation is the v1.x path; this change is the v2 path (session mode). The capability's existing text (this section's MODIFIED block) is preserved in v1.x `WorkerId` terminology on the surrounding requirements; the v2 session-mode invocation lives in this block and rides the harness abstraction (the `harness-spi` capability). The session-mode decision is `IHarness.Capabilities.LiveSession` — never a Translator flag, never a per-call override. The 0.99.2 `--mode rpc` wire format (`prompt` / `steer` / `follow_up` JSON-RPC commands; stdout = the same stream-json event shape) is documented in `openspec/changes/add-orchestra/spike-1b-report.md` and `rpc.md` shipped with the pi install.
 
 #### Scenario: Translator spawns pi in session mode
 
-- **WHEN** `PiHarness.StartAsync` is invoked for a worker
-- **THEN** pi is spawned as `pi --mode json` (no `--no-session` flag) and the in-process session transport is open for `TurnInput`; a one-shot `--no-session` invocation never happens under this change
+- **WHEN** `IHarnessRuntime.StartSessionAsync` is invoked for a worker on the production harness
+- **THEN** pi is spawned as `pi --mode rpc --no-session` (no positional `-p BRIEF`; the brief goes through the first `prompt` JSON-RPC command) and the in-process session transport is open for `TurnInput`; a one-shot `pi -p BRIEF --no-session` invocation never happens under this change
 
 #### Scenario: Translator never reads the v1.x one-shot path
 
@@ -169,28 +169,28 @@ The Translator SHALL consume the harness abstraction (`IHarness`, `harness-spi` 
 
 ### Requirement: Live-session mode is the harness's choice, not a Translator flag
 
-The Translator SHALL NOT carry a "live session" / "no-session" flag. The decision lives in `IHarness.StartAsync`. `PiHarness.StartAsync` runs pi in **session mode** (`pi --mode json` with an in-process session transport) — the bidi command channel carries the session turn; the Translator does not consult `TranslatorOptions` for the session question. There is no per-call override: pi never goes through `--no-session` under this change.
+The Translator SHALL NOT carry a "live session" / "no-session" flag. The decision lives in `IHarnessRuntime.StartSessionAsync`. The production `PiHarness` runs pi in **session mode** (`pi --mode rpc --no-session` — JSON-RPC over stdin/stdout; `--no-session` turns persistence off so the process is ephemeral, one worker cycle from prompt to stdin close) — the bidi command channel carries the session turn; the Translator does not consult `TranslatorOptions` for the session question. There is no per-call override on the production side. The wire format is documented in `openspec/changes/add-orchestra/spike-1b-report.md`; commands are `prompt` / `steer` / `follow_up` JSON-RPC objects terminated by LF, the response is the same `stream-json` event shape the parser already handles.
 
 #### Scenario: Translator does not consult PiExecutable for session
 
 - **WHEN** the Translator starts a worker
-- **THEN** the session-mode decision is `IHarness.Capabilities.LiveSession`; the Translator never consults `TranslatorOptions.PiExecutable` to choose between session and one-shot (the v1.x one-shot `--no-session` form does not exist under this change)
+- **THEN** the session-mode decision is `IHarness.Capabilities.LiveSession`; the Translator never consults `TranslatorOptions.PiExecutable` to choose between session and one-shot (the v1.x one-shot `pi -p BRIEF` form does not exist under this change)
 
 #### Scenario: PiHarness runs in session mode
 
-- **WHEN** `PiHarness.StartAsync` is invoked for a worker
-- **THEN** pi is invoked as `pi --mode json` (no `--no-session` flag) and the in-process session transport is open for `TurnInput`; a one-shot `--no-session` invocation never happens under this change
+- **WHEN** `IHarnessRuntime.StartSessionAsync` is invoked on the production harness for a worker
+- **THEN** pi is invoked as `pi --mode rpc --no-session` and the in-process session transport is open for `TurnInput`; the `--no-session` flag is the persistence-off / ephemeral-process signal, not the v1.x one-shot launcher
 
-#### Scenario: Test-fake harness rejects authoritative session turns
+#### Scenario: Test-fake harness lands as follow-up WorkItem
 
-- **WHEN** a `TurnInput` is delivered to a `TestFakeHarness` execution (the test fake declares `Capabilities.LiveSession = false`)
-- **THEN** the steering endpoint returns `409 Conflict` with `code = session.livesession_unavailable`; no session-mode pi is spawned for the fake
+- **WHEN** a steer arrives for a run whose profile resolves to the `TestFakeHarness` (the test fake declares `Capabilities.LiveSession = false`)
+- **THEN** the platform stages a follow-up research `WorkItem` (the cowork 11.1 fallback — the canonical no-live-session semantics); the API returns `202 Accepted` with `{ delivered: true, followUpWorkItemId }`. The `409 Conflict` with `code = session.livesession_unavailable` path is reserved for Phase 8 / Instrument — an explicit, intentional `LiveSession = false` declaration on a non-default harness that rejects `TurnInput` outright (a separate wire shape from the follow-up path)
 
 ## ADAPTER Notes
 
 `WorkerCommandHub` ships on master with `Stop` / `InjectContext` / `LeaseExpired` / `Exec` plumbing and zero production callers; the kill switch (`Stop`) is wired to the reaper, the other commands sit on the registry without live callers. Baton adds `TurnInput` and the first caller. The v1.x `WorkerId` model is the contract Baton delivers against; cowork 11.1's slot / execution identity is the contract the v2 worker-runtime declares — the change does not pre-empt cowork 11.1, it consumes the existing channel.
 
-The Translator's pi invocation is fully session-mode under this change: `pi --mode json` with an in-process session transport, `TurnInput` delivered as a session turn. The v1.x one-shot `pi -p BRIEF --no-session` path is removed; nothing in the Translator or the harness abstraction re-introduces it.
+The Translator's pi invocation is fully session-mode under this change: `pi --mode rpc --no-session` with an in-process session transport, `TurnInput` delivered as a session turn. The v1.x one-shot `pi -p BRIEF --no-session` path is removed; nothing in the Translator or the harness abstraction re-introduces it. The wire-format mechanism (commands on stdin, events on stdout, the close-stdin orderly-shutdown) is the JSON-RPC-over-stdio channel documented in `openspec/changes/add-orchestra/spike-1b-report.md`; the spike-1b evidence (per-test timelines, raw event streams, PID list) is the canonical record of the GO verdict.
 
 ## ARCHIVE-ORDER CONSTRAINT
 

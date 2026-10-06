@@ -45,8 +45,7 @@ public interface IHarnessRuntime : Shared.Kernel.Harness.IHarness
 /// Closing the session (via <see cref="IAsyncDisposable.DisposeAsync"/>)
 /// signals orderly shutdown: the writer flushes its last command,
 /// the writer is closed, the harness process sees EOF on stdin and
-/// exits; the reader drains the remaining events; the session's
-/// <see cref="ExitTask"/> resolves.
+/// exits; the reader drains the remaining events.
 /// <para>
 /// Concurrency: the <see cref="Events"/> reader and the
 /// <see cref="TurnInputs"/> writer are safe to drive in parallel
@@ -81,14 +80,6 @@ public interface IHarnessSession : IAsyncDisposable
     /// empty-text turns.
     /// </summary>
     public ITurnInputWriter TurnInputs { get; }
-
-    /// <summary>
-    /// Resolves with the harness's process exit code when the
-    /// process ends (clean shutdown, crash, or kill). The
-    /// <c>PiPump</c> reads this to know when the cycle is over
-    /// without having to race the event stream.
-    /// </summary>
-    public Task<int> ExitTask { get; }
 }
 
 /// <summary>

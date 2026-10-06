@@ -1,6 +1,5 @@
 using Comuki.Host.Translator.Parsing;
 using Comuki.Host.Translator.Runtime;
-using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
 using Xunit;
 
@@ -113,14 +112,26 @@ public sealed class TestFakeHarnessSessionShould
 
         // The session is still in its initial state — no events
         // written yet (the LiveSession=false path of the fake
-        // doesn't write the wave). Tests would wait for a timeout
-        // if they tried to read here; the no-LiveSession contract
-        // is "the session is silent", and a silent harness is
-        // exactly the "no echo expected" semantic.
-        var processExited = await Task.WhenAny(
-            session.ExitTask,
-            Task.Delay(TimeSpan.FromMilliseconds(50), TestContext.Current.CancellationToken));
-        Assert.NotEqual(session.ExitTask, processExited);
+        // doesn't write the wave). A short read with
+        // cancellation confirms the channel is silent (no wave
+        // ever materialised), which is the "no echo expected"
+        // semantic of the LiveSession=false branch.
+        using var readCts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        readCts.CancelAfter(TimeSpan.FromMilliseconds(50));
+        var enumerator = session.Events.GetAsyncEnumerator(readCts.Token);
+        try
+        {
+            var sawEvent = await enumerator.MoveNextAsync();
+            sawEvent.ShouldBeFalse("the no-LiveSession branch is silent — no event wave is emitted");
+        }
+        catch (OperationCanceledException) when (readCts.IsCancellationRequested && !TestContext.Current.CancellationToken.IsCancellationRequested)
+        {
+            // Expected: cancellation trips the read before any event lands.
+        }
+        finally
+        {
+            await enumerator.DisposeAsync();
+        }
     }
 
     /// <summary>
@@ -169,12 +180,5 @@ public sealed class TestFakeHarnessShould
         liveSession.Name.ShouldBe("test-fake-pi");
         liveSession.Capabilities.LiveSession.ShouldBeTrue();
         noLiveSession.Capabilities.LiveSession.ShouldBeFalse();
-        // Logger is unused in the runtime surface — NullLogger
-        // is the production-default dependency, accepted by the
-        // public ctor signature (the test does not exercise the
-        // runtime half directly, but the call below proves the
-        // type can be constructed with the DI-supplied null
-        // logger without throwing).
-        _ = NullLogger<TestFakeHarness>.Instance;
     }
 }

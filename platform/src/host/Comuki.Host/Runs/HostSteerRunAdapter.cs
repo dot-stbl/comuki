@@ -198,7 +198,7 @@ public sealed class HostSteerRunAdapter(
             {
                 Text = text,
                 Role = "user",
-                Metadata = new Dictionary<string, string>(),
+                Metadata = [],
             });
 
         logger.LogInformation(

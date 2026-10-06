@@ -80,7 +80,6 @@ internal sealed class FakeHarnessSession : IHarnessSession
     private readonly CancellationTokenSource disposedCts = new();
     private readonly FakeTurnInputWriter writer;
     private readonly bool liveSession;
-    private readonly TaskCompletionSource<int> exitSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private bool disposed;
 
     public FakeHarnessSession(bool liveSession, string brief, CancellationToken cancellationToken)
@@ -107,8 +106,6 @@ internal sealed class FakeHarnessSession : IHarnessSession
     public IAsyncEnumerable<PiEvent> Events => events.Reader.ReadAllAsync(disposedCts.Token);
 
     public ITurnInputWriter TurnInputs => writer;
-
-    public Task<int> ExitTask => exitSource.Task;
 
     /// <summary>
     /// Records one inbound turn (steer / follow_up) on the fake
@@ -196,7 +193,6 @@ internal sealed class FakeHarnessSession : IHarnessSession
         disposed = true;
         disposedCts.Cancel();
         events.Writer.TryComplete();
-        exitSource.TrySetResult(0);
         writer.CloseStdin();
         await Task.CompletedTask;
     }

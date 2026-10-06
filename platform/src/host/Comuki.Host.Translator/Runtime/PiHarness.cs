@@ -30,8 +30,8 @@ namespace Comuki.Host.Translator.Runtime;
 /// <see cref="IHarnessSession.Events"/>, and the <c>await using</c>
 /// on the session disposes on every exit path (success, cancellation,
 /// pi crash). DisposeAsync closes the stdin writer (pi's documented
-/// shutdown — close stdin → orderly exit, code 0), kills the
-/// process tree on cancellation, and drains the exit task.
+/// shutdown — close stdin → orderly exit, code 0) and kills the
+/// process tree on cancellation.
 /// </para>
 /// <para>
 /// Concurrency: <see cref="ITurnInputWriter.TryWriteSteer"/> and
@@ -116,27 +116,11 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
                 SingleWriter = true,
             });
 
-        var exitTaskSource = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         var stderrTask = PiProcessHelpers.DrainStderrAsync(process, cancellationToken);
 
         var readerTask = Task.Run(
             async () => await ReadEventsAsync(process.StandardOutput, events.Writer, cancellationToken),
             cancellationToken);
-
-        _ = Task.Run(
-            async () =>
-            {
-                try
-                {
-                    await process.WaitForExitAsync(CancellationToken.None);
-                    exitTaskSource.TrySetResult(process.ExitCode);
-                }
-                catch (Exception exception)
-                {
-                    exitTaskSource.TrySetException(exception);
-                }
-            },
-            CancellationToken.None);
 
         var writer = new PiRpcTurnInputWriter(process.StandardInput.BaseStream, logger);
         var initialTurnId = $"{InitialTurnIdPrefix}{Interlocked.Increment(ref nextRequestId)}";
@@ -172,7 +156,6 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
             process.Id,
             events.Reader.ReadAllAsync(cancellationToken),
             writer,
-            exitTaskSource.Task,
             readerTask,
             stderrTask,
             process,
@@ -211,19 +194,16 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
 /// One open <c>pi --mode rpc</c> session. Owns the <see cref="Process"/>
 /// (one per worker run), the <see cref="StreamReader"/>
 /// on stdout (consumed by the reader task that feeds the events
-/// channel), the <see cref="StreamWriter"/> on stdin (consumed by
-/// <see cref="PiRpcTurnInputWriter"/>), and a task for the
-/// process exit code. <see cref="DisposeAsync"/> is the
-/// single close path: stdin writer closed (pi's documented
+/// channel), and the <see cref="StreamWriter"/> on stdin (consumed by
+/// <see cref="PiRpcTurnInputWriter"/>). <see cref="DisposeAsync"/> is
+/// the single close path: stdin writer closed (pi's documented
 /// shutdown), reader task awaited, stderr drained, process
-/// tree-killed on cancellation, <see cref="Process"/>
-/// disposed.
+/// tree-killed on cancellation, <see cref="Process"/> disposed.
 /// </summary>
 internal sealed class PiRpcSession(
     int processId,
     IAsyncEnumerable<PiEvent> events,
     ITurnInputWriter turnInputs,
-    Task<int> exitTask,
     Task readerTask,
     Task<string> stderrTask,
     Process process,
@@ -243,8 +223,6 @@ internal sealed class PiRpcSession(
     public IAsyncEnumerable<PiEvent> Events { get; } = events;
 
     public ITurnInputWriter TurnInputs { get; } = turnInputs;
-
-    public Task<int> ExitTask { get; } = exitTask;
 
     public async ValueTask DisposeAsync()
     {

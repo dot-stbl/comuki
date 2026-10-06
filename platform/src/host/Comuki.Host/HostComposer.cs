@@ -277,9 +277,19 @@ internal static class HostComposer
         // authoritative (Capabilities.LiveSession). The harness
         // registry is populated at boot by HarnessRegistrar
         // (per-Harness IHarness registrations).
+        // Harness catalog (Phase 1c partial). HarnessRegistry populates
+        // itself at construction from the DI-registered IHarness instances;
+        // the host process holds the capability declarations (Name +
+        // Capabilities), the runtime half lives in the Translator process,
+        // and the two halves share IHarness.Name as the contract
+        // identifier. Phase 8 / Instrument replaces the DI-registered
+        // capabilities with a profile-frontmatter-driven catalog; the
+        // resolver path stays the same.
         builder.Services.AddSingleton<HarnessRegistry>();
-        builder.Services.AddSingleton<IHarnessRegistryBootstrap, HarnessCatalogBootstrap>();
-        builder.Services.AddSingleton<IRunHarnessResolver, RunHarnessResolver>();
+        // Resolver holds OrchestrationDbContext (scoped) — same lifetime
+        // as its peer ExecutionIdResolver (line above). Singleton here
+        // was a captive-dependency landmine.
+        builder.Services.AddScoped<IRunHarnessResolver, RunHarnessResolver>();
         builder.Services.AddSingleton<IWorkerCommandPipe, WorkerCommandHub>();
         builder.Services.AddScoped<ISteerRunPort, HostSteerRunAdapter>();
         // Harness catalog (Phase 1c partial). The host process
@@ -675,16 +685,12 @@ internal static class HostComposer
                 seedResult.Unchanged);
         }
 
-        // Populate the harness catalog (Phase 1c) from the
-        // DI-registered IHarness instances. The bootstrap runs
-        // after Build() so the resolved singletons reflect every
-        // registration the composition made (and tests can swap the
-        // bootstrap for a controlled catalog). The catalog is the
-        // seam the steering resolver reads; populating it after
-        // Build() keeps the boot order: migrations → catalog →
-        // listener.
-        app.Services.GetRequiredService<IHarnessRegistryBootstrap>()
-            .Populate(app.Services.GetRequiredService<HarnessRegistry>());
+        // The harness catalog (HarnessRegistry) populates itself at
+        // construction from the DI-registered IHarness instances —
+        // no post-Build step is needed; the catalog is ready the
+        // moment the service provider materialises the registry.
+        // The first read happens lazily through RunHarnessResolver;
+        // the registration itself is enough for DI to construct it.
 
         HostDatabase.WarnLegacyAlias(database, app.Logger);
 

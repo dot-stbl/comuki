@@ -9,12 +9,22 @@ namespace Comuki.Host.Runs;
 /// <summary>
 /// Default <see cref="IRunHarnessResolver"/>: joins <c>runs</c> to
 /// <c>work_items</c> in the orchestration schema, picks the single
-/// running work item for the run, and looks up the harness by profile
-/// key in the in-process <see cref="HarnessRegistry"/>. The schema
-/// read is the same one <see cref="ExecutionIdResolver"/> does; the
+/// running work item for the run, and looks up the harness by name
+/// in the in-process <see cref="HarnessRegistry"/>. The schema read
+/// is the same one <see cref="ExecutionIdResolver"/> does; the
 /// <see cref="HarnessRegistry"/> lookup is a single
 /// <c>ConcurrentDictionary</c> read — the resolver's cost is
 /// dominated by the EF round-trip, not the harness map.
+/// <para>
+/// Lookup-by-name (not by profile key): the registry keys on
+/// <see cref="IHarness.Name"/>. A profile that has no
+/// <c>harness:</c> frontmatter — the production default until
+/// Phase 8 / Instrument lands — falls back to
+/// <see cref="HarnessIds.Pi"/>, the canonical prod harness. The
+/// fallback is the one and only place the default lives; the harness
+/// catalog (Phase 8) reads it from the profile, the resolver
+/// applies it on a miss.
+/// </para>
 /// </summary>
 /// <param name="db">Orchestration context of the current scope.</param>
 /// <param name="registry">In-process harness catalog; populated at
@@ -40,8 +50,20 @@ public sealed class RunHarnessResolver(
             .Select(item => item.ProfileKey)
             .FirstOrDefaultAsync(cancellationToken);
 
-        return profileKey is null
-            ? null
-            : registry.FindByProfileKey(profileKey);
+        if (profileKey is null)
+        {
+            return null;
+        }
+
+        // First match: harness the profile explicitly declares (e.g.
+        // harness: test-fake-pi in the profile frontmatter). Miss:
+        // fall back to Pi — the production default, the only harness
+        // declared in the live harness catalog today. The fallback
+        // is the one knob Phase 8 / Instrument will move from
+        // hard-coded "pi" to "the profile's implicit harness" — but
+        // the resolution shape (explicit name wins, otherwise the
+        // default) stays.
+        return registry.FindByName(profileKey)
+            ?? registry.FindByName(HarnessIds.Pi);
     }
 }

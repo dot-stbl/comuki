@@ -22,12 +22,34 @@ public sealed record VerificationGateView(
     string Evaluator);
 
 /// <summary>
-/// Run-level wire shape for <c>GET /api/v1/runs/{runId}/verification</c>.
-/// Groups per-gate verdicts by work item; the FE renders the list directly
-/// under the run's work-item strip.
+/// Run-level wire shape for <c>GET /api/v1/runs/{runId}/verification</c>
+/// (add-orchestra §3 — Coda, <c>verification/spec.md</c> Requirement
+/// "Verification view is a derived read"). The two top-level booleans
+/// surface the "verification pending" annotation the FE renders as a
+/// pill under the run's status strip; the per-gate list renders as the
+/// evidence drill-down beneath it. The semantics are derived from the
+/// <see cref="Gates"/> list alone — a future per-project
+/// <c>VerifyEnabled</c> read is gated on the registry returning at
+/// least one record (the project is provably opted in if a provider
+/// has stamped anything).
 /// </summary>
 /// <param name="RunId">Run the verdicts belong to.</param>
+/// <param name="Verified">
+/// <see langword="true"/> when every gate in <see cref="Gates"/> is
+/// <c>passed</c> AND at least one gate has been evaluated — the run's
+/// verification axis is fully terminal and positive. A run with no
+/// gates yet, with mixed <c>passed</c>/<c>pending</c>, or with any
+/// <c>failed</c> is <see langword="false"/>.</param>
+/// <param name="VerificationPending">
+/// <see langword="true"/> when at least one gate is still <c>pending</c>
+/// AND the run is not yet fully verified — the "verification pending"
+/// annotation the spec introduces. Terminal failures do NOT count as
+/// pending: a run with one <c>pending</c> and one <c>failed</c> gate
+/// is <c>pending=true</c>; a run with only <c>failed</c> is
+/// <c>pending=false</c>.</param>
 /// <param name="Gates">One entry per evaluated (work item, gate) pair. Newest first within a work item.</param>
 public sealed record RunVerificationView(
     Guid RunId,
+    bool Verified,
+    bool VerificationPending,
     IReadOnlyList<VerificationGateView> Gates);

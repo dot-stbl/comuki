@@ -42,7 +42,7 @@ public sealed class GetRunVerificationViewHandlerShould
         view.ShouldBeNull();
     }
 
-    [Fact(DisplayName = "Given a run with no work items, when GetAsync is called, then it returns an empty gates list")]
+    [Fact(DisplayName = "Given a run with no work items, when GetAsync is called, then it returns an empty gates list and both booleans are false")]
     public async Task ReturnEmptyGatesForRunWithoutWorkItemsAsync()
     {
         var db = NewDbContext();
@@ -59,9 +59,11 @@ public sealed class GetRunVerificationViewHandlerShould
         view.ShouldNotBeNull();
         view!.RunId.ShouldBe(run.Id.Value);
         view.Gates.ShouldBeEmpty();
+        view.Verified.ShouldBeFalse();
+        view.VerificationPending.ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "Given a run with verdicts, when GetAsync is called, then it flattens them to per-gate views")]
+    [Fact(DisplayName = "Given a run with verdicts, when GetAsync is called, then it flattens them to per-gate views and surfaces both booleans")]
     public async Task FlattenVerdictsToGateViewsAsync()
     {
         var db = NewDbContext();
@@ -125,6 +127,132 @@ public sealed class GetRunVerificationViewHandlerShould
         view.Gates.Count.ShouldBe(2);
         view.Gates.ShouldContain(g => g.WorkItemId == workItemA.Id && g.Verdict == "passed");
         view.Gates.ShouldContain(g => g.WorkItemId == workItemB.Id && g.Verdict == "failed");
+        // One passed + one failed: not all-passed (failed exists), no
+        // pending → verified=false, verificationPending=false. The
+        // all-passed and verification-pending scenarios live in their
+        // own tests below.
+        view.Verified.ShouldBeFalse();
+        view.VerificationPending.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Given a run whose every gate is passed, when GetAsync is called, then Verified=true and Pending=false")]
+    public async Task VerifiedWhenAllGatesPassAsync()
+    {
+        var db = NewDbContext();
+        var records = Substitute.For<IVerificationRecordStore>();
+        var artifacts = Substitute.For<IVisualArtifactStore>();
+        var projectId = ProjectId.New();
+        var run = Run.Create(projectId, now);
+        await db.Runs.AddAsync(run, TestContext.Current.CancellationToken);
+
+        var workItemA = WorkItem.Create(
+            run.Id,
+            profileKey: "verify",
+            image: "ghcr.io/comuki/worker@sha256:1",
+            envClass: "net10-sdk-bun",
+            profilesRef: "refs/heads/main",
+            brief: "{}",
+            initialStatus: WorkItemStatus.Queued,
+            now);
+        var workItemB = WorkItem.Create(
+            run.Id,
+            profileKey: "verify",
+            image: "ghcr.io/comuki/worker@sha256:1",
+            envClass: "net10-sdk-bun",
+            profilesRef: "refs/heads/main",
+            brief: "{}",
+            initialStatus: WorkItemStatus.Queued,
+            now);
+        await db.WorkItems.AddAsync(workItemA, TestContext.Current.CancellationToken);
+        await db.WorkItems.AddAsync(workItemB, TestContext.Current.CancellationToken);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        records.ListByWorkItemsAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                VerificationRecord.FromEvaluation(
+                    workItemA.Id,
+                    "verify:generic-command-run",
+                    new GateVerdictResult(GateVerdict.Passed, [], "verifier-7"),
+                    now),
+                VerificationRecord.FromEvaluation(
+                    workItemB.Id,
+                    "verify:generic-command-run",
+                    new GateVerdictResult(GateVerdict.Passed, [], "verifier-7"),
+                    now),
+            ]);
+        artifacts.ListByWorkItemsAndFilenameAsync(
+                Arg.Any<IReadOnlyCollection<Guid>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns([]);
+        var handler = new GetRunVerificationViewHandler(db, records, artifacts);
+
+        var view = await handler.GetAsync(run.Id, TestContext.Current.CancellationToken);
+
+        view.ShouldNotBeNull();
+        view!.Verified.ShouldBeTrue();
+        view.VerificationPending.ShouldBeFalse();
+    }
+
+    [Fact(DisplayName = "Given a run with at least one pending gate, when GetAsync is called, then Verified=false and Pending=true")]
+    public async Task VerificationPendingWhenAnyGateIsPendingAsync()
+    {
+        var db = NewDbContext();
+        var records = Substitute.For<IVerificationRecordStore>();
+        var artifacts = Substitute.For<IVisualArtifactStore>();
+        var projectId = ProjectId.New();
+        var run = Run.Create(projectId, now);
+        await db.Runs.AddAsync(run, TestContext.Current.CancellationToken);
+
+        var workItemA = WorkItem.Create(
+            run.Id,
+            profileKey: "verify",
+            image: "ghcr.io/comuki/worker@sha256:1",
+            envClass: "net10-sdk-bun",
+            profilesRef: "refs/heads/main",
+            brief: "{}",
+            initialStatus: WorkItemStatus.Queued,
+            now);
+        var workItemB = WorkItem.Create(
+            run.Id,
+            profileKey: "verify",
+            image: "ghcr.io/comuki/worker@sha256:1",
+            envClass: "net10-sdk-bun",
+            profilesRef: "refs/heads/main",
+            brief: "{}",
+            initialStatus: WorkItemStatus.Queued,
+            now);
+        await db.WorkItems.AddAsync(workItemA, TestContext.Current.CancellationToken);
+        await db.WorkItems.AddAsync(workItemB, TestContext.Current.CancellationToken);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        records.ListByWorkItemsAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                VerificationRecord.FromEvaluation(
+                    workItemA.Id,
+                    "verify:generic-command-run",
+                    new GateVerdictResult(GateVerdict.Pending, [], "verifier-7"),
+                    now),
+                VerificationRecord.FromEvaluation(
+                    workItemB.Id,
+                    "verify:generic-command-run",
+                    new GateVerdictResult(GateVerdict.Passed, [], "verifier-7"),
+                    now),
+            ]);
+        artifacts.ListByWorkItemsAndFilenameAsync(
+                Arg.Any<IReadOnlyCollection<Guid>>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns([]);
+        var handler = new GetRunVerificationViewHandler(db, records, artifacts);
+
+        var view = await handler.GetAsync(run.Id, TestContext.Current.CancellationToken);
+
+        view.ShouldNotBeNull();
+        view!.Verified.ShouldBeFalse();
+        view.VerificationPending.ShouldBeTrue();
     }
 
     [Fact(DisplayName = "Given a run whose work item has a cmdiff bundle member, when GetAsync is called, then the gate evidence carries the cmdiff URI")]

@@ -62,8 +62,14 @@ public sealed class GetRunVerificationViewHandler(
 
         if (workItemIds.Count == 0)
         {
+            // No work items = no gates to evaluate. Both booleans
+            // are false: nothing has been verified, and there is
+            // nothing pending — the empty-gates branch reads as a
+            // neutral "no annotations" pill on the FE.
             return new RunVerificationView(
                 RunId: runId.Value,
+                Verified: false,
+                VerificationPending: false,
                 Gates: []);
         }
 
@@ -89,8 +95,40 @@ public sealed class GetRunVerificationViewHandler(
                 Evaluator: row.Evaluator))
             .ToArray();
 
+        // Run-level booleans (add-orchestra §3 — Coda,
+        // <c>verification/spec.md</c> Requirement "Verification view is
+        // a derived read"). Both derive from the gate list alone —
+        // the view is read-only and never touches a project-settings
+        // store.
+        //
+        //   Verified            = gates.Count > 0 && gates.All(g => g.Verdict == "passed")
+        //   VerificationPending = !verified && gates.Any(g => g.Verdict == "pending")
+        //
+        // The four states the FE renders map onto:
+        //   - empty list    → verified=false, pending=false (no verdicts yet)
+        //   - all passed    → verified=true,  pending=false  (all-passed scenario)
+        //   - any pending   → verified=false, pending=true   (verification-pending scenario)
+        //   - only failed   → verified=false, pending=false  (gate rejected; no Pending drill-down)
+        var hasPassed = false;
+        var hasPending = false;
+        var hasFailed = false;
+        foreach (var gate in gates)
+        {
+            switch (gate.Verdict)
+            {
+                case "passed": hasPassed = true; break;
+                case "pending": hasPending = true; break;
+                case "failed": hasFailed = true; break;
+            }
+        }
+
+        var verified = gates.Length > 0 && hasPassed && !hasPending && !hasFailed;
+        var verificationPending = !verified && hasPending;
+
         return new RunVerificationView(
             RunId: runId.Value,
+            Verified: verified,
+            VerificationPending: verificationPending,
             Gates: gates);
     }
 

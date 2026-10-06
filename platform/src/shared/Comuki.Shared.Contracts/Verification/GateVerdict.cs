@@ -3,12 +3,14 @@ namespace Comuki.Shared.Contracts.Verification;
 /// <summary>
 /// Closed set of gate verdicts (add-orchestra §3 — Coda,
 /// <c>verification/spec.md</c> Requirement "VerificationRecord is a
-/// per-WorkItem sibling table"). The wire form is the same
-/// PascalCase value the existing journal event types use (camelCase
-/// down at the JSON layer through <c>JsonNamingPolicy.CamelCase</c>),
-/// and the canonical "pending" string survives the column-default
-/// round-trip when an evaluator has not run for the (work item,
-/// gate) pair yet.
+/// per-WorkItem sibling table"). The wire form is the lowercase value
+/// <see cref="Value"/> exposes — <c>"pending"</c> / <c>"passed"</c> /
+/// <c>"failed"</c> — the canonical values the spec and the
+/// <c>gate.evaluated</c> journal payload agree on. A freshly-loaded
+/// row whose column default is the canonical "no verdict" string
+/// (<c>"pending"</c>) round-trips through
+/// <see cref="FromWire"/> without throwing; any other unknown wire
+/// value collapses to <see cref="Unspecified"/>.
 /// </summary>
 public readonly record struct GateVerdict
 {
@@ -22,7 +24,7 @@ public readonly record struct GateVerdict
     /// <summary>The default verdict — no evaluator has stamped this gate yet.</summary>
     public static GateVerdict Unspecified { get; }
 
-    /// <summary>Default (no value) — equivalent to <see cref="Unspecified"/> for the nullability contract.</summary>
+    /// <summary>The wire value this verdict carries — lowercase, the canonical literal the spec &amp; journal payload both use.</summary>
     public string Value => value ?? string.Empty;
 
     /// <summary>Gate is in flight; not a terminal verdict.</summary>

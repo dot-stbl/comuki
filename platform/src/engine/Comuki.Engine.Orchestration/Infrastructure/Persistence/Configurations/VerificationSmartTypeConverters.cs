@@ -8,10 +8,11 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Persistence.Configurations;
 /// EF value converters for the verification axis (add-orchestra §3 —
 /// Coda). One per persisted closed-set value (the verdict) plus the
 /// value comparer for the jsonb evidence array. Wire form is the
-/// PascalCase name the smart-type carries through
-/// <see cref="GateVerdict.FromWire"/>; the column default of
-/// <see cref="GateVerdict.Pending"/> (the canonical "no verdict" wire
-/// value) collapses an unknown wire value to the default on read.
+/// lowercase value <see cref="GateVerdict.Value"/> carries ("pending"
+/// / "passed" / "failed"); <see cref="GateVerdict.FromWire"/> collapses
+/// any unknown wire value to <see cref="GateVerdict.Unspecified"/> on
+/// read so a freshly-loaded row never throws on a value the catalogue
+/// has not seen yet.
 /// </summary>
 internal static class VerificationSmartTypeConverters
 {

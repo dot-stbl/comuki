@@ -58,10 +58,17 @@ public static class VerificationHostExtensions
     public static IServiceCollection AddVerificationGateProvider<TProvider>(this IServiceCollection services)
         where TProvider : class, IVerificationGateProvider
     {
-        // Singleton + keyed registration: the registry snapshots the
-        // DI-resolved instance once at composition, so the provider's
-        // lifetime must match (singleton). Provider authors get a typed
-        // constructor — DI handles the rest.
+        // Singleton registration + same-singleton-both-sides binding:
+        // the registry snapshots the DI-resolved instance once at
+        // composition, so the provider's lifetime must match
+        // (singleton). The same-singleton factory keeps concrete and
+        // IVerificationGateProvider resolving to one instance — this
+        // is the standard concrete-plus-interface pattern, not a
+        // keyed service registration (the gate-name uniqueness is
+        // enforced in VerificationProviderRegistry's ctor, not via
+        // Microsoft.Extensions.DependencyInjection's keyed-service
+        // feature). Provider authors get a typed constructor — DI
+        // handles the rest.
         services.AddSingleton<TProvider>();
         services.AddSingleton<IVerificationGateProvider>(static serviceProvider =>
             serviceProvider.GetRequiredService<TProvider>());

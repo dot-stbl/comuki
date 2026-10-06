@@ -1,7 +1,6 @@
 using Comuki.Engine.Orchestration.Infrastructure.Verification;
 using Comuki.Modules.Verify.Infrastructure.Verification;
 using Comuki.Shared.Contracts.Verification;
-using Comuki.Shared.Editions.Gating;
 
 namespace Comuki.Host.Verification;
 
@@ -10,24 +9,28 @@ namespace Comuki.Host.Verification;
 /// (add-orchestra §3 — Coda): the engine scaffolding, the per-project
 /// <c>VerifyEnabled</c> adapter, and the platform-shipped first
 /// gate provider (<see cref="GenericCommandGateProvider"/>). The
-/// <c>[RequiresFeature(Features.Verification)]</c> attribute on
-/// <see cref="AddOrchestrationVerification"/> is the indexable
-/// call-site for the <c>verification</c> paid feature key — the
-/// architecture test
+/// <c>[RequiresFeature(Features.Verification)]</c> attribute is
+/// attached to the verification view endpoint
+/// (<c>RunsController.GetVerificationAsync</c>) — that endpoint
+/// is the only consumer-side gate. The architecture test
 /// <c>EveryPaidRegistryEntryIsGatedShould</c> walks
 /// <c>Comuki.Host</c>'s public surface and confirms the gate is
-/// present; the Community edition answers 403 here until the
-/// feature flips on.
+/// present; the Community edition answers 403
+/// <c>edition.feature_unavailable</c> on the endpoint until the
+/// feature flips on. The composition-root extension itself is
+/// unrestricted — it must run on every contour so the engine
+/// scaffolding, the <c>VerifyEnabled</c> adapter, and the platform-shipped
+/// provider are always wired; the gate is per-endpoint, not per-wire.
 /// </summary>
 public static class VerificationHostExtensions
 {
     /// <summary>
     /// Wires the orchestration verification scaffolding plus the
-    /// platform-shipped first gate provider.
+    /// platform-shipped first gate provider. Unrestricted — see the
+    /// type-level doc on this class for the endpoint-level gate.
     /// </summary>
     /// <param name="services">The host's service collection.</param>
     /// <param name="configuration">The host configuration.</param>
-    [RequiresFeature("verification")]
     public static IServiceCollection AddOrchestrationVerification(
         this IServiceCollection services,
         IConfiguration configuration)

@@ -20,7 +20,7 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Queue;
 /// </summary>
 /// <param name="db">Orchestration EF context — the unit-of-work carrier for the queue's transactions.</param>
 /// <param name="outbox">Outbox staging surface — terminal complete/fail transitions also stage an <c>orchestration.run.terminated.v1</c> message on the caller's scope (WS7, issue #87).</param>
-/// <param name="verification">Per-work-item verification evaluator (add-orchestra §3 — Coda). Called after every terminal transition; the evaluator shares this scope so its upsert + journal append land in the same transaction as the transition.</param>
+/// <param name="verification">Per-work-item verification evaluator (add-orchestra §3 — Coda). Called inside every terminal transition's transaction so the evaluator's raw upsert (<c>ExecuteSqlRaw</c>) and journal append enlist with the same scope — both are documented as row-level open transactions, and a lone call after <c>CommitAsync</c> would land in autocommit and silently split the work item's atomicity guarantee.</param>
 public sealed class WorkItemQueueEf(
     OrchestrationDbContext db,
     IOutbox outbox,
@@ -201,17 +201,23 @@ file static class WorkItemOwnedTransition
         // A terminal item may have been the run's last open one — finalize
         // the run (Succeeded when nothing failed, Failed otherwise).
         await RunProgression.FinalizeAsync(db, outbox, transaction, owner, now, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
 
         // Verification axis (Coda, add-orchestra §3): re-evaluate the
         // gate providers now that the work item is terminal. The
-        // evaluator shares the unit-of-work so its upsert + journal
-        // append commit with the transition — Pending here means
-        // "the data source hasn't caught up yet" and a later
-        // re-evaluation (verifier worker stamps or a manual nudge)
-        // supersedes it through the upsert.
+        // evaluator runs INSIDE the open transaction so its raw upsert
+        // (ExecuteSqlRaw) and journal append enlist with the same scope
+        // — both are documented as row-level open transactions, and a
+        // lone ExecuteSqlRaw after CommitAsync would otherwise land in
+        // its own autocommit scope (the same trap the previous version
+        // of this code walked into — see commit "[.stbl](feat/orchestra/
+        // coda): transaction-ordering fix" for the repro). Pending here
+        // means "the data source hasn't caught up yet"; a re-evaluation
+        // (verifier worker stamps or a manual nudge) supersedes the row
+        // through the (work_item_id, gate_name) unique upsert.
         await verification.EvaluateAsync(workItemId, owner, cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return true;
     }

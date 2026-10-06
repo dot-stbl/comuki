@@ -18,10 +18,10 @@ public readonly record struct GateEvidenceKind
         this.value = value;
     }
 
-    /// <summary>The default kind — a literal whose value is not one of the named kinds.</summary>
+    /// <summary>The default kind — a literal whose value is not one of the named kinds; equivalent to <see cref="Other"/> for the round-tripping contract.</summary>
     public static GateEvidenceKind Unspecified { get; }
 
-    /// <summary>Kind value (lowercase, dot.case).</summary>
+    /// <summary>The wire value this kind carries — lowercase, dot.case; the canonical literal the <c>evidence.kind</c> JSON field reads and writes.</summary>
     public string Value => value ?? string.Empty;
 
     /// <summary>The <c>changeset.diff</c> bundle member — a unified text/x-diff the gate consults.</summary>

@@ -211,21 +211,21 @@ describe("parseRuleDoc (task 25.1 — skill metadata)", () => {
   test("parses validate_against as a list of strings and SourceRef objects", () => {
     const rule = parseRuleDoc(
       [
-        '---',
-        'name: v',
-        'description: d',
-        'validate_against:',
+        "---",
+        "name: v",
+        "description: d",
+        "validate_against:",
         '  - "../../rules/citation-format.md"',
         '  - { kind: knowledge, id: "doc/citation-style@v3" }',
-        '---',
-        '',
-        'body',
-      ].join('\n')
+        "---",
+        "",
+        "body",
+      ].join("\n")
     )
 
     expect(rule?.validateAgainst).toEqual([
-      '../../rules/citation-format.md',
-      { kind: 'knowledge', id: 'doc/citation-style@v3' },
+      "../../rules/citation-format.md",
+      { kind: "knowledge", id: "doc/citation-style@v3" },
     ])
   })
 
@@ -249,8 +249,8 @@ describe("parseRuleDoc (task 25.1 — skill metadata)", () => {
     const rule = parseRuleDoc(
       [
         "---",
-        'name: v',
-        'description: d',
+        "name: v",
+        "description: d",
         'validate_against: ["a.md", { kind: control, id: "rule-x" }]',
         "---",
         "",
@@ -266,14 +266,7 @@ describe("parseRuleDoc (task 25.1 — skill metadata)", () => {
 
   test("omits trigger_when and validateAgainst when absent", () => {
     const rule = parseRuleDoc(
-      [
-        "---",
-        "name: bare",
-        "description: d",
-        "---",
-        "",
-        "body",
-      ].join("\n")
+      ["---", "name: bare", "description: d", "---", "", "body"].join("\n")
     )
 
     expect(rule?.triggerWhen).toBeUndefined()

@@ -36,9 +36,7 @@ describe("no auto-select on trigger_when (task 25.5)", () => {
   test("the loader exports no auto-select helper (catalog stays a list, not a selector)", async () => {
     // If a future commit adds a select-by-trigger helper, this fails by name.
     // The intended surface is list/read — anything else belongs to the brain.
-    const exported = Object.keys(
-      await import("./loader")
-    ).sort()
+    const exported = Object.keys(await import("./loader")).sort()
 
     expect(exported).toEqual(["listSkills", "readSkill"])
   })

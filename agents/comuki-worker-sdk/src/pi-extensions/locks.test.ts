@@ -1,11 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { BLOCKED_TOOL_TARGETS } from "@comuki/agent-core"
 import type { LockRule } from "@comuki/agent-core"
-import {
-  createLocksExtension,
-  __testing,
-  gitPushRefCandidates,
-} from "./locks"
+import { createLocksExtension, __testing, gitPushRefCandidates } from "./locks"
 import type {
   ExtensionFactory,
   PiExtensionApi,
@@ -21,7 +17,9 @@ type ToolCallHandler = (
 
 interface Harness {
   readonly api: PiExtensionApi
-  readonly toolCall: (event: PiToolCallEvent) => Promise<PiToolCallResult | undefined>
+  readonly toolCall: (
+    event: PiToolCallEvent
+  ) => Promise<PiToolCallResult | undefined>
 }
 
 function makeHarness(): Harness {
@@ -146,9 +144,7 @@ describe("edit-path enforcement", () => {
     expect(
       await runLocks({ toolName: "write", input: { content: "" } })
     ).toBeUndefined()
-    expect(
-      await runLocks({ toolName: "edit", input: {} })
-    ).toBeUndefined()
+    expect(await runLocks({ toolName: "edit", input: {} })).toBeUndefined()
   })
 })
 
@@ -183,9 +179,7 @@ describe("tool-name enforcement (installs and side installs)", () => {
     expect(
       await runLocks({ toolName: "bash", input: { command: 42 } })
     ).toBeUndefined()
-    expect(
-      await runLocks({ toolName: "bash", input: {} })
-    ).toBeUndefined()
+    expect(await runLocks({ toolName: "bash", input: {} })).toBeUndefined()
   })
 })
 
@@ -205,7 +199,9 @@ describe("git-ref enforcement (push to protected branches)", () => {
     expect(denied?.block).toBe(true)
     expect(
       ["no-push-main", "no-push-master"].some((id) =>
-        BLOCKED_TOOL_TARGETS.some((r) => r.id === id && r.reason === denied?.reason)
+        BLOCKED_TOOL_TARGETS.some(
+          (r) => r.id === id && r.reason === denied?.reason
+        )
       )
     ).toBe(true)
   })
@@ -254,7 +250,8 @@ describe("profile locks are appended to the default set", () => {
     id: "profile-no-push-release",
     kind: "git-ref",
     pattern: "refs/heads/release/**",
-    reason: "Release branches are bumped by the release pipeline, not by agents",
+    reason:
+      "Release branches are bumped by the release pipeline, not by agents",
   }
 
   test("profile rule denies on top of the default locks", async () => {
@@ -348,9 +345,9 @@ describe("gitPushRefCandidates", () => {
   })
 
   test("keeps fully-qualified refs as-is", () => {
-    expect(
-      gitPushRefCandidates("git push origin refs/heads/master")
-    ).toContain("refs/heads/master")
+    expect(gitPushRefCandidates("git push origin refs/heads/master")).toContain(
+      "refs/heads/master"
+    )
   })
 
   test("ignores non-push git commands and non-git commands", () => {
@@ -368,18 +365,14 @@ describe("input-shape tolerance (write/edit/bash dispatch)", () => {
   test.each(["write", "edit"])(
     "%s with empty-string path is ignored",
     async (toolName) => {
-      expect(
-        await runLocks({ toolName, input: { path: "" } })
-      ).toBeUndefined()
+      expect(await runLocks({ toolName, input: { path: "" } })).toBeUndefined()
     }
   )
 
   test.each(["write", "edit"])(
     "%s with numeric path is ignored",
     async (toolName) => {
-      expect(
-        await runLocks({ toolName, input: { path: 42 } })
-      ).toBeUndefined()
+      expect(await runLocks({ toolName, input: { path: 42 } })).toBeUndefined()
     }
   )
 

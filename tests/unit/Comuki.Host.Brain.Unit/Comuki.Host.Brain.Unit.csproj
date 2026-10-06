@@ -21,8 +21,13 @@
 
   <ItemGroup>
     <None Include="..\..\..\deploy\helm\templates\brain.yaml" Link="Deployment\brain.yaml" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\..\deploy\hybrid\host.Dockerfile" Link="Deployment\host.Dockerfile" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="..\..\..\deploy\hybrid\infra-dev.yaml" Link="Deployment\infra-dev.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The deploy/hybrid overlay lives on gitlab/master only (see
+         `comuki.orchestrator/.claude/...` and the test's
+         `Assert.SkipUnless(...)` blocks). The Condition keeps the
+         solution build green on github/master (where the files are
+         absent) while preserving the copy on gitlab/master. -->
+    <None Include="..\..\..\deploy\hybrid\host.Dockerfile" Link="Deployment\host.Dockerfile" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\deploy\hybrid\host.Dockerfile')" />
+    <None Include="..\..\..\deploy\hybrid\infra-dev.yaml" Link="Deployment\infra-dev.yaml" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\deploy\hybrid\infra-dev.yaml')" />
   </ItemGroup>
 
 </Project>

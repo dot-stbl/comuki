@@ -82,14 +82,16 @@ public static class Features
     /// Run verification axis (add-orchestra §3 — Coda): the gate-provider
     /// registry, the <c>gate.evaluated</c> journal event, the
     /// <c>VerificationRecord</c> per work item, and the derived
-    /// <c>GET /api/v1/runs/{runId}/verification</c> view. The first
-    /// paid-feature call-site for the key is the host's
-    /// gate-provider registration handler
-    /// (<c>VerificationHostExtensions.AddOrchestrationVerification</c>):
-    /// Community answers a 403 on the registration call (the arch test
-    /// catches an orphan key), and the same gate covers the verification
-    /// view (the view's only permission is <c>run:read</c>, but the
-    /// gate row's existence is what makes the axis observable).
+    /// <c>GET /api/v1/runs/{runId}/verification</c> view. The paid
+    /// gate is <c>[RequiresFeature(Features.Verification)]</c> on
+    /// <c>RunsController.GetVerificationAsync</c> — Community-tier
+    /// requests answer 403 <c>edition.feature_unavailable</c>. The
+    /// composition-root extension that wires the gate providers
+    /// (<c>VerificationHostExtensions.AddOrchestrationVerification</c>)
+    /// is intentionally unrestricted: the providers must be live on
+    /// every contour so the host-side adapter and the platform-shipped
+    /// first provider are always wired; the gate is per-endpoint, not
+    /// per-wire.
     /// </summary>
     public static readonly Feature Verification = Feature.Define(
         "verification",

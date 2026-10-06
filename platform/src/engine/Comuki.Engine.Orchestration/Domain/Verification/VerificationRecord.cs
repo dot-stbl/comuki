@@ -79,10 +79,13 @@ public sealed class VerificationRecord
 
     /// <summary>
     /// Stamps a real evaluation on a row (or a new row). The
-    /// reconstitute path is for the EF store's materialiser; the
-    /// factory is the only entry callers should use — the constructor
-    /// stays <c>private</c> for the same reason every other aggregate
-    /// in the engine does.
+    /// constructor stays <c>private</c> — production code uses
+    /// <see cref="Create"/> / <see cref="FromEvaluation"/> so the
+    /// invariants on <see cref="GateName"/> stay compile-checked at
+    /// the call site. EF Core's materialiser uses the parameterless
+    /// private constructor and the value converters in
+    /// <c>VerificationRecordConfiguration</c> to hydrate the row on
+    /// the read side.
     /// </summary>
     /// <param name="workItemId">Work item the row belongs to.</param>
     /// <param name="gateName">Stable gate name.</param>
@@ -114,34 +117,6 @@ public sealed class VerificationRecord
             Evaluator = string.IsNullOrWhiteSpace(result.Evaluator)
                 ? gateName.Trim()
                 : result.Evaluator.Trim(),
-        };
-    }
-
-    /// <summary>
-    /// EF Core's materialiser calls this with a row read back from
-    /// <c>verifications</c>. The constructor stays <c>private</c> —
-    /// production code uses <see cref="Create"/> /
-    /// <see cref="FromEvaluation"/> so the invariants on
-    /// <see cref="GateName"/> stay compile-checked at the call site.
-    /// </summary>
-    internal static VerificationRecord Reconstitute(
-        Guid id,
-        Guid workItemId,
-        string gateName,
-        GateVerdict verdict,
-        IReadOnlyList<GateEvidenceRef> evidenceRefs,
-        DateTimeOffset evaluatedAt,
-        string evaluator)
-    {
-        return new VerificationRecord
-        {
-            Id = id,
-            WorkItemId = workItemId,
-            GateName = gateName,
-            Verdict = verdict,
-            EvidenceRefs = evidenceRefs,
-            EvaluatedAt = evaluatedAt,
-            Evaluator = evaluator,
         };
     }
 }

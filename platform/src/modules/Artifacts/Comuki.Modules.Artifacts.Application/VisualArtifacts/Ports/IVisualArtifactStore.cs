@@ -61,11 +61,16 @@ public interface IVisualArtifactStore
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Lists the artifacts in a run that match a filename — the work
-    /// item's <c>changeset.diff</c> bundle member for the verification
-    /// view's <c>cmdiff</c> evidence pointer. Returns at most one row
-    /// per work item; the latest version wins (the store keeps a
-    /// monotonic version counter per id).
+    /// Lists every artifact version in a run that match a filename —
+    /// the work item's <c>changeset.diff</c> bundle member for the
+    /// verification view's <c>cmdiff</c> evidence pointer. Returns
+    /// ALL versions of every matching artifact (the store keeps a
+    /// monotonic version counter per id and the rows carry every
+    /// <c>version</c> stamped so far). The store returns the rows in
+    /// <c>OrderByDescending(Version)</c> order so the latest version
+    /// is the first sibling of every id; the caller is responsible
+    /// for picking one per work item (the verification view's
+    /// caller collapses to <c>GroupBy(workItemId).First()</c>).
     /// </summary>
     /// <param name="workItemIds">Work items whose bundle members the caller wants to enumerate.</param>
     /// <param name="filename">The canonical filename (e.g. <c>"changeset.diff"</c>).</param>

@@ -21,12 +21,6 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Persistence.Configurations;
 /// </summary>
 public sealed class VerificationRecordConfiguration : IEntityTypeConfiguration<VerificationRecord>
 {
-    /// <summary>jsonb &lt;-&gt; <see cref="IReadOnlyList{T}"/> bridge. System.Text.Json because the engine has no pre-existing converter for this shape.</summary>
-    private static readonly ValueConverter<IReadOnlyList<GateEvidenceRef>, string> evidenceRefsConverter =
-        new(
-            static refs => JsonSerializer.Serialize(refs, JsonSerializerOptions.Web),
-            static json => JsonSerializer.Deserialize<List<GateEvidenceRef>>(json, JsonSerializerOptions.Web) ?? new List<GateEvidenceRef>());
-
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<VerificationRecord> builder)
     {
@@ -51,10 +45,22 @@ public sealed class VerificationRecordConfiguration : IEntityTypeConfiguration<V
             .HasMaxLength(16)
             .IsRequired();
 
+        // jsonb <-> IReadOnlyList<T> bridge. The fresh options
+        // instance carries the GateEvidenceKind / GateVerdict smart-type
+        // converters (the single common point —
+        // VerificationSmartTypeConverters.CreateEvidenceRefsJsonOptions);
+        // without them the kind collapses to Unspecified on the
+        // EF materialiser's read side and the wire value never
+        // round-trips. ValueComparer is the reference-stable check
+        // described on GateEvidenceRefsComparer.
         builder.Property(static record => record.EvidenceRefs)
             .HasColumnName("evidence_refs")
             .HasColumnType("jsonb")
-            .HasConversion(evidenceRefsConverter, VerificationSmartTypeConverters.GateEvidenceRefsComparer)
+            .HasConversion(
+                new ValueConverter<IReadOnlyList<GateEvidenceRef>, string>(
+                    static refs => JsonSerializer.Serialize(refs, VerificationSmartTypeConverters.CreateEvidenceRefsJsonOptions()),
+                    static json => JsonSerializer.Deserialize<List<GateEvidenceRef>>(json, VerificationSmartTypeConverters.CreateEvidenceRefsJsonOptions()) ?? new List<GateEvidenceRef>()),
+                VerificationSmartTypeConverters.GateEvidenceRefsComparer)
             .IsRequired();
 
         builder.Property(static record => record.EvaluatedAt)

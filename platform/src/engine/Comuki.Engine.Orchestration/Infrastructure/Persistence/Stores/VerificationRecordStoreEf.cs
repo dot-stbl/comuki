@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Comuki.Engine.Orchestration.Application.Verification;
 using Comuki.Engine.Orchestration.Domain.Verification;
+using Comuki.Engine.Orchestration.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Comuki.Engine.Orchestration.Infrastructure.Persistence.Stores;
@@ -31,7 +32,7 @@ public sealed class VerificationRecordStoreEf(OrchestrationDbContext db) : IVeri
             record.WorkItemId,
             record.GateName,
             record.Verdict.Value,
-            JsonSerializer.Serialize(record.EvidenceRefs, JsonSerializerOptions.Web),
+            JsonSerializer.Serialize(record.EvidenceRefs, VerificationSmartTypeConverters.CreateEvidenceRefsJsonOptions()),
             record.EvaluatedAt,
             record.Evaluator,
         };

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Comuki.Shared.Contracts.Verification;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -42,4 +43,35 @@ internal static class VerificationSmartTypeConverters
                     reference.Uri.ToString(),
                     StringComparer.Ordinal)),
             snapshotExpression: static refs => refs.ToList());
+
+    /// <summary>
+    /// Single source of truth for the <c>System.Text.Json</c> options
+    /// the <c>verifications.evidence_refs</c> column needs (add-orchestra
+    /// §3 — Coda). Returns a fresh <see cref="JsonSerializerOptions"/>
+    /// on every call — both the EF value-converter and the raw-SQL
+    /// upsert path need the same smart-type converters
+    /// (<see cref="GateEvidenceKindJsonConverter"/>,
+    /// <see cref="GateVerdictJsonConverter"/>), and a
+    /// <c>static readonly</c> field here is the anti-pattern that
+    /// <c>json-and-ndjson.md</c> §6 bans: the value would be
+    /// shared across every call site and a later mutation (or a
+    /// second options instance constructed with the same converters
+    /// later) would silently diverge. The factory is the one common
+    /// point — both <c>VerificationRecordConfiguration</c> and
+    /// <c>VerificationRecordStoreEf</c> call this method and pass
+    /// the returned instance to their own <c>JsonSerializer</c>
+    /// calls; nothing else constructs a verification-axis options
+    /// object directly.
+    /// </summary>
+    public static JsonSerializerOptions CreateEvidenceRefsJsonOptions()
+    {
+        return new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            Converters =
+            {
+                new GateEvidenceKindJsonConverter(),
+                new GateVerdictJsonConverter(),
+            },
+        };
+    }
 }

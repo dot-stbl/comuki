@@ -25,18 +25,6 @@ public sealed class GetRunVerificationViewHandler(
     IVisualArtifactStore artifacts)
 {
     /// <summary>
-    /// Canonical evidence filename the worker uploads through
-    /// <c>POST /workers/{workItemId}/artifacts</c> with mime
-    /// <c>text/x-diff</c>. The visual-artifact allow-list already
-    /// accepts that mime (issue #51 slice 1 extended it; the verification
-    /// axis lands on the same key). The view looks the row up by this
-    /// filename and exposes its canonical URI as the
-    /// <c>evidence[kind="cmdiff"]</c> entry on every gate the work item
-    /// participates in.
-    /// </summary>
-    private const string ChangesetDiffFilename = "changeset.diff";
-
-    /// <summary>
     /// Resolves the run's work items, then reads every per-(work item,
     /// gate) verdict and flattens it to a single newest-first list. The
     /// scope query filter on <c>Runs</c> / <c>WorkItems</c> gives the
@@ -81,7 +69,8 @@ public sealed class GetRunVerificationViewHandler(
         // stay clean of bundle knowledge — they stamp the verdict; the
         // view joins the bundle in. A work item without a cmdiff
         // simply omits the entry (the spec's "without cmdiff" scenario).
-        var cmdiffByWorkItem = await LoadCmdiffByWorkItemAsync(
+        var cmdiffByWorkItem = await GetRunVerificationViewMappings.LoadCmdiffByWorkItemAsync(
+            artifacts,
             workItemIds,
             cancellationToken);
 
@@ -90,7 +79,7 @@ public sealed class GetRunVerificationViewHandler(
                 WorkItemId: row.WorkItemId,
                 GateName: row.GateName,
                 Verdict: row.Verdict.Value,
-                EvidenceRefs: [.. ResolveEvidenceUris(row, cmdiffByWorkItem)],
+                EvidenceRefs: [.. GetRunVerificationViewMappings.ResolveEvidenceUris(row, cmdiffByWorkItem)],
                 EvaluatedAt: row.EvaluatedAt,
                 Evaluator: row.Evaluator))
             .ToArray();
@@ -131,8 +120,40 @@ public sealed class GetRunVerificationViewHandler(
             VerificationPending: verificationPending,
             Gates: gates);
     }
+}
 
-    private async Task<IReadOnlyDictionary<Guid, string>> LoadCmdiffByWorkItemAsync(
+/// <summary>
+/// File-static helpers for the verification view handler (add-orchestra
+/// §3 — Coda). The view is read-only and the helpers carry no state
+/// of their own, so the file-scope keeps them off the public surface
+/// of <c>Comuki.Host</c> without putting them on the handler class
+/// (handlers do the orchestration; pure projections belong to a
+/// file-static sibling per <c>class-layout-and-tooling.md</c> §1a).
+/// </summary>
+file static class GetRunVerificationViewMappings
+{
+    /// <summary>
+    /// Canonical evidence filename the worker uploads through
+    /// <c>POST /workers/{workItemId}/artifacts</c> with mime
+    /// <c>text/x-diff</c>. The visual-artifact allow-list already
+    /// accepts that mime (issue #51 slice 1 extended it; the verification
+    /// axis lands on the same key). The view looks the row up by this
+    /// filename and exposes its canonical URI as the
+    /// <c>evidence[kind="cmdiff"]</c> entry on every gate the work item
+    /// participates in.
+    /// </summary>
+    private const string ChangesetDiffFilename = "changeset.diff";
+
+    /// <summary>
+    /// Loads the run's per-(work item, cmdiff) bundle-member dictionary.
+    /// A work item may carry several artifact versions with the same
+    /// filename (the store keeps a monotonic version counter per id) —
+    /// the <see cref="IVisualArtifactStore.ListByWorkItemsAndFilenameAsync"/>
+    /// contract returns every version and the caller picks the first
+    /// (the latest under the store's <c>OrderByDescending(Version)</c>).
+    /// </summary>
+    public static async Task<IReadOnlyDictionary<Guid, string>> LoadCmdiffByWorkItemAsync(
+        IVisualArtifactStore artifacts,
         IReadOnlyList<Guid> workItemIds,
         CancellationToken cancellationToken)
     {
@@ -154,20 +175,23 @@ public sealed class GetRunVerificationViewHandler(
                 static group => group.First().Id.ToString());
     }
 
-    private static IEnumerable<string> ResolveEvidenceUris(
+    /// <summary>
+    /// Resolves the URI list for one gate row. First whatever the gate
+    /// provider stamped on the row, then the work item's cmdiff bundle
+    /// member if present. The dictionary lookup is O(1); the view's
+    /// flatten keeps the row list newest-first, so a re-evaluation
+    /// supersedes prior evidence through the upsert on the underlying
+    /// record.
+    /// </summary>
+    public static IEnumerable<string> ResolveEvidenceUris(
         Engine.Orchestration.Domain.Verification.VerificationRecord row,
         IReadOnlyDictionary<Guid, string> cmdiffByWorkItem)
     {
-        // First: whatever the gate provider stamped on the row.
         foreach (var uri in row.EvidenceRefs.Select(static evidence => evidence.Uri.ToString()))
         {
             yield return uri;
         }
 
-        // Then: the work item's cmdiff bundle member, if any. The
-        // dictionary lookup is O(1); the view's flatten keeps the row
-        // list newest-first, so a re-evaluation supersedes prior
-        // evidence through the upsert on the underlying record.
         if (cmdiffByWorkItem.TryGetValue(row.WorkItemId, out var cmdiffUri))
         {
             yield return cmdiffUri;

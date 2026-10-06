@@ -47,7 +47,16 @@ public static class VerificationHostExtensions
         services.AddScoped<IVerificationRecordStore, VerificationRecordStoreEf>();
         services.AddScoped<VerificationEvaluationService>();
         services.TryAddSingleton<IVerificationProviderRegistry, VerificationProviderRegistry>();
-        services.AddSingleton<IProjectVerificationSettings, DefaultProjectVerificationSettings>();
+        // The engine ships an always-false default so the engine
+        // composition validates on its own (the DiComposition unit
+        // test builds only the engine composition and needs
+        // IProjectVerificationSettings resolvable). The host's
+        // ProjectVerificationSettingsAdapter overrides this default
+        // through its own AddSingleton call — TryAddSingleton makes
+        // the composition order irrelevant: whichever contour wires
+        // last wins, and the engine's default never leaks into a host
+        // composition.
+        services.TryAddSingleton<IProjectVerificationSettings, DefaultProjectVerificationSettings>();
         return services;
     }
 

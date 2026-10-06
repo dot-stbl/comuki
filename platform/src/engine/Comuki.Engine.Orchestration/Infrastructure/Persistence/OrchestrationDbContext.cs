@@ -3,6 +3,7 @@ using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Domain.MergeQueue;
 using Comuki.Engine.Orchestration.Domain.Outbox;
 using Comuki.Engine.Orchestration.Domain.Runs;
+using Comuki.Engine.Orchestration.Domain.Verification;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Configurations;
 using Comuki.Shared.Kernel.Ids;
@@ -83,6 +84,15 @@ public sealed class OrchestrationDbContext(
     public DbSet<InboxReceipt> InboxReceipts => Set<InboxReceipt>();
 
     /// <summary>
+    /// Per-work-item verification records (add-orchestra §3 — Coda,
+    /// <c>verification/spec.md</c> Requirement "VerificationRecord is a
+    /// per-WorkItem sibling table"). The scope query filter matches the
+    /// work-item one (the work item must be visible for the record to
+    /// be visible — same subject-scope access pattern).
+    /// </summary>
+    public DbSet<VerificationRecord> Verifications => Set<VerificationRecord>();
+
+    /// <summary>
     /// Left disjunct of the scope filter: true when the current subject
     /// sees every project (a platform-scope role, a system consumer, or a
     /// directly-constructed system context).
@@ -127,7 +137,8 @@ public sealed class OrchestrationDbContext(
             .ApplyConfiguration(new MergeQueueConfiguration())
             .ApplyConfiguration(new MergeBatchConfiguration())
             .ApplyConfiguration(new OutboxMessageConfiguration())
-            .ApplyConfiguration(new InboxReceiptConfiguration());
+            .ApplyConfiguration(new InboxReceiptConfiguration())
+            .ApplyConfiguration(new VerificationRecordConfiguration());
 
         // The object axis, as row-level filters: a run is visible when its
         // project is in the subject's scope; a work item (no project column
@@ -138,6 +149,13 @@ public sealed class OrchestrationDbContext(
             .HasQueryFilter(run => ScopeUnrestricted || ScopeProjectIds.Contains(run.ProjectId));
         modelBuilder.Entity<WorkItem>()
             .HasQueryFilter(item => ScopeUnrestricted || Runs.Any(run => run.Id == item.RunId));
+        // VerificationRecord follows the WorkItem filter: a record is
+        // visible when its parent work item is visible (the work item's
+        // own filter reaches the run through the Runs join above, so
+        // a project-scoped subject sees only records whose work item
+        // belongs to a run in their project set).
+        modelBuilder.Entity<VerificationRecord>()
+            .HasQueryFilter(record => ScopeUnrestricted || WorkItems.Any(item => item.Id == record.WorkItemId));
         // Merge-queue visibility: project-scoped subjects see entries whose
         // project is in their scope AND rows with no project (release
         // trains that span projects are visible to every operator).

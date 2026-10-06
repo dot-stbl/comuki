@@ -4,6 +4,7 @@ using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Outbox;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Engine.Orchestration.Infrastructure.Verification;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +20,11 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Queue;
 /// </summary>
 /// <param name="db">Orchestration EF context — the unit-of-work carrier for the queue's transactions.</param>
 /// <param name="outbox">Outbox staging surface — terminal complete/fail transitions also stage an <c>orchestration.run.terminated.v1</c> message on the caller's scope (WS7, issue #87).</param>
-public sealed class WorkItemQueueEf(OrchestrationDbContext db, IOutbox outbox) : IWorkItemQueue
+/// <param name="verification">Per-work-item verification evaluator (add-orchestra §3 — Coda). Called after every terminal transition; the evaluator shares this scope so its upsert + journal append land in the same transaction as the transition.</param>
+public sealed class WorkItemQueueEf(
+    OrchestrationDbContext db,
+    IOutbox outbox,
+    VerificationEvaluationService verification) : IWorkItemQueue
 {
     /// <inheritdoc />
     public async Task<ClaimedWorkItem?> ClaimAsync(
@@ -104,7 +109,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db, IOutbox outbox) :
 
         // result is worker-produced JSON — embedded as a structured value, not a string
         return await WorkItemOwnedTransition.ApplyAsync(
-            db, outbox, completing: true, workItemId, workerId, generation,
+            db, outbox, verification, completing: true, workItemId, workerId, generation,
             JsonDocument.Parse(resultJson).RootElement.Clone(), now, cancellationToken);
     }
 
@@ -124,7 +129,7 @@ public sealed class WorkItemQueueEf(OrchestrationDbContext db, IOutbox outbox) :
 
         // reason is human text — embedded as a JSON string
         return await WorkItemOwnedTransition.ApplyAsync(
-            db, outbox, completing: false, workItemId, workerId, generation, reason, now, cancellationToken);
+            db, outbox, verification, completing: false, workItemId, workerId, generation, reason, now, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -145,6 +150,7 @@ file static class WorkItemOwnedTransition
     public static async Task<bool> ApplyAsync(
         OrchestrationDbContext db,
         IOutbox outbox,
+        VerificationEvaluationService verification,
         bool completing,
         Guid workItemId,
         WorkerId workerId,
@@ -197,6 +203,16 @@ file static class WorkItemOwnedTransition
         await RunProgression.FinalizeAsync(db, outbox, transaction, owner, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        // Verification axis (Coda, add-orchestra §3): re-evaluate the
+        // gate providers now that the work item is terminal. The
+        // evaluator shares the unit-of-work so its upsert + journal
+        // append commit with the transition — Pending here means
+        // "the data source hasn't caught up yet" and a later
+        // re-evaluation (verifier worker stamps or a manual nudge)
+        // supersedes it through the upsert.
+        await verification.EvaluateAsync(workItemId, owner, cancellationToken);
+
         return true;
     }
 }

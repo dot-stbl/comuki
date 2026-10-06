@@ -9,6 +9,7 @@ using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Stores;
 using Comuki.Engine.Orchestration.Infrastructure.Queue;
+using Comuki.Engine.Orchestration.Infrastructure.Verification;
 using Comuki.Engine.Orchestration.Options;
 using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Contracts.Journal;
@@ -86,6 +87,13 @@ public static class OrchestrationInfrastructureExtensions
         services.AddSingleton<IComukiWorker, LeaseReaperComukiWorker>();
         services.AddSingleton<IComukiWorker, OutboxDispatcherComukiWorker>();
         services.AddScoped<EscalationTimeoutSweeper>();
+
+        // Verification axis (add-orchestra §3 — Coda): the record
+        // store, the provider registry and the evaluation service. The
+        // host wires the platform-shipped first provider
+        // (GenericCommandGateProvider) on top of this in
+        // HostComposer.AddOrchestrationVerification.
+        services.AddOrchestrationVerificationCore(configuration);
 
         // EscalationTimeout:Enabled=false skips the worker registration
         // entirely (the same pattern the host uses for oidc-sweep) — the

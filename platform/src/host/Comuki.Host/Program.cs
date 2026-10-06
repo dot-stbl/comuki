@@ -5,6 +5,7 @@ using Comuki.Host.Cli;
 using Comuki.Host.Cli.Doctor;
 using Comuki.Host.OpenApi;
 using Comuki.Host.Security.Tls;
+using Comuki.Host.Verification;
 using Comuki.Host.Workers;
 using Comuki.Modules.Scheduler.Infrastructure.Observers;
 using Comuki.Shared.Bootstrap;
@@ -119,6 +120,14 @@ builder.Services
     .AddOrchestrationQueue(builder.Configuration)
     .AddOrchestrationApplication()
     .AddWorkerRuntime(builder.Configuration);
+
+// Coda (add-orchestra §3): verification axis — gate-provider
+// registry, evidence storage, the engine-side evaluation service and
+// the platform-shipped first provider (GenericCommandGateProvider
+// over the existing Verify module). The [RequiresFeature] gate on
+// the extension method is the indexable call-site for the
+// `verification` paid feature key.
+builder.Services.AddOrchestrationVerification(builder.Configuration);
 
 // Under build-time OpenAPI generation (GetDocument.Insider) drop our hosted
 // services so the contract is emitted with zero side effects (no

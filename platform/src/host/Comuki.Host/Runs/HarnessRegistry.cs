@@ -28,11 +28,20 @@ public sealed class HarnessRegistry
     /// DI container resolves. The first registration wins on
     /// collisions (<c>TryAdd</c>); the seam is idempotent across
     /// hot-reload and the same constraint every concurrent catalog
-    /// carries. Today the host composition registers Pi (production)
-    /// and TestFakeHarnessCapability (test fake with the
-    /// <see cref="HarnessIds.Pi"/> default's <c>live</c> flag)
-    /// — Phase 8 / Instrument replaces the DI-registered
-    /// capabilities with a profile-frontmatter-driven catalog.
+    /// carries. Today the host composition registers
+    /// <see cref="PiHarnessCapability"/> (production, declares
+    /// <see cref="HarnessCapabilities.LiveSession"/> = true) and
+    /// <see cref="TestFakeHarnessCapability"/> with
+    /// <c>liveSession: false</c> — the no-LiveSession variant
+    /// matches the spec scenario at <c>worker-runtime/spec.md</c>
+    /// ("TestFakeHarness declares Capabilities.LiveSession = false")
+    /// and keeps the steering endpoint's follow-up-WorkItem path
+    /// reachable through DI. Tests that need the LiveSession=true
+    /// variant construct <c>InProcessHarness</c> directly (the
+    /// private class in <c>HostSteerRunAdapterShould</c>) — that
+    /// branch bypasses this registry. Phase 8 / Instrument
+    /// replaces the DI-registered capabilities with a
+    /// profile-frontmatter-driven catalog.
     /// </summary>
     /// <param name="harnesses">All harnesses the composition registered.</param>
     public HarnessRegistry(IEnumerable<IHarness> harnesses)

@@ -79,11 +79,15 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
         };
 
         // pi 0.99.2 --mode rpc surface (per the spike): --mode rpc opens
-        // the JSON-RPC-over-stdio channel; --no-session skips session
-        // persistence (the v1.x one-shot flag, also dropped by this
-        // change for session-capable runs); --session is a future handle,
-        // the brief explicitly says we don't need it (one pi process per
-        // cycle, owned by the same worker from prompt to stdin.close()).
+        // the JSON-RPC-over-stdio channel; --no-session is the same
+        // flag the v1.x one-shot form used to pass, and is still
+        // passed under rpc — under rpc the flag disables session
+        // persistence (the process lives for the worker's lifetime
+        // either way; the v1.x meaning of "no session at all" no
+        // longer applies because rpc IS the session); --session is a
+        // future handle, the brief explicitly says we don't need it
+        // (one pi process per cycle, owned by the same worker from
+        // prompt to stdin.close()).
         startInfo.ArgumentList.Add("--mode");
         startInfo.ArgumentList.Add("rpc");
         startInfo.ArgumentList.Add("--no-session");

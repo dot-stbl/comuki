@@ -18,11 +18,10 @@ internal sealed class PiRpcTurnInputWriter : ITurnInputWriter
 {
     // pi's stdin JSON-RPC payload: { type, id, message } — three
     // single-word keys. Both camelCase (Web) and snake_case_lower
-    // produce the same wire output for single-word field names; Web
-    // is the canonical choice here so the writer doesn't carry a
-    // hand-rolled JsonNamingPolicy when one isn't needed.
-    private static readonly JsonSerializerOptions jsonOptions = new(JsonSerializerDefaults.Web);
-
+    // produce the same wire output for single-word field names; the
+    // frozen `Web` singleton is the canonical choice here so the
+    // writer doesn't carry a hand-rolled `JsonSerializerOptions`
+    // when one isn't needed.
     private readonly StreamWriter writer;
     private readonly ILogger logger;
     private readonly Lock writeGate = new();
@@ -103,7 +102,7 @@ internal sealed class PiRpcTurnInputWriter : ITurnInputWriter
                 // immediately on BaseStream, '\n' on the next
                 // writer.Flush(). The pi wire parser expects exactly this
                 // — a single LF-terminated JSON object per command.
-                JsonSerializer.Serialize(writer.BaseStream, command, jsonOptions);
+                JsonSerializer.Serialize(writer.BaseStream, command, JsonSerializerOptions.Web);
                 writer.Write('\n');
                 writer.Flush();
                 return true;

@@ -1,6 +1,8 @@
 using Comuki.Engine.Orchestration.Application.MergeQueue;
 using Comuki.Engine.Orchestration.Domain.MergeQueue;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
+using Comuki.Shared.Contracts.Journal;
+using Comuki.Shared.Kernel.Ids;
 using FluentValidation;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -25,7 +27,8 @@ public sealed class MergeBatchServiceShould
     {
         var clock = new MergeBatchFakeTimeProvider(now);
         var store = Substitute.For<IMergeBatchStore>();
-        var service = new MergeBatchService(store, new MergeBatchValidator(), clock, NullLogger<MergeBatchService>.Instance);
+        var journal = Substitute.For<IRunJournal>();
+        var service = new MergeBatchService(store, new MergeBatchValidator(), journal, clock, NullLogger<MergeBatchService>.Instance);
 
         var view = await service.CreateAsync(
             new CreateMergeBatchCommand(
@@ -43,6 +46,32 @@ public sealed class MergeBatchServiceShould
                 && batch.Status == MergeBatchStatus.Pending
                 && batch.PullRequestUrls.Count == 2),
             TestContext.Current.CancellationToken);
+        // No RunId on the command — the service must not emit the
+        // run-referenced event for cross-project release trains.
+        await journal.DidNotReceiveWithAnyArgs().AppendAsync(default!, TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "Given a create command with a RunId, when CreateAsync is called, then it appends the run-referenced event in the same scope")]
+    public async Task CreateWithRunIdAppendsRunReferencedEventAsync()
+    {
+        var clock = new MergeBatchFakeTimeProvider(now);
+        var store = Substitute.For<IMergeBatchStore>();
+        var journal = Substitute.For<IRunJournal>();
+        var runId = RunId.New();
+        var service = new MergeBatchService(store, new MergeBatchValidator(), journal, clock, NullLogger<MergeBatchService>.Instance);
+
+        await service.CreateAsync(
+            new CreateMergeBatchCommand(
+                "release-train-q4",
+                ["https://example.com/pr/3"],
+                runId),
+            TestContext.Current.CancellationToken);
+
+        await journal.Received(1).AppendAsync(
+            Arg.Is<RunEventEntry>(entry =>
+                entry.Type == "merge_queue.run_referenced"
+                && entry.RunId == runId),
+            TestContext.Current.CancellationToken);
     }
 
     [Fact(DisplayName = "Given an invalid create command, when CreateAsync is called, then it throws and never touches the store")]
@@ -50,7 +79,8 @@ public sealed class MergeBatchServiceShould
     {
         var clock = new MergeBatchFakeTimeProvider(now);
         var store = Substitute.For<IMergeBatchStore>();
-        var service = new MergeBatchService(store, new MergeBatchValidator(), clock, NullLogger<MergeBatchService>.Instance);
+        var journal = Substitute.For<IRunJournal>();
+        var service = new MergeBatchService(store, new MergeBatchValidator(), journal, clock, NullLogger<MergeBatchService>.Instance);
 
         var exception = await Should.ThrowAsync<ValidationException>(
             () => service.CreateAsync(

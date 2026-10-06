@@ -439,6 +439,16 @@ grpcPort = 17004
 # runTimeout = "00:02:00"
 # outputLogCharCap = 65536
 
+[orchestration.verification]
+# Verification axis (add-orchestra §3 — Coda). The orchestrator
+# re-evaluates every registered gate provider when a work item
+# enters a terminal phase, upserts the verdict into the `verifications`
+# table, and stamps the `gate.evaluated` journal event in the same
+# transaction. The default is ON; flip to false on a contour where
+# the gate evaluation must be skipped (rollback path for the
+# verification axis).
+# enabled = true
+
 [redis]
 # Distributed cache for multi-replica Host (issue #11, "Redis cache при
 # multi-replica Host"): when enabled, the Projects settings snapshot

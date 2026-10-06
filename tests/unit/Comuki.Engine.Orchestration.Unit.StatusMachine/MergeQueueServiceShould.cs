@@ -1,6 +1,7 @@
 using Comuki.Engine.Orchestration.Application.MergeQueue;
 using Comuki.Engine.Orchestration.Domain.MergeQueue;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
+using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Kernel.Ids;
 using FluentValidation;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -25,9 +26,10 @@ public sealed class MergeQueueServiceShould
     {
         var clock = new MergeQueueFakeTimeProvider(now);
         var store = Substitute.For<IMergeQueueStore>();
+        var journal = Substitute.For<IRunJournal>();
         var projectId = ProjectId.New();
         var validator = new MergeQueueValidator();
-        var service = new MergeQueueService(store, validator, clock, NullLogger<MergeQueueService>.Instance);
+        var service = new MergeQueueService(store, validator, journal, clock, NullLogger<MergeQueueService>.Instance);
 
         var view = await service.EnqueueAsync(
             new EnqueueMergeRequestCommand(
@@ -49,6 +51,36 @@ public sealed class MergeQueueServiceShould
                 && entry.Status == MergeQueueStatus.Pending
                 && entry.ProjectId == projectId),
             TestContext.Current.CancellationToken);
+        // No RunId on the command — the service must not emit the
+        // run-referenced event for cross-project release-train entries.
+        await journal.DidNotReceiveWithAnyArgs().AppendAsync(default!, TestContext.Current.CancellationToken);
+    }
+
+    [Fact(DisplayName = "Given an enqueue command with a RunId, when HandleAsync is called, then it appends the run-referenced event in the same scope")]
+    public async Task EnqueueWithRunIdAppendsRunReferencedEventAsync()
+    {
+        var clock = new MergeQueueFakeTimeProvider(now);
+        var store = Substitute.For<IMergeQueueStore>();
+        var journal = Substitute.For<IRunJournal>();
+        var projectId = ProjectId.New();
+        var runId = RunId.New();
+        var service = new MergeQueueService(store, new MergeQueueValidator(), journal, clock, NullLogger<MergeQueueService>.Instance);
+
+        await service.EnqueueAsync(
+            new EnqueueMergeRequestCommand(
+                projectId,
+                "feature/with-run",
+                "https://github.com/comuki/comuki.orchestrator/pull/99",
+                ConflictResolution.None,
+                "from a run",
+                runId),
+            TestContext.Current.CancellationToken);
+
+        await journal.Received(1).AppendAsync(
+            Arg.Is<RunEventEntry>(entry =>
+                entry.Type == "merge_queue.run_referenced"
+                && entry.RunId == runId),
+            TestContext.Current.CancellationToken);
     }
 
     [Fact(DisplayName = "Given invalid enqueue, when HandleAsync is called, then it throws and never touches the store")]
@@ -56,7 +88,8 @@ public sealed class MergeQueueServiceShould
     {
         var clock = new MergeQueueFakeTimeProvider(now);
         var store = Substitute.For<IMergeQueueStore>();
-        var service = new MergeQueueService(store, new MergeQueueValidator(), clock, NullLogger<MergeQueueService>.Instance);
+        var journal = Substitute.For<IRunJournal>();
+        var service = new MergeQueueService(store, new MergeQueueValidator(), journal, clock, NullLogger<MergeQueueService>.Instance);
 
         var exception = await Should.ThrowAsync<ValidationException>(
             () => service.EnqueueAsync(
@@ -79,7 +112,8 @@ public sealed class MergeQueueServiceShould
         var store = Substitute.For<IMergeQueueStore>();
         store.ClaimNextAsync(Arg.Any<ProjectId?>(), Arg.Any<string>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
             .Returns((MergeQueueEntry?)null);
-        var service = new MergeQueueService(store, new MergeQueueValidator(), clock, NullLogger<MergeQueueService>.Instance);
+        var journal = Substitute.For<IRunJournal>();
+        var service = new MergeQueueService(store, new MergeQueueValidator(), journal, clock, NullLogger<MergeQueueService>.Instance);
 
         var view = await service.ClaimNextAsync(null, "operator-alice", TestContext.Current.CancellationToken);
 

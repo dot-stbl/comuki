@@ -1,5 +1,9 @@
+using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Domain.MergeQueue;
+using Comuki.Engine.Orchestration.Infrastructure.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
+using Comuki.Shared.Contracts.Journal;
+using Comuki.Shared.Kernel.Ids;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
@@ -15,13 +19,15 @@ namespace Comuki.Engine.Orchestration.Application.MergeQueue;
 /// <see cref="MergeQueueService"/> side; here we only orchestrate the
 /// batch aggregate itself.
 /// </summary>
-/// <param name="store"></param>
-/// <param name="validator"></param>
-/// <param name="clock"></param>
-/// <param name="logger"></param>
+/// <param name="store">EF-backed merge-batch store (scoped unit-of-work carrier).</param>
+/// <param name="validator">FluentValidation for the create command.</param>
+/// <param name="journal">Run-journal writer — the create path stamps <c>merge_queue.run_referenced</c> in the same scope when a <see cref="RunId"/> is supplied.</param>
+/// <param name="clock">Wall-clock for the create stamp.</param>
+/// <param name="logger">Structured logger.</param>
 public sealed class MergeBatchService(
     IMergeBatchStore store,
     IValidator<CreateMergeBatchCommand> validator,
+    IRunJournal journal,
     TimeProvider clock,
     ILogger<MergeBatchService> logger)
 {
@@ -35,6 +41,25 @@ public sealed class MergeBatchService(
         var batch = MergeBatch.Create(command.Name, command.PullRequestUrls, clock.GetUtcNow(), command.RunId);
 
         await store.AddAsync(batch, cancellationToken);
+
+        // Same-scope journal append — see MergeQueueService.EnqueueAsync
+        // for the rationale (a row visible before the link is a
+        // half-stamped event). Cross-project release trains
+        // (RunId == null) skip the emit by design.
+        if (command.RunId is { } runId)
+        {
+            var batchEvent = new RunEventEntry(
+                Id: Guid.NewGuid(),
+                RunId: runId,
+                Type: RunEventTypes.MergeQueueRunReferenced,
+                PayloadJson: WorkItemEventPayloads.MergeQueueRunReferenced(
+                    kind: "batch",
+                    rowId: batch.Id,
+                    runId: runId.Value),
+                OccurredAt: clock.GetUtcNow());
+            await journal.AppendAsync(batchEvent, cancellationToken);
+        }
+
         logger.LogInformation(
             "Created merge-batch {BatchId} '{BatchName}' with {UrlCount} PR urls",
             batch.Id,

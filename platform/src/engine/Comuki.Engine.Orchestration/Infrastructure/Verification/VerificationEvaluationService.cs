@@ -143,6 +143,40 @@ public sealed class VerificationEvaluationService(
                 continue;
             }
 
+            // Producer hook (add-orchestra §3 — Coda, task 3.2).
+            // Gates that need to schedule an external artefact
+            // (GenericCommandGateProvider inserts a GenericCommandRun
+            // here) override EnsureGateRunAsync; the default no-op
+            // keeps pure read-side providers unchanged. The producer
+            // runs BEFORE the verdict read so the work item the
+            // verifier worker polls has a row to claim on the very
+            // first evaluation pass. The hook is idempotent on the
+            // underlying partial index — a re-evaluation for the same
+            // (work item, gate) is a no-op.
+            try
+            {
+                await provider.EnsureGateRunAsync(context, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                // The producer is best-effort: a misbehaving scheduler
+                // must not break the verdict read. The catch mirrors
+                // the EvaluateAsync catch — same exception, same
+                // verdict semantics. Pending is the spec's canonical
+                // "the provider could not answer" wire value; the
+                // missing row on the verifier side surfaces as
+                // Pending on the next evaluation pass, never as a
+                // crash.
+                logger.LogWarning(exception,
+                    "Gate {GateName} producer threw on work item {WorkItemId}; continuing",
+                    provider.GateName,
+                    workItemId);
+            }
+
             GateVerdictResult result;
             try
             {

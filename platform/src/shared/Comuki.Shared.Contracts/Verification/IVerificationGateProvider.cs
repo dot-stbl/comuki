@@ -47,4 +47,26 @@ public interface IVerificationGateProvider
     public Task<GateVerdictResult> EvaluateAsync(
         VerificationContext context,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Producer hook for gates that need to schedule an external
+    /// artefact before <see cref="EvaluateAsync"/> can stamp a verdict
+    /// (add-orchestra §3 — Coda, task 3.2 "first registered provider is
+    /// the existing Verify module"). The default implementation is a
+    /// no-op — providers that have nothing to schedule let the base
+    /// method run and the engine treats them as a pure read-side gate.
+    /// The platform-shipped first provider
+    /// (<c>GenericCommandGateProvider</c>) overrides this hook to insert
+    /// a <c>GenericCommandRun</c> for the work item on the first
+    /// evaluation pass; subsequent passes are idempotent on the
+    /// underlying partial index.
+    /// </summary>
+    /// <param name="context">The per-call evaluation context — same shape <see cref="EvaluateAsync"/> sees.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    public Task EnsureGateRunAsync(
+        VerificationContext context,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
 }

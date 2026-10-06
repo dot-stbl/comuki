@@ -151,10 +151,15 @@ file static class FrontmatterFields
 
     public static IReadOnlyList<string> SplitFlowList(string content)
     {
-        return [.. content
-            .Split(',')
-            .Select(static part => YamlishFrontmatter.StripQuotes(part.Trim()))
-            .Where(static part => part.Length > 0)];
+        // SplitTopLevelCommas tracks quotes / braces / brackets, so a
+        // comma inside a quoted scalar or a nested flow list/object does
+        // not split the surrounding list — Split(',') did, and a value
+        // like [a, "b, c", d] was getting chopped. The shared helper
+        // also trims each piece, so StripQuotes on the result is the
+        // last step.
+        return [.. YamlishFrontmatter.SplitTopLevelCommas(content)
+            .Select(static piece => YamlishFrontmatter.StripQuotes(piece))
+            .Where(static piece => piece.Length > 0)];
     }
 }
 

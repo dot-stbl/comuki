@@ -27,7 +27,7 @@ public static class VerificationHostExtensions
     /// </summary>
     /// <param name="services">The host's service collection.</param>
     /// <param name="configuration">The host configuration.</param>
-    [RequiresFeature("Verification")]
+    [RequiresFeature("verification")]
     public static IServiceCollection AddOrchestrationVerification(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -53,3 +53,4 @@ public static class VerificationHostExtensions
         return services;
     }
 }
+

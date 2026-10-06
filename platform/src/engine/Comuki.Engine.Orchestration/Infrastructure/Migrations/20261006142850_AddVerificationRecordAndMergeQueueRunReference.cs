@@ -1,4 +1,3 @@
-using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -28,7 +27,7 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
             migrationBuilder.CreateTable(
                 name: "verifications",
                 schema: "orchestration",
-                columns: table => new
+                columns: static table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     work_item_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -38,9 +37,9 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                     evaluated_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     evaluator = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false)
                 },
-                constraints: table =>
+                constraints: static table =>
                 {
-                    table.PrimaryKey("pk_verifications", x => x.id);
+                    table.PrimaryKey("pk_verifications", static x => x.id);
                 });
 
             migrationBuilder.CreateIndex(
@@ -53,7 +52,7 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                 name: "ux_verifications_work_item_id_gate_name",
                 schema: "orchestration",
                 table: "verifications",
-                columns: new[] { "work_item_id", "gate_name" },
+                columns: ["work_item_id", "gate_name"],
                 unique: true);
         }
 

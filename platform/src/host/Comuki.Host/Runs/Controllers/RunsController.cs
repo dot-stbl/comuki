@@ -1,4 +1,5 @@
 using Comuki.Host.Runs.Models;
+using Comuki.Host.Runs.Verification;
 using Comuki.Host.Security.RateLimit;
 using Comuki.Modules.Identity.Application.Permissions;
 using Comuki.Shared.Contracts.Runs;
@@ -14,13 +15,14 @@ namespace Comuki.Host.Runs.Controllers;
 
 /// <summary>
 /// Run listing surface: paged, filterable and sortable through the filter DSL
-/// (grammar on <see cref="FilterQuery"/>), the per-run detail read, and the
-/// three operator decision endpoints (approve / cancel / steer).
-/// Subject-scope filtered by the orchestration context query filters —
-/// out-of-scope rows are absent, not 403.
+/// (grammar on <see cref="FilterQuery"/>), the per-run detail read, the
+/// per-run verification view, and the three operator decision endpoints
+/// (approve / cancel / steer). Subject-scope filtered by the orchestration
+/// context query filters — out-of-scope rows are absent, not 403.
 /// </summary>
 /// <param name="runs">List handler behind <c>GET /api/v1/runs</c>.</param>
 /// <param name="details">Detail handler behind <c>GET /api/v1/runs/{runId}</c>.</param>
+/// <param name="verification">Verification view handler behind <c>GET /api/v1/runs/{runId}/verification</c> (add-orchestra §3 — Coda).</param>
 /// <param name="approve">Host-side approve port (issue #S5).</param>
 /// <param name="cancel">Host-side cancel port (issue #S5).</param>
 /// <param name="steer">Host-side steer port (add-orchestra §1 — Baton).</param>
@@ -30,6 +32,7 @@ namespace Comuki.Host.Runs.Controllers;
 public sealed class RunsController(
     RunsListHandler runs,
     GetRunDetailHandler details,
+    GetRunVerificationViewHandler verification,
     IApproveRunPort approve,
     ICancelRunPort cancel,
     ISteerRunPort steer) : ControllerBase
@@ -65,6 +68,30 @@ public sealed class RunsController(
     {
         return await details.GetAsync(new RunId(runId), cancellationToken) is { } found
             ? new OkObjectResult(found)
+            : RunsProblems.RunNotFound(new RunId(runId));
+    }
+
+    /// <summary>
+    /// Reads the per-gate verification view (add-orchestra §3 — Coda).
+    /// Returns the flat list of (work item, gate) verdicts the
+    /// orchestrator has stamped for the run. A run with no verdicts yet
+    /// (project had <c>VerifyEnabled=false</c>, or all work items still
+    /// pending) reads as 200 with an empty <c>Gates</c> list — the FE
+    /// renders "no gates evaluated" without a separate null path. Gated
+    /// by the <c>verification</c> paid feature key — Community-tier
+    /// requests answer 403 <c>edition.feature_unavailable</c>.
+    /// </summary>
+    /// <param name="runId">Run to read the verification view for.</param>
+    /// <param name="cancellationToken"></param>
+    [HttpGet("{runId:guid}/verification", Name = "runs-get-verification")]
+    [RequiresFeature("verification")]
+    [ProducesResponseType<RunVerificationView>(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult> GetVerificationAsync(Guid runId, CancellationToken cancellationToken = default)
+    {
+        return await verification.GetAsync(new RunId(runId), cancellationToken) is { } view
+            ? new OkObjectResult(view)
             : RunsProblems.RunNotFound(new RunId(runId));
     }
 

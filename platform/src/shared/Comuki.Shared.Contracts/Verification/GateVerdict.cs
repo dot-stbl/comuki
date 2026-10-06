@@ -24,8 +24,20 @@ public readonly record struct GateVerdict
     /// <summary>The default verdict — no evaluator has stamped this gate yet.</summary>
     public static GateVerdict Unspecified { get; }
 
+    /// <summary>
+    /// Wire form of <see cref="Unspecified"/> — what
+    /// <see cref="Value"/> returns when the smart-type is the named
+    /// <c>default</c>. Named after <see cref="Unspecified"/> (per
+    /// <c>smart-types.md</c>) so a freshly-loaded row whose wire value
+    /// is the canonical "no verdict" string round-trips through
+    /// <see cref="Value"/> without falling back to <see cref="string.Empty"/>
+    /// (an empty wire value is impossible to distinguish from an
+    /// error in the reader).
+    /// </summary>
+    public const string UnspecifiedValue = "unspecified";
+
     /// <summary>The wire value this verdict carries — lowercase, the canonical literal the spec &amp; journal payload both use.</summary>
-    public string Value => value ?? string.Empty;
+    public string Value => value ?? UnspecifiedValue;
 
     /// <summary>Gate is in flight; not a terminal verdict.</summary>
     public static GateVerdict Pending { get; } = new("pending");

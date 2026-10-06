@@ -74,15 +74,19 @@ public sealed class RunsController(
     /// <summary>
     /// Reads the per-gate verification view (add-orchestra §3 — Coda).
     /// Returns the flat list of (work item, gate) verdicts the
-    /// orchestrator has stamped for the run. A run with no verdicts yet
-    /// (project had <c>VerifyEnabled=false</c>, or all work items still
-    /// pending) reads as 200 with an empty <c>Gates</c> list — the FE
-    /// renders "no gates evaluated" without a separate null path. Gated
-    /// by the <c>verification</c> paid feature key — Community-tier
-    /// requests answer 403 <c>edition.feature_unavailable</c>.
+    /// orchestrator has stamped for the run, and the derived
+    /// <c>verified</c> / <c>verificationPending</c> booleans the FE
+    /// renders as the "verification pending" pill under the run's
+    /// status strip. A run with no verdicts yet (project had
+    /// <c>VerifyEnabled=false</c>, or all work items still pending)
+    /// reads as 200 with an empty <c>Gates</c> list and both booleans
+    /// <see langword="false"/> — the FE renders "no gates evaluated"
+    /// without a separate null path. Gated by the <c>verification</c>
+    /// paid feature key — Community-tier requests answer 403
+    /// <c>edition.feature_unavailable</c>.
     /// </summary>
     /// <param name="runId">Run to read the verification view for.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cooperative cancellation token threaded into the verification view handler and the EF read.</param>
     [HttpGet("{runId:guid}/verification", Name = "runs-get-verification")]
     [RequiresFeature("verification")]
     [ProducesResponseType<RunVerificationView>(StatusCodes.Status200OK)]

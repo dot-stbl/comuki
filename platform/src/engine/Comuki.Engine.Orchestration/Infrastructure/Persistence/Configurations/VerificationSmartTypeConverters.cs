@@ -14,6 +14,7 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Persistence.Configurations;
 /// read so a freshly-loaded row never throws on a value the catalogue
 /// has not seen yet.
 /// </summary>
+// TODO(SMART-TYPES): убрать после [SmartType]-генератора — см. source-generators.md §1
 internal static class VerificationSmartTypeConverters
 {
     /// <summary>Bidirectional converter for <see cref="GateVerdict"/>.</summary>

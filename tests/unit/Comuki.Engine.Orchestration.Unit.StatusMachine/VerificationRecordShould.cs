@@ -80,4 +80,18 @@ public sealed class VerificationRecordShould
         GateVerdict.Passed.Value.ShouldBe("passed");
         GateVerdict.Failed.Value.ShouldBe("failed");
     }
+
+    [Fact(DisplayName = "Given the default verdict, when Value is read, then the named Unspecified wire string is returned, not string.Empty")]
+    public void GateVerdictDefaultValueIsNamed()
+    {
+        GateVerdict.Unspecified.Value.ShouldBe("unspecified");
+        default(GateVerdict).Value.ShouldBe("unspecified");
+    }
+
+    [Fact(DisplayName = "Given the default kind, when Value is read, then the named Unspecified wire string is returned, not string.Empty")]
+    public void GateEvidenceKindDefaultValueIsNamed()
+    {
+        GateEvidenceKind.Unspecified.Value.ShouldBe("other");
+        default(GateEvidenceKind).Value.ShouldBe("other");
+    }
 }

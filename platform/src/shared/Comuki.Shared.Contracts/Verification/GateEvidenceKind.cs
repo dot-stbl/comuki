@@ -21,8 +21,19 @@ public readonly record struct GateEvidenceKind
     /// <summary>The default kind — a literal whose value is not one of the named kinds; equivalent to <see cref="Other"/> for the round-tripping contract.</summary>
     public static GateEvidenceKind Unspecified { get; }
 
+    /// <summary>
+    /// Wire form of <see cref="Unspecified"/> — what
+    /// <see cref="Value"/> returns when the smart-type is the named
+    /// <c>default</c>. Per <c>smart-types.md</c>: a freshly-loaded
+    /// row's <c>kind</c> never reads back as an empty string; the named
+    /// default carries a stable, lowercase wire form (matching the
+    /// <see cref="Other"/> value the journal's open-type rule maps
+    /// unknown provider-specific kinds onto).
+    /// </summary>
+    public const string UnspecifiedValue = "other";
+
     /// <summary>The wire value this kind carries — lowercase, dot.case; the canonical literal the <c>evidence.kind</c> JSON field reads and writes.</summary>
-    public string Value => value ?? string.Empty;
+    public string Value => value ?? UnspecifiedValue;
 
     /// <summary>The <c>changeset.diff</c> bundle member — a unified text/x-diff the gate consults.</summary>
     public static GateEvidenceKind Cmdiff { get; } = new("cmdiff");

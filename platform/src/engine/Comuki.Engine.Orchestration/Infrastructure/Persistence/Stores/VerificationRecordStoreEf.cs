@@ -37,11 +37,11 @@ public sealed class VerificationRecordStoreEf(OrchestrationDbContext db) : IVeri
         };
 
         await db.Database.ExecuteSqlRawAsync(
-            """
-            INSERT INTO orchestration.verifications
+            $$"""
+            INSERT INTO {{OrchestrationDatabase.Schema}}.{{OrchestrationDatabase.Verifications}}
                 (id, work_item_id, gate_name, verdict, evidence_refs, evaluated_at, evaluator)
             VALUES
-                ({0}, {1}, {2}, {3}, {4}::jsonb, {5}, {6})
+                ({{0}}, {{1}}, {{2}}, {{3}}, {{4}}::jsonb, {{5}}, {{6}})
             ON CONFLICT (work_item_id, gate_name) DO UPDATE SET
                 verdict = EXCLUDED.verdict,
                 evidence_refs = EXCLUDED.evidence_refs,

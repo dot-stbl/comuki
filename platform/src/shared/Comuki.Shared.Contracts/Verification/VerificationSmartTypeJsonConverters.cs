@@ -14,6 +14,7 @@ namespace Comuki.Shared.Contracts.Verification;
 /// open-type rule — provider-specific kinds collapse to <c>other</c>
 /// on read, never to a parse error).
 /// </summary>
+// TODO(SMART-TYPES): убрать после [SmartType]-генератора — см. source-generators.md §1
 public sealed class GateEvidenceKindJsonConverter : JsonConverter<GateEvidenceKind>
 {
     /// <inheritdoc />
@@ -56,6 +57,7 @@ public sealed class GateEvidenceKindJsonConverter : JsonConverter<GateEvidenceKi
 /// so a freshly-loaded row whose column default is the canonical
 /// <c>"pending"</c> string round-trips without throwing.
 /// </summary>
+// TODO(SMART-TYPES): убрать после [SmartType]-генератора — см. source-generators.md §1
 public sealed class GateVerdictJsonConverter : JsonConverter<GateVerdict>
 {
     /// <inheritdoc />

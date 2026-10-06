@@ -32,7 +32,7 @@ public sealed class MergeBatchService(
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
 
-        var batch = MergeBatch.Create(command.Name, command.PullRequestUrls, clock.GetUtcNow());
+        var batch = MergeBatch.Create(command.Name, command.PullRequestUrls, clock.GetUtcNow(), command.RunId);
 
         await store.AddAsync(batch, cancellationToken);
         logger.LogInformation(

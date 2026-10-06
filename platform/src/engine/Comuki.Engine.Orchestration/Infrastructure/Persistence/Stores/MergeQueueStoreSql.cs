@@ -34,7 +34,7 @@ internal static class MergeQueueStoreSql
         + "    LIMIT 1 "
         + "    FOR UPDATE SKIP LOCKED "
         + ") "
-        + "RETURNING id, project_id, branch_name, pull_request_url, status, conflict_resolution, "
+        + "RETURNING id, project_id, run_id, branch_name, pull_request_url, status, conflict_resolution, "
         + "          enqueued_at, claimed_by, claimed_at, merged_at, abandoned_at, abandoned_reason, notes";
 
     /// <summary>
@@ -74,6 +74,7 @@ internal static class MergeQueueStoreSql
     public static MergeQueueEntry ReadClaimed(DbDataReader reader)
     {
         var projectIdOrdinal = reader.GetOrdinal("project_id");
+        var runIdOrdinal = reader.GetOrdinal("run_id");
         var claimedByOrdinal = reader.GetOrdinal("claimed_by");
         var claimedAtOrdinal = reader.GetOrdinal("claimed_at");
         var mergedAtOrdinal = reader.GetOrdinal("merged_at");
@@ -86,6 +87,9 @@ internal static class MergeQueueStoreSql
             reader.IsDBNull(projectIdOrdinal)
                 ? null
                 : new ProjectId(reader.GetGuid(projectIdOrdinal)),
+            reader.IsDBNull(runIdOrdinal)
+                ? null
+                : new RunId(reader.GetGuid(runIdOrdinal)),
             reader.GetString(reader.GetOrdinal("branch_name")),
             reader.GetString(reader.GetOrdinal("pull_request_url")),
             MergeQueueStatus.FromWire(reader.GetString(reader.GetOrdinal("status"))),

@@ -28,6 +28,10 @@ public sealed class MergeQueueConfiguration : IEntityTypeConfiguration<MergeQueu
             .HasColumnName("project_id")
             .HasConversion(OrchestrationIdConverters.ProjectIdToUuid);
 
+        builder.Property(static entry => entry.RunId)
+            .HasColumnName("run_id")
+            .HasConversion(OrchestrationIdConverters.RunIdToNullableUuid);
+
         builder.Property(static entry => entry.BranchName)
             .HasColumnName("branch_name")
             .HasMaxLength(256)

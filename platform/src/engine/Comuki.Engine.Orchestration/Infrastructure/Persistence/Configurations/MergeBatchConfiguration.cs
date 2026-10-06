@@ -50,6 +50,10 @@ public sealed class MergeBatchConfiguration : IEntityTypeConfiguration<MergeBatc
             .HasMaxLength(256)
             .IsRequired();
 
+        builder.Property(static batch => batch.RunId)
+            .HasColumnName("run_id")
+            .HasConversion(OrchestrationIdConverters.RunIdToNullableUuid);
+
         builder.Property(static batch => batch.PullRequestUrls)
             .HasColumnName("pull_request_urls")
             .HasColumnType("jsonb")

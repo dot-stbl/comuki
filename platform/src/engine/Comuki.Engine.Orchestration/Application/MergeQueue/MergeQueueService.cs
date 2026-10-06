@@ -39,7 +39,8 @@ public sealed class MergeQueueService(
             command.PullRequestUrl,
             command.ConflictResolution,
             command.Notes,
-            clock.GetUtcNow());
+            clock.GetUtcNow(),
+            command.RunId);
 
         await store.AddAsync(entry, cancellationToken);
         logger.LogInformation(

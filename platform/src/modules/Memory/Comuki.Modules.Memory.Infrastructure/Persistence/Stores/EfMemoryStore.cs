@@ -181,23 +181,17 @@ public sealed class EfMemoryStore(
             if (await MemoryFactLexical.HasColumnAsync(db, cancellationToken))
             {
                 // The lex path uses the user-supplied query text as
-                // plainto_tsquery input; the SQL fragment strips
-                // surrounding quotes and treats the rest as plain tokens.
-                // MemoryFactSql.LexicalQuery returns "" for a blank/empty
-                // query, in which case MemoryFactLexical.TrySearchLexicalAsync
-                // short-circuits and returns [] — the vector path stays
-                // the sole ranker.
-                var lexicalQueryText = !string.IsNullOrEmpty(query.Text)
-                    ? MemoryFactSql.LexicalQuery(query.Text)
-                    : string.Empty;
-                if (lexicalQueryText.Length > 0)
+                // plainto_tsquery input. MemoryFactLexical.TrySearchLexicalAsync
+                // owns the empty-query gate (it short-circuits to [] on
+                // a blank/empty query, since an empty tsquery matches
+                // nothing and the vector path stays the sole ranker), so
+                // the caller does not pre-filter on query.Text being
+                // non-empty.
+                var byLexical = await MemoryFactLexical.TrySearchLexicalAsync(
+                    db, query.Text, MemoryFactMissionQuery.Effective(query, effective.Scope, effective.SubjectId), logger, cancellationToken);
+                if (byLexical is not null)
                 {
-                    var byLexical = await MemoryFactLexical.TrySearchLexicalAsync(
-                        db, lexicalQueryText, MemoryFactMissionQuery.Effective(query, effective.Scope, effective.SubjectId), logger, cancellationToken);
-                    if (byLexical is not null)
-                    {
-                        lexicalRows = [.. byLexical.Select(static row => row.View with { LexicalRank = row.LexicalRank })];
-                    }
+                    lexicalRows = [.. byLexical.Select(static row => row.View with { LexicalRank = row.LexicalRank })];
                 }
             }
         }
@@ -539,14 +533,20 @@ file static class MemoryFactLexical
 
     public static async Task<IReadOnlyList<LexicalRankedRow>?> TrySearchLexicalAsync(
         MemoryDbContext db,
-        string lexicalQuery,
+        string? queryText,
         MemoryFactQuery query,
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        // Empty trimmed query: skip the round-trip — an empty tsquery
+        // Empty / blank query: skip the round-trip — an empty tsquery
         // matches no row anyway, and the caller treats an empty query
-        // as "no lexical signal" (zero rank for everything).
+        // as "no lexical signal" (zero rank for everything). The
+        // conversion itself strips surrounding quotes via
+        // MemoryFactSql.LexicalQuery, so a value like " 'foo' " lands
+        // as the same payload as "foo" without the caller's help.
+        var lexicalQuery = string.IsNullOrEmpty(queryText)
+            ? string.Empty
+            : MemoryFactSql.LexicalQuery(queryText);
         return lexicalQuery is ""
             ? []
             : await MemoryFactHybridSearch.ExecuteRankedAsync(
@@ -558,8 +558,7 @@ file static class MemoryFactLexical
             query,
             "lexical rank search failed; using zero lexical rank",
             logger,
-            cancellationToken,
-            pathParameter: lexicalQuery);
+            cancellationToken);
     }
 }
 
@@ -620,12 +619,12 @@ file static class MemoryFactHybridSearch
     /// <c>@kind</c> filters, and the <c>@limit</c>; reads rows through
     /// <paramref name="readRow"/>; converts a <see cref="PostgresException"/>
     /// into a warning log + null return so the search falls back to
-    /// freshness / zero-rank rather than failing the call. The
-    /// <paramref name="pathParameter"/> value, when supplied, gates the
-    /// call on a non-empty path-specific value (the lexical path uses
-    /// it to short-circuit on a blank query; the vector path passes
-    /// null because the gate is the caller-side null check on
-    /// <c>query.Embedding</c>).
+    /// freshness / zero-rank rather than failing the call. The "is there
+    /// anything to search for" gate lives at the call sites — the lexical
+    /// path's <see cref="MemoryFactLexical.TrySearchLexicalAsync"/> short-
+    /// circuits on a blank query before opening a connection, and the
+    /// vector path's null check on <c>query.Embedding</c> is in
+    /// <see cref="EfMemoryStore.SearchAsync"/>.
     /// </summary>
     /// <param name="db">The context whose connection the command runs on.</param>
     /// <param name="searchSql">
@@ -649,12 +648,6 @@ file static class MemoryFactHybridSearch
     /// </param>
     /// <param name="logger">Logger for the failure-path warning.</param>
     /// <param name="cancellationToken">Cancellation for the connection and command.</param>
-    /// <param name="pathParameter">
-    /// Reserved for callers that need to short-circuit on a blank
-    /// path-specific value before opening a connection (the lexical
-    /// path). The vector path passes null because its gate lives in
-    /// the caller's null check on <c>query.Embedding</c>.
-    /// </param>
     public static async Task<IReadOnlyList<T>?> ExecuteRankedAsync<T>(
         MemoryDbContext db,
         string searchSql,
@@ -663,14 +656,8 @@ file static class MemoryFactHybridSearch
         MemoryFactQuery query,
         string failureLogMessage,
         ILogger logger,
-        CancellationToken cancellationToken,
-        string? pathParameter = null)
+        CancellationToken cancellationToken)
     {
-        if (pathParameter is { Length: 0 })
-        {
-            return [];
-        }
-
         try
         {
             await db.Database.OpenConnectionAsync(cancellationToken);
@@ -719,7 +706,7 @@ file static class MemoryFactHybridSearch
     /// <see cref="MemoryFactSql.LexicalRankSql"/>). Bound here exactly
     /// once per hybrid search.
     /// </summary>
-    private static void BindObjectAxisScope(MemoryDbContext db, System.Data.Common.DbCommand command)
+    internal static void BindObjectAxisScope(MemoryDbContext db, System.Data.Common.DbCommand command)
     {
         command.Parameters.Add(new NpgsqlParameter("unrestricted", NpgsqlTypes.NpgsqlDbType.Boolean)
         {
@@ -736,7 +723,7 @@ file static class MemoryFactHybridSearch
     /// <c>@kind</c> widen on NULL; a typed null is required or the
     /// statement dies with 42P08.
     /// </summary>
-    private static void BindNarrowingFilters(System.Data.Common.DbCommand command, MemoryFactQuery query)
+    internal static void BindNarrowingFilters(System.Data.Common.DbCommand command, MemoryFactQuery query)
     {
         command.Parameters.Add(MemoryFactVectors.FilterTextParameter(
             "scope", query.Scope is { } scope ? MemoryScopeKeys.Key(scope) : null));

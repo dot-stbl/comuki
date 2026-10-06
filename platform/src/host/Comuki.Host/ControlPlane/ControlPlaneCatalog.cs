@@ -49,7 +49,6 @@ public sealed class ControlPlaneCatalog(
             cancellationToken);
 
         return [.. entries
-            .Select(static entry => entry.Entry)
             .OrderBy(static profile => profile.Key, StringComparer.Ordinal)];
     }
 
@@ -79,7 +78,6 @@ public sealed class ControlPlaneCatalog(
             cancellationToken);
 
         return [.. entries
-            .Select(static entry => entry.Entry)
             .OrderBy(static command => command.Key, StringComparer.Ordinal)];
     }
 
@@ -164,12 +162,14 @@ internal static class ControlPlaneDocumentLoader
 
     /// <summary>
     /// Shared read loop: resolve root → folder, enumerate the candidates,
-    /// read each, parse, and skip invalid documents. The two catalogs
-    /// differ only in the enumeration strategy and the entry factory;
-    /// everything else (root resolution, folder check, parse, the
-    /// standard "Skipping {file}: missing or invalid frontmatter
-    /// (name and description required)" warning, the empty catalog
-    /// warning when the root is absent) lives here exactly once.
+    /// read each, parse, and skip invalid documents. The catalogs differ
+    /// only in the enumeration strategy and the entry factory; everything
+    /// else (root resolution, folder check, parse, the standard "Skipping
+    /// {file}: missing or invalid frontmatter (name and description
+    /// required)" warning, the empty catalog warning when the root is
+    /// absent) lives here exactly once. Returns just the entry — the
+    /// intermediate <see cref="CatalogSource"/> and parsed document are
+    /// only used inside the loop, never re-read by the caller.
     /// </summary>
     /// <param name="root">The configured control-plane root, or null when the caller will probe.</param>
     /// <param name="folderName">Folder under the root to read (e.g. <c>profiles</c>, <c>chat-commands</c>, <c>skills</c>).</param>
@@ -178,7 +178,7 @@ internal static class ControlPlaneDocumentLoader
     /// <param name="createEntry">Per-shape entry factory: from (key, parsed document) to the public entry type.</param>
     /// <param name="logger">Logger for the empty-catalog and skip-malformed warnings.</param>
     /// <param name="cancellationToken">Cancellation for the file reads.</param>
-    public static async Task<IReadOnlyList<(CatalogSource Source, TEntry Entry, TDocument Document)>> LoadAsync<TDocument, TEntry>(
+    public static async Task<IReadOnlyList<TEntry>> LoadAsync<TDocument, TEntry>(
         string? root,
         string folderName,
         EnumerateItems enumerate,
@@ -188,7 +188,7 @@ internal static class ControlPlaneDocumentLoader
         CancellationToken cancellationToken)
         where TDocument : class
     {
-        var entries = new List<(CatalogSource, TEntry, TDocument)>();
+        var entries = new List<TEntry>();
 
         if (root is null)
         {
@@ -215,17 +215,12 @@ internal static class ControlPlaneDocumentLoader
                 continue;
             }
 
-            entries.Add((source, createEntry(source, document), document));
+            entries.Add(createEntry(source, document));
         }
 
         return entries;
     }
 }
-
-/// <summary>One catalog entry: the document plus its stable key (the file stem).</summary>
-/// <param name="Key"></param>
-/// <param name="Document"></param>
-file sealed record ControlPlaneCatalogEntry(string Key, ControlPlaneDocument Document);
 
 /// <summary>
 /// File-backed control-plane skill catalog: reads <c>skills/</c> directories
@@ -271,7 +266,6 @@ public sealed class SkillCatalog(
             cancellationToken);
 
         return [.. entries
-            .Select(static entry => entry.Entry)
             .OrderBy(static skill => skill.Key, StringComparer.Ordinal)];
     }
 

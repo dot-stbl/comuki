@@ -156,7 +156,7 @@ public static class MemoryFactSql
     /// <see cref="LexicalRankedRow.LexicalRank"/> respectively.
     /// </summary>
     /// <param name="reader"></param>
-    private static MemoryFactView ReadViewCore(System.Data.Common.DbDataReader reader)
+    internal static MemoryFactView ReadViewCore(System.Data.Common.DbDataReader reader)
     {
         return new MemoryFactView(
             Id: new MemoryFactId(reader.GetGuid(0)),

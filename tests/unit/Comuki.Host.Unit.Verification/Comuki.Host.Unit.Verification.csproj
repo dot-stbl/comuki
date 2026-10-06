@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RootNamespace>Comuki.Engine.Orchestration.Unit.DbContext</RootNamespace>
+    <RootNamespace>Comuki.Host.Unit.Verification</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\host\Comuki.Host\Comuki.Host.csproj" />
   </ItemGroup>
 
 </Project>

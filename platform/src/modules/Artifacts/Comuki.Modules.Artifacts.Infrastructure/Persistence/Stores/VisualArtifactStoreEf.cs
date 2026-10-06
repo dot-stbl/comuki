@@ -123,4 +123,21 @@ public sealed class VisualArtifactStoreEf(
             ? null
             : new VisualArtifactContent(body.Body, body.ContentType, body.SizeBytes);
     }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<VisualArtifact>> ListByWorkItemsAndFilenameAsync(
+        IReadOnlyCollection<Guid> workItemIds,
+        string filename,
+        CancellationToken cancellationToken = default)
+    {
+        return workItemIds.Count == 0
+            ? await Task.FromResult<IReadOnlyList<VisualArtifact>>([])
+            : await db.VisualArtifacts
+            .AsNoTracking()
+            .Where(artifact => artifact.WorkItemId.HasValue
+                && workItemIds.Contains(artifact.WorkItemId.Value)
+                && artifact.Filename == filename)
+            .OrderByDescending(artifact => artifact.Version)
+            .ToListAsync(cancellationToken);
+    }
 }

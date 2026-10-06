@@ -51,6 +51,14 @@ internal sealed class NullVisualArtifactStore : IVisualArtifactStore
     {
         return Task.FromResult<VisualArtifactContent?>(null);
     }
+
+    public Task<IReadOnlyList<Domain.VisualArtifacts.VisualArtifact>> ListByWorkItemsAndFilenameAsync(
+        IReadOnlyCollection<Guid> workItemIds,
+        string filename,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyList<Domain.VisualArtifacts.VisualArtifact>>([]);
+    }
 }
 
 /// <summary>Null source: every ownership probe returns <c>null</c> (== 409). Tests compose without the engine DbContext.</summary>

@@ -52,9 +52,9 @@ public interface IHarness
     /// worker start and chooses the spawn strategy; the
     /// <c>Capabilities.LiveSession</c> field is the single source
     /// of truth for "can a steer land here authoritatively?" per
-    /// <c>specs/session/spec.md</c> Requirement
-    /// "Capabilities.LiveSession is the single source of truth for
-    /// steering".
+    /// <c>openspec/changes/add-orchestra/specs/worker-runtime/spec.md</c>
+    /// Requirement "Capabilities.LiveSession is the single source of
+    /// truth for steering".
     /// </summary>
     public HarnessCapabilities Capabilities { get; }
 }

@@ -28,7 +28,11 @@ public sealed class HarnessRegistry
     /// DI container resolves. The first registration wins on
     /// collisions (<c>TryAdd</c>); the seam is idempotent across
     /// hot-reload and the same constraint every concurrent catalog
-    /// carries.
+    /// carries. Today the host composition registers Pi (production)
+    /// and TestFakeHarnessCapability (test fake with the
+    /// <see cref="HarnessIds.Pi"/> default's <c>live</c> flag)
+    /// — Phase 8 / Instrument replaces the DI-registered
+    /// capabilities with a profile-frontmatter-driven catalog.
     /// </summary>
     /// <param name="harnesses">All harnesses the composition registered.</param>
     public HarnessRegistry(IEnumerable<IHarness> harnesses)

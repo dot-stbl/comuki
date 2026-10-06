@@ -150,11 +150,10 @@ public sealed class HostSteerRunAdapter(
         var followUp = await StageFollowUpAsync(run, text, cancellationToken);
 
         logger.LogInformation(
-            "Steer on run {RunId} staged follow-up work item {WorkItemId} (live worker was {WorkerState}, harness live-session={LiveSession})",
+            "Steer on run {RunId} staged follow-up work item {WorkItemId} (live worker was {WorkerState})",
             runId.Value,
             followUp.Id,
-            liveWorker is null ? "absent" : "present",
-            liveHarness is { Capabilities.LiveSession: true });
+            liveWorker is null ? "absent" : "present");
 
         return new SteerRunResult(true, followUp.Id);
     }

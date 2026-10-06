@@ -1,6 +1,5 @@
 using Comuki.Host.Translator.Execution.Outcomes;
 using Comuki.Host.Translator.Execution.Run;
-using Comuki.Host.Translator.Parsing;
 using Comuki.Host.Translator.Runtime;
 
 namespace Comuki.Host.Translator.Execution.Loop;
@@ -62,7 +61,7 @@ public static class PiPump
             await foreach (var piEvent in session.Events.WithCancellation(run.RunCancellation.Token))
             {
                 summary.Observe(piEvent);
-                ObserveRunState(run, piEvent);
+                PiRunStateObserver.Observe(run, piEvent);
                 if (PiEventToWorkerEvent.ToForwardEvent(run.Claimed.WorkItemId.ToString(), piEvent) is { } forwardable)
                 {
                     await run.Session.SendAsync(forwardable, run.RunCancellation.Token);
@@ -93,28 +92,6 @@ public static class PiPump
                 (long)(clock.GetUtcNow() - startedAt).TotalMilliseconds,
                 summary.ResultText,
                 exception.Message);
-        }
-    }
-
-    /// <summary>
-    /// Side-effect pass on the worker run: tracks the harness's
-    /// agent-settled signal so the <c>WorkerCommandHandler</c>
-    /// chooses between <c>steer</c> and <c>follow_up</c>. Lives
-    /// here (not in <see cref="WorkerRunSummary"/>) because the
-    /// run is what the command handler reads, not the summary.
-    /// </summary>
-    /// <param name="run">The run whose flag flips on the agent-settled signal.</param>
-    /// <param name="piEvent">The event the pump just consumed.</param>
-    private static void ObserveRunState(WorkerRun run, PiEvent piEvent)
-    {
-        switch (piEvent)
-        {
-            case PiEvent.AgentSettledEvent:
-                run.HasAgentSettled = true;
-                break;
-            case PiEvent.AgentStartEvent:
-                run.HasAgentSettled = false;
-                break;
         }
     }
 }

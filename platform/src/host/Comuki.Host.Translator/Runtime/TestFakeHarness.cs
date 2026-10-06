@@ -95,9 +95,12 @@ internal sealed class FakeHarnessSession : IHarnessSession
 
         // Run the initial wave in the background — the worker
         // (or the unit test) starts iterating Events right after
-        // StartSessionAsync returns.
+        // StartSessionAsync returns. _ = discard is intentional:
+        // EmitWaveAsync pushes events into the channel and returns;
+        // the consumer (worker / test) drains the channel
+        // independently, no await needed.
         _ = Task.Run(
-            () => EmitWaveAsync(turnId: "p-initial", promptText: brief, responseText: InitialResponseText, liveSessionSteer: true, cancellationToken),
+            () => EmitWaveAsync(responseText: InitialResponseText, liveSessionSteer: true, cancellationToken),
             cancellationToken);
     }
 
@@ -125,12 +128,14 @@ internal sealed class FakeHarnessSession : IHarnessSession
             return;
         }
 
-        _ = Task.Run(() => EmitWaveAsync(turnId, text, responseText, liveSessionSteer, disposedCts.Token));
+        // _ = discard is intentional: EmitWaveAsync pushes events into
+        // the channel and returns; the consumer drains the channel
+        // independently, no await needed (see emit-on-the-ctor
+        // comment above).
+        _ = Task.Run(() => EmitWaveAsync(responseText, liveSessionSteer, disposedCts.Token));
     }
 
     private async Task EmitWaveAsync(
-        string turnId,
-        string promptText,
         string responseText,
         bool liveSessionSteer = true,
         CancellationToken cancellationToken = default)
@@ -183,18 +188,18 @@ internal sealed class FakeHarnessSession : IHarnessSession
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         if (disposed)
         {
-            return;
+            return default;
         }
 
         disposed = true;
         disposedCts.Cancel();
         events.Writer.TryComplete();
         writer.CloseStdin();
-        await Task.CompletedTask;
+        return default;
     }
 }
 
@@ -206,9 +211,8 @@ internal sealed class FakeHarnessSession : IHarnessSession
 /// </summary>
 internal sealed class FakeTurnInputWriter(FakeHarnessSession session) : ITurnInputWriter
 {
-    private static readonly string responseText = "PONG2";
+    private const string ResponseText = "PONG2";
 
-    private readonly FakeHarnessSession session = session;
     private bool closed;
     private long turnCounter;
 
@@ -220,7 +224,7 @@ internal sealed class FakeTurnInputWriter(FakeHarnessSession session) : ITurnInp
         }
 
         var id = $"{turnId}-{Interlocked.Increment(ref turnCounter)}";
-        session.RecordTurnAndEmitWave(id, text, responseText, liveSessionSteer: true);
+        session.RecordTurnAndEmitWave(id, text, ResponseText, liveSessionSteer: true);
         return true;
     }
 
@@ -232,7 +236,7 @@ internal sealed class FakeTurnInputWriter(FakeHarnessSession session) : ITurnInp
         }
 
         var id = $"{turnId}-{Interlocked.Increment(ref turnCounter)}";
-        session.RecordTurnAndEmitWave(id, text, responseText, liveSessionSteer: false);
+        session.RecordTurnAndEmitWave(id, text, ResponseText, liveSessionSteer: false);
         return true;
     }
 

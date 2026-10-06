@@ -8,8 +8,10 @@ namespace Comuki.Shared.Contracts.Grpc;
 /// <see cref="Stop"/> | <see cref="InjectContext"/> | <see cref="LeaseExpired"/>
 /// | <see cref="Exec"/> | <see cref="TurnInput"/>. Exactly one is meaningful
 /// per command; the wire shape allows more than one to be set (legacy
-/// tolerated) and the worker handler dispatches by first non-null field,
-/// stop first.
+/// tolerated) and the worker handler dispatches each non-null branch
+/// it understands — <see cref="Stop"/>, <see cref="InjectContext"/>,
+/// <see cref="LeaseExpired"/>, <see cref="Exec"/>, and
+/// <see cref="TurnInput"/> are all consumed.
 /// </summary>
 [ProtoContract]
 public sealed record OrchestratorCommand

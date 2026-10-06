@@ -4,9 +4,13 @@ namespace Comuki.Host.Translator.Parsing;
 
 /// <summary>
 /// Typed events emitted by <see cref="StreamJsonParser"/> as it consumes
-/// <c>pi -p ... --output-format stream-json</c> output, one JSON object per line.
-/// The shapes follow Claude Code's stream-json convention (Anthropic-compatible)
-/// — the same convention <c>pi-coding-agent</c> uses.
+/// <c>pi --mode rpc</c> output, one JSON object per line on the
+/// harness's <c>stdout</c>. The shapes follow Claude Code's
+/// stream-json convention (Anthropic-compatible) — the same convention
+/// <c>pi-coding-agent</c> uses; the v1.x one-shot
+/// <c>pi -p ... --output-format stream-json</c> invocation is removed
+/// (see <c>openspec/changes/add-orchestra/specs/worker-runtime/spec.md</c>
+/// MODIFIED "Agent invocation and stream parsing").
 /// </summary>
 public abstract record PiEvent
 {

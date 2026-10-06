@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text;
-using System.Text.Json;
 using Comuki.Host.Translator.Parsing;
 using Comuki.Shared.Kernel.Harness;
 using Microsoft.Extensions.Options;
@@ -57,9 +56,6 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
 
     /// <summary>JSON-RPC <c>id</c> the initial <c>prompt</c> uses; correlates the <c>response</c> to this run.</summary>
     private const string InitialTurnIdPrefix = "p-";
-
-    private readonly IOptions<TranslatorOptions> options = options;
-    private readonly ILogger<PiHarness> logger = logger;
 
     /// <summary>Stable JSON-RPC id mint: monotonic per session, used by the worker-side command writer.</summary>
     private long nextRequestId;
@@ -119,7 +115,7 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
         var stderrTask = PiProcessHelpers.DrainStderrAsync(process, cancellationToken);
 
         var readerTask = Task.Run(
-            async () => await ReadEventsAsync(process.StandardOutput, events.Writer, cancellationToken),
+            async () => await PiReader.ReadEventsAsync(process.StandardOutput, events.Writer, cancellationToken),
             cancellationToken);
 
         var writer = new PiRpcTurnInputWriter(process.StandardInput.BaseStream, logger);
@@ -162,8 +158,47 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
             logger,
             executable));
     }
+}
 
-    private static async Task ReadEventsAsync(
+/// <summary>Process plumbing kept out of the harness: stderr drain and read-loop setup.</summary>
+file static class PiProcessHelpers
+{
+    public static Task<string> DrainStderrAsync(Process process, CancellationToken cancellationToken)
+    {
+        return Task.Run(
+            async () =>
+            {
+                var buffer = new StringBuilder();
+                while (await process.StandardError.ReadLineAsync(cancellationToken) is { } line)
+                {
+                    buffer.AppendLine(line);
+                }
+
+                return buffer.ToString();
+            },
+            cancellationToken);
+    }
+}
+
+/// <summary>
+/// Pure reader for the harness's <c>stdout</c>: line-by-line drain
+/// into the events channel. File-static so it carries no instance
+/// fields of <see cref="PiHarness"/>.
+/// </summary>
+file static class PiReader
+{
+    /// <summary>
+    /// Drains <paramref name="stdout"/> into <paramref name="writer"/>
+    /// until the stream closes or cancellation trips. Each line is
+    /// parsed by <see cref="StreamJsonParser.ParseLine"/> (the same
+    /// parser the v1.x one-shot path uses); the channel's
+    /// <c>Complete()</c> in the <c>finally</c> below flushes the
+    /// consumer on shutdown.
+    /// </summary>
+    /// <param name="stdout">The harness's stdout.</param>
+    /// <param name="writer">The events channel writer.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    public static async Task ReadEventsAsync(
         StreamReader stdout,
         System.Threading.Channels.ChannelWriter<PiEvent> writer,
         CancellationToken cancellationToken)
@@ -187,259 +222,5 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
         {
             writer.TryComplete();
         }
-    }
-}
-
-/// <summary>
-/// One open <c>pi --mode rpc</c> session. Owns the <see cref="Process"/>
-/// (one per worker run), the <see cref="StreamReader"/>
-/// on stdout (consumed by the reader task that feeds the events
-/// channel), and the <see cref="StreamWriter"/> on stdin (consumed by
-/// <see cref="PiRpcTurnInputWriter"/>). <see cref="DisposeAsync"/> is
-/// the single close path: stdin writer closed (pi's documented
-/// shutdown), reader task awaited, stderr drained, process
-/// tree-killed on cancellation, <see cref="Process"/> disposed.
-/// </summary>
-internal sealed class PiRpcSession(
-    int processId,
-    IAsyncEnumerable<PiEvent> events,
-    ITurnInputWriter turnInputs,
-    Task readerTask,
-    Task<string> stderrTask,
-    Process process,
-    ILogger logger,
-    string executable) : IHarnessSession
-{
-    private readonly Task readerTask = readerTask;
-    private readonly Task<string> stderrTask = stderrTask;
-    private readonly Process process = process;
-    private readonly ILogger logger = logger;
-    private readonly string executable = executable;
-    private readonly Lock disposeGate = new();
-    private bool disposed;
-
-    public int ProcessId { get; } = processId;
-
-    public IAsyncEnumerable<PiEvent> Events { get; } = events;
-
-    public ITurnInputWriter TurnInputs { get; } = turnInputs;
-
-    public async ValueTask DisposeAsync()
-    {
-        lock (disposeGate)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            disposed = true;
-        }
-
-        // Order matters: close the writer first so pi's orderly-shutdown
-        // path sees EOF on stdin (the documented shutdown). Only then
-        // tree-kill if the process is still alive — the EOF should make
-        // the wait-for-exit return on its own; the kill is a backstop
-        // for cancellation cases where the wait is interrupted before
-        // the process notices the close.
-        if (TurnInputs is PiRpcTurnInputWriter rpcWriter)
-        {
-            try
-            {
-                rpcWriter.CloseStdin();
-            }
-            catch (Exception exception)
-            {
-                logger.LogWarning(exception, "failed to close stdin on {Executable} (PID {Pid})", executable, ProcessId);
-            }
-        }
-
-        try
-        {
-            await readerTask;
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            logger.LogDebug(exception, "reader task for {Executable} (PID {Pid}) ended with an exception", executable, ProcessId);
-        }
-
-        string stderr;
-        try
-        {
-            stderr = await stderrTask;
-        }
-        catch (OperationCanceledException)
-        {
-            stderr = string.Empty;
-        }
-
-        if (!process.HasExited)
-        {
-            logger.LogWarning("Cancelling {Executable} (PID {Pid})", executable, ProcessId);
-            try
-            {
-                process.Kill(entireProcessTree: true);
-            }
-            catch (System.ComponentModel.Win32Exception exception)
-            {
-                logger.LogWarning(exception, "failed to kill {Executable} (PID {Pid})", executable, ProcessId);
-            }
-            catch (InvalidOperationException exception)
-            {
-                logger.LogWarning(exception, "{Executable} (PID {Pid}) already exited", executable, ProcessId);
-            }
-        }
-
-        try
-        {
-            await process.WaitForExitAsync(CancellationToken.None);
-        }
-        catch (Exception exception)
-        {
-            logger.LogDebug(exception, "wait-for-exit on {Executable} (PID {Pid}) ended with an exception", executable, ProcessId);
-        }
-
-        if (stderr.Length > 0)
-        {
-            logger.LogDebug("{Executable} (PID {Pid}) stderr: {Stderr}", executable, ProcessId, stderr);
-        }
-
-        process.Dispose();
-    }
-}
-
-/// <summary>
-/// Stdin-side writer for the <c>pi --mode rpc</c> channel. Each
-/// command is one JSON object on its own line, terminated by LF
-/// and flushed. A single lock guards the
-/// <see cref="StreamWriter"/> so a concurrent steer and the
-/// reader task's flush (or two steers) can't interleave mid-line.
-/// <see cref="CloseStdin"/> is the orderly-shutdown close (the
-/// session's dispose calls it; pi's
-/// <c>openspec/changes/add-orchestra/spike-1b-report.md</c>
-/// documents that closing stdin makes pi exit code 0).
-/// </summary>
-internal sealed class PiRpcTurnInputWriter : ITurnInputWriter
-{
-    private static readonly JsonSerializerOptions jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-    };
-
-    private readonly StreamWriter writer;
-    private readonly ILogger logger;
-    private readonly Lock writeGate = new();
-    private bool closed;
-
-    public PiRpcTurnInputWriter(Stream stdin, ILogger logger)
-    {
-        writer = new StreamWriter(stdin, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false))
-        {
-            AutoFlush = false,
-            NewLine = "\n",
-        };
-        this.logger = logger;
-    }
-
-    public bool TryWriteSteer(string turnId, string text)
-    {
-        return TryWriteCommand(new { type = "steer", id = turnId, message = text });
-    }
-
-    public bool TryWriteFollowUp(string turnId, string text)
-    {
-        return TryWriteCommand(new { type = "follow_up", id = turnId, message = text });
-    }
-
-    public bool TryWritePrompt(string turnId, string text)
-    {
-        return TryWriteCommand(new { type = "prompt", id = turnId, message = text });
-    }
-
-    /// <summary>Closes the underlying <see cref="StreamWriter"/> (pi's orderly-shutdown signal).</summary>
-    public void CloseStdin()
-    {
-        lock (writeGate)
-        {
-            if (closed)
-            {
-                return;
-            }
-
-            try
-            {
-                writer.Flush();
-            }
-            catch (Exception)
-            {
-                // best-effort: the close below is the actual shutdown signal
-            }
-
-            try
-            {
-                writer.Dispose();
-            }
-            catch (Exception)
-            {
-                // ignore — the process may already have died
-            }
-
-            closed = true;
-        }
-    }
-
-    private bool TryWriteCommand(object command)
-    {
-        lock (writeGate)
-        {
-            if (closed)
-            {
-                return false;
-            }
-
-            try
-            {
-                // pi's stdin is JSON-RPC: one full JSON object per line.
-                // .NET 10 dropped the JsonSerializer.Serialize(StreamWriter,
-                // object?, JsonSerializerOptions?) overload (source-gen only);
-                // serialize to the underlying Stream and keep the writer for
-                // the trailing line terminator + flush. Writes hit the OS pipe
-                // in order: JSON bytes immediately on BaseStream, '\n' on the
-                // next writer.Flush(). The pi wire parser expects exactly
-                // this — a single LF-terminated JSON object per command.
-                JsonSerializer.Serialize(writer.BaseStream, command, jsonOptions);
-                writer.Write('\n');
-                writer.Flush();
-                return true;
-            }
-            catch (Exception exception)
-            {
-                logger.LogWarning(
-                    exception,
-                    "Failed to write {CommandType} command to pi stdin (PID context)",
-                    command.GetType().Name);
-                return false;
-            }
-        }
-    }
-}
-
-/// <summary>Process plumbing kept out of the harness: stderr drain and read-loop setup.</summary>
-file static class PiProcessHelpers
-{
-    public static Task<string> DrainStderrAsync(Process process, CancellationToken cancellationToken)
-    {
-        return Task.Run(
-            async () =>
-            {
-                var buffer = new StringBuilder();
-                while (await process.StandardError.ReadLineAsync(cancellationToken) is { } line)
-                {
-                    buffer.AppendLine(line);
-                }
-
-                return buffer.ToString();
-            },
-            cancellationToken);
     }
 }

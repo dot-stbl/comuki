@@ -99,7 +99,9 @@ public sealed class VerificationRecord
             throw new ArgumentException("gate name must not be empty", nameof(gateName));
         }
 
-        ArgumentNullException.ThrowIfNull(result);
+        // `result` is a non-nullable record; the compiler enforces the
+        // nullability. The ArgumentNullException.ThrowIfNull call the
+        // project rule bans (code-shape.md §11) is duplicate noise.
 
         return new VerificationRecord
         {

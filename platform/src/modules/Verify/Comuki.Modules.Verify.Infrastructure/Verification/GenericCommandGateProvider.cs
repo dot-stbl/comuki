@@ -61,7 +61,9 @@ public sealed class GenericCommandGateProvider(
         VerificationContext context,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        // `context` is a non-nullable record; the compiler enforces
+        // the nullability. The ArgumentNullException.ThrowIfNull call
+        // the project rule bans (code-shape.md §11) is duplicate noise.
 
         // AppliesTo already filtered the project scope; here we just
         // read the most recent run for the work item. The store's

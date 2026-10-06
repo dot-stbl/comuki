@@ -8,6 +8,14 @@ namespace Comuki.Host.Translator.Execution.Run;
 /// deltas append; the authoritative <c>message_end</c> assistant text
 /// replaces (pi guarantees it is the final wording). Feeds the
 /// StageReport's result text.
+/// <para>
+/// The agent-settled signal is tracked separately on
+/// <see cref="WorkerRun.HasAgentSettled"/> (the
+/// <c>WorkerCommandHandler</c> reads it directly; the
+/// <see cref="PiEvent.AgentSettledEvent"/> observation lives in
+/// the pump's <c>ObserveRunState</c> pass to keep this class
+/// focused on text accumulation).
+/// </para>
 /// </summary>
 public sealed class WorkerRunSummary()
 {

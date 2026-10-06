@@ -26,7 +26,8 @@ public sealed class PiExecutionEnvironment : IAsyncDisposable
     }
 
     /// <summary>
-    /// Environment dict to pass to <see cref="Runtime.IPiRunner.RunAsync"/>; <c>null</c>
+    /// Environment dict to pass to <see cref="Runtime.IHarnessRuntime.StartSessionAsync"/>
+    /// as part of the <see cref="Runtime.HarnessStartRequest"/>; <c>null</c>
     /// when the claim carries no proxy, meaning pi runs with the inherited
     /// environment untouched.
     /// </summary>

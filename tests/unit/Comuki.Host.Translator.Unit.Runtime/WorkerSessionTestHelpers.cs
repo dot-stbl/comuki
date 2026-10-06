@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Comuki.Host.Translator.Api.Models.Responses;
 using Comuki.Host.Translator.Execution.Run;
 using Comuki.Host.Translator.Grpc;
+using Comuki.Host.Translator.Runtime;
 using Comuki.Shared.Contracts.Grpc;
 using NSubstitute;
 using ProtoBuf.Grpc;
@@ -43,10 +44,20 @@ internal static class WorkerSessionTestHelpers
     /// <param name="service"></param>
     /// <param name="workItemId"></param>
     /// <param name="runCancellation"></param>
+    /// <param name="harnessSession">
+    /// Optional harness session the command handler reads when a
+    /// <see cref="TurnInput"/> arrives.
+    /// <c>null</c> (the default) preserves the existing pre-Phase 1c
+    /// behaviour where the command handler logs the receipt and
+    /// drops the turn (the harness session was not yet part of
+    /// the run). Pass a <c>TestFakeHarness</c> session to exercise
+    /// the actual session-mode write path.
+    /// </param>
     public static WorkerRun NewRun(
         IWorkerService service,
         Guid workItemId,
-        CancellationTokenSource runCancellation)
+        CancellationTokenSource runCancellation,
+        IHarnessSession? harnessSession = null)
     {
         var claimed = new ClaimedWorkItemResponse(
             workItemId,
@@ -59,6 +70,6 @@ internal static class WorkerSessionTestHelpers
             Attempt: 1,
             Generation: 1);
         var session = WorkerSession.Open(service, "test-token");
-        return new WorkerRun(claimed, session) { RunCancellation = runCancellation };
+        return new WorkerRun(claimed, session) { RunCancellation = runCancellation, HarnessSession = harnessSession };
     }
 }

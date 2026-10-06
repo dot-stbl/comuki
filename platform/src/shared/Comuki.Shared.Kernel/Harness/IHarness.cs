@@ -1,31 +1,38 @@
 namespace Comuki.Shared.Kernel.Harness;
 
 /// <summary>
-/// The harness abstraction (add-orchestra Phase 1c — <c>specs/harness-spi/
-/// spec.md</c> Requirement "IHarness is the abstraction"). Phase 8 /
-/// Instrument owns the full SPI (env resolution, spawn, event parsing,
-/// slot binding); Phase 1c wires the *partial* surface —
-/// <see cref="Name"/> and <see cref="Capabilities"/> — that the
-/// steering endpoint reads to decide whether the gRPC
-/// <c>TurnInput</c> variant lands authoritatively on the worker. The
-/// runtime surface (<c>IPiRunner</c>) stays alongside:
-/// <see cref="IHarness"/> declares the capability, the runner
-/// spawns the process.
+/// The capability-side of the harness abstraction (add-orchestra
+/// Phase 1c — <c>specs/harness-spi/spec.md</c> Requirement
+/// "IHarness is the abstraction"). The runtime side
+/// (<c>IHarnessRuntime</c> in the Translator project) adds the
+/// session-spawn method; the shared kernel deliberately does not
+/// depend on the runtime layer (the runtime lives in
+/// <c>Comuki.Host.Translator</c>; the events it streams are
+/// <c>Comuki.Host.Translator.Parsing.PiEvent</c> — both below the
+/// shared kernel in the dependency graph).
+/// <para>
+/// The Host's harness resolver reads <see cref="Capabilities"/>;
+/// the Translator's <c>PiPump</c> reads the runtime side; the
+/// WorkerCommandHandler reads the active session through the
+/// <c>WorkerRun</c> (no direct harness reference at command-handling
+/// time). The <c>HarnessRegistry</c> on the Host side keys by
+/// <see cref="Name"/>; the Translator side keys by profile the
+/// same way the existing <c>envClass</c> label matches.
+/// </para>
 /// <para>
 /// Two implementations ship in 1c:
 /// <list type="bullet">
 ///   <item>The production <c>PiHarness</c> in
 ///   <c>Comuki.Host.Translator.Runtime</c> — declares
-///   <c>Capabilities.LiveSession = true</c>; the v1.x one-shot
-///   <c>pi -p BRIEF --no-session</c> path is removed (the harness-spi
-///   surface runs pi in <c>--mode rpc</c> session mode; Phase 8
-///   closes the actual stdin-write loop).</item>
+///   <c>Capabilities.LiveSession = true</c> and spawns
+///   <c>pi --mode rpc</c>; the v1.x one-shot
+///   <c>pi -p BRIEF --no-session</c> path is removed.</item>
 ///   <item>The in-process <c>TestFakeHarness</c> in
-///   <c>Comuki.Host.Translator.Runtime</c> — the test fake,
+///   <c>Comuki.Host.Translator.Runtime</c> — the test fake with
 ///   configurable <c>LiveSession</c> flag; the external
-///   <c>Comuki.TestFakePi</c> binary stays as the runtime path
-///   the runner uses when <c>TranslatorOptions.PiExecutable</c>
-///   points at it.</item>
+///   <c>Comuki.TestFakePi</c> binary stays as the runtime path the
+///   runner uses when <c>TranslatorOptions.PiExecutable</c> points at
+///   it.</item>
 /// </list>
 /// </para>
 /// </summary>
@@ -43,8 +50,8 @@ public interface IHarness
     /// <summary>
     /// Capability advertisement. The platform reads the value at
     /// worker start and chooses the spawn strategy; the
-    /// <c>Capabilities.LiveSession</c> field is the single source of
-    /// truth for "can a steer land here authoritatively?" per
+    /// <c>Capabilities.LiveSession</c> field is the single source
+    /// of truth for "can a steer land here authoritatively?" per
     /// <c>specs/session/spec.md</c> Requirement
     /// "Capabilities.LiveSession is the single source of truth for
     /// steering".

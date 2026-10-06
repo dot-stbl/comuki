@@ -37,6 +37,25 @@ public sealed class HarnessRegistry
     }
 
     /// <summary>
+    /// Bulk registration by harness <see cref="IHarness.Name"/>: every
+    /// entry's <c>Name</c> becomes the lookup key. Used at boot
+    /// from the <see cref="IHarness"/> instances the host
+    /// composition registers
+    /// (<see cref="PiHarnessCapability"/>,
+    /// <see cref="TestFakeHarnessCapability"/>). The first wins on
+    /// collisions; the surface is idempotent across hot-reload
+    /// (the same constraint as <see cref="Register"/>).
+    /// </summary>
+    /// <param name="harnesses">Harnesses to register by their <c>Name</c>.</param>
+    public void RegisterAll(IEnumerable<IHarness> harnesses)
+    {
+        foreach (var harness in harnesses)
+        {
+            byProfileKey.TryAdd(harness.Name, harness);
+        }
+    }
+
+    /// <summary>
     /// Resolves the harness for <paramref name="profileKey"/>, or
     /// <c>null</c> when the key has not been registered. The resolver
     /// is a single read; the orchestration schema is the dominant

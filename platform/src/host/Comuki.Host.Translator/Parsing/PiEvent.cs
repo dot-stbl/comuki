@@ -79,6 +79,50 @@ public abstract record PiEvent
     public sealed record AgentEndEvent : PiEvent;
 
     /// <summary>
+    /// pi-native start of the whole agent run (<c>agent_start</c>). The
+    /// session-mode protocol emits this before the first <c>turn_start</c>;
+    /// the Translator uses it to know the harness process is up and
+    /// the events stream is healthy.
+    /// </summary>
+    public sealed record AgentStartEvent : PiEvent;
+
+    /// <summary>
+    /// pi-native agent idle marker (<c>agent_settled</c>): the agent
+    /// has finished its current iteration and is waiting for the next
+    /// turn. Inbound <c>TurnInput</c> commands arriving after this
+    /// event use <c>follow_up</c>; commands arriving before use
+    /// <c>steer</c> (mid-flight). The Translator's
+    /// <c>WorkerCommandHandler</c> tracks this signal to choose
+    /// between the two JSON-RPC commands on the harness's stdin.
+    /// </summary>
+    public sealed record AgentSettledEvent : PiEvent;
+
+    /// <summary>
+    /// pi-native start of one model turn (<c>turn_start</c>). The
+    /// session-mode protocol emits one per model response iteration.
+    /// </summary>
+    public sealed record TurnStartEvent : PiEvent;
+
+    /// <summary>
+    /// pi-native end of one model turn (<c>turn_end</c>). Pairs with
+    /// <see cref="TurnStartEvent"/>; the <c>worker-runtime</c> spec
+    /// uses the pair to delimit assistant text accumulation
+    /// (one <see cref="AssistantTextEvent"/> per turn).
+    /// </summary>
+    public sealed record TurnEndEvent : PiEvent;
+
+    /// <summary>
+    /// pi-native start of a message in a turn (<c>message_start</c>).
+    /// Carries the role (<c>user</c> / <c>assistant</c> / <c>system</c>)
+    /// and the content blocks; the worker uses it to record
+    /// authoritative user turns (the operator's <c>steer</c> lands
+    /// as a new user message on the live session).
+    /// </summary>
+    /// <param name="Role">Message role: <c>user</c> / <c>assistant</c> / <c>system</c>.</param>
+    /// <param name="Content">The message body — verbatim text or tool-call blocks.</param>
+    public sealed record MessageStartEvent(string Role, string Content) : PiEvent;
+
+    /// <summary>
     /// Event type we don't model yet. The raw JSON is preserved so nothing is
     /// lost — we just don't surface it as a typed record.
     /// </summary>

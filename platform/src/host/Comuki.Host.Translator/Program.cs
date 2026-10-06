@@ -38,7 +38,11 @@ builder.Services.AddOptions<TranslatorOptions>()
     .ValidateOnStart();
 
 builder.Services.TryAddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<IPiRunner, PiRunner>();
+builder.Services.AddSingleton<IHarnessRuntime, PiHarness>();
+// TestFakeHarness is registered in the test composition (the unit
+// and integration test projects replace the production
+// PiHarness registration through the harness resolver path); the
+// production host composition does not register it.
 builder.Services.AddSingleton<IProfilesProvider, ProfilesProvider>();
 builder.Services.AddSingleton<RestoreRunner>();
 builder.Services.AddSingleton<IRestoreProcessRunner, RestoreProcessRunner>();

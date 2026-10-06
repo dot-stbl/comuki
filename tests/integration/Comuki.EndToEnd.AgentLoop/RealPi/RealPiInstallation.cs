@@ -14,7 +14,7 @@ namespace Comuki.EndToEnd.AgentLoop.RealPi;
 /// <c>bun add</c>, not <c>npm install</c>: both work (verified manually —
 /// npm resolves the same npm-registry dependency graph fine), but on
 /// Windows npm's generated <c>node_modules/.bin/pi.cmd</c> is a batch-file
-/// shim, and <see cref="Host.Translator.Runtime.PiRunner"/> spawns
+/// shim, and <see cref="Host.Translator.Runtime.PiHarness"/> spawns
 /// <c>PiExecutable</c> directly via <c>Process.Start</c> with
 /// <c>UseShellExecute = false</c> — .NET launches a <c>.cmd</c> through
 /// <c>cmd.exe</c> automatically, but cmd.exe's OWN command-line grammar
@@ -153,8 +153,8 @@ public sealed class RealPiInstallation : IAsyncLifetime
         }
         catch (System.ComponentModel.Win32Exception)
         {
-            // Best-effort teardown, same tolerance as PiRunner's own
-            // PiProcessHelpers.TearDownAsync for this exact race.
+            // Best-effort teardown, same tolerance as PiHarness's own
+            // process shutdown for this exact race.
         }
     }
 

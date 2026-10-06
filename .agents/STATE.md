@@ -1,4 +1,10 @@
 ---
+milestone: v1 (shipped) → v2 (mission-cowork: W1 execution-spine BUILT+MERGED, memory-layers A–D BUILT+MERGED, editions in flight) + storybook contour (DONE) + a11y-tinted-bg token landed + first wiring pass + Storybook 10.6 + 26 status-color a11y debt accepted + allowlist shrunk + Tier-1 visual fixes merged
+status: v2-w1-merged, memory-layers-merged, storybook-contour-merged, a11y-first-wiring-partial, storybook-10.6, a11y-26-debt-accepted, visual-tier-1-merged
+last_updated: 2026-10-06
+master_tip: ef396980 (PR #177 merge, add-mission-cowork memory-phases A–D; PR #179 ancestor — Observability LogsQuery/LogRow hotfix)
+master_ci: RED — 4 джобы (ci×2 + release×2) на 2026-10-06T07:13/08:04, тред #178 OPEN
+openspec_blocked_tasks: 20 из 32 задач фаз A–D заблокированы до фундамента миссия-эпика (#94/#96/#97/#99/#100/#101/#102/#160)
 milestone: v1 (shipped) → v2 (mission-cowork: W1 execution-spine BUILT+MERGED, editions in flight) + storybook contour (DONE) + a11y-tinted-bg token landed + first wiring pass + Storybook 10.6 + 26 status-color a11y debt accepted + allowlist shrunk + Tier-1 visual fixes merged
 status: v2-w1-merged, storybook-contour-merged, a11y-first-wiring-partial, storybook-10.6, a11y-26-debt-accepted, visual-tier-1-merged
 last_updated: 2026-09-28
@@ -9,8 +15,9 @@ openspec_changes_in_flight:
   - harden-pi-worker-sandbox (15/27 tasks; issue #121 + follow-up #125; paused during W1 wave)
   - enrich-chat-parts (22/24 tasks; Testcontainers suite + spec sync remain)
   - agent-runtime-capabilities (planning complete, awaiting /opsx-apply — unchanged since 2026-09-15)
-  - add-mission-cowork (issue #70; W1 execution-spine implemented+merged 2026-09-25 outside
-    openspec flow — spec delta sync + archive pending; MR !44 branch holds pre-implementation drafts)
+  - add-mission-cowork (issue #70; W1 execution-spine (PR #166) merged 2026-09-25; memory-phases A–D
+    (PR #177 + #179 hotfix) merged 2026-10-06 — 32 задачи, из них 20 заблокированы до фундамента;
+    остальные 19 фаз не начаты; spec delta sync + archive pending; ревью-тред #178 OPEN)
   - add-editions-and-licensing (#164; spec on master; implementation stacking: registry !52 →
     license !56 → gating branch → dev-license branch; review F fixes in flight)
   - add-worker-commit-attribution (#165; spec on master; implementation not started)
@@ -22,13 +29,15 @@ progress:
   issues_closed: 50
   issues_open: 0
   cli_rebuild_epic: "shipped — issue #71 (15 sub-issues #72-#85), closed 2026-09-19 to 2026-09-21"
-  mission_cowork_epic: "W1 execution-spine merged 2026-09-25 (WS1-WS10 + #166, origin/master 098a11d5, gitlab !60); rest of 19 phases not started"
+  mission_cowork_epic: "W1 execution-spine merged 2026-09-25 (WS1-WS10 + #166, origin/master 098a11d5, gitlab !60); memory-phases A–D merged 2026-10-06 (PR #177 + #179 hotfix, origin/master ef396980) — 32 задачи, 20 заблокированы до фундамента (#94/#96/#97/#99/#100/#101/#102/#160); rest of 19 phases not started"
   w1_execution_spine: "MERGED — dependency-gated claim, exactly-once finalization, terminal Failed, generation fencing, cancel fencing, outbox/inbox, idempotent admission, event-contract gate, crown e2e; verified gates: build 0/0, StatusMachine 266, Queue(int) 32, Workers 8, Runs 17, Chat 68+11, Arch 41"
+  memory_layers_ad: "MERGED 2026-10-06 — гибрид BM25+pgvector+RRF, MemoryScope.Mission + BlackboardFinding (fail-closed), outcome-счётчики + capped contribution, SourceKind.Wiki + owned-JSON link-graph, yamlish-кор Shared.Kernel, скилл-метаданные TS+C# + C#-каталог скиллов; unit-сьюты PR #177: Memory 149/149, Knowledge 91/91, ProfileCatalog 39/39, Filtering 203/203, agents bun 70+91+89"
   editions_line: "in flight — !52 registry + !56 license + gating + dev-license branches; review F: 2 HIGH (EnforceLimit TOCTOU, future-dated license grants) being fixed"
   rescue_branches: "rescue/redis-cache (b29e6885) and rescue/generic-command-verifier (ec3ce24) — real, complete, never-merged implementations recovered from loose objects 2026-09-23, pushed to gitlab; recoverable, pending a restore-vs-v2 decision, not on master"
-  master_tip: 098a11d5 (origin, = gitlab bb1c1423 content via !60)
+  master_tip: ef396980 (origin, PR #177 merge 2026-10-06; PR #179 ancestor d21ab2ab — Observability LogsQuery/LogRow hotfix в том же train)
+  master_ci_debt: "4 красных джобы (ci×2 + release×2) 2026-10-06T07:13/08:04 — pre-existing CS0234/CS0246 ×7 в Observability.Domain от merge b503881c (add-orchestra-wave1); PR #179 закрыл 7 ошибок LogsQuery/LogRow, первопричина в add-orchestra-wave1 ещё не устранена; ревью-тред #178 OPEN"
   openapi_emission: artifacts/openapi.json
-  be_tests: "W1-verified subset 2026-09-25: StatusMachine 266, Eval 20, ChatRunStarter 6, DiComposition 1, Arch 41, Chat 68, Queue-int 32, Workers-int 8, Runs-int 17, Chat-int 11 (podman: DOCKER_HOST=npipe://./pipe/podman-machine-default, TESTCONTAINERS_RYUK_DISABLED=true)"
+  be_tests: "PR #177 unit-сьюты 2026-10-06: Memory 149/149, Knowledge 91/91, ProfileCatalog 39/39, Filtering 203/203; pre-PR: StatusMachine 266, Eval 20, ChatRunStarter 6, DiComposition 1, Arch 41, Chat 68, Queue-int 32, Workers-int 8, Runs-int 17, Chat-int 11 (podman: DOCKER_HOST=npipe://./pipe/podman-machine-default, TESTCONTAINERS_RYUK_DISABLED=true); Knowledge integration (Testcontainers/Podman) НЕ гонялось в этом PR — wiki-ингест покрыт ими по конвенции, прогон обязателен до следующего влития по миссия-эпику"
   fe_tests: "dashboard 2032 pass; agents/ 155 pass; cli 1433 pass / 4 fail (Windows-only path bug)"
   rule_bootstrap: |
     Agent onboarding ritual enforced by three machine-checkable artefacts
@@ -824,3 +833,54 @@ Gates все зелёные. Forward-task: a11y-known-issues.json не shrink-ed
 После merge — другие агенты, у которых есть локальные ветки поверх старого master, должны будут `git fetch && git rebase origin/master` (или новые коммиты будут конфликтовать при merge).
 
 **Backup:** `C:\Users\bradw\comuki-backup-pre-filter.bundle` (289MB) — содержит все refs в исходном виде до filter-repo.
+
+---
+
+## Memory layers (add-mission-cowork A–D) — завершено 2026-10-06 (merged в master)
+
+**Tip:** `ef396980` (PR #177, "hybrid retrieval, wiki sources, skill assets",
+2026-10-06T08:04Z, 90 files / +6107 / -330). PR #179 (merge `d21ab2ab`,
+"restore missing Observability LogsQuery/LogRow types") вмержен ранее
+того же дня в `add-orchestra-wave1`-ветку как hotfix — стал предком
+#177 в master train. Оба PR в одной волне миссия-эпика.
+
+**Дельта эпика `add-mission-cowork`:** спека (4 новые фазы A–D в
+`openspec/changes/add-mission-cowork/`, design §21–26, +32 задачи,
+дельта-спеки `context-fabric` / `memory` / `worker-runtime` / `realtime` /
+`missions` + новые `code-graph` / `control-plane` / `knowledge`) и
+применимый код: гибрид BM25+pgvector+RRF в Memory, `MemoryScope.Mission`
++ `BlackboardFinding` (fail-closed), outcome-счётчики + capped
+contribution, `SourceKind.Wiki` с owned-JSON link-graph, yamlish-кор в
+`Shared.Kernel`, скилл-метаданные TS+C# + C#-каталог скиллов.
+
+**Гейты PR #177 (зелёные):** unit Memory 149/149, Knowledge 91/91,
+ProfileCatalog 39/39, Filtering 203/203; agents bun 70+91+89,
+typecheck ×3; два круга review+reinvention (финальный pass). НЕ гонялось:
+Knowledge integration (Testcontainers/Podman) — wiki-ингест DB-путь
+покрыт ими по конвенции, прогон до следующего влития по миссия-эпику
+обязателен. Knowledge re-ingest duplicates (#162) — известный долг,
+follow-up.
+
+**Долг по master после merge (тред #178, OPEN):**
+- **4 красных CI-джобы** на master сразу после merge (ci×2 + release×2
+  в `gh run list` от 2026-10-06T07:13 / 08:04) — pre-existing в
+  `Comuki.Modules.Observability.Domain` (CS0234/CS0246 ×7 на
+  `LogsQuery`/`LogRow` от merge `b503881c` в `add-orchestra-wave1`).
+  PR #179 закрыл конкретные 7 ошибок, но общая краснота продолжилась —
+  первопричина в `add-orchestra-wave1` ещё не устранена.
+- **20 из 32 задач фаз A–D** сознательно заблокированы до фундамента
+  миссия-эпика (#94 / #96 / #97 / #99 / #100 / #101 / #102 / #160);
+  нумерация зависимостей — ревью-проверка в #178 пункт 5.
+- **TBD-номера issues** для фаз A–D в `decomposition.md` (#178 пункт 1)
+  — присвоить при файлении.
+- **Interim no-op outcome boost** (#178 пункт 2) — `MemoryRankingOutcomeBoost`
+  применяется per-scope (порядок фактов не меняет), per-fact разводка
+  ждёт `ILearningCandidateRepository`; честный interim или вреден до
+  появления потребителя — open question.
+- **TS-зеркало yamlish-кора** (#178 пункт 3) — пакета `yaml` в `agents/`
+  нет (дом-решение), `reader.ts` самописный; контрактный тест паритета
+  C#↔TS — open question.
+- **Knowledge integration прогон** (Testcontainers/Podman) — обязателен
+  до следующего влития по миссия-эпику; пересекается с долгом #162.
+
+Остальные 19 фаз эпика `add-mission-cowork` (после D) не начаты.

@@ -191,3 +191,53 @@
 - [ ] 19.3 Add cross-Mission blocking edges with dual-access creation and redacted dependency stubs; verify private upstream content does not leak.
 - [ ] 19.4 Add Mission/Task creation, activation, cancellation, completion, deletion, orphan recovery, and goal-revision impact maps; verify every active Task receives explicit disposition.
 - [ ] 19.5 Add Task completion policies with declared evidence contracts, deterministic/Brain-assisted/human reviewers, reviewer separation, and repair proposals; verify successful Run plus failed verification blocks Task without rewriting Run history.
+
+## 20. Hybrid Retrieval (Phase A — tsvector + pgvector RRF over Memory)
+
+- [ ] 20.1 Add a PostgreSQL `tsvector` column + GIN index to `memory.memory_embeddings` and `memory.memory_facts` covering the chunkable text fields; verify the migration degrades gracefully (column absent → vector-only retrieval) without breaking the existing 1536-dim embedding flow.
+- [ ] 20.2 Add a `ts_rank` SQL fragment that ranks candidates by lexeme overlap with the query (or its prefix-expanded query); verify the rank is computed inside Postgres and is zero (NOT an error) when the `tsvector` column is absent.
+- [ ] 20.3 Add RRF fusion over the existing vector rank and the new lexical rank with `k = 60` and `w_lexical = w_vector = 1.0`; verify each candidate carries `LexicalRank`, `VectorRank`, and `FusedScore`, the manifest records `k` and the per-list weights, and ordering is by `FusedScore` desc.
+- [ ] 20.4 Pin embedding and extractor generations per request and refuse mixed-generation fusion; verify the Context Fabric planner never returns a `FusedScore` that combines `g1` and `g2` ranks.
+- [ ] 20.5 Keep `Filtered` (`Comuki.Shared.Filtering`) free of `tsvector`/vector semantics; verify the hybrid retrieval lives behind the dedicated typed query/result seam already specified in task 7.9.
+
+## 21. Swarm Memory (Phase B — Mission scope + blackboard + ephemeral tier)
+
+- [ ] 21.1 Add a fourth `MemoryScope` value `Mission` to `MemoryScopeKeys`/`MemoryDbContext`/`MemoryFallbackRanking` and a visibility predicate that runs before any other visibility filter; verify a non-participant gets an empty result (not 403/404) for a Mission-scoped search.
+- [ ] 21.2 Add a `BlackboardFinding` kind under `Scope = Mission`, keyed by `(MissionId, workerKey, fingerprint)`, with supersede semantics on re-write; verify retrieval by default returns the active generation only and the audit path sees both.
+- [ ] 21.3 Add a swarm-blackboard pub/sub layer on the existing `IRealtimeBackplane` with channel key `mission:swarm:<missionId>`, payloads `(fingerprint, workerKey, generation, op)`; verify the channel never consumes Mission stream sequence and Redis-outage degrades to durable-only polling (mirroring presence).
+- [ ] 21.4 Add an `ephemeral` tier to the WorkerRuntime slot lifecycle (same `IWorkerRuntime` surface, new `MissionId` identity in the slot, slot recycles across WorkItems of one Mission); verify the slot's scratch directory lives at `/work/scratch/<executionId>/` and is wiped on `Stop` or container teardown.
+- [ ] 21.5 Wire the ephemeral flush contract: on successful WorkItem completion the worker records `EphemeralNote` rows under `Scope = Mission, SubjectId = parentMissionId` via `IMemoryStore.Write`, returning a `flushSummary` on the WorkItem's terminal outcome; verify lease-lost / cancelled executions skip the flush and a structured log names the lost fingerprints.
+- [ ] 21.6 Reject cross-Mission claims on an ephemeral slot with `409 work-item.mission-mismatch`; verify the slot keeps serving its own Mission.
+- [ ] 21.7 Apply the existing retention/crypto-shred path (`data-lifecycle`) to Mission-scoped facts and `BlackboardFinding` rows on Mission completion; verify nothing about a terminal Mission's memory survives except the minimal audit metadata.
+
+## 22. Outcome Reinforcement (Phase C — verdict signals + planning memory)
+
+- [ ] 22.1 Add six outcome counters to memory candidates: `VerifyPassCount` / `VerifyFailCount` / `BuildGreenCount` / `BuildRedCount` / `TaskSucceededCount` / `TaskFailedCount`; verify the columns live on the candidate row and ride the existing `__comuki_memory` migration history.
+- [ ] 22.2 Implement signed contribution per signal in the fused rank, capped at `outcome_cap_per_signal` (default 5); verify read/repeat counts remain unsigned priors and an extreme tail does not exceed the cap.
+- [ ] 22.3 Refuse silent Decision downgrades: a candidate that contradicts an accepted Decision creates a conflict node (existing rule applies unchanged), not a supersede; verify the conflict surface flags the candidate for policy resolution.
+- [ ] 22.4 Store the durable decomposition footprint of a completed Mission (DAG of stages/Workers, skills invoked per node, final outcome); verify the planner reads it as advisory priors only (never auto-replays) and private Mission priors stay Mission-private.
+
+## 23. CodeGraph (Phase D — repository-symbol graph)
+
+- [ ] 23.1 Add `CodeGraph` aggregate + `FileEntry` + `Symbol` + `CallEdge` tables under the Memory or Knowledge module (per a follow-up decision recorded in the change's design.md); verify a `CodeGraph` belongs to exactly one Repository and is immutable across a given `ParserGeneration`.
+- [ ] 23.2 Implement a tree-sitter-based indexer for TypeScript (`*.ts`, `*.tsx` under `src/`) and C# (`*.cs` under `platform/src/`); verify the indexer excludes `Migrations/`, `bin/`, `obj/`, `node_modules/`, `.git/`, `dist/`, `build/` by construction.
+- [ ] 23.3 Implement `SymbolLookup` (exact + prefix) and `ImpactPaths` (deterministic traversal up to `depthMax = 3`, range `[1, 5]`); verify the same query yields the same path in the same order across runs.
+- [ ] 23.4 Expose the graph as a Context Fabric `SourceRef` of kind `code-graph`; verify the Brain sees it through the standard adapter — no CodeGraph-specific API.
+- [ ] 23.5 Run an indexer heartbeat (default 5 minutes, range `[60s, 1h]`) that re-parses only the files whose content hash differs; verify no work runs on an unchanged Repository.
+- [ ] 23.6 Gate visibility on the Repository's `AccessLevel`; verify a `Read`-only Repository exposes the graph read-only and `Write` allows re-indexing, and cross-project queries do NOT see neighbour Repositories unless the caller has read access (per `repositories` capability's neighbour-visibility rules).
+
+## 24. Wiki from Mission Artefacts (Phase D — Knowledge sub-corpus)
+
+- [x] 24.1 Add `SourceKind = wiki` and `WikiPage` fields (`WikiPageId`, `WikiPageKind`, `UpdatedByMissionId`, `LinkGraph`) on the existing `SourceDocument`; verify ingestion reuses the `knowledge.ingest` REST/MCP surface unchanged.
+- [ ] 24.2 Build a `WikiGenerationProposal` per Mission when `wiki_generation_enabled = true`: Brain proposes candidate pages with `WikiPageKind`, body draft, link-graph candidates, and citations; verify humans / owners approve or reject per candidate.
+- [ ] 24.3 Honour `supersedes: <pageId>` by demoting the older page to `stale-but-auditable` per the existing revision/generation rule; verify the link-graph carries a `supersedes` edge and Brain sees it in citation context.
+- [ ] 24.4 Expose `WikiLinkGraph` as a Context Fabric operation (forward + reverse adjacency); verify Wiki retrieval rides the same hybrid RRF pipeline (task 20.x) and the same visibility-before-retrieval rule.
+- [ ] 24.5 Honour Wiki page privacy: Project-scoped by default, global corpus only via the existing knowledge-global write scope; verify a Mission's Wiki stays Mission-scoped until declassification.
+
+## 25. Skill Metadata (Phase D — control-plane managed assets)
+
+- [x] 25.1 Extend `SKILL.md` frontmatter parsing to accept `trigger_when` (string or flow list), `validate_against` (string, flow list, or `SourceRef`-shaped objects), and `version` (semver); verify existing `SKILL.md` files without these fields parse exactly as today (strict superset).
+- [x] 25.2 Surface the three fields alongside `Key` / `Name` / `Description` / `Scope` in the catalog list response and in the Brain / Worker SDK's skill view; verify the C# catalog and the TS rule-doc reader stay in parser parity per the existing rule.
+- [ ] 25.3 Mark a skill `stale=true` when any `validate_against` source reference rolls forward a generation; verify the Brain's operation trace records the stale state at the moment the skill was selected.
+- [x] 25.4 Default `version` to `0.1.0`; verify absence is a legal state (warning only, not an error) and the catalog tolerates it.
+- [x] 25.5 Refuse auto-selecting a skill solely on `trigger_when` match; verify the catalog returns the skill as a candidate with `trigger_when` visible to the Brain, and the Brain's own model decides whether to apply it.

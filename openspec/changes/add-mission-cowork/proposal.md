@@ -27,18 +27,20 @@ Comuki can execute isolated goals, but it cannot yet host a durable shared objec
 - `data-lifecycle`: class-aware retention, holds, evidence pinning, crypto-shred, and deletion audit.
 - `outbound-webhooks`: scoped, signed, redacted, replayable Project integration subscriptions for Mission attention and full events.
 - `api-contracts`: versioned nested HTTP routes, documented OpenAPI/Scalar reference, and one generated TypeScript contract package for clients.
+- `code-graph`: repository-symbol graph (symbols, files, call-edges, impact paths) for the client code base, first iteration TypeScript and C# via tree-sitter, surfaced as a Context Fabric source so Brain and workers see code without re-deriving it.
 
 ### Modified Capabilities
 
 - `intake`: replaced before first release by the broader Integrations context; admission creates Tasks and tracker sync follows Task/Mission resolution.
 - `runs`: Runs become fenced Task attempts with reliable terminal publication.
-- `worker-runtime`: leases and streams bind to independent execution slots rather than one host-wide worker identity.
+- `worker-runtime`: leases and streams bind to independent execution slots rather than one host-wide worker identity; workers also expose an ephemeral tier (local scratch + flush to platform memory on completion).
 - `compute`: capacity planning supports warm multi-slot hosts and desired-parallelism intents.
 - `identity`: actor, credential, service account, Mission access, audit grants, configurable roles, and capability permissions become explicit.
-- `realtime`: add ordered Mission delivery plus multi-node presence and typing.
-- `memory`: project knowledge promotion gains candidate, conflict, provenance, visibility, and declassification semantics.
+- `realtime`: add ordered Mission delivery plus multi-node presence and typing; the same `IRealtimeBackplane` carries Mission-scoped swarm-blackboard pub/sub for worker findings.
+- `memory`: project knowledge promotion gains candidate, conflict, provenance, visibility, and declassification semantics; add a Mission scope, a swarm-blackboard durable side, outcome-reinforced candidate ranking, and an ephemeral flush contract for the worker tier.
 - `artifacts`: Task/Mission visibility mediates Run and artifact reads.
 - `chat`: personal chat remains separate but uses the common capability and Brain-operation planes.
+- `control-plane`: skills carry managed-asset metadata (`trigger_when`, `validate_against`, version) on top of today's pure markdown; the catalog exposes them so the Brain and Worker SDK can decide when to apply a skill and whether it is still valid for the current control-plane generation.
 
 ## Impact
 

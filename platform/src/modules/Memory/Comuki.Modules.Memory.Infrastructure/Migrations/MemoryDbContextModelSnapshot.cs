@@ -166,6 +166,14 @@ namespace Comuki.Modules.Memory.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<int>("BuildGreenCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("build_green_count");
+
+                    b.Property<int>("BuildRedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("build_red_count");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -211,11 +219,27 @@ namespace Comuki.Modules.Memory.Infrastructure.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("status");
 
+                    b.Property<int>("TaskFailedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("task_failed_count");
+
+                    b.Property<int>("TaskSucceededCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("task_succeeded_count");
+
                     b.Property<string>("Topic")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("topic");
+
+                    b.Property<int>("VerifyFailCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("verify_fail_count");
+
+                    b.Property<int>("VerifyPassCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("verify_pass_count");
 
                     b.HasKey("Id")
                         .HasName("pk_learning_candidates");

@@ -351,6 +351,112 @@ mTLS; colocated deployment may use loopback/Unix socket plus the session token.
 User/API credentials never cross to Brain. Tool intents return to Host and the
 Capability Broker re-authorizes every effect.
 
+### 21. Hybrid retrieval — lexical (tsvector) + pgvector + RRF
+Context Fabric's retrieval plane adds a lexical rank alongside the existing
+pgvector cosine rank and fuses them with Reciprocal Rank Fusion
+(`k = 60`, equal per-list weights). The Memory module's existing
+`memory_embeddings` (1536-dim) and `memory_facts.embedding` columns carry
+the vector side; the lexical side lives in the same sources via a
+`tsvector` column with a GIN index. Either side may degrade gracefully
+without the other (no `tsvector` → vector-only; no `embedding` →
+lexical-only); the platform never silently drops a back-end. Filters
+(visibility, scope, kind, freshness, RBAC) apply **before** both rank
+signals compute, and embedding/extractor generations are pinned per
+request so the fusion stage never mixes generations.
+
+### 22. Swarm memory — Mission scope + blackboard + ephemeral tier
+Three coupled changes for sharing what workers discover inside a Mission:
+
+- **Mission scope** — `MemoryScope` grows from `User | Project | Global` to
+  `User | Project | Mission | Global`. A Mission-scoped fact is readable
+  by every active Mission participant of that Mission and by the
+  Mission's Brain operation; nothing leaks across Missions; the scope
+  check applies before visibility filtering and before Context Pack
+  compilation. Mission completion runs the Mission-scoped facts through
+  the same retention/crypto-shred path as Mission evidence generations.
+- **Swarm blackboard** — a per-Mission pub/sub channel for worker
+  findings. The durable side lives in Memory as `Mission`-scope facts of
+  kind `BlackboardFinding` (keyed by `(MissionId, workerKey, fingerprint)`;
+  re-write supersedes). The realtime side rides on the existing
+  `IRealtimeBackplane` (InMemory/Redis per decision #12; same access
+  decision; never consumes Mission sequence). Redis-outage degradation
+  falls back to durable polling, mirroring presence.
+- **Ephemeral worker tier** — a second tier of execution slots
+  (`ephemeral`) that recycles across multiple WorkItems of the same
+  Mission, owns a per-slot `/work/scratch/<executionId>/` region, and
+  flushes `EphemeralNote` records into the Mission-scoped memory on
+  successful completion. Flush failure never blocks terminal WorkItem
+  publication; lease-lost / cancelled executions lose the scratch
+  contents (a structured log names the lost fingerprints so operators
+  can re-mission the notes).
+
+### 23. Outcome-reinforced candidate ranking + planning memory
+Memory candidates gain **outcome signals** alongside the existing
+read/repeat counters: `VerifyPassCount` / `VerifyFailCount`,
+`BuildGreenCount` / `BuildRedCount`, `TaskSucceededCount` /
+`TaskFailedCount`. Fused ranking uses signed contributions per signal,
+capped per signal (default `outcome_cap_per_signal = 5`); read/repeat
+counts remain unsigned priors. The platform SHALL NOT silently
+overwrite a trusted accepted Decision — a candidate that downgrades a
+Decision becomes a conflict node, not a supersede. Planning memory
+additionally stores the durable decomposition footprint of a
+completed Mission (DAG of stages/Workers, skills invoked per node,
+final outcome); the planner surfaces these as advisory priors on
+subsequent Missions of the same Project, never as automatic replay.
+Private Mission priors stay Mission-private until declassified per
+the existing rule.
+
+### 24. CodeGraph — repository-symbol graph as a Context Fabric source
+Each Repository attached to a Project carries a parsed **CodeGraph**:
+symbols (TypeScript and C# in the first iteration via tree-sitter),
+files, call-edges with confidence (`resolved` / `bestGuess`), and an
+impact-path answer up to a configurable depth (default 3). The graph
+is exposed to Context Fabric as a `SourceRef` of kind `code-graph` so
+Brain and workers see it without re-deriving it. The indexer runs on
+Repository attach, on every Repository generation bump, and on a
+heartbeat (default 5 minutes, range `[60s, 1h]`); indexing is
+incremental. Visibility follows the Repository's `AccessLevel`; the
+graph never crosses attachment boundaries. v1 explicitly excludes
+`Migrations/`, `bin/`, `obj/`, `node_modules/`, `.git/`, `dist/`,
+`build/` from the file set.
+
+### 25. Skills become managed assets; Wiki lives in the Knowledge capability
+Two finishing moves on the asset plane:
+
+- **Skill metadata** — control-plane `SKILL.md` files accept three
+  optional frontmatter fields on top of the existing `name` /
+  `description` / `scope`: `trigger_when` (selection hint, NOT an
+  instruction), `validate_against` (a list of source references whose
+  generation bumps mark the skill `stale`), and `version`
+  (semver, default `0.1.0`). Skills without metadata behave exactly
+  as today (strict superset). The catalog surfaces all three fields
+  alongside the existing shape; the Brain / Worker SDK's skill view
+  mirrors them. The catalog SHALL NOT auto-select a skill solely on
+  `trigger_when` match.
+- **Wiki from Mission artefacts** — Mission workers' outputs are
+  optional candidates for a Project-private Wiki, ingested as
+  `SourceDocument` rows with `SourceKind = wiki` through the existing
+  `knowledge.ingest` surface. Wiki pages are advisory: Brain produces
+  a `WikiGenerationProposal` (kind, body draft, link-graph candidates,
+  citations) that humans / owners approve or reject; rejected
+  candidates do not become pages. Wiki retrieval rides the same hybrid
+  pipeline (decision #21) and the same visibility-before-retrieval
+  rule; Wiki's link-graph adjacency is exposed as an extra Context
+  Fabric operation.
+
+### 26. Knowledge spec gap — resolved
+The original Gate-A open question "add a Knowledge spec or explicitly
+exclude generic Knowledge" was resolved separately by **add-knowledge-spec**
+(issue #160) — that change owns the source-document/chunk corpus,
+pgvector embedding pipeline, project/global write scope, the read-side
+visibility rules, the source key + content hash contract, the
+revision/generation tracking, and the provenance on search hits. The
+Wiki extension in this change (decision #25 above) lands in the
+**knowledge** capability delta inside this umbrella and merges with
+`add-knowledge-spec`'s delta at archive time. Generic Knowledge is
+included from day one — there is no separate `exclude generic
+Knowledge` decision.
+
 ## Risks / Trade-offs
 
 - **[Risk] Mega-epic produces a big-bang rewrite** → Treat this artifact as architecture; create and archive smaller OpenSpec changes per vertical slice. No implementation branch spans the whole plan.

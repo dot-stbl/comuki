@@ -28,6 +28,12 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Persistence;
 /// either (inserts are never filtered by <c>HasQueryFilter</c>, even for
 /// the entities it does model) — <see cref="IsProjectWritable"/> is the
 /// only thing standing between a caller and another project's corpus.
+///
+/// Wiki ingest (<see cref="SourceKind.Wiki"/>) reuses the same
+/// <c>knowledge.ingest</c> REST/MCP surface as every other kind. The
+/// ingestor extracts the Wiki-specific metadata from the body's
+/// frontmatter (<c>kind</c>, <c>link_graph</c>) and attaches it to the
+/// <see cref="SourceDocument"/> before saving.
 /// </summary>
 /// <param name="contextFactory"></param>
 /// <param name="embedder"></param>
@@ -85,10 +91,23 @@ public sealed class PgKnowledgeIngestor(
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         var document = SourceDocument.Create(projectId, title, sourceKind, sourceRef, mimeType, now);
+
+        if (sourceKind == SourceKind.Wiki)
+        {
+            AttachWikiMetadataFromBody(document, text);
+        }
+
         context.SourceDocuments.Add(document);
         await context.SaveChangesAsync(cancellationToken);
 
-        var chunks = Chunker.Chunk(text, targetTokens);
+        // Wiki frontmatter is metadata, not body — strip it so the
+        // chunker sees the markdown content only. Other kinds carry no
+        // frontmatter, so the strip is a no-op.
+        var chunkableText = sourceKind == SourceKind.Wiki
+            ? WikiFrontmatter.StripFrontmatter(text)
+            : text;
+
+        var chunks = Chunker.Chunk(chunkableText, targetTokens);
         if (chunks.Count == 0)
         {
             // No chunks produced — commit the document row so the
@@ -162,6 +181,29 @@ public sealed class PgKnowledgeIngestor(
             sourceRef);
 
         return new KnowledgeIngestResult(document.Id, ChunksWritten: rows.Count);
+    }
+
+    /// <summary>
+    /// Pulls the Wiki frontmatter from <paramref name="body"/>, generates a
+    /// fresh <see cref="WikiPageId"/>, and attaches the parsed kind and
+    /// link graph to the document. EF persists the link graph as an owned
+    /// jsonb projection on <see cref="SourceDocument.LinkGraph"/>; no
+    /// manual serialisation. When the body carries no frontmatter (or no
+    /// recognised keys) the document still gets a fresh page id —
+    /// <c>kind</c> is null, the link graph is empty.
+    /// </summary>
+    /// <param name="document">A newly-created <see cref="SourceDocument"/> with <see cref="SourceKind.Wiki"/>.</param>
+    /// <param name="body">Markdown body the caller handed to the ingestor.</param>
+    private static void AttachWikiMetadataFromBody(SourceDocument document, string body)
+    {
+        var metadata = WikiFrontmatter.ExtractMetadata(body) ?? new WikiIngestMetadata(null, []);
+        var wikiPageId = WikiPageId.New();
+
+        document.AttachWikiMetadata(
+            wikiPageId,
+            metadata.Kind,
+            updatedByMissionId: null,
+            metadata.LinkGraph);
     }
 
     /// <summary>

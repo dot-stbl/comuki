@@ -8,4 +8,14 @@ public enum MemoryFactKind
 
     /// <summary>Task-scoped note; swept after <see cref="MemoryFactPolicy.EphemeralTtl"/>.</summary>
     Ephemeral = 2,
+
+    /// <summary>
+    ///     A blackboard finding surfaced by a worker during a mission. Carries
+    ///     a composite <c>TopicKey = (MissionId, workerKey, fingerprint)</c>
+    ///     so supersede is keyed per worker output, not per mission. Lives
+    ///     alongside the existing kinds because it follows the same
+    ///     write/read/sweep mechanics — the kind is metadata, not a
+    ///     separate aggregate.
+    /// </summary>
+    BlackboardFinding = 3,
 }

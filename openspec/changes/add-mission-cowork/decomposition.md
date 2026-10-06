@@ -53,6 +53,9 @@ re-deriving the whole epic.
 | **add-templates** | #98 | §15.1–15.5 | ADD `templates` | #89, #93, #94, #95 | `control-plane/{profiles,chat-commands,skills,rules}` already exists as the *procedural* authority layer (markdown+frontmatter, git-versioned) — design.md decision #15 explicitly requires Templates (work-shape schemas) stay separate from it. No collision in code today since Templates doesn't exist, but this change must not touch `control-plane/`. | None beyond the control-plane boundary note above | M | 8 (parallel with #96, #103) | T0 unit (schema/DAG/compatibility validation, no-side-effect dry-run) + T4 eval (task 15.3's "configured evals" publication gate — `Comuki.AgentEval`) + T1 integration (instantiation binding, migration proposals) |
 | **add-data-lifecycle** | #102 | §16.1–16.5, §16.2a | ADD `data-lifecycle` | #87, #89, #90, #95 | No retention/hold/crypto-shred code exists. `openspec/specs/artifacts/spec.md` confirms today's actual behavior is the trivial case: "v1 retention = never delete." Fully greenfield. | None found | L | 6 (parallel with #92, #101) | T0 unit (`RetentionPolicy.Evaluate` per resource class) + T1 integration (Testcontainers Postgres+MinIO: crypto-shred, prove backup ciphertext unreadable after key destruction) |
 | **add-outbound-webhooks** | #103 | §17.1–17.5 | ADD `outbound-webhooks` | #87, #88, #90, #93, #94, #102 | No outbound webhook code. Intake's `SyncJob`/`RunStatusBridgeComukiWorker` is *inbound* tracker sync-back (Task/Run status → external tracker comment) — an outbox-dispatcher pattern precedent, not reusable machinery. Fully greenfield. | Needs `add-data-lifecycle` specifically for its consent-revocation crypto-shred requirement (task 17.4) | M | 8 (parallel with #96, #98) | T0 unit (HMAC signing, redaction, SSRF/redirect validation) + T1 integration (outbox delivery ordering/dedupe/dead-letter, Postgres) + T2 scenario (hop-limit/loop-suppression against a fake destination server) |
+| **add-hybrid-retrieval-and-mission-memory** | TBD (umbrella Phase A+B) | §A.1–A.4 (RRF+tsvector), §B.1–B.7 (Mission scope, swarm blackboard, ephemeral tier) | MODIFY `context-fabric` (hybrid retrieval), MODIFY `memory` (Mission scope + blackboard durable side + ephemeral flush), MODIFY `worker-runtime` (ephemeral tier lifecycle), MODIFY `realtime` (IRealtimeBackplane swarm channel), MODIFY `missions` (Mission-scoped memory + blackboard link) | `add-context-fabric` (#96) for the retrieval plane; `add-mission-stream-and-room` (#94) for `IRealtimeBackplane`; `add-durable-brain-operations` (#97) for Brain-published `BlackboardFinding` writes; `add-worker-pools-and-isolation-classes` (#100) for the slot tier contract (ephemeral slots ride the same `WorkerHostId` / `SlotId` / `ExecutionId` model) | The Memory module's `memory_embeddings` (pgvector 1536) and `MemoryFallbackRanking` already exist; `MemoryScope` is `User | Project | Global` today — adding `Mission` is a 4th enum value + a visibility predicate; `IRealtimeBackplane` does not exist (planned by #101) — this change uses it through the future seam. No `tsvector` column anywhere today; the `Memory_embedding_1536` migration is the pattern. Ephemeral worker tier has no precedent in `WorkerPoolState` (`ConcurrentDictionary<WorkerId, PoolWorker>` is single-slot). | Shares `memory/spec.md` and `context-fabric/spec.md` with #96 (Knowledge / retrieval) and #99 (Brain completion) — split cleanly per the `memory`/`context-fabric`/realtime deltas in this umbrella. Wiki and CodeGraph are separate rows below (Phase D). | XL | **TBD: 9** (Phase A — hybrid retrieval) and **10** (Phase B — swarm memory), inserted into the existing wave graph after #94 (`IRealtimeBackplane` ships) and #97 (Brain ops) but before #99 (completion review needs the new ranking signals). **Both waves depend on #94** for the realtime backplane seam; **Phase B additionally depends on #100** for the slot lifecycle to slot `ephemeral` in cleanly. | T0 unit (RRF math with `k=60`, Mission scope predicate, `BlackboardFinding` supersede, ephemeral scratch + flush lifecycle, access check on `mission:swarm:` channel) + T1 integration (real Postgres tsvector + pgvector query plans; `IRealtimeBackplane` InMemory+Redis adapters; Testcontainers with pgvector image) + T2 scenario (two workers + fake model: write/find/supersede across the blackboard; Brain reads priors of a previous Mission on the planner) |
+| **add-outcome-reinforcement-and-planning-priors** | TBD (umbrella Phase C) | §C.1–C.3 (outcome signals), §C.4 (planning memory) | MODIFY `memory` (outcome-reinforced ranking, planning priors) | `add-context-fabric` (#96, for retrieval exposing outcome counts in the candidate provenance); `add-mission-completion-review` (#99, which becomes the source of `TaskSucceeded`/`TaskFailed` signals); `add-durable-brain-operations` (#97, for the planner that reads the priors) | Memory candidates already carry `confidence`, `extractor_generation`, provenance — adding six outcome counters is a schema addition on the candidate row; no migration outside the Memory module's own `__comuki_memory` history (per `memory/spec.md`'s `Persistence layout`). Planner has no "priors of past Missions" surface today. | Strictly additive on `memory`; does not modify `context-fabric`'s retrieval contract — outcome counts appear in `KnowledgeSearchHit` provenance, not in `FusedScore`. | M | **11** (immediately after #99 — completion review now feeds the planner); can ship as a single GitHub issue OR stay as a follow-up branch of #99 if the user prefers. | T0 unit (signed contributions cap, conflict-not-supersede on Decision downgrade, `prior-of-prior` not auto-replayed, Project-scoped priors NOT leaking across Projects) + T1 integration (real Postgres: insert candidates with outcome counts, ranking, planner reads top-K priors) + T4 eval (Comuki.AgentEval: recall + staleness + plan-card quality with priors enabled/disabled) |
+| **add-code-graph-and-managed-assets** | TBD (umbrella Phase D) | §D.1–D.8 (CodeGraph), §D.9–D.12 (Wiki), §D.13–D.15 (skill metadata) | ADD `code-graph`; MODIFY `control-plane` (skill metadata); MODIFY `knowledge` (Wiki delta — merges with `add-knowledge-spec` at archive) | `add-repositories` (#163) for the Repository attachment that owns each CodeGraph; `add-context-fabric` (#96) for the `SourceRef` integration; `add-knowledge-spec` (issue #160) for the Wiki substrate (the umbrella knowledge delta merges at archive time) | No `CodeGraph` anywhere in the repo. No `WikiPage` / `WikiGenerationProposal`. No `trigger_when` / `validate_against` / `version` in skill frontmatter. The Knowledge module already exposes `knowledge.ingest` + `knowledge.search` + `knowledge.documents` — Wiki rides that surface via `SourceKind = wiki`. | Wiki deliberately stays in the `knowledge` capability (it's a document/chunk corpus, not a new asset type); the umb-ella's `specs/knowledge/spec.md` delta will be merged into `add-knowledge-spec`'s delta at archive. Skill metadata is a strict superset — old `SKILL.md` files parse exactly as today. | XL | **12** (parallel with #104 dashboard when it lands; CodeGraph could parallel with anything since `add-repositories` is the only meaningful dep, and #163 itself is Wave 2). Wiki itself can ship later in the same wave once `add-knowledge-spec` lands (issue #160 / Wave 8 in the existing graph). Skill metadata is the cheapest piece — could ship in any wave after #94. | T0 unit (symbol/edge/intersection math, deterministic impact ordering, Wiki supersede = `stale-but-auditable`, skill stale transition on `validate_against` generation bump, catalog surfaces all three metadata fields) + T1 integration (real Postgres for `code-graph` rows + Wiki `SourceDocument` rows; tree-sitter parse of fixture repos) + T3 Storybook/Playwright (Wiki candidate approval flow) |
 
 ### Not one of the 18
 
@@ -107,15 +110,25 @@ flowchart TD
         I96["#96 add-context-fabric"]
         I98["#98 add-templates"]
         I103["#103 add-outbound-webhooks"]
+        IA["Phase D — code-graph-and-managed-assets (umbrella deltas only)"]
     end
     subgraph W9["Wave 9 — Brain (solo)"]
         I97["#97 add-durable-brain-operations"]
     end
+    subgraph W9b["Wave 9b — hybrid retrieval (Phase A)"]
+        IA1["Phase A — hybrid-retrieval-and-mission-memory (RRF+tsvector half)"]
+    end
     subgraph W10["Wave 10 — completion (solo)"]
         I99["#99 add-mission-completion-review"]
     end
+    subgraph W10b["Wave 10b — swarm memory (Phase B)"]
+        IA2["Phase B — hybrid-retrieval-and-mission-memory (swarm half)"]
+    end
     subgraph W11["Wave 11 — dashboard (solo, final integrator)"]
         I104["#104 add-mission-dashboard"]
+    end
+    subgraph W11b["Wave 11b — outcome reinforcement (Phase C)"]
+        IA3["Phase C — outcome-reinforcement-and-planning-priors"]
     end
 
     I87 --> I88 --> I89
@@ -137,6 +150,15 @@ flowchart TD
     I95 --> I97
     I97 --> I99
     I94 --> I99
+    I94 --> IA1
+    IA1 --> IA2
+    I100 --> IA2
+    I99 --> IA3
+    I94 --> IA3
+    I96 --> IA3
+    I163 --> IA
+    I96 --> IA
+    IA --> IA3
     I99 --> I104
     I101 --> I104
     I92 --> I104
@@ -249,6 +271,141 @@ Full rationale recorded verbatim in
 (R1–R16, from the grilling transcript).
 
 1. **Multi-repo / cross-product model (issue #163)** — Repository becomes a standalone registered unit; Projects attach repositories many-to-many with a per-attachment role and access level, effective access `min(attachment, credential)` (R1/R4). Repository rules, credentials, and its one merge queue stay repo-owned; the project only initiates work, pays budget, and supplies memory/context (R3). A repo-to-repo link graph (package/pin, submodule, api-contract, deploy/GitOps, codegen-consumer, read-context, fork/upstream) replaces any notion of a project-to-project link (R6); auto-discovery seeds `suggested` links, only human-confirmed links drive planning (R10). Cross-repo changes execute as a DAG of one-target-repo-plus-read-only-neighbours tasks gated by artifact-source-adapter readiness (R8/R9); a repo where Comuki has no write access blocks external with a brain-authored request to the repo's own channel (R2/R5). Memory gains a repository layer alongside project/global, fed only by facts and incidents intrinsic to the repo, promoted from project memory only through redaction + provenance (R11/R12). Brain sees attached repos fully and graph-neighbour metadata always, neighbour code/memory only with read access (R16). This subsumes issue #50 (dependency-ordered merge batches) via the per-repo merge queue plus the cross-repo DAG — confirmed against code: `MergeBatch.PullRequestUrls` is a flat, unordered list today, and `MergeQueueEntry.ProjectId` is already nullable.
-2. **Epic amendment (missions/spec.md, this file's #93/#94/#99 rows)** — the "Mission belongs to exactly one Project" invariant becomes home Project + participating Projects (R7). `add-minimal-missions` (#93) introduces the `HomeProject`/`MissionParticipation` structure now, with an empty participant list behaving exactly as the prior single-Project Mission (no behavior change to any existing scenario); `add-multi-repo-projects` (#163) later fills in the full invitation/approval/budget participation mechanics via the capability broker. `feature/source-workspace-clone`'s scalar `Project.SourceGitUrl`/`SourceGitRef` lands as-is (#125) and is migrated into the primary `ProjectRepositoryAttachment` once both changes exist.
+2. **Epic amendment (missions/spec.md, this file's #93/#94/#99 rows)** — the "Mission belongs to exactly one Project" invariant becomes home Project + participating Projects (R7). `add-minimal-missions` (#93) introduces the `HomeProject`/`MissionParticipation` structure now, with an empty participant list behaving exactly as the prior single-Project Mission (no behavior change to any existing scenario); `add-multi-repo-projects` (#163) later fills in the full invitation/approval/budget participation mechanics via the capability broker. `feature/source-workspace-clone`'s scalar `Project.SourceGitUrl`/`Project.SourceGitRef` lands as-is (#125) and is migrated into the primary `ProjectRepositoryAttachment` once both changes exist.
 3. **Wave slot** — `add-multi-repo-projects` (#163) lands in Wave 2, parallel with `#88`: its foundation depends only on `#87`'s execution spine. Only its Mission-participation routing task additionally waits on `#90` (capability broker, Wave 4) and `#93` (`HomeProject`/`MissionParticipation`, Wave 5) — see the wave-plan note above the diagram.
 4. **Non-goals tension (flag for `proposal.md`, not fixed here)** — the epic's `proposal.md` currently lists "Cross-project Missions or Tasks belonging to multiple Missions" as a Non-goal; R7/R15 supersede that for Mission *participation* (a Task still belongs to exactly one Mission — only the Mission's Project scope widens to home + participating). `proposal.md` is outside this amendment's edit set; its Non-goals bullet needs a follow-up edit by whoever next touches that file.
+
+## Decisions (user, 2026-10-05)
+
+Authoritative record for the four new umbrella phases (A — hybrid retrieval,
+B — swarm memory, C — outcome reinforcement, D — intelligent assets).
+Recorded here for traceability across the umbrella; the per-child-change
+GitHub issues (or follow-up umbrella deltas) carry the same rationale.
+
+1. **Phases land as umbrella deltas, not as separate child changes** — Phases
+   A, B, C, D amend the existing `add-mission-cowork` umbrella through
+   `proposal.md` / `design.md` / `decomposition.md` / `tasks.md` plus the
+   corresponding `specs/` deltas. The four phases share dependencies with
+   existing umbrella rows (`add-context-fabric` #96, `add-mission-stream-and-room`
+   #94, `add-worker-pools-and-isolation-classes` #100,
+   `add-mission-completion-review` #99, `add-multi-repo-projects` #163,
+   `add-knowledge-spec` issue #160). Splitting them into four separate
+   child changes would multiply coordination cost on shared spec files
+   (`memory`, `context-fabric`, `worker-runtime`, `realtime`, `missions`,
+   `control-plane`, `knowledge`) without yielding independent review units.
+
+2. **Knowledge spec gap (design.md open question) — resolved by `add-knowledge-spec`,
+   not by this umbrella** — generic Knowledge (source documents, chunks,
+   pgvector embedding pipeline, project/global write scope, source key +
+   content hash, revision/generation tracking, provenance on search hits)
+   already lives in the separately-tracked `add-knowledge-spec` change
+   (issue #160, lands in Wave 8). The Wiki extension from this umbrella
+   lands in a new `specs/knowledge/spec.md` delta in this change and
+   merges with `add-knowledge-spec`'s delta at archive time. Generic
+   Knowledge is **included** from day one (not excluded); the design.md
+   "exclude generic Knowledge" branch is closed.
+
+3. **Hybrid retrieval (Phase A) — RRF with `k = 60`, equal per-list weights**
+   — the lexical (`tsvector` + GIN index) and vector (pgvector cosine)
+   sides carry equal weight in the fusion stage. The two sides degrade
+   gracefully and independently — no `tsvector` column → vector-only,
+   no `embedding` column → lexical-only; the platform never silently
+   drops a back-end. Generation pinning is per-request and the fusion
+   stage SHALL NOT mix generations.
+
+4. **Mission scope (Phase B) — fourth `MemoryScope` value** —
+   `User | Project | Mission | Global`. Mission-scoped facts are
+   participant + Brain visible only; they ride the same retention /
+   crypto-shred path as Mission evidence generations on Mission
+   completion. Non-participants receive an empty result (NOT 403/404)
+   so Mission existence is not confirmed.
+
+5. **Swarm blackboard transport (Phase B) — reuses `IRealtimeBackplane`,
+   not a new transport** — the realtime side rides the same backplane
+   contract #101 (`add-mission-real-time-presence-and-backplane`) plans;
+   channel `mission:swarm:<missionId>`; same InMemory/Redis topology
+   selection; same Redis-outage degradation. The blackboard never
+   consumes Mission stream sequence. The durable side lives in Memory
+   as `BlackboardFinding` facts, keyed by `(MissionId, workerKey,
+   fingerprint)` with supersede semantics.
+
+6. **Ephemeral worker tier (Phase B) — second slot tier, same wire contract**
+   — the ephemeral slot is identical to the regular slot on the
+   `IWorkerRuntime` surface (same claim/heartbeat/complete/fail
+   envelopes) but adds `MissionId` to the slot identity, recycles
+   across WorkItems of one Mission, owns `/work/scratch/<executionId>/`,
+   and flushes `EphemeralNote` records into the Mission-scoped memory
+   on completion. Flush failure does NOT block terminal publication;
+   the slot uses #100's `WorkerHostId` / `SlotId` / `ExecutionId`
+   model unchanged.
+
+7. **Outcome reinforcement (Phase C) — signed contributions, capped per
+   signal, no Decision downgrade** — six outcome counters
+   (`VerifyPassCount` / `VerifyFailCount` / `BuildGreenCount` /
+   `BuildRedCount` / `TaskSucceededCount` / `TaskFailedCount`) enter
+   the fused rank as signed contributions, capped per signal (default
+   `outcome_cap_per_signal = 5`). Read/repeat counts remain unsigned
+   priors. A candidate that downgrades an accepted Decision becomes a
+   conflict node (existing rule), not a supersede.
+
+8. **Planning memory (Phase C) — advisory priors, never auto-replay**
+   — completed Mission decompositions (DAG of stages/Workers, skills
+   per node, final outcome) live in Memory and surface to the planner
+   as advisory priors. The planner SHALL NOT auto-replay any prior
+   DAG; Brain may consult or ignore priors. Private Mission priors stay
+   private until declassified (existing rule).
+
+9. **CodeGraph (Phase D) — TypeScript and C# only in v1, tree-sitter** —
+   the indexer excludes `Migrations/`, `bin/`, `obj/`, `node_modules/`,
+   `.git/`, `dist/`, `build/`. Incremental indexing on a 5-minute
+   heartbeat (range `[60s, 1h]`). The graph is exposed as a Context
+   Fabric `SourceRef` of kind `code-graph`; queries are
+   `SymbolLookup` / `ImpactPaths` (no hybrid free-text mode in v1).
+
+10. **Wiki (Phase D) — `SourceKind = wiki`, advisory proposals** —
+    Wiki pages are `SourceDocument` rows in the existing `knowledge`
+    corpus; ingestion goes through `knowledge.ingest`. Brain proposes
+    a `WikiGenerationProposal` per Mission; humans / owners approve or
+    reject each candidate; rejected candidates do NOT become pages.
+    Wiki retrieval rides the same hybrid pipeline (decision #21) and
+    adds one extra Context Fabric operation (`WikiLinkGraph`) for
+    adjacency traversal. Wiki lives in the `knowledge` capability and
+    is owned by `add-knowledge-spec` (issue #160); the umbrella delta
+    merges at archive time.
+
+11. **Skill metadata (Phase D) — strict superset of today's frontmatter** —
+    `trigger_when` / `validate_against` / `version` are OPTIONAL.
+    Skills without metadata parse exactly as today. The catalog
+    surfaces the three fields alongside `Key` / `Name` / `Description`
+    / `Scope`. `trigger_when` is a selection hint — the Brain's own
+    model decides; the catalog SHALL NOT auto-select on `trigger_when`
+    match. `validate_against` watches a list of source references;
+    generation bump on any target marks the skill `stale=true` and the
+    Brain sees the stale state in its operation trace. `version` is
+    semver, defaults to `0.1.0`.
+
+12. **New GitHub issues** — Phase A (hybrid retrieval) → issue **TBD**
+    (filed separately after this umbrella amendment is reviewed);
+    Phase B (swarm memory) → issue **TBD**; Phase C (outcome
+    reinforcement) → issue **TBD**; Phase D (code-graph and managed
+    assets) → issue **TBD**. Each issue's task list draws from the
+    Phase's `tasks.md` section added in this amendment. All four issues
+    declare the same per-dependency list as the umbrella rows above so
+    the tightened wave plan above is the single source of truth.
+
+13. **Wave numbering — new waves 9b, 10b, 11b** — Phase A lands in
+    Wave 9b (after #94 ships `IRealtimeBackplane`); Phase B lands in
+    Wave 10b (after #94 and #100 both ship); Phase C lands in Wave
+    11b (after #99 ships, because completion review is the source of
+    `TaskSucceeded`/`TaskFailed`); Phase D's foundation (CodeGraph)
+    can ship in Wave 8 (parallel with #96) and the Wiki / skill
+    metadata pieces can ship in any later wave — the wave diagram
+    above places Phase D as a parallel sub-row of Wave 8 for clarity.
+
+14. **Spec deltas** — these all live in this umbrella change as
+    MODIFIED requirements on existing specs (`context-fabric`,
+    `memory`, `worker-runtime`, `realtime`, `missions`, `control-plane`)
+    plus NEW `code-graph` and `knowledge` (Wiki) capability folders.
+    Per the openspec-update-change discipline, no new file is
+    invented beyond the canonical `specs/<capability>/spec.md` paths;
+    the Wiki delta merges with `add-knowledge-spec` at archive.

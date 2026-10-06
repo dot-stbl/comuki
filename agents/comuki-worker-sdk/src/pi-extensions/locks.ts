@@ -43,9 +43,10 @@ const PATH_TOOLS: ReadonlySet<string> = new Set(["write", "edit"])
 export function createLocksExtension(
   options: LocksExtensionOptions = {}
 ): ExtensionFactory {
-  const rules: readonly LockRule[] = options.profileLocks === undefined
-    ? BLOCKED_TOOL_TARGETS
-    : [...BLOCKED_TOOL_TARGETS, ...options.profileLocks]
+  const rules: readonly LockRule[] =
+    options.profileLocks === undefined
+      ? BLOCKED_TOOL_TARGETS
+      : [...BLOCKED_TOOL_TARGETS, ...options.profileLocks]
 
   return function locksExtension(api: PiExtensionApi): void {
     api.on("tool_call", (event) => enforceLocks(event, rules))
@@ -89,9 +90,7 @@ function enforceLocks(
   return undefined
 }
 
-function pathArgument(
-  input: Record<string, unknown>
-): string | undefined {
+function pathArgument(input: Record<string, unknown>): string | undefined {
   const path = input.path
   return typeof path === "string" && path.length > 0 ? path : undefined
 }

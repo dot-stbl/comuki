@@ -15,6 +15,9 @@ public static class MemoryScopeKeys
     /// <summary>Key of <see cref="MemoryScope.Global"/>.</summary>
     public const string Global = "global";
 
+    /// <summary>Key of <see cref="MemoryScope.Mission"/>.</summary>
+    public const string Mission = "mission";
+
     /// <summary>Subject id used by global-scope facts (they have no narrower owner).</summary>
     public const string GlobalSubject = "global";
 
@@ -27,6 +30,7 @@ public static class MemoryScopeKeys
             MemoryScope.User => User,
             MemoryScope.Project => Project,
             MemoryScope.Global => Global,
+            MemoryScope.Mission => Mission,
             _ => throw new ArgumentOutOfRangeException(nameof(scope), scope, null),
         };
     }
@@ -40,6 +44,7 @@ public static class MemoryScopeKeys
             User => MemoryScope.User,
             Project => MemoryScope.Project,
             Global => MemoryScope.Global,
+            Mission => MemoryScope.Mission,
             _ => null,
         };
     }

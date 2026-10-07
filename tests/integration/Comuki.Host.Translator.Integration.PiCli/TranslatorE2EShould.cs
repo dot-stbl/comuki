@@ -407,6 +407,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
             WorkingDirectory = Path.Combine(Path.GetTempPath(), "comuki-e2e-" + Guid.NewGuid().ToString("N")),
             HeartbeatInterval = TimeSpan.FromSeconds(5),
             ClaimPollInterval = TimeSpan.FromSeconds(1),
+            EnvClass = EnvClass,
         };
         Directory.CreateDirectory(options.WorkingDirectory);
 

@@ -52,6 +52,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
 {
     private const string Image = "ghcr.io/comuki/worker:s3";
     private const string ProfilesRef = "refs/heads/main";
+    private const string EnvClass = "net10-sdk-bun";
     private const string ProfileKey = "implement";
 
     private TestWorkerHost host = null!;
@@ -323,7 +324,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         using var claim = await client.PostAsync(
             "/workers/claim",
             new StringContent(
-                /*lang=json,strict*/ $$"""{"image":"{{Image}}","profilesRef":"{{ProfilesRef}}","profileKey":"{{ProfileKey}}"}""",
+                /*lang=json,strict*/ $$"""{"image":"{{Image}}","profilesRef":"{{ProfilesRef}}","profileKey":"{{ProfileKey}}","envClass":"{{EnvClass}}"}""",
                 System.Text.Encoding.UTF8,
                 "application/json"),
             TestContext.Current.CancellationToken);

@@ -1,4 +1,3 @@
-using Comuki.Host.Translator.Api.Contracts;
 using Comuki.Host.Translator.Execution.Outcomes;
 using Comuki.Host.Translator.Execution.Run;
 using Comuki.Host.Translator.Runtime;
@@ -33,18 +32,23 @@ namespace Comuki.Host.Translator.Execution.Loop;
 /// On every parsed event, the pump calls
 /// <see cref="WorkerProgressWatchdog.Reset"/> — silence past
 /// <c>WorkerProgressTimeout</c> ticks the timer. The watchdogs
-/// decide the escalation; the pump reads
-/// <see cref="WorkerProgressWatchdog.ShouldFailItem"/> /
-/// <see cref="DeadlinePolicy.ShouldFailItem"/> on each
-/// iteration and short-circuits without forwarding the result.
+/// set <see cref="WorkerProgressWatchdog.ShouldFailItem"/> /
+/// <see cref="DeadlinePolicy.ShouldFailItem"/> and a typed
+/// <see cref="WorkerProgressWatchdog.FailReason"/> on tier 3 —
+/// the pump reads both on each iteration and short-circuits
+/// with the watchdog's reason as the outcome's
+/// <see cref="PiOutcome.ErrorText"/>. The loop's existing
+/// <c>api.FailAsync(reason, generation)</c> call takes over with
+/// the right message; the pump does not call the orchestrator
+/// REST API directly.
 /// </para>
 /// </summary>
 public static class PiPump
 {
     /// <summary>Runs the harness session for the claimed brief until it ends, is stopped, or fails.</summary>
-    /// <param name="api">Orchestrator REST client — used by the watchdogs to call <c>api.FailAsync</c> on tier 3.</param>
     /// <param name="harness">The runtime half of the harness SPI — produces the session, owns the process lifecycle.</param>
     /// <param name="run">The run being pumped; <see cref="WorkerRun.HarnessSession"/> is populated by this method (the command handler reads it later). <see cref="WorkerRun.RunCancellation"/> is the pump's cancellation source.</param>
+    /// <param name="deadlineChainState">Process-level state (consecutive-turn-breach counter + threshold) the <c>DeadlinePolicy</c> reads and writes.</param>
     /// <param name="summary">Fold target: every parsed harness event is observed by it; its result text becomes the outcome's on all three exits.</param>
     /// <param name="startedAt">Duration base — the outcome's DurationMs counts elapsed milliseconds from this instant to outcome time.</param>
     /// <param name="clock">Read once, at outcome time, to compute DurationMs.</param>
@@ -52,9 +56,9 @@ public static class PiPump
     /// <param name="logger">Top-level pump logger; watchdog / policy loggers are created from the same factory.</param>
     /// <param name="loggerFactory">Used to mint per-component loggers (watchdog, policy, harness).</param>
     public static async Task<PiOutcome> PumpAsync(
-        IOrchestratorApi api,
         IHarnessRuntime harness,
         WorkerRun run,
+        DeadlineChainState deadlineChainState,
         WorkerRunSummary summary,
         DateTimeOffset startedAt,
         TimeProvider clock,
@@ -66,11 +70,13 @@ public static class PiPump
             run.Claimed, Path.GetTempPath(), run.RunCancellation.Token);
 
         // Backpressure callback — invoked by the bounded events
-        // channel when a progress fragment is dropped. The pump
-        // journals a worker.events_dropped event over the gRPC
-        // stream so the host can increment its
-        // events_dropped_total counter (Phase 2 wires the OTel
-        // side). The callback is best-effort: a send failure is
+        // channel when a progress fragment is dropped, and by
+        // the line reader when a line exceeds MaxLineLengthBytes.
+        // The pump journals a worker.events_dropped event over the
+        // gRPC stream so the host can increment its
+        // events_dropped_total counter (the counter is wired in
+        // Phase 2 — telemetry — and lives in the worker's own
+        // Meter). The callback is best-effort: a send failure is
         // logged at warning and never propagated to the reader.
         void OnProgressDropped() => _ = TryJournalEventsDroppedAsync(run, loggerFactory);
 
@@ -92,16 +98,17 @@ public static class PiPump
 
         // Phase 1: arm the watchdogs. The progress watchdog ticks
         // on WorkerProgressTimeout / 6; the deadline policy ticks
-        // on min(TurnBudget, RunBudget) / 12. Both own their timers
-        // and stop on Dispose. The fail-item path (tier 3 of the
-        // watchdog, run-budget breach of the policy) is the pump's
-        // existing api.FailAsync call — the watchdogs only cancel
-        // the run and set the typed reason, the loop's normal
-        // fail path takes over with the right message.
+        // on min(TurnBudget, RunBudget) / 12. Both own their ITimer
+        // (via TimeProvider.CreateTimer) and stop on Dispose. The
+        // fail-item path (tier 3 of the watchdog, run-budget breach
+        // of the policy) is the loop's existing api.FailAsync call
+        // — the watchdogs only cancel the run and set the typed
+        // reason, the loop's normal fail path takes over with the
+        // right message.
         await using var progressWatchdog = new WorkerProgressWatchdog(
             run, options, clock, loggerFactory.CreateLogger<WorkerProgressWatchdog>());
         await using var deadlinePolicy = new DeadlinePolicy(
-            run, options, clock, loggerFactory.CreateLogger<DeadlinePolicy>());
+            run, deadlineChainState, options, clock, loggerFactory.CreateLogger<DeadlinePolicy>());
         progressWatchdog.Start();
         deadlinePolicy.Start();
 
@@ -120,20 +127,27 @@ public static class PiPump
                     await run.Session.SendAsync(forwardable, run.RunCancellation.Token);
                 }
 
-                // Tier 3 short-circuit: the watchdogs already called
-                // api.FailAsync and cancelled the run. The pump
-                // exits with cancelled; the loop short-circuits
-                // complete because run.StopRequested is true.
+                // Tier 3 short-circuit: the watchdogs have set
+                // ShouldFailItem and FailReason (one of
+                // worker.stall_detected, worker.turn_budget_exceeded,
+                // worker.run_budget_exceeded). The pump exits with
+                // FailedStatus + the typed reason; the loop's
+                // api.FailAsync path takes over without a
+                // watchdog-side REST call.
                 if (progressWatchdog.ShouldFailItem || deadlinePolicy.ShouldFailItem)
                 {
+                    var reason = progressWatchdog.ShouldFailItem
+                        ? progressWatchdog.FailReason ?? "worker.stall_detected"
+                        : deadlinePolicy.FailReason ?? "worker.stall_detected";
                     logger.LogWarning(
-                        "Harness run of work item {WorkItemId} aborted: watchdog / deadline policy requested fail-item",
-                        run.Claimed.WorkItemId);
+                        "Harness run of work item {WorkItemId} aborted: {Reason}",
+                        run.Claimed.WorkItemId,
+                        reason);
                     return new PiOutcome(
                         PiOutcome.FailedStatus,
                         (long)(clock.GetUtcNow() - startedAt).TotalMilliseconds,
                         summary.ResultText,
-                        "worker.stall_detected");
+                        reason);
                 }
             }
 
@@ -147,12 +161,19 @@ public static class PiPump
         }
         catch (OperationCanceledException)
         {
-            logger.LogWarning("Harness run of work item {WorkItemId} cancelled", run.Claimed.WorkItemId);
+            // The watchdogs / orchestrator cancelled the run; the
+            // outcome reads as cancelled. The catch branch does
+            // not reset the consecutive-turn-breach counter
+            // (a cancellation is not a clean turn).
+            var reason = progressWatchdog.ShouldFailItem || deadlinePolicy.ShouldFailItem
+                ? (progressWatchdog.FailReason ?? deadlinePolicy.FailReason ?? "run aborted by watchdog or deadline policy")
+                : "run cancelled by orchestrator command or lease expiry";
+            logger.LogWarning("Harness run of work item {WorkItemId} cancelled: {Reason}", run.Claimed.WorkItemId, reason);
             return new PiOutcome(
                 PiOutcome.CancelledStatus,
                 (long)(clock.GetUtcNow() - startedAt).TotalMilliseconds,
                 summary.ResultText,
-                "run cancelled by orchestrator command or lease expiry");
+                reason);
         }
         catch (InvalidOperationException exception)
         {
@@ -170,6 +191,12 @@ public static class PiPump
         }
     }
 
+    /// <summary>Best-effort journal send for an <c>events_dropped</c> event.
+    /// File-static so it carries no instance state of <see cref="PiPump"/>;
+    /// the worker's gRPC send failure is logged and never propagated to
+    /// the read loop.</summary>
+    /// <param name="run">The run the drop event binds to.</param>
+    /// <param name="loggerFactory">Logger factory; the helper mints its own logger so the journal send's failure has a stable log source.</param>
     private static async Task TryJournalEventsDroppedAsync(WorkerRun run, ILoggerFactory loggerFactory)
     {
         try

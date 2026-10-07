@@ -102,18 +102,6 @@ public sealed class TranslatorOptions
     public TimeSpan WorkerProgressTimeout { get; init; } = TimeSpan.FromSeconds(60);
 
     /// <summary>
-    /// Per-tool-call budget (harden-worker-runtime Phase 1, design D1,
-    /// coordination note: aligns with brain-ops 5min default for
-    /// default-profiles; different semantics — wall-clock cap on a
-    /// single tool invocation, not on task completion). The watchdog
-    /// resets on each parsed event, so a long-but-active run never
-    /// trips; this is the upper bound on a single idle stretch
-    /// between events. Default 5min.
-    /// </summary>
-    [Range(typeof(TimeSpan), "00:00:10", "01:00:00")]
-    public TimeSpan ToolCallTimeout { get; init; } = TimeSpan.FromMinutes(5);
-
-    /// <summary>
     /// Escalation policy the <c>WorkerProgressWatchdog</c> walks
     /// through when <c>last_event_age &gt; WorkerProgressTimeout</c>
     /// (harden-worker-runtime Phase 1, design D1):
@@ -147,8 +135,9 @@ public sealed class TranslatorOptions
     /// <summary>
     /// Wall-clock budget on a single worker process lifetime (one or
     /// more cycles; harden-worker-runtime Phase 1, design D2). On
-    /// breach, fail-item with reason <c>worker.stall_detected</c> and
-    /// let the host re-queue. Default 480min (8h); range 15min–24h.
+    /// breach, fail-item with reason <c>worker.run_budget_exceeded</c>
+    /// and let the host re-queue. Default 480min (8h); range
+    /// 15min–24h.
     /// </summary>
     [Range(typeof(TimeSpan), "00:15:00", "1.00:00:00")]
     public TimeSpan RunBudget { get; init; } = TimeSpan.FromHours(8);
@@ -166,11 +155,14 @@ public sealed class TranslatorOptions
     /// <summary>
     /// Per-line cap on the pi stream-json reader
     /// (harden-worker-runtime Phase 3, design D4). Lines longer than
-    /// this are dropped, the
-    /// <c>parse_errors_total{kind = line_too_long}</c> counter is
-    /// incremented, and the worker keeps reading the next line — one
-    /// bad line cannot OOM the process. Default 1 MB; <c>0</c> disables
-    /// the cap (non-production only).
+    /// this are dropped (the rest of the line is consumed from the
+    /// stream so the next call sees the start of the next line),
+    /// the reader invokes the pump's
+    /// <see cref="Runtime.WorkerEventsChannel.OnProgressDropped"/>
+    /// callback (which journals <c>worker.events_dropped</c>), and
+    /// the worker keeps reading — one bad line cannot OOM the
+    /// process. Default 1 MB; <c>0</c> disables the cap
+    /// (non-production only — the test fake harness sets 0).
     /// </summary>
     [Range(0, 64 * 1024 * 1024)]
     public int MaxLineLengthBytes { get; init; } = 1 * 1024 * 1024;
@@ -178,9 +170,13 @@ public sealed class TranslatorOptions
     /// <summary>
     /// Bounded capacity of the harness events channel
     /// (harden-worker-runtime Phase 3, design D4). The channel drops
-    /// progress-fragments (<c>text_delta</c>) on drop-oldest; mandatory
-    /// events (<c>StageStart</c>, <c>StageReport</c>, <c>agent_end</c>)
-    /// wait for the consumer instead. Default 1024; range 16–16384.
+    /// progress-fragments (<c>text_delta</c>) on drop-oldest;
+    /// <c>agent_end</c> (the only mandatory <c>PiEvent</c> on the
+    /// stream-json side) waits for the consumer instead. The
+    /// run-level lifecycle events (<c>StageStart</c>,
+    /// <c>StageReport</c>) are surfaced over the gRPC stream by
+    /// the loop, not through this channel. Default 1024; range
+    /// 16–16384.
     /// </summary>
     [Range(16, 16384)]
     public int EventsChannelCapacity { get; init; } = 1024;
@@ -191,8 +187,11 @@ public sealed class TranslatorOptions
 /// through (harden-worker-runtime Phase 1, design D1). The flag
 /// encodes the highest tier that fires: Warn-only stops at the
 /// journal; GentleKill cancels the harness on the second tick;
-/// FailItem (Warn + GentleKill + FailItem) calls
-/// <c>api.FailAsync</c> on the third.
+/// FailItem (Warn + GentleKill + FailItem) sets
+/// <c>ShouldFailItem</c> + <c>FailReason = "worker.stall_detected"</c>
+/// on the third; the pump reads both and the loop's existing
+/// <c>api.FailAsync</c> call (in <c>TranslatorLoop</c>) handles
+/// the REST side with the typed reason.
 /// </summary>
 [Flags]
 public enum WorkerProgressEscalationPolicy
@@ -206,7 +205,10 @@ public enum WorkerProgressEscalationPolicy
     /// <summary>Tier 2 — cancel the harness on the second tick.</summary>
     GentleKill = 2,
 
-    /// <summary>Tier 3 — <c>api.FailAsync</c> with reason on the third tick.</summary>
+    /// <summary>Tier 3 — set <c>ShouldFailItem = true</c> +
+    /// <c>FailReason = "worker.stall_detected"</c> on the third tick;
+    /// the loop's <c>api.FailAsync</c> call (in <c>TranslatorLoop</c>)
+    /// handles the REST side with the typed reason.</summary>
     FailItem = 4,
 
     /// <summary>Default chain — warn, then gentle-kill, then fail-item.</summary>

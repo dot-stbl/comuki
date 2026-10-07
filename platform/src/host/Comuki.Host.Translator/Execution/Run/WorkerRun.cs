@@ -15,8 +15,8 @@ namespace Comuki.Host.Translator.Execution.Run;
 /// arrives mid-cycle and writes the operator's turn into the
 /// harness's stdin writer.
 /// </summary>
-/// <param name="claimed"></param>
-/// <param name="session"></param>
+/// <param name="claimed">The work item the run executes; surfaced over the worker stream and read by the watchdogs for the journal payload.</param>
+/// <param name="session">The worker bidi stream the run reports over (Start, Activity, Report, Conditions, StallWarn, StallDetected, EventsDropped).</param>
 public sealed class WorkerRun(
     ClaimedWorkItemResponse claimed,
     WorkerSession session) : IAsyncDisposable

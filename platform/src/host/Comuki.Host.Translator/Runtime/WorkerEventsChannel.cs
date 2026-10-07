@@ -15,23 +15,25 @@ namespace Comuki.Host.Translator.Runtime;
 ///   when the channel is full and a new <c>text_delta</c> arrives,
 ///   the oldest progress item is dropped (and the drop is counted +
 ///   journaled) to make room. The new item is then accepted.</item>
-///   <item><b>Mandatory events</b> (<c>StageStart</c>, <c>StageReport</c>,
-///   <c>agent_end</c>) — never drop: the writer awaits a free slot.
-///   These are the load-bearing items the pump needs to see for a
-///   correct run outcome; their order in the stream is also
-///   preserved (a <c>StageReport</c> after a flood of text-deltas
-///   is queued behind the text-deltas the consumer hasn't drained
-///   yet, but is never replaced).</item>
+///   <item><b>Mandatory events</b> (<c>agent_end</c>) — never drop:
+///   the writer awaits a free slot. These are the load-bearing
+///   items the pump needs to see for a correct run outcome;
+///   their order in the stream is also preserved (an
+///   <c>agent_end</c> after a flood of text-deltas is queued
+///   behind the text-deltas the consumer hasn't drained yet,
+///   but is never replaced).</item>
 /// </list>
-/// The <c>TryPeek</c>/<c>TryRead</c> dance below is racy in principle
-/// (another reader could drain the peeked item between the two calls)
-/// but the channel has <c>SingleReader = true</c> — the consumer is
-/// the pump's events iterator, single-threaded. The peek + read pair
-/// is therefore atomic with respect to the channel's reader.
+/// The drop-oldest branch uses an internal <see cref="Lock"/>
+/// around the peek + read pair so the writer cannot race the
+/// reader when it claims the oldest progress item; the underlying
+/// <c>Channel</c> is configured with <c>SingleReader = true</c>,
+/// but the writer is the only writer, so this is the only
+/// concurrency hazard and a single lock makes the pair atomic.
 /// </summary>
 public sealed class WorkerEventsChannel
 {
     private readonly Channel<PiEvent> channel;
+    private readonly Lock dropGate = new();
     private long progressDropped;
 
     /// <summary>Number of progress events dropped on the drop-oldest policy since the channel was constructed.</summary>
@@ -101,9 +103,8 @@ public sealed class WorkerEventsChannel
         // OLDEST progress item to make room. If the oldest item is
         // mandatory (rare — only when the channel is full of
         // mandatory events, which would mean a flood of
-        // StageStart/Report/agent_end, which doesn't happen in
-        // practice), wait for the consumer instead of dropping
-        // the mandatory item.
+        // agent_end, which doesn't happen in practice), wait for
+        // the consumer instead of dropping the mandatory item.
         if (channel.Writer.TryWrite(piEvent))
         {
             return ValueTask.CompletedTask;
@@ -123,20 +124,28 @@ public sealed class WorkerEventsChannel
 
     private bool TryDropOldestProgress()
     {
-        if (!channel.Reader.TryPeek(out var oldest))
+        // Lock around the peek + read pair so a concurrent
+        // SingleReader cannot drain the peeked item between the
+        // two calls. The writer thread is the only writer; the
+        // reader thread is the only reader; this lock serialises
+        // the two pairs of <c>TryPeek</c> + <c>TryRead</c> against
+        // any other writer that re-enters the drop path.
+        lock (dropGate)
         {
-            return false;
-        }
+            if (!channel.Reader.TryPeek(out var oldest))
+            {
+                return false;
+            }
 
-        if (IsMandatory(oldest))
-        {
-            return false;
-        }
+            if (IsMandatory(oldest))
+            {
+                return false;
+            }
 
-        if (!channel.Reader.TryRead(out _))
-        {
-            // Consumer raced us (shouldn't happen — SingleReader) — give up.
-            return false;
+            if (!channel.Reader.TryRead(out _))
+            {
+                return false;
+            }
         }
 
         Interlocked.Increment(ref progressDropped);
@@ -148,38 +157,6 @@ public sealed class WorkerEventsChannel
     {
         return piEvent switch
         {
-            PiEvent.AgentEndEvent => true,
-            _ => false,
-        };
-    }
-
-    /// <summary>StageStart / StageReport markers — the run-level lifecycle events
-    /// emitted by the host / claim side. The pump sees them as
-    /// <c>PiEvent</c> through the events channel; today they are
-    /// not in the <c>PiEvent</c> shape (they live on the gRPC side),
-    /// so this predicate is forward-looking — the channel is ready
-    /// to mark them as mandatory when they enter the event stream
-    /// (e.g. a future harness that emits run-level events inline).</summary>
-    /// <remarks>
-    /// <para>Today the only event the host's <c>StageStart</c> /
-    /// <c>StageReport</c> shape binds to is the first
-    /// <c>PiEvent.AgentStartEvent</c> (the harness's
-    /// <c>agent_start</c>), but those are session-level (one per
-    /// turn) and dropping one is non-fatal. The run-level mandatory
-    /// events are surfaced over gRPC by the loop (ToStartEvent /
-    /// ToReportEvent on the bound session) — not through this
-    /// channel. This predicate still keeps the door open for
-    /// future run-level events to flow through the same channel
-    /// without re-architecting.</para>
-    /// </remarks>
-    internal static bool IsRunLevelMandatory(PiEvent piEvent)
-    {
-        return piEvent switch
-        {
-            // Future-proofing: any new mandatory event type the
-            // harness starts emitting on stdout will be added here.
-            // The AgentEndEvent is the closest existing equivalent
-            // (run-level end-of-stream marker) and is mandatory today.
             PiEvent.AgentEndEvent => true,
             _ => false,
         };

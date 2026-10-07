@@ -18,8 +18,8 @@ namespace Comuki.Host.Translator.Unit.Runtime;
 internal static class WorkerSessionTestHelpers
 {
     /// <summary>Mocks <see cref="IWorkerService.Connect"/> to return <paramref name="commands"/>.</summary>
-    /// <param name="service"></param>
-    /// <param name="commands"></param>
+    /// <param name="service">The mocked gRPC service the worker session opens against.</param>
+    /// <param name="commands">The orchestrator commands the mock streams to the worker, in order; the stream completes after the last one.</param>
     public static void StubCommandStream(IWorkerService service, IEnumerable<OrchestratorCommand> commands)
     {
         service.Connect(Arg.Any<IAsyncEnumerable<WorkerEvent>>(), Arg.Any<CallContext>())

@@ -36,18 +36,24 @@ namespace Comuki.Host.Translator.Execution.Loop;
 /// is logged, not propagated — the work item's lease / completion path
 /// stays unaffected.
 /// </remarks>
-/// <param name="api"></param>
+/// <remarks>
+/// Constructs the loop. The loop is a long-lived singleton
+/// (created once at startup); the <see cref="processStartedAt"/>
+/// baseline and the <see cref="deadlineChainState"/> process-level
+/// state are seeded here and reused across every cycle.
+/// </remarks>
+/// <param name="api">Orchestrator REST client (claim/heartbeat/complete/fail). The pump does not call this directly; the watchdogs' typed <c>FailReason</c> rides the pump's <c>PiOutcome.ErrorText</c> and the loop calls <c>api.FailAsync</c> with the same reason.</param>
 /// <param name="harness">The runtime half of the harness SPI (replaces the v1.x <c>IPiRunner</c>); the <c>PiPump</c> opens the live session through it.</param>
-/// <param name="workerService"></param>
-/// <param name="profilesProvider"></param>
-/// <param name="sourceCloneRunner"></param>
-/// <param name="restoreRunner"></param>
-/// <param name="heartbeat"></param>
+/// <param name="workerService">gRPC client the loop uses to open the worker bidi stream.</param>
+/// <param name="profilesProvider">Materialises client profiles before pi starts.</param>
+/// <param name="sourceCloneRunner">Clones the claim's <c>SourceGitUrl</c> into the worker's working directory.</param>
+/// <param name="restoreRunner">Runs the accepted <c>[restore]</c> opcodes against the cloned tree.</param>
+/// <param name="heartbeat">Background lease extension; lease-lost on rejection or thrown exception.</param>
 /// <param name="debugExecHost">Opt-in operator debug exec surface (harden-pi-worker-sandbox 5.3).</param>
-/// <param name="options"></param>
-/// <param name="clock"></param>
-/// <param name="loggerFactory"></param>
-/// <param name="logger"></param>
+/// <param name="options">Bound <c>Translator</c> options; the loop reads <c>WorkerImage</c>, <c>ProfilesRef</c>, <c>ProfileKey</c>, <c>EnvClass</c>, <c>WorkerToken</c>, <c>WorkingDirectory</c>, <c>HeartbeatInterval</c>.</param>
+/// <param name="clock">Injected for the process-started-at baseline and the <c>DeadlinePolicy</c>'s run-budget wall-clock.</param>
+/// <param name="loggerFactory">Mints per-component loggers (pump, watchdog, policy, harness).</param>
+/// <param name="logger">Top-level loop logger.</param>
 public sealed class TranslatorLoop(
     IOrchestratorApi api,
     IHarnessRuntime harness,
@@ -62,6 +68,19 @@ public sealed class TranslatorLoop(
     ILoggerFactory loggerFactory,
     ILogger<TranslatorLoop> logger)
 {
+    private readonly IOrchestratorApi api = api;
+    private readonly IHarnessRuntime harness = harness;
+    private readonly IWorkerService workerService = workerService;
+    private readonly IProfilesProvider profilesProvider = profilesProvider;
+    private readonly SourceCloneRunner sourceCloneRunner = sourceCloneRunner;
+    private readonly RestoreRunner restoreRunner = restoreRunner;
+    private readonly HeartbeatMonitor heartbeat = heartbeat;
+    private readonly IDebugExecHost debugExecHost = debugExecHost;
+    private readonly IOptions<TranslatorOptions> options = options;
+    private readonly TimeProvider clock = clock;
+    private readonly ILoggerFactory loggerFactory = loggerFactory;
+    private readonly ILogger<TranslatorLoop> logger = logger;
+
     /// <summary>
     /// Wall-clock instant the worker process itself started
     /// (harden-worker-runtime Phase 1, design D2). Seeded once at
@@ -73,8 +92,21 @@ public sealed class TranslatorLoop(
     /// </summary>
     private readonly DateTimeOffset processStartedAt = clock.GetUtcNow();
 
+    /// <summary>
+    /// Process-level state for the <c>DeadlinePolicy</c>'s
+    /// turn-budget chain (harden-worker-runtime Phase 1, design D2).
+    /// Seeded once at construction; survives across cycles so the
+    /// "3 consecutive breaches" chain counts across policy
+    /// recreations. The pump resets the counter on a successful
+    /// cycle completion; cancellation (catch-OCE) does not reset
+    /// it — cancellation is the watchdog / orchestrator's signal,
+    /// not a clean turn.
+    /// </summary>
+    private readonly DeadlineChainState deadlineChainState = new(
+            options.Value.ConsecutiveTurnBreachesBeforeFail);
+
     /// <summary>Attempts one full work item cycle. False = queue empty.</summary>
-    /// <param name="stoppingToken"></param>
+    /// <param name="stoppingToken">Hosted-service stop token; propagated into claim, heartbeat, command handler, and session lifecycle.</param>
     public async Task<bool> TryRunOnceAsync(CancellationToken stoppingToken)
     {
         var opts = options.Value;
@@ -193,7 +225,7 @@ public sealed class TranslatorLoop(
 
         var summary = new WorkerRunSummary();
         var outcome = await PiPump.PumpAsync(
-            api, harness, run, summary, runStartedAt, clock, options, loggerFactory.CreateLogger(nameof(PiPump)), loggerFactory);
+            harness, run, deadlineChainState, summary, runStartedAt, clock, options, loggerFactory.CreateLogger(nameof(PiPump)), loggerFactory);
 
         // AgentRunning — pi was started and the pump returned (success or
         // otherwise). The pump does not distinguish "started and crashed"

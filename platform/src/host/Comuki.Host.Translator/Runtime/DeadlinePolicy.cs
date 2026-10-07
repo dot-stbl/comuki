@@ -22,30 +22,31 @@ namespace Comuki.Host.Translator.Runtime;
 ///   re-spawning side).</item>
 /// </list>
 /// Both budgets share the same escalation path as the
-/// <see cref="WorkerProgressWatchdog"/> (cancel + journal +
-/// <c>api.FailAsync</c> on the third turn-budget breach in a row).
-/// Brain-ops 5/15/30-min budgets live in <c>add-mission-cowork</c>
-/// and have a different semantic (task-completion, not worker
-/// ephemeral lifetime) — see <c>design.md</c> §Coordination notes.
+/// <see cref="WorkerProgressWatchdog"/> (cancel + journal + the
+/// loop's existing <c>api.FailAsync</c> call on tier 3). Brain-ops
+/// 5/15/30-min budgets live in <c>add-mission-cowork</c> and have
+/// a different semantic (task-completion, not worker ephemeral
+/// lifetime) — see <c>design.md</c> §Coordination notes.
 /// </summary>
 /// <remarks>
-/// <see cref="WorkerProgressWatchdog"/> tracks progress; this policy
-/// tracks wall-clock. The two coexist — a run that emits a
-/// <c>text_delta</c> every 30s stays below the progress timeout but
-/// can still hit the turn-budget. Conversely, a 5-hour run that
-/// emits events every 10ms stays below both timeouts but can still
-/// hit the run-budget.
+/// The consecutive-turn-breach counter lives on
+/// <see cref="DeadlineChainState"/>, not on the policy instance,
+/// so the chain is "inside the same worker process" (per the
+/// design's wording) — the pump recreates the policy every
+/// cycle, but the state survives. The pump resets the counter on
+/// a successful cycle completion; the catch-OCE branch
+/// (cancellation) does not reset it.
 /// </remarks>
 public sealed class DeadlinePolicy : IDisposable
 {
     private readonly WorkerRun run;
+    private readonly DeadlineChainState chainState;
     private readonly TranslatorOptions options;
     private readonly TimeProvider clock;
     private readonly ILogger<DeadlinePolicy> logger;
     private readonly TimeSpan tickInterval;
-    private readonly Timer timer;
     private readonly Lock gate = new();
-    private int consecutiveTurnBreaches;
+    private ITimer? timer;
     private bool runBudgetFired;
     private bool disposed;
 
@@ -54,38 +55,47 @@ public sealed class DeadlinePolicy : IDisposable
     /// timer; the pump drives that via <see cref="Start"/> so the
     /// first tick reads the actual wall-clock at cycle-spawn time.
     /// </summary>
-    /// <param name="run">The bound run — the policy cancels its
-    /// <see cref="WorkerRun.RunCancellation"/> on gentle-kill and reads
-    /// <see cref="WorkerRun.RunStartedAt"/> / <see cref="WorkerRun.ProcessStartedAt"/>
-    /// for the wall-clock budgets.</param>
+    /// <param name="run">The bound run — the policy reads
+    /// <see cref="WorkerRun.RunStartedAt"/> and
+    /// <see cref="WorkerRun.ProcessStartedAt"/> for the
+    /// wall-clock budgets and cancels
+    /// <see cref="WorkerRun.RunCancellation"/> on gentle-kill /
+    /// fail-item.</param>
+    /// <param name="chainState">Process-level state (counter +
+    /// threshold) the policy reads and writes. The counter
+    /// survives across policy recreations because the state
+    /// outlives the policy.</param>
     /// <param name="options">Bound <c>Translator</c> options — carries
     /// <c>TurnBudget</c>, <c>RunBudget</c> and
     /// <c>ConsecutiveTurnBreachesBeforeFail</c>.</param>
     /// <param name="clock">Injected for tests; the policy never reads
-    /// <c>DateTimeOffset.UtcNow</c> directly.</param>
+    /// <c>DateTimeOffset.UtcNow</c> directly. The clock's
+    /// <see cref="TimeProvider.CreateTimer"/> implementation drives the
+    /// tick.</param>
     /// <param name="logger">Records the budget breaches; gentle-kill is
     /// warning, fail-item is error.</param>
     public DeadlinePolicy(
         WorkerRun run,
+        DeadlineChainState chainState,
         IOptions<TranslatorOptions> options,
         TimeProvider clock,
         ILogger<DeadlinePolicy> logger)
     {
         this.run = run;
+        this.chainState = chainState;
         this.options = options.Value;
         this.clock = clock;
         this.logger = logger;
         // Tick every (min(TurnBudget, RunBudget) / 12) so a 60-min
         // turn budget checks every 5 min, a 5-min turn budget checks
-        // every 25s. Floors at 100ms (small enough for unit tests
-        // — the timer is real-time-driven, not TimeProvider-driven)
-        // and caps at 30s (a 1h+ budget still ticks every 30s).
+        // every 25s. Floors at 100ms (small enough for unit tests —
+        // the timer fires on virtual-time advance) and caps at 30s
+        // (a 1h+ budget still ticks every 30s).
         var smallest = this.options.TurnBudget < this.options.RunBudget
             ? this.options.TurnBudget
             : this.options.RunBudget;
         tickInterval = TimeSpan.FromMilliseconds(
             Math.Clamp(smallest.TotalMilliseconds / 12, 100, 30_000));
-        timer = new Timer(OnTick, state: null, dueTime: Timeout.Infinite, period: Timeout.Infinite);
     }
 
     /// <summary>Arms the timer; the pump calls this once per cycle.</summary>
@@ -98,8 +108,9 @@ public sealed class DeadlinePolicy : IDisposable
                 return;
             }
 
-            consecutiveTurnBreaches = 0;
             ShouldFailItem = false;
+            FailReason = null;
+            timer ??= clock.CreateTimer(_ => OnTick(), state: null, dueTime: Timeout.InfiniteTimeSpan, period: Timeout.InfiniteTimeSpan);
             timer.Change(tickInterval, tickInterval);
         }
     }
@@ -114,7 +125,7 @@ public sealed class DeadlinePolicy : IDisposable
                 return;
             }
 
-            timer.Change(Timeout.Infinite, Timeout.Infinite);
+            timer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
     }
 
@@ -136,7 +147,30 @@ public sealed class DeadlinePolicy : IDisposable
         private set;
     }
 
-    private void OnTick(object? state)
+    /// <summary>The typed reason attached to the last fail-item fire —
+    /// one of <c>worker.turn_budget_exceeded</c> /
+    /// <c>worker.run_budget_exceeded</c>. <c>null</c> until the
+    /// policy has fired at least once.</summary>
+    public string? FailReason
+    {
+        get
+        {
+            lock (gate)
+            {
+                return field;
+            }
+        }
+
+        private set
+        {
+            lock (gate)
+            {
+                field = value;
+            }
+        }
+    }
+
+    private void OnTick()
     {
         var now = clock.GetUtcNow();
         var turnElapsed = now - run.RunStartedAt;
@@ -163,6 +197,7 @@ public sealed class DeadlinePolicy : IDisposable
 
                 runBudgetFired = true;
                 ShouldFailItem = true;
+                FailReason = "worker.run_budget_exceeded";
             }
 
             FireRunBudgetBreach(turnElapsed, runElapsed);
@@ -175,9 +210,11 @@ public sealed class DeadlinePolicy : IDisposable
         }
 
         // Turn-budget chain: each tick that finds turnElapsed past
-        // the budget counts as a breach. After
-        // ConsecutiveTurnBreachesBeforeFail consecutive breaches, the
-        // item is failed with reason worker.turn_budget_exceeded.
+        // the budget counts as a breach. The counter lives on
+        // DeadlineChainState so the chain survives policy
+        // recreations. After ConsecutiveTurnBreachesBeforeFail
+        // consecutive breaches, the item is failed with reason
+        // worker.turn_budget_exceeded.
         int observedBreaches;
         lock (gate)
         {
@@ -185,14 +222,14 @@ public sealed class DeadlinePolicy : IDisposable
             {
                 return;
             }
-
-            consecutiveTurnBreaches++;
-            observedBreaches = consecutiveTurnBreaches;
         }
+
+        chainState.ConsecutiveBreaches++;
+        observedBreaches = chainState.ConsecutiveBreaches;
 
         FireTurnBudgetBreach(turnElapsed, runElapsed, observedBreaches);
 
-        if (observedBreaches >= options.ConsecutiveTurnBreachesBeforeFail)
+        if (observedBreaches >= chainState.ConsecutiveTurnBreachesBeforeFail)
         {
             lock (gate)
             {
@@ -202,18 +239,19 @@ public sealed class DeadlinePolicy : IDisposable
                 }
 
                 ShouldFailItem = true;
+                FailReason = "worker.turn_budget_exceeded";
             }
         }
     }
 
     private void FireTurnBudgetBreach(TimeSpan turnElapsed, TimeSpan runElapsed, int observedBreaches)
     {
-        if (observedBreaches >= options.ConsecutiveTurnBreachesBeforeFail)
+        if (observedBreaches >= chainState.ConsecutiveTurnBreachesBeforeFail)
         {
             logger.LogError(
                 "Turn-budget breach #{ObservedBreaches} (>= {Threshold}) on work item {WorkItemId}: turn {TurnElapsedMs}ms >= TurnBudget {TurnBudgetMs}ms — failing item with reason worker.turn_budget_exceeded",
                 observedBreaches,
-                options.ConsecutiveTurnBreachesBeforeFail,
+                chainState.ConsecutiveTurnBreachesBeforeFail,
                 run.Claimed.WorkItemId,
                 (long)turnElapsed.TotalMilliseconds,
                 (long)options.TurnBudget.TotalMilliseconds);
@@ -245,7 +283,7 @@ public sealed class DeadlinePolicy : IDisposable
         logger.LogWarning(
             "Turn-budget breach #{ObservedBreaches} on work item {WorkItemId}: turn {TurnElapsedMs}ms >= TurnBudget {TurnBudgetMs}ms — gentle-kill (consecutive {ObservedBreaches}/{Threshold})",
             observedBreaches,
-            options.ConsecutiveTurnBreachesBeforeFail,
+            chainState.ConsecutiveTurnBreachesBeforeFail,
             run.Claimed.WorkItemId,
             (long)turnElapsed.TotalMilliseconds,
             (long)options.TurnBudget.TotalMilliseconds);
@@ -263,18 +301,13 @@ public sealed class DeadlinePolicy : IDisposable
     /// Resets the consecutive-breach counter on a successful
     /// cycle completion. The pump calls this after the events
     /// iterator returns without the watchdog / policy firing.
+    /// Delegates to <see cref="DeadlineChainState"/> so the reset
+    /// actually clears the process-level counter (not a
+    /// policy-local copy that the next policy would re-read).
     /// </summary>
     public void ResetBreachCounter()
     {
-        lock (gate)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            consecutiveTurnBreaches = 0;
-        }
+        chainState.ConsecutiveBreaches = 0;
     }
 
     private void FireRunBudgetBreach(TimeSpan turnElapsed, TimeSpan runElapsed)
@@ -295,17 +328,17 @@ public sealed class DeadlinePolicy : IDisposable
             tier: 3,
             reason: "worker.run_budget_exceeded")
             .ContinueWith(
-                task =>
-                {
-                    if (task.Exception is not null)
+                    task =>
                     {
-                        logger.LogError(
-                            task.Exception,
-                            "Run-budget stall-detected journal send threw on work item {WorkItemId}",
-                            run.Claimed.WorkItemId);
-                    }
-                },
-                TaskScheduler.Default);
+                        if (task.Exception is not null)
+                        {
+                            logger.LogError(
+                                task.Exception,
+                                "Run-budget stall-detected journal send threw on work item {WorkItemId}",
+                                run.Claimed.WorkItemId);
+                        }
+                    },
+                    TaskScheduler.Default);
     }
 
     private async Task TrySendStallDetectedAsync(long lastEventAgeMs, long turnElapsedMs, long runElapsedMs, int tier, string reason)
@@ -343,11 +376,11 @@ public sealed class DeadlinePolicy : IDisposable
             }
 
             disposed = true;
-            timer.Dispose();
+            timer?.Dispose();
         }
     }
 
-    /// <summary>Async dispose — the underlying <see cref="Timer"/> exposes
+    /// <summary>Async dispose — the underlying <see cref="ITimer"/> exposes
     /// <c>DisposeAsync</c>; we forward so the pump can <c>await using</c>.</summary>
     public ValueTask DisposeAsync()
     {

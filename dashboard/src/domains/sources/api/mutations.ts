@@ -12,18 +12,18 @@ import {
   settingsToJson,
   sourceConnectionViewToConnection,
 } from "@/domains/sources/api/mappers"
-import { getApiV1AdmissionRules } from "@/shared/api/_generated/clients/getApiV1AdmissionRules"
-import { postApiV1AdmissionRules } from "@/shared/api/_generated/clients/postApiV1AdmissionRules"
-import { postApiV1Sources } from "@/shared/api/_generated/clients/postApiV1Sources"
-import { postApiV1SourcesProbe } from "@/shared/api/_generated/clients/postApiV1SourcesProbe"
-import { postApiV1SourcesSourceidProbe } from "@/shared/api/_generated/clients/postApiV1SourcesSourceidProbe"
-import { postApiV1SourcesSourceidRotateSecret } from "@/shared/api/_generated/clients/postApiV1SourcesSourceidRotateSecret"
-import { postApiV1Tickets } from "@/shared/api/_generated/clients/postApiV1Tickets"
-import { putApiV1AdmissionRulesRuleid } from "@/shared/api/_generated/clients/putApiV1AdmissionRulesRuleid"
-import { putApiV1SourcesSourceid } from "@/shared/api/_generated/clients/putApiV1SourcesSourceid"
-import { deleteApiV1SourcesSourceid } from "@/shared/api/_generated/clients/deleteApiV1SourcesSourceid"
+import { getApiV1IntegrationAdmissionRules } from "@/shared/api/_generated/clients/getApiV1IntegrationAdmissionRules"
+import { postApiV1IntegrationAdmissionRules } from "@/shared/api/_generated/clients/postApiV1IntegrationAdmissionRules"
+import { postApiV1IntegrationSources } from "@/shared/api/_generated/clients/postApiV1IntegrationSources"
+import { postApiV1IntegrationSourcesProbe } from "@/shared/api/_generated/clients/postApiV1IntegrationSourcesProbe"
+import { postApiV1IntegrationSourcesSourceidProbe } from "@/shared/api/_generated/clients/postApiV1IntegrationSourcesSourceidProbe"
+import { postApiV1IntegrationSourcesSourceidRotateSecret } from "@/shared/api/_generated/clients/postApiV1IntegrationSourcesSourceidRotateSecret"
+import { postApiV1IntegrationItems } from "@/shared/api/_generated/clients/postApiV1IntegrationItems"
+import { putApiV1IntegrationAdmissionRulesRuleid } from "@/shared/api/_generated/clients/putApiV1IntegrationAdmissionRulesRuleid"
+import { putApiV1IntegrationSourcesSourceid } from "@/shared/api/_generated/clients/putApiV1IntegrationSourcesSourceid"
+import { deleteApiV1IntegrationSourcesSourceid } from "@/shared/api/_generated/clients/deleteApiV1IntegrationSourcesSourceid"
 import type { AdmissionRuleView } from "@/shared/api/_generated/types/AdmissionRuleView"
-import type { CreateNativeTicketRequest } from "@/shared/api/_generated/types/CreateNativeTicketRequest"
+import type { CreateNativeInboundItemRequest } from "@/shared/api/_generated/types/CreateNativeInboundItemRequest"
 import type { SecretRotationResponse } from "@/shared/api/_generated/types/SecretRotationResponse"
 import {
   connectSeedSource,
@@ -134,7 +134,7 @@ export function useTestSourceDraft() {
           mockSecret
         )
       }
-      const result = await postApiV1SourcesProbe({
+      const result = await postApiV1IntegrationSourcesProbe({
         provider: draft.kind,
         settingsJson: settingsToJson({
           auth: draft.auth,
@@ -163,7 +163,7 @@ export function useTestConnection() {
         await wait()
         return probeSeedConnection(connectionId)
       }
-      const result = await postApiV1SourcesSourceidProbe(connectionId)
+      const result = await postApiV1IntegrationSourcesSourceidProbe(connectionId)
       return { ok: result.reachable, message: result.message }
     },
     onSettled: async () => {
@@ -200,7 +200,7 @@ export function useConnectSource() {
         }
         return connectSeedSource(seedDraft) as SourceConnection
       }
-      const created = await postApiV1Sources({
+      const created = await postApiV1IntegrationSources({
         projectId: draft.projectId,
         provider: draft.kind,
         name: draft.name,
@@ -255,7 +255,7 @@ export function useUpdateConnection() {
         updateSeedConnection(connectionId, { baseUrl, account, auth })
         return connectionId
       }
-      await putApiV1SourcesSourceid(connectionId, {
+      await putApiV1IntegrationSourcesSourceid(connectionId, {
         settingsJson: settingsToJson({ auth, account, baseUrl }),
         secretEnvRef,
       })
@@ -293,7 +293,7 @@ export function useDisconnectSource() {
         }
         return connectionId
       }
-      await deleteApiV1SourcesSourceid(connectionId)
+      await deleteApiV1IntegrationSourcesSourceid(connectionId)
       return connectionId
     },
     onMutate: async (connectionId) => {
@@ -349,7 +349,7 @@ export function useRotateSecretMutation() {
         await wait()
         return rotateSeedSecret(connectionId)
       }
-      return postApiV1SourcesSourceidRotateSecret(connectionId)
+      return postApiV1IntegrationSourcesSourceidRotateSecret(connectionId)
     },
     onSettled: async (_data, _error, connectionId) => {
       await client.invalidateQueries({ queryKey: sourcesQueryKey })
@@ -407,13 +407,13 @@ export function useSaveWatch() {
       const filterJson = filter.length > 0 ? filter : "{}"
 
       if (ruleId) {
-        await putApiV1AdmissionRulesRuleid(ruleId, {
+        await putApiV1IntegrationAdmissionRulesRuleid(ruleId, {
           mode: hostMode,
           filterJson,
           enabled,
         })
       } else {
-        await postApiV1AdmissionRules({
+        await postApiV1IntegrationAdmissionRules({
           projectId,
           mode: hostMode,
           filterJson,
@@ -448,7 +448,7 @@ export function useAdmissionRules(projectId: string | undefined) {
       if (!projectId) {
         return []
       }
-      return getApiV1AdmissionRules({ projectId })
+      return getApiV1IntegrationAdmissionRules({ projectId })
     },
   })
 }
@@ -457,7 +457,7 @@ export function useAdmissionRules(projectId: string | undefined) {
  * File a ticket in the product's own intake.
  *
  * Mock mode writes to the shared sources store. Real mode calls
- * `POST /api/v1/tickets`. The wire `CreateNativeTicketRequest` is the host's
+ * `POST /api/v1/integration/items`. The wire `CreateNativeInboundItemRequest` is the host's
  * intake shape — `projectId`, `title`, `body`, `externalId`, `author` — and
  * the dashboard's `SeedTicketDraft` carries two fields the wire does not:
  *
@@ -482,12 +482,12 @@ export function useCreateNativeTicket() {
         await wait()
         return createSeedNativeTicket(draft)
       }
-      const request: CreateNativeTicketRequest = {
+      const request: CreateNativeInboundItemRequest = {
         projectId: draft.projectId,
         title: draft.title,
         body: draft.body,
       }
-      await postApiV1Tickets(request)
+      await postApiV1IntegrationItems(request)
       return draft
     },
     onSettled: async () => {

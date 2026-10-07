@@ -29,7 +29,7 @@ ticket:
     ref: main
 worker:
   # Same label as add-null-check-real-pi.scenario.yaml — the shared
-  # RealPiFakeModelHost (Intake:Worker:Image config) only carries one
+  # RealPiFakeModelHost (Integrations:Worker:Image config) only carries one
   # image label, and both WS7's fake-mode fact and WS8's replay-mode
   # fact land here. The queue claim SQL's `image = @image` filter matches
   # whichever scenario the in-flight translator loop is targeting, and

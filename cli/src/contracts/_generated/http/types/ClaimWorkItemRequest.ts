@@ -5,13 +5,14 @@
 
 
 /**
- * @description Claim request body: the labels the worker presents (from its\n`COMUKI_*` environment). The claiming worker\'s id comes from its\nbearer token — never from the body.
+ * @description Claim request body: the labels the worker presents (from its\n`COMUKI_*` environment). The claiming worker\'s id comes from its\nbearer token — never from the body.\nstring ClaimWorkItemRequest.EnvClass is REQUIRED (task 3.2): missing or empty is a\n`400 worker.env_class.required`; the queue SQL filters\n`env_class = @envClass`, so omitting it would silently miss\nevery claim. string? ClaimWorkItemRequest.Image is now OPTIONAL in the wire shape —\nthe item\'s image is pinned by the host at WorkItem.Create from the\nproject default, and the worker doesn\'t need to know it. Older workers\nstill post image; we keep accepting it and ignore it for the match.
 */
 export type ClaimWorkItemRequest = {
     /**
-     * @type string
+     * @description Present for backward compatibility; ignored on the match.
+     * @type null,string
     */
-    image: string;
+    image: string | null;
     /**
      * @type string
     */
@@ -20,4 +21,8 @@ export type ClaimWorkItemRequest = {
      * @type string
     */
     profileKey: string;
+    /**
+     * @type string
+    */
+    envClass: string;
 };

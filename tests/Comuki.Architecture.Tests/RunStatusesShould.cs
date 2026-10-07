@@ -6,15 +6,15 @@ using Xunit;
 namespace Comuki.Architecture.Tests;
 
 /// <summary>
-/// Drift guard for <see cref="RunStatuses"/> — Intake's compile-checked
+/// Drift guard for <see cref="RunStatuses"/> — Integrations' compile-checked
 /// stand-in for <see cref="RunStatus"/>, kept in Shared.Contracts because
-/// Intake must not reference the engine (see the module-boundary tests).
+/// Integrations must not reference the engine (see the module-boundary tests).
 /// This project is the one place both assemblies are visible together, so
 /// it is where a rename on either side gets caught: renaming a
 /// <see cref="RunStatus"/> member breaks the <c>nameof</c> below at
 /// compile time; renaming, removing, or drifting the value of a
 /// <see cref="RunStatuses"/> constant fails the assertions. Either way the
-/// build stops before Intake's tracker sync-back quietly stops matching
+/// build stops before Integrations' tracker sync-back quietly stops matching
 /// rows in Postgres.
 /// </summary>
 public sealed class RunStatusesShould

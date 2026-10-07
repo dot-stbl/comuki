@@ -3,7 +3,7 @@ using Comuki.Modules.Artifacts.Infrastructure.Persistence;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Intake.Infrastructure.Persistence;
+using Comuki.Modules.Integrations.Infrastructure.Persistence;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Procedures.Infrastructure.Persistence;
@@ -51,7 +51,7 @@ public static class DatabaseSchemaEnsurer
             ProjectsDatabase.Schema => CreateProjectsSchemaDdl,
             MemoryDatabase.Schema => CreateMemorySchemaDdl,
             ChatDatabase.Schema => CreateChatSchemaDdl,
-            IntakeDatabase.Schema => CreateIntakeSchemaDdl,
+            IntegrationsDatabase.Schema => CreateIntegrationsSchemaDdl,
             CostsDatabase.Schema => CreateCostsSchemaDdl,
             KnowledgeDatabase.Schema => CreateKnowledgeSchemaDdl,
             ArtifactsDatabase.Schema => CreateArtifactsSchemaDdl,
@@ -76,7 +76,7 @@ public static class DatabaseSchemaEnsurer
     private const string CreateProjectsSchemaDdl = "CREATE SCHEMA IF NOT EXISTS projects";
     private const string CreateMemorySchemaDdl = "CREATE SCHEMA IF NOT EXISTS memory";
     private const string CreateChatSchemaDdl = "CREATE SCHEMA IF NOT EXISTS chat";
-    private const string CreateIntakeSchemaDdl = "CREATE SCHEMA IF NOT EXISTS intake";
+    private const string CreateIntegrationsSchemaDdl = "CREATE SCHEMA IF NOT EXISTS integrations";
     private const string CreateCostsSchemaDdl = "CREATE SCHEMA IF NOT EXISTS costs";
     private const string CreateKnowledgeSchemaDdl = "CREATE SCHEMA IF NOT EXISTS knowledge";
     private const string CreateArtifactsSchemaDdl = "CREATE SCHEMA IF NOT EXISTS artifacts";

@@ -18,7 +18,7 @@ public sealed class AgentLoopHarness(AgentLoopHost host) : IAgentLoopHarness
 {
     /// <summary>
     /// Stable, collision-free GitHub issue numbers per scenario name in this
-    /// suite's fixture corpus — Intake's duplicate-active-ticket check keys
+    /// suite's fixture corpus — the Integrations module's duplicate-active-ticket check keys
     /// on <c>{repo}#{number}</c>, so two scenarios must never share one.
     /// </summary>
     private static readonly IReadOnlyDictionary<string, int> issueNumbersByScenario = new Dictionary<string, int>(StringComparer.Ordinal)

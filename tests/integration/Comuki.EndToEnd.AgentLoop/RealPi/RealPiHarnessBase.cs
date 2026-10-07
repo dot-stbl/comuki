@@ -63,7 +63,7 @@ public abstract class RealPiHarnessBase(RealPiInstallation realPi, RealPiFakeMod
     /// <summary>
     /// The shared worker-image label every scenario this base serves declares
     /// as <c>worker.image</c> — and the label <see cref="RealPiFakeModelHost"/>'s
-    /// <c>Intake:Worker:Image</c> config is set to. A single label across
+    /// <c>Integrations:Worker:Image</c> config is set to. A single label across
     /// <see cref="RealPiFakeModelHarness"/>/<see cref="ReplayPiFakeModelHarness"/>
     /// (and the cassette generator) means the queue claim SQL's
     /// <c>image = @image</c> filter matches whichever scenario the in-flight
@@ -162,7 +162,7 @@ public abstract class RealPiHarnessBase(RealPiInstallation realPi, RealPiFakeMod
             ? new WorkerHandle(WorkerId.New(), "in-process-real-pi")
             : throw new InvalidOperationException(
                 "the real-pi translator loop found nothing to claim — the webhook-seeded work item never reached "
-                    + "Queued, or its claim labels don't match RealPiFakeModelHost's Intake:Worker:* config.");
+                    + "Queued, or its claim labels don't match RealPiFakeModelHost's Integrations:Worker:* config.");
     }
 
     /// <inheritdoc />

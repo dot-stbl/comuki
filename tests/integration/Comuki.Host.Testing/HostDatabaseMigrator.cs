@@ -13,7 +13,7 @@ namespace Comuki.Host.Testing;
 /// Before this type existed, each integration harness hand-listed which
 /// contexts to migrate, and every one of them fell behind as the host grew
 /// modules: <c>Host.Integration.Auth</c> migrated three of ten,
-/// <c>Host.Integration.Intake</c> five of ten — both failed at runtime with
+/// <c>Host.Integration.Integrations</c> five of ten — both failed at runtime with
 /// <c>42P01: relation "…" does not exist</c> the moment a hosted service
 /// the host wires unconditionally (schedulers, sweepers, packagers) touched
 /// a module's table the harness never migrated. The shared target list in

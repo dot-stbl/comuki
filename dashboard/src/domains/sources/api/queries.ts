@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 
 import { sourceConnectionViewsToSnapshot } from "@/domains/sources/api/mappers"
 import type { SourcesSnapshot } from "@/domains/sources/model/types"
-import { getApiV1Sources } from "@/shared/api/_generated/clients/getApiV1Sources"
+import { getApiV1IntegrationSources } from "@/shared/api/_generated/clients/getApiV1IntegrationSources"
 import { readSeedSources } from "@/shared/api/mock/sources.store"
 import { env } from "@/shared/config/env"
 
@@ -28,7 +28,7 @@ async function getSources(): Promise<SourcesSnapshot> {
   if (env.useMock) {
     return readSeedSources()
   }
-  const views = await getApiV1Sources()
+  const views = await getApiV1IntegrationSources()
   return sourceConnectionViewsToSnapshot(views)
 }
 

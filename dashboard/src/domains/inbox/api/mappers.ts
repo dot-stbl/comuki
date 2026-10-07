@@ -1,6 +1,6 @@
-import type { ClaimTicketRequest } from "@/shared/api/_generated/types/ClaimTicketRequest"
-import type { CreateNativeTicketRequest } from "@/shared/api/_generated/types/CreateNativeTicketRequest"
-import type { IntakeTicketView } from "@/shared/api/_generated/types/IntakeTicketView"
+import type { ClaimInboundItemRequest } from "@/shared/api/_generated/types/ClaimInboundItemRequest"
+import type { CreateNativeInboundItemRequest } from "@/shared/api/_generated/types/CreateNativeInboundItemRequest"
+import type { InboundItemView } from "@/shared/api/_generated/types/InboundItemView"
 import type { WebhookAcceptedResponse } from "@/shared/api/_generated/types/WebhookAcceptedResponse"
 
 import type {
@@ -15,15 +15,15 @@ import type { SeedNativeTicket } from "@/shared/api/mock/sources.seed"
 /* ---------------------------------------------------------------------------
  * Wire → domain mappers.
  *
- * The host returns the kubb-generated `IntakeTicketView`. It is the same
- * shape across the local pending list (`GET /api/v1/inbox`), the external
- * catalog browse (`GET /api/v1/inbox/catalog`) and the claim response
- * (`POST /api/v1/inbox/claim`). One mapper turns the wire row into a
+ * The host returns the kubb-generated `InboundItemView`. It is the same
+ * shape across the local pending list (`GET /api/v1/integration/inbox`), the external
+ * catalog browse (`GET /api/v1/integration/inbox/catalog`) and the claim response
+ * (`POST /api/v1/integration/inbox/claim`). One mapper turns the wire row into a
  * domain `Ticket`; the rest compose.
  *
  * The wire carries `status: string` (kubb's loose typing of an enum whose
  * `ToString()` is what the host hands back). The mapper normalises the four
- * known lifecycle values and defaults anything else to `"pending"` so a
+ * known lifecycle values and defaults anything else to `"Pending"` so a
  * partial backend upgrade degrades the row, not the screen.
  *
  * `kind` is not on the wire yet (#27 added it server-side but the read view
@@ -33,16 +33,16 @@ import type { SeedNativeTicket } from "@/shared/api/mock/sources.seed"
 
 /** Closed set of statuses the wire row may carry; see <see cref="TicketStatus"/>. */
 const KNOWN_STATUSES = new Set<TicketStatus>([
-  "pending",
-  "claimed",
-  "done",
-  "dismissed",
+  "Pending",
+  "Claimed",
+  "Done",
+  "Dismissed",
 ])
 
 /**
  * Normalise the wire `status` string to the domain union.
  *
- * Unknown values fall through to `"pending"` rather than throwing — the host
+ * Unknown values fall through to `"Pending"` rather than throwing — the host
  * may have rolled out a status the FE has not yet taught the mapper. The
  * row still renders, with the wrong status; the screen flags this case via
  * the inbox's own "unknown state" affordance, not a crash.
@@ -51,7 +51,7 @@ export function normalizeTicketStatus(value: string): TicketStatus {
   if (KNOWN_STATUSES.has(value as TicketStatus)) {
     return value as TicketStatus
   }
-  return "pending"
+  return "Pending"
 }
 
 /**
@@ -64,7 +64,7 @@ export function normalizeTicketStatus(value: string): TicketStatus {
  *
  * `kind` defaults to `"issue"` — see the mapper header for why.
  */
-export function mapIntakeTicketViewToTicket(view: IntakeTicketView): Ticket {
+export function mapInboundItemViewToTicket(view: InboundItemView): Ticket {
   return {
     id: view.id,
     projectId: view.projectId,
@@ -80,18 +80,18 @@ export function mapIntakeTicketViewToTicket(view: IntakeTicketView): Ticket {
 }
 
 /**
- * Wire list (`GET /api/v1/inbox`) → list of domain tickets.
+ * Wire list (`GET /api/v1/integration/inbox`) → list of domain tickets.
  *
  * The host returns the rows as a bare JSON array — no envelope. The same
  * mapper handles the claim response's single row (call sites are
- * <c>mapIntakeTicketViewToTicket</c> directly when the response is one row).
+ * <c>mapInboundItemViewToTicket</c> directly when the response is one row).
  */
-export function mapInboxToTickets(page: IntakeTicketView[]): Ticket[] {
-  return page.map(mapIntakeTicketViewToTicket)
+export function mapInboxToTickets(page: InboundItemView[]): Ticket[] {
+  return page.map(mapInboundItemViewToTicket)
 }
 
 /**
- * Wire catalog page (`GET /api/v1/inbox/catalog?connectionId=…`) → domain
+ * Wire catalog page (`GET /api/v1/integration/inbox/catalog?connectionId=…`) → domain
  * projection.
  *
  * The catalog endpoint takes the connection id as a query param but does
@@ -101,20 +101,20 @@ export function mapInboxToTickets(page: IntakeTicketView[]): Ticket[] {
  * is implicitly "no specific connection").
  */
 export function mapInboxCatalogToConnections(
-  page: IntakeTicketView[],
+  page: InboundItemView[],
   connectionId: string
 ): CatalogProjection {
   return {
     connectionId,
-    items: page.map(mapIntakeTicketViewToTicket),
+    items: page.map(mapInboundItemViewToTicket),
   }
 }
 
 /* ---------------------------------------------------------------------------
  * Domain → wire mappers.
  *
- * Two output shapes today: <c>ClaimTicketRequest</c> (single id) and
- * <c>CreateNativeTicketRequest</c> (project id, title, optional body /
+ * Two output shapes today: <c>ClaimInboundItemRequest</c> (single id) and
+ * <c>CreateNativeInboundItemRequest</c> (project id, title, optional body /
  * externalId / author). The wire expects the host to mint the optional
  * fields when they're empty, so the mapper passes through `undefined`
  * verbatim — kubb's zod schema accepts both empty and absent as "omit".
@@ -128,7 +128,7 @@ export function mapInboxCatalogToConnections(
  */
 export function mapClaimTicketInputToClaimRequest(
   input: ClaimTicketInput
-): ClaimTicketRequest {
+): ClaimInboundItemRequest {
   return { ticketId: input.ticketId }
 }
 
@@ -141,7 +141,7 @@ export function mapClaimTicketInputToClaimRequest(
  */
 export function mapNativeTicketInputToCreateRequest(
   input: CreateNativeTicketInput
-): CreateNativeTicketRequest {
+): CreateNativeInboundItemRequest {
   return {
     projectId: input.projectId,
     title: input.title,
@@ -182,7 +182,7 @@ export function mapSeedTicketToTicket(ticket: SeedNativeTicket): Ticket {
     externalId: ticket.id,
     title: ticket.title,
     url: mockTicketUrl(ticket.id),
-    status: claimed ? "claimed" : "pending",
+    status: claimed ? "Claimed" : "Pending",
     runId: claimed ? MOCK_RUN_ID : null,
     createdAt: mockTicketCreatedAt(ticket.createdAt),
     kind: "issue",

@@ -31,7 +31,7 @@ internal sealed class InboxEf(OrchestrationDbContext db, TimeProvider clock) : I
         // ExecuteSqlRawAsync. OpenConnectionAsync/CloseConnectionAsync is
         // EF's own ref-counted pattern for mixing raw ADO with the context —
         // safe whether or not the caller already holds this connection open
-        // inside its own BeginTransactionAsync (WS9's IntakeRunLauncher
+        // inside its own BeginTransactionAsync (WS9's IntegrationRunLauncher
         // does; a bare TryClaimAsync call with no ambient transaction, like
         // the InboxDedupeShould tests, doesn't).
         await db.Database.OpenConnectionAsync(cancellationToken);

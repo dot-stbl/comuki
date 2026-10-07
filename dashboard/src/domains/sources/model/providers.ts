@@ -379,7 +379,7 @@ export function filterFields(key: ProviderKey): readonly string[] {
 export function intakeNote(key: ProviderKey): string {
   const provider = providerOf(key)
   return provider === null
-    ? sharedSourcesT("intakeNoteUnknown")
+    ? sharedSourcesT("integrationNoteUnknown")
     : sharedSourcesT(`provider.${key}.intakeNote`, {
         defaultValue: provider.intakeNote,
       })

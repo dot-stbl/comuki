@@ -281,7 +281,7 @@ grpcPort = 17004
 # = probe upward from the app base directory for a `control-plane/` dir.
 # root = "/app/control-plane"
 
-[intake]
+[integrations]
 # publicBaseUrl = "http://localhost:17170"
 # bridgeInterval = "00:00:15"
 # syncMaxAttempts = 5
@@ -290,7 +290,7 @@ grpcPort = 17004
 # catalogPageSize = 25
 # inboxListLimit = 50
 
-[intake.worker]
+[integrations.worker]
 # issueDefaultProfileKey = "general"
 # image = "ghcr.io/comuki/worker:dev"
 # profilesRef = "refs/heads/main"

@@ -1,0 +1,17 @@
+{
+  "required": ["delivered", "followUpWorkItemId"],
+  "type": "object",
+  "properties": {
+    "delivered": {
+      "type": "boolean",
+      "description": "`true` when the runtime delivered the steer to the live execution\r\n(Phase 1c) or successfully staged the follow-up (Phase 1a).\r\n`false` when the runtime had no live stream to deliver to and no\r\nfollow-up is the right call — the caller may retry once the run picks\r\nup a fresh worker."
+    },
+    "followUpWorkItemId": {
+      "type": ["null", "string"],
+      "description": "The id of the queued follow-up WorkItem. Always set on the Phase 1a\r\nruntime; absent on the Phase 1c runtime (where the steer rides the\r\nlive session).",
+      "format": "uuid"
+    }
+  },
+  "description": "Response of `POST /api/v1/runs/{runId}/steer`. On the Phase 1a\r\n(no-LiveSession) runtime bool SteerRunResponse.Delivered is always\r\n`true` and Guid? SteerRunResponse.FollowUpWorkItemId carries the id of\r\nthe queued follow-up WorkItem the handler staged. On a future\r\nLiveSession runtime (Phase 1c) bool SteerRunResponse.Delivered reports\r\nwhether the bidi channel accepted the typed turn and\r\nGuid? SteerRunResponse.FollowUpWorkItemId is omitted (the harness, not a\r\nnew work item, carries the authoritative turn).",
+  "x-readme-ref-name": "SteerRunResponse"
+}

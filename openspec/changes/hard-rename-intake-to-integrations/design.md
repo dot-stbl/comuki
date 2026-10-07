@@ -30,7 +30,9 @@ Mission/Work change builds on the right foundation instead of carrying
   shimmed routes.
 - Clean, squashed EF Core migration baseline for the renamed module
   (one `InitialIntegrationsSchema` migration, history table
-  `__comuki_integrations`).
+  `integrations.n_history` — domain convention `<schema>.n_history`; the
+  legacy `__comuki_intake` token does **not** exist in this repo and is
+  not introduced here).
 - All generated OpenAPI-derived TypeScript contracts (dashboard Kubb
   client, CLI generated client) regenerated against the renamed
   routes/DTOs and drift-checked (zero `Intake*` / `intake:` hits
@@ -55,7 +57,7 @@ Mission/Work change builds on the right foundation instead of carrying
 |---|---|
 | `Comuki.Modules.Intake.{Domain,Application,Infrastructure}` | `Comuki.Modules.Integrations.{Domain,Application,Infrastructure}` |
 | PostgreSQL schema `intake` | `integrations` |
-| Migrations history table `__comuki_intake` | `__comuki_integrations` |
+| Migrations history table `__comuki_intake` | `integrations.n_history` (domain convention `<schema>.n_history`; the `__comuki_intake` token does **not** exist in this repo — this row maps the **concept** of the prior history-table naming to the new house convention) |
 | `IntakeDbContext` | `IntegrationsDbContext` |
 | `IncomingTicket` (entity) | `InboundItem` |
 | `IncomingTicketId` | `InboundItemId` |
@@ -104,7 +106,7 @@ Not renamed (epic does not name them — kept to minimize blast radius):
 `AddSourceConnectionWebhookSecret`) plus `IntakeDbContextModelSnapshot.cs`,
 then generate one fresh `InitialIntegrationsSchema` migration from the
 renamed entity configurations, producing schema `integrations` and
-history table `__comuki_integrations` from scratch. Dev/staging data is
+history table `integrations.n_history` from scratch. Dev/staging data is
 reset by dropping the old `intake` schema by hand (one-time operator
 step — `Comuki.Migrator` never auto-migrates, so this is not app logic,
 just a runbook entry in `tasks.md`).
@@ -134,7 +136,7 @@ new carried migration step appended to the existing 4-migration history.
 - The renamed `Comuki.Modules.Integrations.Infrastructure` project
   generates ONE new `dotnet ef migrations add InitialIntegrationsSchema`
   migration built from the renamed entity configurations, producing
-  schema `integrations` and history table `__comuki_integrations` from
+  schema `integrations` and history table `integrations.n_history` from
   scratch.
 - Rename the `Comuki.Migrator` design-time factory at
   `platform/src/host/Comuki.Migrator/Factories/Intake/IntakeDesignTimeFactory.cs`
@@ -144,8 +146,8 @@ new carried migration step appended to the existing 4-migration history.
   (currently `new("intake", IntakeDatabase.Schema, ...)`) to register
   `"integrations"` against `IntegrationsDatabase.Schema`.
 - Dev/staging cutover: drop the old `intake` schema (and its
-  `__comuki_intake` history table) by hand once the new baseline is
-  confirmed. Documented as a runbook line in `tasks.md`, not app logic.
+  history table) by hand once the new baseline is confirmed. Documented
+  as a runbook line in `tasks.md`, not app logic.
 - `deploy/k8s/postgres.yaml`, `deploy/helm/templates/postgres.yaml`,
   `deploy/compose/init/01-schemas.sql` currently each have exactly one
   line `CREATE SCHEMA IF NOT EXISTS intake;` — rename to `integrations`
@@ -184,16 +186,46 @@ tip at `gitlab/feature/mission-cowork-index`:
     block, lines ~244-265 — `AddIntakeApplication()` /
     `AddIntakePersistence()` / `AddIntakeProviders()` calls +
     `IntakeOptions` / `IntakeWorkerDefaults` binding +
-    `IIntakeProfileRouter` / `IntakeProfileRouter` DI).
+    `IIntakeProfileRouter` / `IntakeProfileRouter` DI), **plus** the
+    `Errors/Handlers/Intake/**` mapping at lines ~18 / ~506
+    (`Errors/Handlers/Intake/**` are 2 handler files in
+    `platform/src/host/Comuki.Host/Errors/Handlers/Intake/` and the
+    host error handler registrations referencing them inside
+    `HostComposer.cs` — both must be renamed together).
+  - `comuki.slnx` — **6** physical-path entries under
+    `platform/src/modules/Intake/**` (the 3 csproj's plus the 3
+    matching solution-folder blocks: `Comuki.Modules.Intake.Domain`,
+    `Comuki.Modules.Intake.Application`,
+    `Comuki.Modules.Intake.Infrastructure`, and their parent
+    `Intake` solution folder). The renamed module sits under
+    `platform/src/modules/Integrations/**`; verify the 6 entries
+    match the new physical paths post-rename, and that the project
+    names match the new assembly names
+    (`Comuki.Modules.Integrations.{Domain,Application,Infrastructure}`).
+  - `platform/src/host/Comuki.Host/ApiRoutes.cs` — **7** route
+    constants for the Intake surface (`Inbox`, `InboxCatalog`,
+    `InboxClaim`, `Tickets`, `Sources`, `SourceProbe`,
+    `AdmissionRules`, plus `Rule` sub-segment) — all move under the
+    `/api/v1/integration/...` prefix; see the route table in §1.
+  - `platform/src/shared/Comuki.Shared.Migrations/DatabaseSchemaEnsurer.cs`
+    — **2** references (`intake` schema name) at lines ~54 and ~79,
+    plus `MigrationTargets.cs` registry entry.
   - `platform/src/host/Comuki.Migrator/Factories/Intake/IntakeDesignTimeFactory.cs`
-  - `platform/src/shared/Comuki.Shared.Migrations/Targets/MigrationTargets.cs`
-    (registry entry).
+    (design-time factory; renamed together with the
+    Infrastructure-layer rename per §3.1 — they form one atomic
+    transaction with `MigrationTargets.cs`).
   - `platform/src/modules/Identity/.../Permissions.cs`
     (`IntakeRead` / `IntakeClaim` permission key constants).
   - `platform/src/modules/Identity/.../RoleMatrix.cs` (role→permission
     grants referencing those keys).
   - `platform/src/shared/Comuki.Shared.Contracts/Runs/RunStatuses.cs`
     (one doc-comment mention only — cosmetic).
+  - `platform/src/modules/.../MemorySeeder.cs` — line ~42 has a doc-comment
+    reference to the Intake surface; update for consistency with the
+    rename (cosmetic; no runtime behaviour change).
+  - `platform/src/shared/Comuki.Shared.Secrets/SecretRefUnsetException.cs`
+    — line ~9 doc comment references the Intake webhook flow; update
+    for consistency (cosmetic).
   - Two files
     (`platform/src/modules/Projects/**/DomainTypeAdmission.cs`,
     `.../DomainTypeAdmissionService.cs`) are **false positives** — they
@@ -205,13 +237,23 @@ tip at `gitlab/feature/mission-cowork-index`:
   `tests/integration/Comuki.Host.Integration.Intake/**` (whole project),
   `tests/integration/Comuki.Modules.Intake.Integration.Migrations/**`
   (whole project — this one especially needs the squashed-migration
-  rewrite, not just a rename), `tests/Comuki.Architecture.Tests/{IntakeModuleLayerTests.cs,
+  rewrite, not just a rename, to assert
+  `inbound_items` / `deliveries` / `integrations.n_history` against
+  the new single-migration baseline, **not** the old 4-step history),
+  `tests/Comuki.Architecture.Tests/{IntakeModuleLayerTests.cs,
   ScopeGuardTests.cs, SharedContractsModuleBoundaryTests.cs}` (layer-
   boundary assertions naming `Comuki.Modules.Intake.*` — rename to
   `Comuki.Modules.Integrations.*`), plus incidental references in
   `Comuki.EndToEnd.AgentLoop` and `Comuki.AgentTest.Runner`
   fixtures/scenario YAML that construct native tickets against the old
-  routes.
+  routes. **Architecture-tests stragglers discovered during
+  reconnaissance (2026-09-25):**
+  `tests/Comuki.Architecture.Tests/ProjectsModuleLayerTests.cs`,
+  `tests/Comuki.Architecture.Tests/RunStatusesShould.cs`, and the
+  Architecture.Tests `csproj` itself carry incidental `Intake`-named
+  references (boundary tests, doc-comment mentions) — update them
+  alongside the rename; do not treat the file list above as
+  exhaustive.
 - `dashboard/src` — 81 files. Generated contracts under
   `dashboard/src/shared/api/_generated/**` (types/schemas named
   `IntakeTicketView`, `PostApiV1Tickets`, `PostApiV1InboxClaim`,
@@ -219,23 +261,71 @@ tip at `gitlab/feature/mission-cowork-index`:
   `dashboard`'s `generate-api` script, do not hand-edit) plus
   hand-written consumers in `dashboard/src/domains/{inbox,sources}/**`
   (api queries/mutations/mappers that reference the generated type/route
-  names) and `dashboard/src/app/layout/{nav.ts,nav-sections.ts}` (a
-  cosmetic nav section `id: "intake"` / `label: "Intake"` grouping
+  names), `dashboard/src/domains/tasks/**` (**~17 files** — the
+  Tasks domain renders `IntakeTicketView`, posts to `/api/v1/inbox`
+  and `POST /api/v1/tickets`; rename the view to `InboundItemView`,
+  the inbox paths to `/api/v1/integration/inbox`, and the create-item
+  path to `POST /api/v1/integration/items` — same shape as
+  `domains/inbox`/`sources`, just a different feature surface that
+  was missed in the original reconnaissance), `dashboard/src/shared/api/polling.ts`
+  (polls the feed for `intake`-typed updates), `dashboard/src/mock/{sources,tasks}.seed.ts`
+  (mock seed data with literal `intake` keys), and
+  `dashboard/src/app/layout/{nav.ts,nav-sections.ts}` (a cosmetic nav
+  section `id: "intake"` / `label: "Intake"` grouping
   Inbox/Sources/Tasks — optional rename to `"integrations"` /
-  `"Integrations"`, low risk, does not block the gate).
+  `"Integrations"`, low risk, does not block the gate). The verify
+  gate in §6.1 below is extended to `*.json` to catch the i18n
+  namespace key `"intake"` present across **14** locale files
+  (`dashboard/src/shared/i18n/locales/**/*.json`) — that string is
+  the i18n **key** not a route; rename to `"integrations"` and
+  update the values ("Intake" → "Integrations") in lock-step.
 - `cli/src` — 6 files, all generated contracts under
   `cli/src/contracts/_generated/**` (regenerate via cli's
   `generate:contracts` script; architecture.md notes the CLI itself is
   "explicitly not restructured" here — no hand-written cli command code
   references Intake types directly).
-- `control-plane` — 0 files, no touch points.
+- `control-plane` — **2** deliberate non-renames, listed for
+  documentation but **NOT** in this change's scope:
+  `control-plane/.../procedure-node-kinds/intake.md` and its sibling
+  `classify.md` describe a **pipeline stage** named `intake` (the
+  `intake-envelope-v1` envelope is the wire shape that flows between
+  procedure nodes). The English word "intake" in these docs is the
+  domain term for "what comes in", independent of the bounded-context
+  rename; they stay as-is. Same for the procedural stage name "Intake"
+  used in prose anywhere else in `control-plane/` — it refers to
+  the pipeline stage, not the module.
 - `deploy` (open-source paths) — `deploy/k8s/postgres.yaml`,
   `deploy/helm/templates/postgres.yaml`,
   `deploy/compose/init/01-schemas.sql` (schema bootstrap SQL, one line
   each), `deploy/config.example.toml` (`[intake]`/`[intake.worker]`
-  sections → `[integrations]`/`[integrations.worker]`),
+  sections → `[integrations]`/`[integrations.worker]`, **2** section
+  blocks at lines ~284 and ~293),
   `deploy/compose/docker-compose.yml` and `deploy/compose.e2e.yml`
   (comments only, cosmetic).
+- **E2E config keys** — `scripts/ci/e2e-smoke.mjs` (~line 66 —
+  fixture path references the old `Intake/...` layout) plus its
+  sibling integration test at `tests/integration/.../test:515` that
+  points at the same fixtures; **3** host fixtures that bind
+  `Intake:Worker:*` env-var overrides live in
+  `tests/tools/Comuki.AgentTest.Runner/{AgentLoopHost:110-112,
+  CrownScenarioHost:100-102, RealPiFakeModelHost:120-122}` plus
+  `tests/tools/Comuki.AgentTest.Runner/ScenarioRunner.cs:114`. All
+  move from `Intake:Worker:*` to `Integrations:Worker:*`; the load
+  comments referencing `Intake` follow the rename.
+- **Documentation** (kept live; historical `audits/**` is **not**
+  touched):
+  - `README.md` — 3 places mention the Intake module / routes /
+    permissions.
+  - `.agents/STATE.md`, `.agents/ROADMAP.md`,
+    `.agents/database-schemas/{integrations,intake}.md`,
+    `.agents/docs/host-internals/**`,
+    `.agents/docs/architecture/comuki-architecture.md`, and
+    `.agents/rules/coding/testing-integration.md:95` (one
+    doc-comment line in the local test runtime rule referencing
+    the intake migration suite).
+  - `DESIGN.md` (root) — 2 cosmetic references to the Intake
+    surface in design-system prose.
+  - These are all cosmetic; nothing routes through them.
 
 #### `deploy/hybrid` overlay
 
@@ -319,7 +409,7 @@ Ordered restated summary (mirrors tasks.md workstream order):
    `intake_deliveries`→`deliveries` in the EF configurations; delete
    the 4 existing migrations + `IntakeDbContextModelSnapshot.cs`,
    generate one fresh `InitialIntegrationsSchema` migration (history
-   table `__comuki_integrations`); rename
+   table `integrations.n_history`); rename
    `IntakeProvidersExtensions`→`IntegrationsProvidersExtensions`,
    `IntakePersistenceExtensions`→`IntegrationsPersistenceExtensions`;
    provider subfolders (GitHub/GitLab/Jira/YandexTracker) get

@@ -28,7 +28,7 @@ namespace Comuki.Host.Integration.Oidc;
 /// not thread one declared <c>ICollectionFixture&lt;T&gt;</c> into
 /// another's constructor, so the contained-field pattern is the documented
 /// escape). No <c>ResetDatabaseAsync</c> is added — Oidc, like Smoke /
-/// Auth / Intake before it, shares one host/database across the whole
+/// Auth / Integrations before it, shares one host/database across the whole
 /// suite with no per-test reset: <c>OidcState.Id</c> is a UUIDv7 (no
 /// collision across runs of <c>OidcStateSweeperShould</c>'s fixed
 /// <c>"verifier-expired"</c> / <c>"verifier-fresh"</c> verifiers — only

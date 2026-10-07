@@ -60,7 +60,7 @@ public static class ArtifactsDatabase
 ```
 
 …and similarly for `OrchestrationDatabase`, `IdentityDatabase`,
-`MemoryDatabase`, `ChatDatabase`, `IntakeDatabase`, `CostsDatabase`.
+`MemoryDatabase`, `ChatDatabase`, `IntegrationsDatabase`, `CostsDatabase`.
 Every `IEntityTypeConfiguration` does `builder.ToTable(<XxxDatabase>.X, <XxxDatabase>.Schema)` and never types the literal.
 
 ## Per-context migration history
@@ -170,7 +170,7 @@ snapshot-coupling explanation).
   `CREATE SCHEMA IF NOT EXISTS` idempotent bootstrap.
 - `platform/src/modules/Projects/.../Persistence/ProjectsDatabase.cs`,
   `IdentityDatabase.cs`, `MemoryDatabase.cs`, `ChatDatabase.cs`,
-  `IntakeDatabase.cs`, `CostsDatabase.cs`, `ArtifactsDatabase.cs` —
+  `IntegrationsDatabase.cs`, `CostsDatabase.cs`, `ArtifactsDatabase.cs` —
   per-context schema + table constants.
 - `platform/src/modules/Projects/.../Persistence/ProjectsDbContext.cs`
   (and the other seven `XxxDbContext.cs`) — `ApplyOptions` with

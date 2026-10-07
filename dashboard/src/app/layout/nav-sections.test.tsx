@@ -53,14 +53,14 @@ describe("the section tree, filtered by what the session may do", () => {
     expect(sectionsFor(["viewer"]).sections).toEqual(["Observe"])
   })
 
-  it("drops a section whose items all vanished", () => {
-    // A viewer holds runs.view and nothing else, so Intake and Configure lose
-    // every item they had — and a section heading standing over nothing is a
-    // worse artefact than the missing item.
+it("drops a section whose items all vanished", () => {
+    // A viewer holds runs.view and nothing else, so Integrations and Configure lose
+    // every item they had — and a section heading standing over nothing is
+    // a worse artefact than the missing item.
     expect(sectionsFor(["viewer"]).sections).toEqual(["Observe"])
   })
 
-  it("opens intake and knowledge for a member, and still hides approvals", () => {
+  it("opens integrations and knowledge for a member, and still hides approvals", () => {
     const { labels } = sectionsFor(["member"])
 
     expect(labels).toContain("Inbox")
@@ -73,7 +73,7 @@ describe("the section tree, filtered by what the session may do", () => {
   it("gives a project-admin the upper tier entire", () => {
     const { sections } = sectionsFor(["project-admin"])
 
-    expect(sections).toEqual(["Intake", "Observe", "Configure"])
+    expect(sections).toEqual(["Integrations", "Observe", "Configure"])
   })
 
   it("gives an operator the platform tier without the identity registry", () => {

@@ -3,7 +3,7 @@
     "label": "Язык"
   },
   "nav": {
-    "intake": "Приём",
+    "integrations": "Интеграции",
     "observe": "Наблюдение",
     "configure": "Настройка",
     "platform": "Платформа",

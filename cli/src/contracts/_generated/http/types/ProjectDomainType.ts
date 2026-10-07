@@ -4,15 +4,7 @@
 */
 
 
-export const projectDomainTypeEnum = {
-    Standard: "Standard",
-    Custom: "Custom",
-    Hybrid: "Hybrid"
-} as const;
-
-export type ProjectDomainTypeEnumKey = (typeof projectDomainTypeEnum)[keyof typeof projectDomainTypeEnum];
-
 /**
  * @description Per-project routing mode for user-facing domain types\n(`code`, `data`, `infra`, `research`, …).\nA Standard project sends every domain through the fixed default\nprofile. A Custom project routes only via the\nstring? ProjectSettings.CustomDomainTypesJson map. A Hybrid\nproject tries the default first, falls back to the JSON map.
 */
-export type ProjectDomainType = ProjectDomainTypeEnumKey;
+export type ProjectDomainType = number;

@@ -3,7 +3,7 @@
     "label": "语言"
   },
   "nav": {
-    "intake": "接入",
+    "integrations": "集成",
     "observe": "观察",
     "configure": "配置",
     "platform": "平台",

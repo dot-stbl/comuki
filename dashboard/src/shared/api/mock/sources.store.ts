@@ -443,7 +443,7 @@ export function createSeedNativeTicket(
  * (the run id, when claimed) and which ones are already taken. Both reset with
  * the rest of the seed.
  *
- * The wire shape is the host's `IntakeTicketView` — UUID id, kebab-case source,
+ * The wire shape is the host's `InboundItemView` — UUID id, kebab-case source,
  * externalId, deep-link url, status string, runId, createdAt. We synthesize
  * the UUID-shaped id and the deep-link url from the seed id, because the seed
  * keeps human-readable ticket ids (`nt_4120`) on purpose.

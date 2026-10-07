@@ -19,10 +19,10 @@ namespace Comuki.AgentTest.Runner.Execution;
 public interface IAgentLoopHarness
 {
     /// <summary>
-    /// Seeds the scenario's ticket through the real intake webhook endpoint
+    /// Seeds the scenario's ticket through the real integrations webhook endpoint
     /// (admission rule + source connection already provisioned by the
     /// harness's own setup) and returns the run/work-item the real
-    /// <c>IntakeRunLauncher</c> created.
+    /// <c>IntegrationRunLauncher</c> created.
     /// </summary>
     /// <param name="scenario"></param>
     /// <param name="cancellationToken"></param>

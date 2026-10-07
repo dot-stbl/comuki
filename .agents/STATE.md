@@ -376,7 +376,7 @@ situations, not one:**
   - **Memory** — long-term facts с pgvector (`SourceDocument` +
     `MemoryEmbedding` entities, raw-SQL managed embeddings),
     learning-candidate queue, chat checkpoints в `memory` schema.
-  - **Intake** — GH/GL/Yandex Tracker/Jira источники, dedupe, sync-back
+  - **Integrations** — GH/GL/Yandex Tracker/Jira источники, dedupe, sync-back
     outbox, GH/GL PR-review профиль (issue #27), 5 admin endpoints #38–#42
     (probe + nested rules + connect/update/test-draft/test-connection).
   - **Costs** — `UsageRecorder` под `IBudgetGate`, project costs view +

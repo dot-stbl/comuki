@@ -117,10 +117,10 @@ public sealed class RealPiFakeModelHost : IAsyncLifetime
         // translator loop runs alone against the queue, so the only
         // Queued item at run time is the one the in-flight fact just
         // seeded.
-        builder.Configuration["Intake:Worker:Image"] = RealPiHarnessBase.WorkerImageLabel;
-        builder.Configuration["Intake:Worker:ProfilesRef"] = "test";
-        builder.Configuration["Intake:Worker:IssueDefaultProfileKey"] = "implement";
-        builder.Configuration["Intake:BridgeInterval"] = "00:00:01";
+        builder.Configuration["Integrations:Worker:Image"] = RealPiHarnessBase.WorkerImageLabel;
+        builder.Configuration["Integrations:Worker:ProfilesRef"] = "test";
+        builder.Configuration["Integrations:Worker:IssueDefaultProfileKey"] = "implement";
+        builder.Configuration["Integrations:BridgeInterval"] = "00:00:01";
 
         Environment.SetEnvironmentVariable(HookSecretEnv, HookSecret, EnvironmentVariableTarget.Process);
 
@@ -167,7 +167,7 @@ public sealed class RealPiFakeModelHost : IAsyncLifetime
         return application.Services.GetRequiredService<WorkerTokenIssuer>();
     }
 
-    /// <summary>Posts a GitHub issue webhook through the real webhook endpoint and returns the run/work-item <c>IntakeRunLauncher</c> created — same mechanism as <see cref="AgentLoopHost.SeedTicketAsync"/>.</summary>
+    /// <summary>Posts a GitHub issue webhook through the real webhook endpoint and returns the run/work-item <c>IntegrationRunLauncher</c> created — same mechanism as <see cref="AgentLoopHost.SeedTicketAsync"/>.</summary>
     public async Task<SeededWorkItem> SeedTicketAsync(
         string title,
         string body,

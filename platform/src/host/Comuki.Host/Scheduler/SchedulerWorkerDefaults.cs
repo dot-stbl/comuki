@@ -6,7 +6,7 @@ namespace Comuki.Host.Scheduler;
 /// them from configuration because profiles carry no image metadata
 /// yet — resolving image / ref per profile from the project's git
 /// settings is a documented follow-up. Mirrors
-/// <c>ChatWorkerDefaults</c> / <c>IntakeWorkerDefaults</c>.
+/// <c>ChatWorkerDefaults</c> / <c>IntegrationWorkerDefaults</c>.
 /// </summary>
 public sealed class SchedulerWorkerDefaults
 {

@@ -512,7 +512,7 @@ function WEBHOOK_FIXTURE_PATH() {
     process.cwd(),
     'tests',
     'integration',
-    'Comuki.Host.Integration.Intake',
+    'Comuki.Host.Integration.Integrations',
     'Fixtures',
     'github-issue-opened.json',
   );

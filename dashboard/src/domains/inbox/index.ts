@@ -3,7 +3,7 @@
  *
  * This slice ships the API and model layers only — no pages yet. The
  * existing `tasks` domain owns the inbox UI today; this domain is the
- * bridge to the backend's `/api/v1/inbox` surface so pages can switch
+ * bridge to the backend's `/api/v1/integration/inbox` surface so pages can switch
  * over without a fork in the mock path.
  *
  * Re-exporting the public surface here (rather than importing from
@@ -38,7 +38,7 @@ export {
   mapClaimTicketInputToClaimRequest,
   mapInboxCatalogToConnections,
   mapInboxToTickets,
-  mapIntakeTicketViewToTicket,
+  mapInboundItemViewToTicket,
   mapNativeTicketInputToCreateRequest,
   mapSeedTicketToTicket,
   normalizeTicketStatus,

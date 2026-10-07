@@ -82,35 +82,41 @@ public static class ApiRoutes
     /// <summary>Root of the anonymous tracker webhook surface (issue #6): /api/hooks/{provider}/{key}.</summary>
     public const string HooksRoot = "api/hooks";
 
-    /// <summary>Native ticket creation (permission run:create).</summary>
-    public const string Tickets = "/api/v1/tickets";
+    /// <summary>Native inbound item creation (permission run:create).</summary>
+    public const string Items = "/api/v1/integration/items";
 
     /// <summary>Base of the inbox surface (pending list, catalog, claim).</summary>
-    public const string Inbox = "/api/v1/inbox";
+    public const string Inbox = "/api/v1/integration/inbox";
+
+    /// <summary>Inbox catalog fetch — full remote snapshot of an integration source (issue #27).</summary>
+    public const string InboxCatalog = "/api/v1/integration/inbox/catalog";
+
+    /// <summary>Claim a pending inbound item for a run (permission integration:claim).</summary>
+    public const string InboxClaim = "/api/v1/integration/inbox/claim";
 
     /// <summary>Source connection CRUD base.</summary>
-    public const string Sources = "/api/v1/sources";
+    public const string Sources = "/api/v1/integration/sources";
 
     /// <summary>One source connection by id.</summary>
-    public const string Source = "/api/v1/sources/{sourceId:guid}";
+    public const string Source = "/api/v1/integration/sources/{sourceId:guid}";
 
     /// <summary>Admission rule CRUD base.</summary>
-    public const string AdmissionRules = "/api/v1/admission-rules";
+    public const string AdmissionRules = "/api/v1/integration/admission-rules";
 
     /// <summary>One admission rule by id.</summary>
-    public const string AdmissionRule = "/api/v1/admission-rules/{ruleId:guid}";
+    public const string AdmissionRule = "/api/v1/integration/admission-rules/{ruleId:guid}";
 
     /// <summary>Admission rule nested under a source connection (issue #40 — FE write path for the watch form).</summary>
-    public const string SourceAdmissionRule = "/api/v1/sources/{sourceId:guid}/rules/{ruleId:guid}";
+    public const string SourceAdmissionRule = "/api/v1/integration/sources/{sourceId:guid}/rules/{ruleId:guid}";
 
     /// <summary>Probe a draft source connection before save (issue #41).</summary>
-    public const string SourcesProbeDraft = "/api/v1/sources/probe";
+    public const string SourcesProbeDraft = "/api/v1/integration/sources/probe";
 
     /// <summary>Probe an existing source connection (issue #42).</summary>
-    public const string SourceProbe = "/api/v1/sources/{sourceId:guid}/probe";
+    public const string SourceProbe = "/api/v1/integration/sources/{sourceId:guid}/probe";
 
     /// <summary>Rotate a source connection's webhook secret (issue #46).</summary>
-    public const string SourceRotateSecret = "/api/v1/sources/{sourceId:guid}/rotate-secret";
+    public const string SourceRotateSecret = "/api/v1/integration/sources/{sourceId:guid}/rotate-secret";
 
     /// <summary>The realtime websocket hub of runs and project attention (issue #7).</summary>
     public const string HubsRuns = "/ws/runs";

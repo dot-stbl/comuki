@@ -72,7 +72,7 @@ namespace Comuki.Host.Testing.Fixtures;
 /// <c>Comuki.Host.Integration.Costs.PlatformCostsEndpointShould.InitializeAsync</c>
 /// for the pattern: reset the database, then boot (or reboot) the host so
 /// its own startup seeding runs again against the now-empty tables. Auth
-/// and Intake never call <see cref="ResetDatabaseAsync"/> at all — both
+/// and Integrations never call <see cref="ResetDatabaseAsync"/> at all — both
 /// already shared one host/database across their whole suite before WS2,
 /// with no per-test reset, and that conversion intentionally preserved it.
 /// </para>

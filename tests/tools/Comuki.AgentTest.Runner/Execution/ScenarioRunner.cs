@@ -111,7 +111,7 @@ public sealed class ScenarioRunner(IAgentLoopHarness harness)
                     "run.status",
                     $"work item did not reach a terminal status within {options.Timeout}; last observed status: '{status}'. "
                         + "This usually means the container's Translator never claimed the queued item — check that "
-                        + "worker.image/profileKey/profilesRef in the scenario match Intake:Worker:* on the host.",
+                        + "worker.image/profileKey/profilesRef in the scenario match Integrations:Worker:* on the host.",
                     stopwatch.Elapsed,
                     artifactPaths,
                     cost);

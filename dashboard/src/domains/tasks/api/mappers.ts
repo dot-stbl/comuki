@@ -1,7 +1,7 @@
 import { NATIVE_PROVIDER } from "@/domains/sources/model/providers"
 import type { ProviderKey } from "@/domains/sources/model/types"
 import type { Task, TaskStatus } from "@/domains/tasks/model/types"
-import type { IntakeTicketView } from "@/shared/api/_generated/types/IntakeTicketView"
+import type { InboundItemView } from "@/shared/api/_generated/types/InboundItemView"
 import type { SeedTask } from "@/shared/api/mock/tasks.seed"
 import { formatRelativeInstant } from "@/shared/lib/relative-time"
 
@@ -48,7 +48,7 @@ export function toTask(seed: SeedTask): Task {
 // ---------------------------------------------------------------------------
 // Wire → domain mappers (real-backend path).
 //
-// The kubb-generated response type is `IntakeTicketView`, with a flat shape:
+// The kubb-generated response type is `InboundItemView`, with a flat shape:
 // id / projectId / source (kebab-case provider key) / externalId / title /
 // url / status / runId / createdAt. The dashboard's `Task` is richer (carries
 // an `app` and a pre-formatted `age` string), so two facts are derived:
@@ -69,9 +69,9 @@ export function toTask(seed: SeedTask): Task {
 // ---------------------------------------------------------------------------
 
 /**
- * A wire `IntakeTicketStatus` → dashboard `TaskStatus`. The wire's enum is
+ * A wire `InboundItemStatus` → dashboard `TaskStatus`. The wire's enum is
  * `Pending | Claimed | Done | Dismissed`; only `Pending` arrives through
- * `/api/v1/inbox` (the host's `ListPendingAsync` filters the others out), so
+ * `/api/v1/integration/inbox` (the host's `ListPendingAsync` filters the others out), so
  * the mapping is one entry today. `Claimed` is the only other live value,
  * reached on the optimistic claim transition; it reads as `"queued"` in the
  * dashboard so the row's chip turns from "new" to "queued" without a new
@@ -91,7 +91,7 @@ function wireStatusToTaskStatus(wire: string): TaskStatus {
 }
 
 /**
- * Wire `IntakeTicketView` → dashboard `Task`.
+ * Wire `InboundItemView` → dashboard `Task`.
  *
  * The dashboard has no `internalId` notion — every Task's id comes from
  * the wire. `app` defaults to the (verbatim) source; `priority` defaults to
@@ -99,7 +99,7 @@ function wireStatusToTaskStatus(wire: string): TaskStatus {
  * renders "normal" without highlighting — a future wire shape carries
  * `priority`, this mapper widens to read it.
  */
-export function intakeTicketViewToTask(view: IntakeTicketView): Task {
+export function inboundItemViewToTask(view: InboundItemView): Task {
   return {
     id: view.id,
     projectId: view.projectId,
@@ -116,6 +116,6 @@ export function intakeTicketViewToTask(view: IntakeTicketView): Task {
   }
 }
 
-export function intakeTicketViewsToTasks(views: IntakeTicketView[]): Task[] {
-  return views.map(intakeTicketViewToTask)
+export function inboundItemViewsToTasks(views: InboundItemView[]): Task[] {
+  return views.map(inboundItemViewToTask)
 }

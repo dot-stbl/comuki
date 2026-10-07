@@ -26,9 +26,9 @@
     <ProjectReference Include="..\..\platform\src\modules\Costs\Comuki.Modules.Costs.Domain\Comuki.Modules.Costs.Domain.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Costs\Comuki.Modules.Costs.Application\Comuki.Modules.Costs.Application.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Costs\Comuki.Modules.Costs.Infrastructure\Comuki.Modules.Costs.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\platform\src\modules\Intake\Comuki.Modules.Intake.Domain\Comuki.Modules.Intake.Domain.csproj" />
-    <ProjectReference Include="..\..\platform\src\modules\Intake\Comuki.Modules.Intake.Application\Comuki.Modules.Intake.Application.csproj" />
-    <ProjectReference Include="..\..\platform\src\modules\Intake\Comuki.Modules.Intake.Infrastructure\Comuki.Modules.Intake.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Integrations\Comuki.Modules.Integrations.Domain\Comuki.Modules.Integrations.Domain.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Integrations\Comuki.Modules.Integrations.Application\Comuki.Modules.Integrations.Application.csproj" />
+    <ProjectReference Include="..\..\platform\src\modules\Integrations\Comuki.Modules.Integrations.Infrastructure\Comuki.Modules.Integrations.Infrastructure.csproj" />
     
     <ProjectReference Include="..\..\platform\src\modules\Proxy\Comuki.Modules.Proxy.Application\Comuki.Modules.Proxy.Application.csproj" />
     <ProjectReference Include="..\..\platform\src\modules\Proxy\Comuki.Modules.Proxy.Infrastructure\Comuki.Modules.Proxy.Infrastructure.csproj" />

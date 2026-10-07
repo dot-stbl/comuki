@@ -3,6 +3,7 @@
 * Do not edit manually.
 */
 
+import type { HeartbeatWorkItemRequest } from "./HeartbeatWorkItemRequest";
 
 export type PostWorkersWorkitemidHeartbeatPathParams = {
     /**
@@ -16,10 +17,13 @@ export type PostWorkersWorkitemidHeartbeatPathParams = {
 */
 export type PostWorkersWorkitemidHeartbeat200 = any;
 
+export type PostWorkersWorkitemidHeartbeatMutationRequest = (null | HeartbeatWorkItemRequest);
+
 export type PostWorkersWorkitemidHeartbeatMutationResponse = PostWorkersWorkitemidHeartbeat200;
 
 export type PostWorkersWorkitemidHeartbeatMutation = {
     Response: PostWorkersWorkitemidHeartbeat200;
+    Request: PostWorkersWorkitemidHeartbeatMutationRequest;
     PathParams: PostWorkersWorkitemidHeartbeatPathParams;
     Errors: any;
 };

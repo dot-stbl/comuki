@@ -21,7 +21,7 @@ namespace Comuki.Host.Integration.Smoke;
 /// owned <c>PostgresCollectionFixture</c> (containment — xUnit v3 does
 /// not thread one declared <c>ICollectionFixture&lt;T&gt;</c> into another's
 /// constructor, so the contained-field pattern is the documented escape).
-/// No <c>ResetDatabaseAsync</c> is added — Smoke, like Auth and Intake
+/// No <c>ResetDatabaseAsync</c> is added — Smoke, like Auth and Integrations
 /// before it, shares one host/database across the whole suite with no
 /// per-test reset (tests scope themselves by generated ids, and the boot
 /// seeder only writes the three <c>platform.*</c> facts once on the single

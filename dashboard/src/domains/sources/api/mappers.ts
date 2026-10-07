@@ -158,7 +158,7 @@ export function settingsToJson(settings: {
 
 /**
  * The full snapshot the screens read. In real mode tickets are empty —
- * `GET /api/v1/tickets` is not on the wire — and the screen already knows
+ * `GET /api/v1/integration/items` is not on the wire — and the screen already knows
  * "no tickets yet" is a valid answer for the rows that show a count.
  */
 export function sourceConnectionViewsToSnapshot(

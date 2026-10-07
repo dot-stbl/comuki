@@ -17,7 +17,7 @@ namespace Comuki.EndToEnd.AgentLoop;
 /// Boots the real host composition (<see cref="HostComposer"/>) on a
 /// random loopback port against one shared, migrated Postgres owned by
 /// this type's own <see cref="PostgresCollectionFixture"/> — modelled
-/// exactly on <c>tests/integration/Comuki.Host.Integration.Intake/HostIntakeServer</c>.
+/// exactly on <c>tests/integration/Comuki.Host.Integration.Integrations/HostIntegrationServer</c>.
 /// </summary>
 /// <remarks>
 /// <see cref="PostgresCollectionFixture"/> is owned by containment (a
@@ -63,9 +63,9 @@ public sealed class CrownScenarioHost : IAsyncLifetime
     public IServiceProvider Services => application.Services;
 
     /// <summary>The shared <see cref="WorkItemLabels"/> value stamped on every WorkItem seeded for or by this suite
-    /// (the <c>Intake:Worker:*</c> config on this host + the explicit seeds in <see cref="CrownScenarioShould"/>),
+    /// (the <c>Integrations:Worker:*</c> config on this host + the explicit seeds in <see cref="CrownScenarioShould"/>),
     /// so a single <see cref="IWorkItemQueue.ClaimAsync"/> call covers them all. Mirror of the host's
-    /// intake-worker defaults — change <c>Intake:Worker:*</c> above and update this constant with it.</summary>
+    /// integrations-worker defaults — change <c>Integrations:Worker:*</c> above and update this constant with it.</summary>
     public static WorkItemLabels EntryLabels => new("ghcr.io/comuki/worker:crown-test", "crown-test", "implement", "net10-sdk-bun");
 
     /// <inheritdoc />
@@ -87,19 +87,19 @@ public sealed class CrownScenarioHost : IAsyncLifetime
         builder.Configuration["Host:RateLimit:ApiPermitsPerMinute"] = "100000";
         builder.Configuration["Host:RateLimit:RunDecisionPermitsPerMinute"] = "10000";
         builder.Configuration["Host:RateLimit:OidcStartPermitsPerMinute"] = "10000";
-        builder.Configuration["Intake:BridgeInterval"] = "00:00:01";
-        builder.Configuration["Intake:SyncBackoff"] = "00:00:01";
+        builder.Configuration["Integrations:BridgeInterval"] = "00:00:01";
+        builder.Configuration["Integrations:SyncBackoff"] = "00:00:01";
         // Claim labels every WorkItem seeded by this suite uses — fixed at host
-        // boot (Intake:Worker:*/Chat:Worker:* each bind once); the in-process
+        // boot (Integrations:Worker:*/Chat:Worker:* each bind once); the in-process
         // worker caller in CrownScenarioShould only ever asks for these exact
-        // strings, so one ClaimAsync covers the intake-created item AND the
+        // strings, so one ClaimAsync covers the integrations-created item AND the
         // ChatRunStarter-materialized plan items alike. The image already
         // carries a tag (":crown-test") so WorkerImagePinning.Resolve — which
         // ChatRunStarter runs it through — returns it unchanged; see its
         // remarks on HasTagOrDigest.
-        builder.Configuration["Intake:Worker:Image"] = "ghcr.io/comuki/worker:crown-test";
-        builder.Configuration["Intake:Worker:ProfilesRef"] = "crown-test";
-        builder.Configuration["Intake:Worker:IssueDefaultProfileKey"] = "implement";
+        builder.Configuration["Integrations:Worker:Image"] = "ghcr.io/comuki/worker:crown-test";
+        builder.Configuration["Integrations:Worker:ProfilesRef"] = "crown-test";
+        builder.Configuration["Integrations:Worker:IssueDefaultProfileKey"] = "implement";
         builder.Configuration["Chat:Worker:Image"] = "ghcr.io/comuki/worker:crown-test";
         builder.Configuration["Chat:Worker:ProfilesRef"] = "crown-test";
 

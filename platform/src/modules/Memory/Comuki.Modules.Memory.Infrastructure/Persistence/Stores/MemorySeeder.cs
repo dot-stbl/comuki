@@ -39,7 +39,7 @@ public static class MemorySeeder
         + "Built with .NET 10 + React 19.";
 
     private const string ArchitectureText =
-        "Modules: Identity (auth/users/keys), Orchestration (runs/work-items/leases), Intake (sources/tickets), "
+        "Modules: Identity (auth/users/keys), Orchestration (runs/work-items/leases), Integrations (sources/items), "
         + "Chat (operator↔brain sessions), Knowledge (RAG with pgvector), Memory (facts with TTL), "
         + "Costs (usage tracking), Artifacts (MinIO bundles), Scheduler (cron jobs), Proxy (virtual keys). "
         + "Compute: Docker or Kubernetes batch Jobs.";

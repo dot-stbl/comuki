@@ -17,6 +17,16 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <!-- Wave 1 B4a: Refit replaces the deprecated
+         AddHttpClient<IEmbeddingClient, OpenAIEmbeddingClient> typed-
+         client factory. The infrastructure now owns the Refit
+         interface (IOpenAIEmbeddingsApi), the bearer handler
+         (OpenAIBearerTokenHandler), and the standard resilience
+         pipeline (AddStandardResilienceHandler). Central package
+         management supplies the version from Directory.Packages.props. -->
+    <PackageReference Include="Refit" />
+    <PackageReference Include="Refit.HttpClientFactory" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
   </ItemGroup>
 
   <ItemGroup>

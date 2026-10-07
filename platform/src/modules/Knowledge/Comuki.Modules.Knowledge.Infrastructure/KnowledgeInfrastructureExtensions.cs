@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Refit;
 
 namespace Comuki.Modules.Knowledge.Infrastructure;
 
@@ -75,33 +75,44 @@ public static class KnowledgeInfrastructureExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        // Embedding client selection — the same singleton instance is
-        // resolved by every ingestion and search. Provider changes are
-        // rare; the host restart cycle absorbs them. The OpenAI client
-        // owns its HttpClient; the typed factory below threads the
-        // base address through AddHttpClient so the host can override
-        // it through configuration (Knowledge:Embedding:OpenAiBaseUrl)
-        // without re-touching this registration.
-        services.AddHttpClient<IEmbeddingClient, OpenAIEmbeddingClient>(static (httpClient, sp) =>
-        {
-            var options = sp.GetRequiredService<IOptions<KnowledgeEmbeddingOptions>>().Value;
-            httpClient.BaseAddress = new Uri("https://api.openai.com/");
-            return new OpenAIEmbeddingClient(
-                httpClient,
-                options.ResolveApiKey()
-                    ?? throw new InvalidOperationException(
-                        "Knowledge:Embedding:Provider=openai requires Knowledge:Embedding:ApiKeyEnvRef to name an env var with the key."),
-                options.Model,
-                options.Dimensions,
-                sp.GetRequiredService<ILogger<OpenAIEmbeddingClient>>());
-        });
+        // Refit-typed OpenAI client. The base address is pinned to
+        // api.openai.com because the contract is hard-wired to OpenAI's
+        // /v1/embeddings shape; Knowledge:Embedding:OpenAiBaseUrl (if
+        // reintroduced) would need to override this. The bearer handler
+        // resolves the API key from the env var on every call, so a
+        // key rotation takes effect without re-binding the client. The
+        // standard resilience handler (retry + circuit breaker + total
+        // timeout) is wired by the same call — every outbound embedding
+        // request gets the same retry/timeout policy as the rest of
+        // the host's outbound HTTP.
+        services.AddTransient<OpenAIBearerTokenHandler>();
+        services
+            .AddRefitClient<IOpenAIEmbeddingsApi>()
+            .ConfigureHttpClient(static client => client.BaseAddress = new Uri("https://api.openai.com/"))
+            .AddHttpMessageHandler<OpenAIBearerTokenHandler>()
+            .AddStandardResilienceHandler();
 
+        // Concrete clients are singletons (stateless). The
+        // IEmbeddingClient binding picks the right one by options.Kind
+        // so a Noop config never instantiates the OpenAI client (which
+        // would otherwise validate the env-var key at construction
+        // and fail). The previous shape had two AddSingleton registrations
+        // for IEmbeddingClient (the AddHttpClient typed-client factory
+        // for OpenAI + a separate switch factory) — the latter is
+        // now the only one, and the AddHttpClient is gone (Refit owns
+        // the OpenAI HttpClient). NoopEmbeddingClient's ctor takes
+        // a dimension count, so the factory pulls it from the bound
+        // options rather than relying on DI to find a bare int.
+        services.AddSingleton<OpenAIEmbeddingClient>();
+        services.AddSingleton(static sp =>
+            new NoopEmbeddingClient(
+                sp.GetRequiredService<IOptions<KnowledgeEmbeddingOptions>>().Value.Dimensions));
         services.AddSingleton<IEmbeddingClient>(static sp =>
         {
             var options = sp.GetRequiredService<IOptions<KnowledgeEmbeddingOptions>>().Value;
             return options.Kind switch
             {
-                EmbeddingProviderKind.Noop => new NoopEmbeddingClient(options.Dimensions),
+                EmbeddingProviderKind.Noop => sp.GetRequiredService<NoopEmbeddingClient>(),
                 EmbeddingProviderKind.OpenAi => sp.GetRequiredService<OpenAIEmbeddingClient>(),
                 EmbeddingProviderKind.Voyage => throw new NotSupportedException(
                     "Knowledge:Embedding:Provider=voyage is reserved — no embedder is shipped yet; switch to openai or noop."),

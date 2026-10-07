@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Comuki.Host.Translator.Parsing;
 
@@ -23,12 +24,20 @@ namespace Comuki.Host.Translator.Runtime;
 ///   behind the text-deltas the consumer hasn't drained yet,
 ///   but is never replaced).</item>
 /// </list>
-/// The drop-oldest branch uses an internal <see cref="Lock"/>
-/// around the peek + read pair so the writer cannot race the
-/// reader when it claims the oldest progress item; the underlying
-/// <c>Channel</c> is configured with <c>SingleReader = true</c>,
-/// but the writer is the only writer, so this is the only
-/// concurrency hazard and a single lock makes the pair atomic.
+/// The drop-oldest branch and the consumer's drain share a single
+/// <see cref="Lock"/> (<c>dropGate</c>). Without it, the writer's
+/// <c>TryPeek</c> + <c>TryRead</c> pair is not atomic with the
+/// reader's <c>TryRead</c>: the reader can drain the peeked
+/// progress item between the two calls, the writer's <c>TryRead</c>
+/// then reads a DIFFERENT (possibly mandatory) item that just
+/// became the head — silently dropping a mandatory <c>agent_end</c>.
+/// With the lock, the writer's peek + read pair and the reader's
+/// <c>TryRead</c> are mutually exclusive: only one party can
+/// observe / mutate the channel head at a time. The underlying
+/// <c>Channel</c> is configured with <c>SingleReader = true</c> and
+/// <c>SingleWriter = true</c>, so the lock's only job is to
+/// serialise the peek-read pair with the drain — no writer-vs-writer
+/// or reader-vs-reader race is possible.
 /// </summary>
 public sealed class WorkerEventsChannel
 {
@@ -47,11 +56,47 @@ public sealed class WorkerEventsChannel
     /// </summary>
     public Action? OnProgressDropped { get; set; }
 
-    /// <summary>The reader the pump iterates. Same surface as
-    /// <c>Channel&lt;PiEvent&gt;.Reader.ReadAllAsync(cancellationToken)</c>.</summary>
-    public IAsyncEnumerable<PiEvent> ReadAllAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// The reader the pump iterates. The custom async iterator
+    /// (instead of <c>Channel&lt;PiEvent&gt;.Reader.ReadAllAsync</c>)
+    /// takes <see cref="dropGate"/> around every <c>TryRead</c> so
+    /// the drop and the drain observe a consistent channel head —
+    /// the same head the writer's <see cref="TryDropOldestProgress"/>
+    /// peeked, never a head the reader had already drained.
+    /// </summary>
+    /// <param name="cancellationToken">Forwarded to the channel's
+    /// <c>WaitToReadAsync</c>; the iterator itself is a
+    /// [EnumeratorCancellation]-attributed parameter so the
+    /// compiler injects the caller's token at iteration time.</param>
+    public async IAsyncEnumerable<PiEvent> ReadAllAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        return channel.Reader.ReadAllAsync(cancellationToken);
+        var reader = channel.Reader;
+        while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            // Drain all currently-available items under the same
+            // lock the writer's TryDropOldestProgress uses, so the
+            // two never observe different channel heads.
+            while (true)
+            {
+                PiEvent? item = null;
+                var read = false;
+                lock (dropGate)
+                {
+                    if (reader.TryRead(out var got))
+                    {
+                        item = got;
+                        read = true;
+                    }
+                }
+
+                if (!read)
+                {
+                    break;
+                }
+
+                yield return item!;
+            }
+        }
     }
 
     /// <summary>
@@ -124,12 +169,13 @@ public sealed class WorkerEventsChannel
 
     private bool TryDropOldestProgress()
     {
-        // Lock around the peek + read pair so a concurrent
-        // SingleReader cannot drain the peeked item between the
-        // two calls. The writer thread is the only writer; the
-        // reader thread is the only reader; this lock serialises
-        // the two pairs of <c>TryPeek</c> + <c>TryRead</c> against
-        // any other writer that re-enters the drop path.
+        // Lock around the peek + read pair. The reader's drain in
+        // ReadAllAsync also takes this lock for every TryRead, so
+        // the two operations are mutually exclusive: the reader
+        // cannot drain the peeked item between TryPeek and TryRead,
+        // and the writer cannot read a different head than the one
+        // it peeked. This is the contract that "mandatory events
+        // are never dropped" relies on.
         lock (dropGate)
         {
             if (!channel.Reader.TryPeek(out var oldest))

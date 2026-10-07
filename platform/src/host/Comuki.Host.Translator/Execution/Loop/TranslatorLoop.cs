@@ -68,19 +68,6 @@ public sealed class TranslatorLoop(
     ILoggerFactory loggerFactory,
     ILogger<TranslatorLoop> logger)
 {
-    private readonly IOrchestratorApi api = api;
-    private readonly IHarnessRuntime harness = harness;
-    private readonly IWorkerService workerService = workerService;
-    private readonly IProfilesProvider profilesProvider = profilesProvider;
-    private readonly SourceCloneRunner sourceCloneRunner = sourceCloneRunner;
-    private readonly RestoreRunner restoreRunner = restoreRunner;
-    private readonly HeartbeatMonitor heartbeat = heartbeat;
-    private readonly IDebugExecHost debugExecHost = debugExecHost;
-    private readonly IOptions<TranslatorOptions> options = options;
-    private readonly TimeProvider clock = clock;
-    private readonly ILoggerFactory loggerFactory = loggerFactory;
-    private readonly ILogger<TranslatorLoop> logger = logger;
-
     /// <summary>
     /// Wall-clock instant the worker process itself started
     /// (harden-worker-runtime Phase 1, design D2). Seeded once at

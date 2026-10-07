@@ -38,10 +38,8 @@ internal sealed class PiLineReader(StreamReader stdout, Action? onLineDropped = 
 {
     private const int ReadBufferSize = 4096;
 
-    private readonly StreamReader stdout = stdout;
     private readonly char[] readBuffer = new char[ReadBufferSize];
     private readonly StringBuilder lineBuffer = new(ReadBufferSize);
-    private readonly Action? onLineDropped = onLineDropped;
     private int position;
     private int filled;
     private bool endOfStream;

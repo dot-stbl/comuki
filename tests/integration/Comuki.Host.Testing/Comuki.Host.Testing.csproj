@@ -12,6 +12,14 @@
     <!-- Shouldly, for the login-response assertion in
          TestBootstrapAdmin's HttpClient extension. -->
     <PackageReference Include="Shouldly" />
+    <!-- Wave 1 A2: adopt Microsoft.Extensions.TimeProvider.Testing's
+         FakeTimeProvider in place of the local Comuki.Host.Testing.Clocks
+         copy. The package asset flows transitively to integration test
+         projects that reference this one (Identity.Stores,
+         Engine.Orchestration.Queue) — they can keep their
+         `using Microsoft.Extensions.Time.Testing;` after the
+         local FakeTimeProvider is deleted here. -->
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <!-- WS2 (add-agentic-test-contour): PostgresCollectionFixture
          implements xunit's IAsyncLifetime and reads TestContext.Current —
          the only reason this otherwise-not-a-test-project references

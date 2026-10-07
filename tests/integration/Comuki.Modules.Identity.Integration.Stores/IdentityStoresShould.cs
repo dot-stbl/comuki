@@ -1,5 +1,5 @@
-using Comuki.Host.Testing.Clocks;
 using Comuki.Host.Testing.Fixtures;
+using Microsoft.Extensions.Time.Testing;
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Modules.Identity.Domain.Assignments;
 using Comuki.Modules.Identity.Domain.Oidc;

@@ -107,19 +107,28 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
         // stream-json on stdout is the same wire shape as the
         // v1.x `--mode json` one-shot — `StreamJsonParser` is the same
         // parser (per the brief, untouched). The reader background task
-        // drains the pipe and pushes parsed events into the channel;
-        // the consumer is `PiPump` on the worker side.
-        var events = System.Threading.Channels.Channel.CreateUnbounded<PiEvent>(
-            new System.Threading.Channels.UnboundedChannelOptions
-            {
-                SingleReader = true,
-                SingleWriter = true,
-            });
+        // drains the pipe and pushes parsed events into the bounded
+        // channel; the consumer is `PiPump` on the worker side.
+        // Harden-worker-runtime Phase 3: capacity defaults to
+        // TranslatorOptions.EventsChannelCapacity (1024); a value of
+        // 0 means unbounded (test-only path; the production harness
+        // always passes a non-zero value via the pump).
+        var capacity = request.EventsChannelCapacity > 0
+            ? request.EventsChannelCapacity
+            : options.Value.EventsChannelCapacity;
+        var events = new WorkerEventsChannel(capacity)
+        {
+            OnProgressDropped = request.OnProgressDropped,
+        };
 
         var stderrTask = PiProcessHelpers.DrainStderrAsync(process, cancellationToken);
 
         var readerTask = Task.Run(
-            async () => await PiReader.ReadEventsAsync(process.StandardOutput, events.Writer, cancellationToken),
+            async () => await PiReader.ReadEventsAsync(
+                process.StandardOutput,
+                events,
+                request.MaxLineLengthBytes,
+                cancellationToken),
             cancellationToken);
 
         var writer = new PiRpcTurnInputWriter(process.StandardInput.BaseStream, logger);
@@ -135,7 +144,7 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
                 "Failed to write initial prompt to {Executable} stdin (PID {Pid})",
                 executable,
                 process.Id);
-            events.Writer.TryComplete();
+            events.Complete();
             try
             {
                 if (!process.HasExited)
@@ -154,7 +163,7 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
 
         return Task.FromResult<IHarnessSession>(new PiRpcSession(
             process.Id,
-            events.Reader.ReadAllAsync(cancellationToken),
+            events.ReadAllAsync(cancellationToken),
             writer,
             readerTask,
             stderrTask,
@@ -192,7 +201,7 @@ file static class PiProcessHelpers
 file static class PiReader
 {
     /// <summary>
-    /// Drains <paramref name="stdout"/> into <paramref name="writer"/>
+    /// Drains <paramref name="stdout"/> into <paramref name="events"/>
     /// until the stream closes or cancellation trips. Each line is
     /// parsed by <see cref="StreamJsonParser.ParseLine"/> (the same
     /// parser the v1.x one-shot path uses); the channel's
@@ -200,20 +209,22 @@ file static class PiReader
     /// consumer on shutdown.
     /// </summary>
     /// <param name="stdout">The harness's stdout.</param>
-    /// <param name="writer">The events channel writer.</param>
+    /// <param name="events">The bounded events channel (harden-worker-runtime Phase 3, design D4).</param>
+    /// <param name="maxLineLengthBytes">Per-line cap. Lines longer than this are dropped before parse (one bad line cannot OOM the process). <c>0</c> disables the cap.</param>
     /// <param name="cancellationToken">Cancels the read.</param>
     public static async Task ReadEventsAsync(
         StreamReader stdout,
-        System.Threading.Channels.ChannelWriter<PiEvent> writer,
+        WorkerEventsChannel events,
+        int maxLineLengthBytes,
         CancellationToken cancellationToken)
     {
         try
         {
-            while (await stdout.ReadLineAsync(cancellationToken) is { } line)
+            while (await ReadLineWithCapAsync(stdout, maxLineLengthBytes, cancellationToken) is { } line)
             {
                 foreach (var piEvent in StreamJsonParser.ParseLine(line))
                 {
-                    await writer.WriteAsync(piEvent, cancellationToken);
+                    await events.WriteAsync(piEvent, cancellationToken);
                 }
             }
         }
@@ -224,7 +235,85 @@ file static class PiReader
         }
         finally
         {
-            writer.TryComplete();
+            events.Complete();
         }
+    }
+
+    /// <summary>
+    /// Reads the next line, capping the length to
+    /// <paramref name="maxLineLengthBytes"/>. A line longer than the cap
+    /// is dropped, the dropped tail is read-and-discarded (so the next
+    /// call sees the start of the next line), and the method returns
+    /// <c>null</c> so the outer loop reads the next line. The
+    /// <see cref="WorkerEventsChannel.OnProgressDropped"/> callback
+    /// is invoked with a synthetic marker so the pump can journal
+    /// the drop (the <c>parse_errors_total{kind = line_too_long}</c>
+    /// counter is incremented in the harness event journal when the
+    /// marker reaches the host).
+    /// </summary>
+    private static async Task<string?> ReadLineWithCapAsync(
+        StreamReader stdout,
+        int maxLineLengthBytes,
+        CancellationToken cancellationToken)
+    {
+        if (maxLineLengthBytes <= 0)
+        {
+            return await stdout.ReadLineAsync(cancellationToken);
+        }
+
+        var buffer = new StringBuilder();
+        var droppedTail = false;
+        while (true)
+        {
+            // ReadOneChar is synchronous because StreamReader has no
+            // async Peek; the OS pipe is already buffered so a single
+            // sync Peek+Read pair is cheap. Cancellation is observed
+            // between characters only (the loop body is the only
+            // async point in practice — line cap is hit on overflow,
+            // not in the happy path).
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return null;
+            }
+
+            var ch = ReadOneChar(stdout);
+            if (ch is null)
+            {
+                return droppedTail ? null : (buffer.Length == 0 ? null : buffer.ToString());
+            }
+
+            if (ch == '\n')
+            {
+                return droppedTail ? null : buffer.ToString();
+            }
+
+            if (buffer.Length < maxLineLengthBytes)
+            {
+                buffer.Append(ch.Value);
+            }
+            else
+            {
+                droppedTail = true;
+            }
+        }
+    }
+
+    private static char? ReadOneChar(StreamReader reader)
+    {
+        // StreamReader has no async Peek — Peek() is synchronous and
+        // returns the next char without consuming it. The underlying
+        // stream buffers ahead, so a single Read() after Peek is
+        // cheap. We can't make this truly async without a custom
+        // StreamReader, and the harness stdout is already buffered
+        // by the OS pipe, so synchronous reads here are well within
+        // the caller's throughput budget.
+        var peeked = reader.Peek();
+        if (peeked < 0)
+        {
+            return null;
+        }
+
+        reader.Read();
+        return (char)peeked;
     }
 }

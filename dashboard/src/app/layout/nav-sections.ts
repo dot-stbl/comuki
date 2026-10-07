@@ -56,7 +56,7 @@ export interface NavItem {
 
 export interface NavSection {
   /** Machine name; used by the variant hook to remember a "last section". */
-  id: "intake" | "observe" | "configure" | "platform"
+  id: "integrations" | "observe" | "configure" | "platform"
   /** Display label, also used as the inner-rail heading when this section is active. */
   label: string
   /** The word in the `shell` namespace; the English `label` is the identity. */
@@ -79,9 +79,9 @@ export interface NavSection {
 
 export const productNavSections: NavSection[] = [
   {
-    id: "intake",
-    label: "Intake",
-    labelKey: "nav.intake",
+    id: "integrations",
+    label: "Integrations",
+    labelKey: "nav.integrations",
     icon: InboxIcon,
     items: [
       // The console is not a section: its one door in the chrome is the

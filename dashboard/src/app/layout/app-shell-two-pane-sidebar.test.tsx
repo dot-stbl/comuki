@@ -28,7 +28,7 @@ describe("AppShellTwoPaneOuter — section buttons in the DOM", () => {
     const buttons = container.querySelectorAll('[data-test="two-pane-section"]')
     expect(buttons.length).toBe(4)
     const labels = [...buttons].map((b) => b.getAttribute("aria-label"))
-    expect(labels).toEqual(["Intake", "Observe", "Configure", "Platform"])
+    expect(labels).toEqual(["Integrations", "Observe", "Configure", "Platform"])
   })
 
   it("marks the active section button", () => {
@@ -130,7 +130,7 @@ describe("AppShellTwoPaneOuter in russian", () => {
 
     const buttons = container.querySelectorAll('[data-test="two-pane-section"]')
     expect([...buttons].map((b) => b.getAttribute("aria-label"))).toEqual([
-      "Приём",
+      "Интеграции",
       "Наблюдение",
       "Настройка",
       "Платформа",

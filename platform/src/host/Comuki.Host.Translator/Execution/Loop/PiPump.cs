@@ -42,6 +42,20 @@ namespace Comuki.Host.Translator.Execution.Loop;
 /// the right message; the pump does not call the orchestrator
 /// REST API directly.
 /// </para>
+/// <para>
+/// Exit-code harness check (fix-worker-runtime, worker-runtime
+/// spec scenario "Non-zero pi exit fails the item"): the events
+/// iterator completes on stdout EOF; the process then either
+/// exits 0 (orderly shutdown via stdin close — pi's documented
+/// path) or crashes. A non-zero <c>ExitCode</c> on an
+/// otherwise-Success outcome means the run streamed its events
+/// but the harness died mid-run — fail the item rather than
+/// report success. The session is disposed in the <c>finally</c>
+/// so <see cref="IHarnessSession.ExitCode"/> is captured before
+/// the post-disposal check reads it. Cancellation/InvalidOp
+/// outcomes already carry their own failure shape and pass
+/// through unchanged.
+/// </para>
 /// </summary>
 public static class PiPump
 {
@@ -88,7 +102,13 @@ public static class PiPump
             MaxLineLengthBytes: options.Value.MaxLineLengthBytes,
             OnProgressDropped: OnProgressDropped);
 
-        await using var session = await harness.StartSessionAsync(
+        // Disposal is hand-rolled (not `await using var session`) so the
+        // post-disposal step below can read `session.ExitCode` — the
+        // `using var` form disposes at method exit, *after* we've already
+        // returned. The harness session's `DisposeAsync` waits for the
+        // process to exit and captures `process.ExitCode` there, so
+        // `session.ExitCode` is only valid *after* this `try/finally`.
+        var session = await harness.StartSessionAsync(
             request, run.RunCancellation.Token);
         run.HarnessSession = session;
         logger.LogInformation(
@@ -112,6 +132,7 @@ public static class PiPump
         progressWatchdog.Start();
         deadlinePolicy.Start();
 
+        PiOutcome outcome;
         try
         {
             await foreach (var piEvent in session.Events.WithCancellation(run.RunCancellation.Token))
@@ -153,7 +174,7 @@ public static class PiPump
 
             deadlinePolicy.ResetBreachCounter();
             logger.LogInformation("Harness run of work item {WorkItemId} finished", run.Claimed.WorkItemId);
-            return new PiOutcome(
+            outcome = new PiOutcome(
                 PiOutcome.SuccessStatus,
                 (long)(clock.GetUtcNow() - startedAt).TotalMilliseconds,
                 summary.ResultText,
@@ -169,7 +190,7 @@ public static class PiPump
                 ? (progressWatchdog.FailReason ?? deadlinePolicy.FailReason ?? "run aborted by watchdog or deadline policy")
                 : "run cancelled by orchestrator command or lease expiry";
             logger.LogWarning("Harness run of work item {WorkItemId} cancelled: {Reason}", run.Claimed.WorkItemId, reason);
-            return new PiOutcome(
+            outcome = new PiOutcome(
                 PiOutcome.CancelledStatus,
                 (long)(clock.GetUtcNow() - startedAt).TotalMilliseconds,
                 summary.ResultText,
@@ -178,7 +199,7 @@ public static class PiPump
         catch (InvalidOperationException exception)
         {
             logger.LogError(exception, "Harness run of work item {WorkItemId} failed", run.Claimed.WorkItemId);
-            return new PiOutcome(
+            outcome = new PiOutcome(
                 PiOutcome.FailedStatus,
                 (long)(clock.GetUtcNow() - startedAt).TotalMilliseconds,
                 summary.ResultText,
@@ -186,9 +207,55 @@ public static class PiPump
         }
         finally
         {
+            // Defensive stop — `await using` on the watchdogs
+            // already disposes them at scope exit, but a stop call
+            // here makes the lifecycle observable in logs even if
+            // an exception unwound the scope abnormally.
             progressWatchdog.Stop();
             deadlinePolicy.Stop();
+            // Dispose the session so we can read ExitCode below.
+            // The session's `DisposeAsync` waits for the harness
+            // process to exit and captures its ExitCode there, so
+            // `session.ExitCode` is only valid after this call.
+            await session.DisposeAsync();
         }
+
+        // Exit-code harness check (worker-runtime spec scenario
+        // "Non-zero pi exit fails the item"). The events iterator
+        // completed on stdout EOF; the process then either exits 0
+        // (orderly shutdown via stdin close — pi's documented path)
+        // or crashes. A non-zero ExitCode on an otherwise-Success
+        // outcome means the run streamed its events but the
+        // harness died mid-run — fail the item rather than report
+        // success. Cancellation/InvalidOp outcomes already carry
+        // their own failure shape and pass through (this check
+        // only fires on SuccessStatus).
+        if (outcome.Status == PiOutcome.SuccessStatus
+            && session.ExitCode is int exitCode
+            && exitCode != 0)
+        {
+            // StderrTail is the operator-facing slice of the harness's
+            // captured stderr (production: bounded tail, the production
+            // PiRpcSession trims to a 4 KiB cap; the in-process fake
+            // returns null). Append it to the ErrorText so the operator
+            // sees the failing harness's last lines alongside the exit
+            // code, per the spec scenario "outcome is failed carrying
+            // the exit code and stderr".
+            var errorText = session.StderrTail is { Length: > 0 } stderrTail
+                ? $"harness exited with code {exitCode}\nstderr:\n{stderrTail}"
+                : $"harness exited with code {exitCode}";
+            logger.LogError(
+                "Harness run of work item {WorkItemId} finished cleanly but exited with code {ExitCode} — failing the item",
+                run.Claimed.WorkItemId,
+                exitCode);
+            return new PiOutcome(
+                PiOutcome.FailedStatus,
+                outcome.DurationMs,
+                outcome.ResultText,
+                errorText);
+        }
+
+        return outcome;
     }
 
     /// <summary>Best-effort journal send for an <c>events_dropped</c> event.

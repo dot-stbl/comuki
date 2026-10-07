@@ -63,7 +63,7 @@ const WEBHOOK_FIXTURE_PATH = path.join(
   REPO_ROOT,
   'tests',
   'integration',
-  'Comuki.Host.Integration.Intake',
+  'Comuki.Host.Integration.Integrations',
   'Fixtures',
   'github-issue-opened.json',
 );

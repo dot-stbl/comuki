@@ -1,6 +1,8 @@
 using Comuki.Host.Translator.Api.Contracts;
 using Comuki.Host.Translator.Api.Models.Requests;
 using Comuki.Host.Translator.Execution.Loop;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Refit;
 using Shouldly;
@@ -11,9 +13,11 @@ namespace Comuki.Host.Translator.Unit.Runtime;
 /// <summary>
 /// Lifecycle of <see cref="HeartbeatMonitor"/>: keeps extending the lease
 /// until cancelled, returns false on a rejected heartbeat (409 — the
-/// reaper took the item), surfaces an upstream failure as a propagated
-/// exception. Cancellation racing <c>Task.Delay</c> exits cleanly with
-/// <c>true</c>.
+/// reaper took the item) and the same false on a thrown heartbeat (an
+/// upstream/network failure that means we cannot prove the lease is
+/// still held — the TranslatorLoop's existing lease-lost path takes
+/// over without killing the host). Cancellation racing <c>Task.Delay</c>
+/// exits cleanly with <c>true</c>.
 /// </summary>
 public sealed class HeartbeatMonitorShould
 {
@@ -33,7 +37,7 @@ public sealed class HeartbeatMonitorShould
         sequence.Enqueue(rejection);
         api.HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>())
             .Returns(_ => sequence.Dequeue());
-        var monitor = new HeartbeatMonitor(api);
+        var monitor = new HeartbeatMonitor(api, NullLogger<HeartbeatMonitor>.Instance);
 
         var held = await monitor.RunAsync(
             workItemId,
@@ -53,7 +57,7 @@ public sealed class HeartbeatMonitorShould
         var success = SuccessResponse();
         api.HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>())
             .Returns(success);
-        var monitor = new HeartbeatMonitor(api);
+        var monitor = new HeartbeatMonitor(api, NullLogger<HeartbeatMonitor>.Instance);
         using var runSource = new CancellationTokenSource();
         using var stoppingSource = new CancellationTokenSource();
         runSource.CancelAfter(TimeSpan.FromMilliseconds(5));
@@ -69,21 +73,32 @@ public sealed class HeartbeatMonitorShould
         await api.DidNotReceive().HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Given an upstream heartbeat call that throws, when RunAsync runs, then the exception propagates")]
-    public async Task HeartbeatExceptionPropagatesAsync()
+    [Fact(DisplayName = "Given an upstream heartbeat call that throws, when RunAsync runs, then it returns false (lease-lost), logs the exception at Error, and does not propagate it")]
+    public async Task HeartbeatExceptionIsLoggedAndReturnsFalseAsync()
     {
         var api = Substitute.For<IOrchestratorApi>();
         api.HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>())
-            .Returns<IApiResponse>(_ => throw new HttpRequestException("upstream dropped"));
-        var monitor = new HeartbeatMonitor(api);
+            .Returns<IApiResponse>(static _ => throw new HttpRequestException("upstream dropped"));
+        var logger = Substitute.For<ILogger<HeartbeatMonitor>>();
+        var monitor = new HeartbeatMonitor(api, logger);
 
-        await Should.ThrowAsync<HttpRequestException>(
-            async () => await monitor.RunAsync(
-                workItemId,
-                1,
-                TimeSpan.FromMilliseconds(1),
-                new CancellationTokenSource().Token,
-                TestContext.Current.CancellationToken));
+        var held = await monitor.RunAsync(
+            workItemId,
+            1,
+            TimeSpan.FromMilliseconds(1),
+            new CancellationTokenSource().Token,
+            TestContext.Current.CancellationToken);
+
+        // Lease-lost semantics: the loop sees `false` and skips
+        // complete/fail without killing the host. The HttpRequestException
+        // never reaches the TranslatorLoop's `await heartbeatTask`.
+        held.ShouldBeFalse();
+        logger.Received(1).Log(
+            LogLevel.Error,
+            Arg.Any<EventId>(),
+            Arg.Any<object?>(),
+            Arg.Any<HttpRequestException>(),
+            Arg.Any<Func<object?, Exception?, string>>());
     }
 
     [Fact(DisplayName = "Given the run token trips before any heartbeat, when RunAsync runs, then it returns true without ever calling heartbeat")]
@@ -93,8 +108,9 @@ public sealed class HeartbeatMonitorShould
         var success = SuccessResponse();
         api.HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>())
             .Returns(success);
-        var monitor = new HeartbeatMonitor(api);
+        var monitor = new HeartbeatMonitor(api, NullLogger<HeartbeatMonitor>.Instance);
         using var runSource = new CancellationTokenSource();
+        using var stoppingSource = new CancellationTokenSource();
         runSource.Cancel();
 
         var held = await monitor.RunAsync(
@@ -102,7 +118,7 @@ public sealed class HeartbeatMonitorShould
             1,
             TimeSpan.FromSeconds(10),
             runSource.Token,
-            TestContext.Current.CancellationToken);
+            stoppingSource.Token);
 
         held.ShouldBeTrue();
         await api.DidNotReceive().HeartbeatAsync(workItemId, Arg.Any<HeartbeatWorkItemRequest>(), Arg.Any<CancellationToken>());

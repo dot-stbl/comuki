@@ -5,7 +5,7 @@
 
 
 /**
- * @description Wire body of PATCH /api/v1/projects/{projectId} — null fields are left untouched.
+ * @description Wire body of PATCH /api/v1/projects/{projectId} — null fields are left\nuntouched; an empty tags array clears the list. Icon and color follow\nthe same shapes as on create (≤ 200 chars / `#rrggbb`).
 */
 export type UpdateProjectRequest = {
     /**
@@ -24,4 +24,24 @@ export type UpdateProjectRequest = {
      * @type null,string
     */
     profilesGitRef: string | null;
+    /**
+     * @type null,string
+    */
+    icon?: string | null;
+    /**
+     * @type null,string
+    */
+    color?: string | null;
+    /**
+     * @type null,array
+    */
+    tags?: string[] | null;
+    /**
+     * @type null,string
+    */
+    sourceGitUrl?: string | null;
+    /**
+     * @type null,string
+    */
+    sourceGitRef?: string | null;
 };

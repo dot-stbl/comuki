@@ -4,7 +4,7 @@ import {
   mapClaimTicketInputToClaimRequest,
   mapInboxCatalogToConnections,
   mapInboxToTickets,
-  mapIntakeTicketViewToTicket,
+  mapInboundItemViewToTicket,
   mapNativeTicketInputToCreateRequest,
   mapSeedTicketToTicket,
   normalizeTicketStatus,
@@ -14,20 +14,20 @@ import {
   providerBrand,
   providerLabel,
 } from "@/domains/sources/model/providers"
-import type { IntakeTicketView } from "@/shared/api/_generated/types/IntakeTicketView"
+import type { InboundItemView } from "@/shared/api/_generated/types/InboundItemView"
 import { SOURCES_SEED } from "@/shared/api/mock/sources.seed"
 
 /**
  * Wire ↔ domain mappers for the kubb-generated inbox surface.
  *
- * The host returns a sparse row (`IntakeTicketView`) on every inbox-shaped
+ * The host returns a sparse row (`InboundItemView`) on every inbox-shaped
  * endpoint — pending list, catalog browse and the claim response. The
  * mapper turns one wire row into one domain `Ticket`; the rest compose.
  *
  * These assertions pin:
  *
  *  - the wire's `status: string` is normalised to the four-value union,
- *    with unknown values falling through to `"pending"` (a partial
+ *    with unknown values falling through to `"Pending"` (a partial
  *    backend rollout should degrade the row, not the screen);
  *  - the wire's loose typing for `runId` (kubb keeps it `string | null`)
  *    carries through verbatim, including `null`;
@@ -40,8 +40,8 @@ import { SOURCES_SEED } from "@/shared/api/mock/sources.seed"
  */
 
 function ticketViewFixture(
-  overrides: Partial<IntakeTicketView> = {}
-): IntakeTicketView {
+  overrides: Partial<InboundItemView> = {}
+): InboundItemView {
   return {
     id: "00000000-0000-0000-0000-000000000001",
     projectId: "00000000-0000-0000-0000-0000000000aa",
@@ -49,7 +49,7 @@ function ticketViewFixture(
     externalId: "42",
     title: "search-idx drops the last shard on a cold start",
     url: "https://github.com/comuki/web-app/issues/42",
-    status: "pending",
+    status: "Pending",
     runId: null,
     createdAt: "2026-09-04T10:00:00.000+00:00",
     ...overrides,
@@ -58,22 +58,22 @@ function ticketViewFixture(
 
 describe("normalizeTicketStatus", () => {
   it("accepts every value of the wire's closed status set", () => {
-    expect(normalizeTicketStatus("pending")).toBe("pending")
-    expect(normalizeTicketStatus("claimed")).toBe("claimed")
-    expect(normalizeTicketStatus("done")).toBe("done")
-    expect(normalizeTicketStatus("dismissed")).toBe("dismissed")
+    expect(normalizeTicketStatus("Pending")).toBe("Pending")
+    expect(normalizeTicketStatus("Claimed")).toBe("Claimed")
+    expect(normalizeTicketStatus("Done")).toBe("Done")
+    expect(normalizeTicketStatus("Dismissed")).toBe("Dismissed")
   })
 
-  it('falls back to "pending" for unknown values', () => {
-    expect(normalizeTicketStatus("admitted")).toBe("pending")
-    expect(normalizeTicketStatus("")).toBe("pending")
-    expect(normalizeTicketStatus("Pending")).toBe("pending")
+  it('falls back to "Pending" for unknown values', () => {
+    expect(normalizeTicketStatus("admitted")).toBe("Pending")
+    expect(normalizeTicketStatus("")).toBe("Pending")
+    expect(normalizeTicketStatus("pending")).toBe("Pending")
   })
 })
 
-describe("mapIntakeTicketViewToTicket", () => {
+describe("mapInboundItemViewToTicket", () => {
   it("carries the host's row fields through verbatim", () => {
-    const ticket = mapIntakeTicketViewToTicket(ticketViewFixture())
+    const ticket = mapInboundItemViewToTicket(ticketViewFixture())
 
     expect(ticket.id).toBe("00000000-0000-0000-0000-000000000001")
     expect(ticket.projectId).toBe("00000000-0000-0000-0000-0000000000aa")
@@ -81,35 +81,35 @@ describe("mapIntakeTicketViewToTicket", () => {
     expect(ticket.externalId).toBe("42")
     expect(ticket.title).toBe("search-idx drops the last shard on a cold start")
     expect(ticket.url).toBe("https://github.com/comuki/web-app/issues/42")
-    expect(ticket.status).toBe("pending")
+    expect(ticket.status).toBe("Pending")
     expect(ticket.runId).toBeNull()
     expect(ticket.createdAt).toBe("2026-09-04T10:00:00.000+00:00")
   })
 
   it("maps a claimed row's runId through unchanged", () => {
-    const ticket = mapIntakeTicketViewToTicket(
+    const ticket = mapInboundItemViewToTicket(
       ticketViewFixture({
-        status: "claimed",
+        status: "Claimed",
         runId: "00000000-0000-0000-0000-00000000beef",
       })
     )
 
-    expect(ticket.status).toBe("claimed")
+    expect(ticket.status).toBe("Claimed")
     expect(ticket.runId).toBe("00000000-0000-0000-0000-00000000beef")
   })
 
   it('defaults the kind to "issue" until the wire carries a discriminator', () => {
-    const ticket = mapIntakeTicketViewToTicket(ticketViewFixture())
+    const ticket = mapInboundItemViewToTicket(ticketViewFixture())
 
     expect(ticket.kind).toBe("issue")
   })
 
-  it('normalises an unknown status to "pending"', () => {
-    const ticket = mapIntakeTicketViewToTicket(
+  it('normalises an unknown status to "Pending"', () => {
+    const ticket = mapInboundItemViewToTicket(
       ticketViewFixture({ status: "queued-for-claim" })
     )
 
-    expect(ticket.status).toBe("pending")
+    expect(ticket.status).toBe("Pending")
   })
 })
 
@@ -119,7 +119,7 @@ describe("mapIntakeTicketViewToTicket", () => {
  * `Ticket.source` was a bare `string` with the five provider words written
  * out in a doc comment — open, honest about being open, and with nowhere to
  * look a word up. It is a `ProviderKey` now: the same `string`, with the
- * registry the sources table and the intake cards read behind it.
+ * registry the sources table and the inbox cards read behind it.
  *
  * `TicketStatus` next door stays closed, and the contrast is the point. That
  * set is the *screen's* — four lifecycle states it knows how to draw, and an
@@ -134,13 +134,13 @@ describe("a ticket's provider", () => {
     // what happens to a status one line above, and for the opposite reason.
     for (const source of ["github", "native", "linear", "monday.com"]) {
       expect(
-        mapIntakeTicketViewToTicket(ticketViewFixture({ source })).source
+        mapInboundItemViewToTicket(ticketViewFixture({ source })).source
       ).toBe(source)
     }
   })
 
   it("reads as itself on a screen even with no registry entry", () => {
-    const ticket = mapIntakeTicketViewToTicket(
+    const ticket = mapInboundItemViewToTicket(
       ticketViewFixture({ source: "linear" })
     )
 
@@ -152,7 +152,7 @@ describe("a ticket's provider", () => {
   })
 
   it("reaches the same registry the sources table does", () => {
-    const ticket = mapIntakeTicketViewToTicket(
+    const ticket = mapInboundItemViewToTicket(
       ticketViewFixture({ source: "yandex-tracker" })
     )
 
@@ -166,21 +166,21 @@ describe("a ticket's provider", () => {
 
 describe("mapInboxToTickets", () => {
   it("maps every row of a wire list to a domain ticket", () => {
-    const list: IntakeTicketView[] = [
+    const list: InboundItemView[] = [
       ticketViewFixture({
         id: "00000000-0000-0000-0000-000000000001",
-        status: "pending",
+        status: "Pending",
       }),
       ticketViewFixture({
         id: "00000000-0000-0000-0000-000000000002",
         source: "gitlab",
         externalId: "9",
-        status: "claimed",
+        status: "Claimed",
         runId: "00000000-0000-0000-0000-00000000beef",
       }),
       ticketViewFixture({
         id: "00000000-0000-0000-0000-000000000003",
-        status: "dismissed",
+        status: "Dismissed",
       }),
     ]
 
@@ -188,11 +188,11 @@ describe("mapInboxToTickets", () => {
 
     expect(tickets).toHaveLength(3)
     expect(tickets[0]?.id).toBe("00000000-0000-0000-0000-000000000001")
-    expect(tickets[0]?.status).toBe("pending")
+    expect(tickets[0]?.status).toBe("Pending")
     expect(tickets[1]?.source).toBe("gitlab")
-    expect(tickets[1]?.status).toBe("claimed")
+    expect(tickets[1]?.status).toBe("Claimed")
     expect(tickets[1]?.runId).toBe("00000000-0000-0000-0000-00000000beef")
-    expect(tickets[2]?.status).toBe("dismissed")
+    expect(tickets[2]?.status).toBe("Dismissed")
   })
 
   it("returns an empty array when the host's list is empty", () => {
@@ -285,24 +285,24 @@ describe("mapSeedTicketToTicket (mock side)", () => {
     )
   })
 
-  it('maps straightToWork=false to status="pending" with no run id', () => {
+  it('maps straightToWork=false to status="Pending" with no run id', () => {
     const seed = SOURCES_SEED.tickets.find((ticket) => !ticket.straightToWork)
     expect(seed).toBeDefined()
 
     const ticket = mapSeedTicketToTicket(seed!)
 
-    expect(ticket.status).toBe("pending")
+    expect(ticket.status).toBe("Pending")
     expect(ticket.runId).toBeNull()
     expect(ticket.source).toBe("native")
   })
 
-  it('maps straightToWork=true to status="claimed" with a synthesised run id', () => {
+  it('maps straightToWork=true to status="Claimed" with a synthesised run id', () => {
     const seed = SOURCES_SEED.tickets.find((ticket) => ticket.straightToWork)
     expect(seed).toBeDefined()
 
     const ticket = mapSeedTicketToTicket(seed!)
 
-    expect(ticket.status).toBe("claimed")
+    expect(ticket.status).toBe("Claimed")
     expect(ticket.runId).toBe("00000000-0000-0000-0000-runstub000001")
   })
 

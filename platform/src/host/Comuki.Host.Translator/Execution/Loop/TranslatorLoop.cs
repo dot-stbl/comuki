@@ -244,6 +244,20 @@ public sealed class TranslatorLoop(
         }
 
         run.RunCancellation.Cancel();
+
+        // Drain (harden-pi-worker-sandbox 5.2, spec D7) — ship the
+        // accumulated artifact list to the host right before the gRPC
+        // session closes. The packager reads the journal's
+        // worker.drained entry and skips any prefix it has already
+        // bundled; a drain send failure is logged and never blocks the
+        // complete / fail (the artifact list is a hint, not a gate).
+        // SendDrainAsync must run BEFORE Session.CloseAsync — closing
+        // the channel first makes the send unobservable: the gRPC client
+        // cannot deliver to a closed stream and the cancellation
+        // contract turns into a hang, leaving complete / fail
+        // unreachable on every lease-held cycle.
+        await WorkerDrainSender.SendAsync(run, logger, stoppingToken);
+
         await run.Session.CloseAsync();
         await commandTask;
         var leaseHeld = await heartbeatTask;
@@ -331,4 +345,34 @@ public sealed class TranslatorLoop(
 
     /// <summary>Sandbox condition name — pi process has started.</summary>
     private const string AgentRunningCondition = "AgentRunning";
+}
+
+/// <summary>
+/// Drains the run-scoped <see cref="ArtifactAccumulator"/> as a single
+/// <c>worker.drained</c> event (harden-pi-worker-sandbox 5.2, spec
+/// D7). Best-effort: a transport failure is logged at warning and
+/// never propagated — the work item's complete/fail path stays
+/// unaffected (the drain is a journal hint, not a gate, per the
+/// packager's <c>IsBundledAsync</c> idempotence contract). File-static
+/// per <c>class-layout-and-tooling.md</c> §1a — the body is pure
+/// (run + logger inputs, no instance state).
+/// </summary>
+file static class WorkerDrainSender
+{
+    public static async Task SendAsync(WorkerRun run, ILogger logger, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await run.Session.SendAsync(
+                WorkerEventEnvelope.ToDrainEvent(run.Claimed.WorkItemId, run.ArtifactAccumulator.Snapshot()),
+                cancellationToken);
+        }
+        catch (RpcException exception)
+        {
+            logger.LogWarning(
+                exception,
+                "Drain of work item {WorkItemId} could not be delivered",
+                run.Claimed.WorkItemId);
+        }
+    }
 }

@@ -6,7 +6,7 @@ namespace Comuki.Modules.Scheduler.Application.Ports;
 /// <summary>
 /// The dispatcher's contract — the scheduler module's only way to fire a
 /// run. The module never references the engine: the host composes the
-/// implementation (mirroring the intake module's <c>IRunLauncher</c>
+/// implementation (mirroring the integrations module's <c>IRunLauncher</c>
 /// port), which writes the run + work item through the orchestration
 /// context.
 /// </summary>

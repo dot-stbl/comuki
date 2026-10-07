@@ -6,7 +6,7 @@ namespace Comuki.Shared.Contracts.Runs;
 /// queue's raw-SQL and partial-index predicates pin the same text via
 /// <c>nameof</c>). The enum itself lives in
 /// <c>Comuki.Engine.Orchestration.Domain</c>; these strings are the only
-/// representation modules that must not reference the engine (Intake's
+/// representation modules that must not reference the engine (Integrations'
 /// tracker sync-back bridge) are allowed to depend on. A rename on either
 /// side is caught by the drift guard in <c>Comuki.Architecture.Tests</c>,
 /// which pins every constant here against <c>nameof(RunStatus.*)</c>.

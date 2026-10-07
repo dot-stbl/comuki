@@ -256,7 +256,9 @@ update job status. Failures remain retryable in the outbox.
 ### Requirement: Persistence layout
 Integrations tables (`inbound_items`, `deliveries`, `source_connections`,
 `admission_rules`, `sync_jobs`) SHALL use module-private migrations history
-`__comuki_integrations`. Deliveries SHALL insert-first for idempotency.
+`integrations.n_history` (domain convention `<schema>.n_history`; the
+prior `__comuki_intake` token does not exist in this repo and is not
+introduced here). Deliveries SHALL insert-first for idempotency.
 
 #### Scenario: Replay uses delivery lock
 - **WHEN** the same delivery id is inserted twice

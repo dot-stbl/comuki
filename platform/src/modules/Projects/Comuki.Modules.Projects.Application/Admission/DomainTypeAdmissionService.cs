@@ -7,8 +7,8 @@ using Comuki.Shared.Kernel.Ids;
 namespace Comuki.Modules.Projects.Application.Admission;
 
 /// <summary>
-/// The domain-user intake gate: given a project, a user-facing domain type
-/// and the intake source the work arrived from, answers whether it may run
+/// The domain-user integrations gate: given a project, a user-facing domain type
+/// and the integrations source the work arrived from, answers whether it may run
 /// and which control-plane profile takes it.
 /// <para>
 /// Two layers, in order. First <b>admission</b> — the per-project
@@ -49,7 +49,7 @@ public sealed class DomainTypeAdmissionService(
     /// </summary>
     /// <param name="projectId">Project the work is attributed to.</param>
     /// <param name="domainType">User-facing domain type (<c>code</c>, <c>data</c>, …); normalized here.</param>
-    /// <param name="source">Intake source key (<c>github</c>, <c>gitlab</c>, <c>native</c>, …).</param>
+    /// <param name="source">Integrations source key (<c>github</c>, <c>gitlab</c>, <c>native</c>, …).</param>
     /// <param name="cancellationToken"></param>
     /// <returns>Admitted decision carrying the profile key, or a denial carrying reason codes.</returns>
     public async Task<DomainTypeAdmissionDecision> EvaluateAsync(

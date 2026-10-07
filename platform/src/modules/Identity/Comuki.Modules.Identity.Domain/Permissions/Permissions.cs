@@ -30,11 +30,11 @@ public static class Permissions
     /// <summary>Read the work-item queue.</summary>
     public static readonly PermissionKey QueueRead = new("queue:read");
 
-    /// <summary>Read intake sources.</summary>
-    public static readonly PermissionKey IntakeRead = new("intake:read");
+    /// <summary>Read integration sources.</summary>
+    public static readonly PermissionKey IntegrationRead = new("integration:read");
 
-    /// <summary>Claim intake items.</summary>
-    public static readonly PermissionKey IntakeClaim = new("intake:claim");
+    /// <summary>Claim integration items.</summary>
+    public static readonly PermissionKey IntegrationClaim = new("integration:claim");
 
     /// <summary>Read source repositories.</summary>
     public static readonly PermissionKey SourceRead = new("source:read");

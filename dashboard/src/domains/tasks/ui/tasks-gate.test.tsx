@@ -82,7 +82,7 @@ function Backlog({ onDispatch }: { onDispatch: (task: Task) => void }) {
   )
 }
 
-function Intake({ onCreate }: { onCreate: (input: CreateTaskInput) => void }) {
+function CreateTask({ onCreate }: { onCreate: (input: CreateTaskInput) => void }) {
   return (
     <CreateTaskForm
       apps={["checkout-web"]}
@@ -115,12 +115,12 @@ function mountBacklog(
   }
 }
 
-function mountIntake(roles: Role[], projectRoles: Record<string, Role[]> = {}) {
+function mountCreateTask(roles: Role[], projectRoles: Record<string, Role[]> = {}) {
   const onCreate = vi.fn()
   render(
     <TestSession roles={roles} projectRoles={projectRoles}>
       <QueryClientProvider client={new QueryClient()}>
-        <Intake onCreate={onCreate} />
+        <CreateTask onCreate={onCreate} />
       </QueryClientProvider>
     </TestSession>
   )
@@ -202,13 +202,13 @@ describe("native intake, by project", () => {
   it("offers only the projects this shift may put work into", () => {
     // The choices behind an act are filtered even though the act itself stays
     // visible: a select is a list of things that can happen.
-    const { options } = mountIntake(["viewer"], { p_test: ["member"] })
+    const { options } = mountCreateTask(["viewer"], { p_test: ["member"] })
 
     expect(options).toEqual(["p_test"])
   })
 
   it("creates in the project that was chosen", () => {
-    const { create, title, project, onCreate } = mountIntake(["member"])
+    const { create, title, project, onCreate } = mountCreateTask(["member"])
 
     expect(selectValues(project).length).toBe(2)
     setSelectValue(project, "p_other")
@@ -226,7 +226,7 @@ describe("native intake, by project", () => {
   })
 
   it("lets a viewer fill the form in and refuses the queueing", () => {
-    const { create, title, options, onCreate } = mountIntake(["viewer"])
+    const { create, title, options, onCreate } = mountCreateTask(["viewer"])
 
     fireEvent.change(title, { target: { value: "look into the flake" } })
 
@@ -247,7 +247,7 @@ describe("native intake, by project", () => {
   })
 
   it("queues the task for a member", () => {
-    const { create, title, onCreate } = mountIntake(["member"])
+    const { create, title, onCreate } = mountCreateTask(["member"])
 
     fireEvent.change(title, { target: { value: "look into the flake" } })
     fireEvent.click(create)

@@ -5,7 +5,7 @@ using Comuki.Shared.Kernel.Ids;
 namespace Comuki.Modules.Scheduler.Application.Ports;
 
 /// <summary>
-/// The scheduler persistence port. Mirrors the intake store shape: every
+/// The scheduler persistence port. Mirrors the integrations store shape: every
 /// CRUD verb plus the due-job query the dispatcher polls against. The
 /// host never reaches into the scheduler schema — implementations live in
 /// <c>Comuki.Modules.Scheduler.Infrastructure</c>.

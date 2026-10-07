@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
+using Comuki.Host.Translator.Api.Models.Responses;
 using Comuki.Host.Translator.Execution.Loop;
 using Comuki.Host.Translator.Execution.Outcomes;
 using Comuki.Host.Translator.Execution.Run;
@@ -8,6 +9,7 @@ using Comuki.Host.Translator.Runtime;
 using Comuki.Shared.Kernel.Harness;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -36,6 +38,32 @@ namespace Comuki.Host.Translator.Unit.Runtime;
 /// the failure threshold, so the pump sees the fail-item signal
 /// and returns <c>FailedStatus</c> with the typed reason.
 /// </para>
+/// <para>
+/// Exit-code harness check (worker-runtime spec scenario "Non-zero
+/// pi exit fails the item" plus the "outcome carries stderr
+/// alongside the exit code" addition): when the harness streams
+/// its events cleanly (the events iterator returns without
+/// exception) but the OS exit code is non-zero, the pump's
+/// post-disposal check fails the item and carries both the exit
+/// code and the captured stderr tail in
+/// <see cref="PiOutcome.ErrorText"/>. The cancellation /
+/// invalid-op paths preserve their own shape (the spec's
+/// "Failures propagate" baseline for non-heartbeat components
+/// still applies; the heartbeat-isolation carve-out is its own
+/// <see cref="HeartbeatMonitorShould"/> test).
+/// </para>
+/// <para>
+/// Why a custom session here rather than
+/// <see cref="TestFakeHarness"/>: the production fake emits one
+/// wave per inbound command and keeps the channel open across
+/// them. For the exit-code path we need a session whose channel
+/// completes after one wave so the pump's <c>await foreach</c>
+/// exits naturally (no cancellation, no exception) and the
+/// post-disposal ExitCode branch can be exercised. The
+/// <see cref="SingleWaveHarness"/> / <see cref="SingleWaveSession"/>
+/// pair below is the single-purpose seam that gives the pump a
+/// clean drain.
+/// </para>
 /// </summary>
 public sealed class PiPumpShould
 {
@@ -48,7 +76,7 @@ public sealed class PiPumpShould
         var options = Options.Create(WorkerSessionTestHelpers.NewOptions(
             workerProgressTimeout: TimeSpan.FromSeconds(1),
             policy: WorkerProgressEscalationPolicy.WarnGentleKillFailItem));
-        var run = NewRun(clock);
+        var run = NewRunForWatchdog(clock);
         var harness = new ControllableFakeHarness();
 
         // Start the pump on a background task — it parks awaiting
@@ -90,7 +118,7 @@ public sealed class PiPumpShould
             turnBudget: TimeSpan.FromSeconds(12),
             runBudget: TimeSpan.FromHours(1),
             consecutiveTurnBreachesBeforeFail: 3));
-        var run = NewRun(clock);
+        var run = NewRunForWatchdog(clock);
         var harness = new ControllableFakeHarness();
 
         var pumpTask = PiPump.PumpAsync(
@@ -112,14 +140,122 @@ public sealed class PiPumpShould
         outcome.ErrorText.ShouldBe("worker.turn_budget_exceeded");
     }
 
-    private static WorkerRun NewRun(FakeTimeProvider clock)
+    [Fact(DisplayName = "Given a session that streams cleanly but exits 0, when PumpAsync runs, then the outcome is SuccessStatus and ErrorText is empty")]
+    public async Task CleanExitReturnsSuccessAsync()
+    {
+        var harness = new SingleWaveHarness(new SingleWaveSession(exitCode: null, stderrTail: null));
+
+        var outcome = await PumpAsyncWithExitCodeCheckAsync(harness);
+
+        outcome.Status.ShouldBe(PiOutcome.SuccessStatus);
+        outcome.ErrorText.ShouldBeEmpty();
+    }
+
+    [Fact(DisplayName = "Given a session that streams cleanly but exits non-zero with a stderr tail, when PumpAsync runs, then the outcome is failed carrying both the exit code and the stderr tail in ErrorText")]
+    public async Task NonZeroExitAppendsStderrTailAsync()
+    {
+        const int exit = 3;
+        const string stderrTail = "Error: model not found\n  at <anonymous> (handler.ts:42)";
+        var harness = new SingleWaveHarness(new SingleWaveSession(exitCode: exit, stderrTail: stderrTail));
+
+        var outcome = await PumpAsyncWithExitCodeCheckAsync(harness);
+
+        outcome.Status.ShouldBe(PiOutcome.FailedStatus, "the events iterator completed; only the harness's own exit code flags the run as failed");
+        outcome.ErrorText.ShouldContain($"harness exited with code {exit}");
+        outcome.ErrorText.ShouldContain(stderrTail);
+    }
+
+    [Fact(DisplayName = "Given a non-zero exit with no stderr captured, when PumpAsync runs, then the outcome is failed carrying the exit code only (no spurious stderr label)")]
+    public async Task NonZeroExitWithoutStderrCarriesExitCodeOnlyAsync()
+    {
+        const int exit = 7;
+        var harness = new SingleWaveHarness(new SingleWaveSession(exitCode: exit, stderrTail: null));
+
+        var outcome = await PumpAsyncWithExitCodeCheckAsync(harness);
+
+        outcome.Status.ShouldBe(PiOutcome.FailedStatus);
+        outcome.ErrorText.ShouldBe($"harness exited with code {exit}");
+        outcome.ErrorText.ShouldNotContain("stderr:");
+    }
+
+    private static WorkerRun NewRunForWatchdog(FakeTimeProvider clock)
     {
         return WorkerSessionTestHelpers.NewRun(
-            NSubstitute.Substitute.For<Shared.Contracts.Grpc.IWorkerService>(),
+            Substitute.For<Shared.Contracts.Grpc.IWorkerService>(),
             workItemId,
             new CancellationTokenSource(),
             runStartedAt: clock.GetUtcNow(),
             processStartedAt: clock.GetUtcNow());
+    }
+
+    /// <summary>
+    /// Drives <see cref="PiPump.PumpAsync"/> with the bare minimum
+    /// surface the exit-code tests need: a <see cref="WorkerRunSummary"/>
+    /// for the event-fold, a fixed started-at instant, the run's
+    /// <see cref="CancellationToken"/>, default watchdogs/deadline
+    /// thresholds (the exit-code check fires before any watchdog has
+    /// time to do anything on a single-wave session), and a
+    /// <see cref="TimeProvider.System"/> for the duration math. The
+    /// harness session is what carries the behaviour under test; the
+    /// worker gRPC stream (<c>WorkerRun.Session</c>) is intentionally
+    /// not wired — the only events <see cref="SingleWaveSession"/>
+    /// emits are session lifecycle events that
+    /// <see cref="PiEventToWorkerEvent.ToForwardEvent"/> maps to
+    /// <c>null</c>, so the pump never calls
+    /// <c>run.Session.SendAsync</c> on the unwired stub. The
+    /// <see cref="WorkerRun"/> ctor takes a non-nullable worker
+    /// session; we pass <c>null!</c> with a boundary-comment because
+    /// the pump's path doesn't dereference it in these tests.
+    /// </summary>
+    private static async Task<PiOutcome> PumpAsyncWithExitCodeCheckAsync(IHarnessRuntime harness)
+    {
+        var runCancellation = new CancellationTokenSource();
+        var workItemId = Guid.NewGuid();
+        var claimed = new ClaimedWorkItemResponse(
+            workItemId,
+            RunId: Guid.NewGuid(),
+            ProjectId: Guid.NewGuid(),
+            ProfileKey: "test-profile",
+            EnvClass: "net10-sdk-bun",
+            Brief: "test-brief",
+            LeaseUntilUnixMs: 0,
+            Attempt: 1,
+            Generation: 1);
+        // boundary: WorkerRun.Session is non-nullable but the pump's
+        // path never calls SendAsync on it in these tests (see class
+        // remarks). The SingleWaveSession emits only lifecycle events
+        // that PiEventToWorkerEvent maps to null. RunStartedAt /
+        // ProcessStartedAt are required on WorkerRun (harden-worker-runtime
+        // Phase 1, watchdog/deadline inputs); the exit-code tests don't
+        // exercise the watchdogs, so the timestamps stay at the default
+        // minimum — the watchdogs never tick on a single-wave session
+        // because the channel completes before the first deadline tick.
+        var run = new WorkerRun(claimed, null!)
+        {
+            RunCancellation = runCancellation,
+            HarnessSession = Substitute.For<IHarnessSession>(),
+            RunStartedAt = DateTimeOffset.MinValue,
+            ProcessStartedAt = DateTimeOffset.MinValue,
+        };
+        var summary = new WorkerRunSummary();
+        var startedAt = DateTimeOffset.UtcNow;
+        var clock = TimeProvider.System;
+        var options = Options.Create(WorkerSessionTestHelpers.NewOptions());
+        // PiPump is a static class — use a forwarding logger factory
+        // rather than `NullLogger<PiPump>` (static types aren't allowed
+        // as generic arguments).
+        var loggerFactory = NullLoggerFactory.Instance;
+
+        return await PiPump.PumpAsync(
+            harness,
+            run,
+            new DeadlineChainState(consecutiveTurnBreachesBeforeFail: 3),
+            summary,
+            startedAt,
+            clock,
+            options,
+            loggerFactory.CreateLogger(nameof(PiPump)),
+            loggerFactory);
     }
 }
 
@@ -170,10 +306,23 @@ internal sealed class ControllableFakeHarnessSession : IHarnessSession
     public ControllableFakeHarnessSession()
     {
         ConsumerParked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        TurnInputs = new NullTurnInputWriter();
+        TurnInputs = new ControllableNullTurnInputWriter();
     }
 
     public int ProcessId => -100;
+
+    /// <summary>
+    /// No OS process to inspect — the controllable harness runs
+    /// in-process. <c>null</c> matches the production
+    /// <c>FakeHarnessSession</c> contract: the pump's exit-code
+    /// check sees <c>null</c> and skips the post-disposal branch,
+    /// so the watchdog / deadline tests stay focused on their own
+    /// failure paths.
+    /// </summary>
+    public int? ExitCode => null;
+
+    /// <summary>No OS stderr to capture — in-process harness.</summary>
+    public string? StderrTail => null;
 
     public IAsyncEnumerable<PiEvent> Events => AwaitedAsync();
 
@@ -214,7 +363,7 @@ internal sealed class ControllableFakeHarnessSession : IHarnessSession
 }
 
 /// <summary>Stub stdin-side writer for the controllable harness; never invoked in the pump tests.</summary>
-file sealed class NullTurnInputWriter : ITurnInputWriter
+file sealed class ControllableNullTurnInputWriter : ITurnInputWriter
 {
     public bool TryWriteSteer(string turnId, string text)
     {
@@ -224,5 +373,106 @@ file sealed class NullTurnInputWriter : ITurnInputWriter
     public bool TryWriteFollowUp(string turnId, string text)
     {
         return true;
+    }
+}
+
+/// <summary>
+/// Test-only <see cref="IHarnessRuntime"/> that returns a
+/// pre-built <see cref="SingleWaveSession"/> on
+/// <see cref="StartSessionAsync"/>. Lets the pump consume the
+/// session under test from the same handle that built it (no
+/// second harness, no second session).
+/// </summary>
+internal sealed class SingleWaveHarness(IHarnessSession session) : IHarnessRuntime
+{
+    public string Name { get; } = "single-wave-pi-session-harness";
+
+    public HarnessCapabilities Capabilities { get; } = new(liveSession: true);
+
+    public Task<IHarnessSession> StartSessionAsync(HarnessStartRequest request, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(session);
+    }
+}
+
+/// <summary>
+/// One-shot harness session: pre-fills a <see cref="Channel{T}"/> with
+/// one prompt wave (agent_start → agent_settled), then completes the
+/// channel before the constructor returns — the pump's
+/// <c>await foreach</c> is guaranteed to see all five events and exit
+/// naturally on the first <c>MoveNextAsync</c> past the end. Sync
+/// completion is the test seam: the production <c>TestFakeHarness</c>
+/// uses <c>Task.Run</c> because it has to model "the wave lands on
+/// stdin then pi replies asynchronously"; for the pump's outcome
+/// we don't need that — the test only cares about the post-foreach
+/// exit-code / stderr path. Intentionally omits
+/// <c>AssistantTextEvent</c> / <c>ToolCallEvent</c> / etc. — the only
+/// events that map to a forwardable worker event — because the
+/// test's <see cref="WorkerRun"/> carries a <c>null</c> worker
+/// session stub (the gRPC channel is irrelevant to the outcome-shape
+/// assertions; see the rationale on
+/// <see cref="PiPumpShould.PumpAsyncWithExitCodeCheckAsync"/> for the null).
+/// <see cref="ExitCode"/> and <see cref="StderrTail"/> are
+/// constructor-pinned — the test configures them up front and the
+/// pump reads them post-disposal to drive the non-zero-exit and
+/// stderr-appended outcome paths.
+/// </summary>
+internal sealed class SingleWaveSession : IHarnessSession
+{
+    private readonly Channel<PiEvent> events;
+
+    public SingleWaveSession()
+        : this(exitCode: null, stderrTail: null)
+    {
+    }
+
+    public SingleWaveSession(int? exitCode, string? stderrTail)
+    {
+        ExitCode = exitCode;
+        StderrTail = stderrTail;
+        events = Channel.CreateUnbounded<PiEvent>(new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = true,
+        });
+        events.Writer.TryWrite(new PiEvent.AgentStartEvent());
+        events.Writer.TryWrite(new PiEvent.TurnStartEvent());
+        events.Writer.TryWrite(new PiEvent.TurnEndEvent());
+        events.Writer.TryWrite(new PiEvent.AgentEndEvent());
+        events.Writer.TryWrite(new PiEvent.AgentSettledEvent());
+        events.Writer.TryComplete();
+    }
+
+    public int ProcessId { get; } = -1;
+
+    public int? ExitCode { get; }
+
+    public string? StderrTail { get; }
+
+    public IAsyncEnumerable<PiEvent> Events => events.Reader.ReadAllAsync();
+
+    public ITurnInputWriter TurnInputs { get; } = new SingleWaveNullTurnInputWriter();
+
+    public ValueTask DisposeAsync()
+    {
+        return default;
+    }
+
+    /// <summary>Null-object turn writer: this session never accepts turns (the pump is single-pass in these tests).</summary>
+    private sealed class SingleWaveNullTurnInputWriter : ITurnInputWriter
+    {
+        public bool TryWriteSteer(string turnId, string text)
+        {
+            return false;
+        }
+
+        public bool TryWriteFollowUp(string turnId, string text)
+        {
+            return false;
+        }
+
+        public static void CloseStdin()
+        {
+        }
     }
 }

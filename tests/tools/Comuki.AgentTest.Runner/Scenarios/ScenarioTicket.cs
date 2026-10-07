@@ -3,7 +3,7 @@ namespace Comuki.AgentTest.Runner.Scenarios;
 /// <summary>The inbound ticket a scenario seeds through the real webhook endpoint.</summary>
 public sealed record ScenarioTicket
 {
-    /// <summary>Intake source key (matches an intake webhook fixture shape) — <c>github</c> is the only wired provider today.</summary>
+    /// <summary>Integrations source key (matches an integrations webhook fixture shape) — <c>github</c> is the only wired provider today.</summary>
     public string Source { get; init; } = "github";
 
     /// <summary>Ticket title.</summary>

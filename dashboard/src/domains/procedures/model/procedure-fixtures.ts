@@ -20,7 +20,7 @@
 import type { Edge, Node } from "@xyflow/react"
 
 export const PROCEDURE_NODE_NAMES = [
-  "Intake",
+  "Integration",
   "Plan",
   "Execute",
   "Verify",
@@ -153,8 +153,8 @@ export interface ProcedureFixture {
 
 /** The default six nodes — one per pipeline shape, ordered left-to-right. */
 export const DEFAULT_PROCEDURE_NODES: ReadonlyArray<ProcedureNode> = [
-  { id: "intake", name: "Intake", kind: "step", col: 0, row: 0 },
-  { id: "plan", name: "Plan", kind: "step", col: 1, row: 0 },
+      { id: "integration", name: "Integration", kind: "step", col: 0, row: 0 },
+      { id: "plan", name: "Plan", kind: "step", col: 1, row: 0 },
   { id: "execute", name: "Execute", kind: "step", col: 2, row: 0 },
   { id: "verify", name: "Verify", kind: "step", col: 3, row: 0 },
   { id: "repair", name: "Repair loop", kind: "loop", col: 4, row: 0 },
@@ -167,7 +167,7 @@ export const DEFAULT_PROCEDURE_NODES: ReadonlyArray<ProcedureNode> = [
  * the one the studio writes by default.
  */
 export const DEFAULT_PROCEDURE_EDGES: ReadonlyArray<ProcedureEdge> = [
-  { from: "intake", to: "plan" },
+  { from: "integration", to: "plan" },
   { from: "plan", to: "execute" },
   { from: "execute", to: "verify" },
   { from: "verify", to: "repair" },
@@ -206,7 +206,7 @@ export const LIVE_RUN_NEEDS_DECISION: ProcedureFixture = {
     taskTitle: "Add request tracing",
     pinnedVersion: "standard-feature@v4",
     stages: [
-      { name: "Intake", status: "success" },
+      { name: "Integration", status: "success" },
       { name: "Plan", status: "success" },
       { name: "Execute", status: "success" },
       { name: "Verify", status: "failed" },
@@ -241,7 +241,7 @@ export const REPLAY_OBSERVED_DRIFT: ProcedureFixture = {
     events: [
       {
         id: "evt-intake",
-        stageName: "Intake",
+        stageName: "Integration",
         at: "13:02:11",
         planned: "read ticket, classify standard procedure",
         observed: "read ticket, classify standard procedure",
@@ -309,17 +309,17 @@ export const INVALID_PROCEDURE: ProcedureFixture = {
       gitRef: "local branch",
     },
     nodes: [
-      { id: "intake", name: "Intake", kind: "step", col: 0, row: 0 },
+  { id: "integration", name: "Integration", kind: "step", col: 0, row: 0 },
       { id: "plan", name: "Plan", kind: "step", col: 1, row: 0 },
       // Plan refers to itself — a cycle the harness can't compile.
       { id: "plan-self", name: "Plan (self)", kind: "step", col: 1, row: 1 },
       { id: "execute", name: "Execute", kind: "step", col: 2, row: 0 },
     ],
     edges: [
-      { from: "intake", to: "plan" },
+      { from: "integration", to: "plan" },
       { from: "plan", to: "plan-self" },
       { from: "plan-self", to: "plan" },
-      { from: "execute", to: "intake" },
+      { from: "execute", to: "integration" },
     ],
   },
 }
@@ -409,7 +409,7 @@ function flowPosition(col: number, row: number): { x: number; y: number } {
 /** The edges of the standard six-node procedure in React Flow shape. */
 const STANDARD_FLOW_EDGES: ReadonlyArray<ProcedureFlowEdge> = [
   // Plan fans out into the three parallel implement lanes…
-  { id: "e-intake-plan", source: "intake", target: "plan" },
+  { id: "e-intake-plan", source: "integration", target: "plan" },
   { id: "e-plan-api", source: "plan", target: "implement-api" },
   { id: "e-plan-ui", source: "plan", target: "implement-ui" },
   { id: "e-plan-docs", source: "plan", target: "implement-docs" },
@@ -474,10 +474,10 @@ export const STANDARD_FEATURE_PROCEDURE: ProcedureFlowFixture = {
   valid: true,
   nodes: [
     {
-      id: "intake",
+      id: "integration",
       type: "procedure",
       position: flowPosition(0, 1),
-      data: { label: "Intake", kind: "step", channel: "standard-feature" },
+      data: { label: "Integration", kind: "step", channel: "standard-feature" },
     },
     {
       id: "plan",
@@ -560,10 +560,10 @@ export const HOTFIX_MANUAL_DEPLOY_GATE_PROCEDURE: ProcedureFlowFixture = {
   valid: true,
   nodes: [
     {
-      id: "intake",
+      id: "integration",
       type: "procedure",
       position: flowPosition(0, 0),
-      data: { label: "Intake", kind: "step", channel: "hotfix" },
+      data: { label: "Integration", kind: "step", channel: "hotfix" },
     },
     {
       id: "plan",
@@ -602,7 +602,7 @@ export const HOTFIX_MANUAL_DEPLOY_GATE_PROCEDURE: ProcedureFlowFixture = {
     },
   ],
   edges: [
-    { id: "e-intake-plan", source: "intake", target: "plan" },
+    { id: "e-intake-plan", source: "integration", target: "plan" },
     { id: "e-plan-execute", source: "plan", target: "execute" },
     { id: "e-execute-verify", source: "execute", target: "verify" },
     { id: "e-verify-human", source: "verify", target: "human" },
@@ -625,10 +625,10 @@ export const DOCS_ONLY_NO_DEPLOY_PROCEDURE: ProcedureFlowFixture = {
   valid: true,
   nodes: [
     {
-      id: "intake",
+      id: "integration",
       type: "procedure",
       position: flowPosition(0, 0),
-      data: { label: "Intake", kind: "step", channel: "docs-only" },
+      data: { label: "Integration", kind: "step", channel: "docs-only" },
     },
     {
       id: "plan",
@@ -665,7 +665,7 @@ export const DOCS_ONLY_NO_DEPLOY_PROCEDURE: ProcedureFlowFixture = {
     },
   ],
   edges: [
-    { id: "e-intake-plan", source: "intake", target: "plan" },
+    { id: "e-intake-plan", source: "integration", target: "plan" },
     { id: "e-plan-docs", source: "plan", target: "implement-docs" },
     { id: "e-docs-verify", source: "implement-docs", target: "verify" },
     { id: "e-verify-human", source: "verify", target: "human" },
@@ -688,10 +688,10 @@ export const INVALID_CYCLE_PROCEDURE: ProcedureFlowFixture = {
   invalidReason: "cycle",
   nodes: [
     {
-      id: "intake",
+      id: "integration",
       type: "procedure",
       position: flowPosition(0, 0),
-      data: { label: "Intake", kind: "step", channel: "standard-feature" },
+      data: { label: "Integration", kind: "step", channel: "standard-feature" },
     },
     {
       id: "plan",
@@ -717,9 +717,9 @@ export const INVALID_CYCLE_PROCEDURE: ProcedureFlowFixture = {
     },
   ],
   edges: [
-    { id: "e-intake-plan", source: "intake", target: "plan" },
+    { id: "e-intake-plan", source: "integration", target: "plan" },
     { id: "e-plan-self", source: "plan", target: "plan-self" },
     { id: "e-self-plan", source: "plan-self", target: "plan" },
-    { id: "e-execute-intake", source: "execute", target: "intake" },
+    { id: "e-execute-intake", source: "execute", target: "integration" },
   ],
 }

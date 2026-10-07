@@ -3,7 +3,7 @@ namespace Comuki.Host.Runs;
 /// <summary>
 /// Worker launch defaults for follow-up WorkItems the steer endpoint
 /// stages (add-orchestra §1 — Baton, Phase 1a no-LiveSession path).
-/// Mirrors <c>ChatWorkerDefaults</c> / <c>IntakeWorkerDefaults</c>:
+/// Mirrors <c>ChatWorkerDefaults</c> / <c>IntegrationWorkerDefaults</c>:
 /// the worker image and the pinned profiles-ref the follow-up claim
 /// labels carry, and the default <c>profileKey</c> when the originating
 /// run has none the resolver can reach. Profile overrides per
@@ -19,7 +19,7 @@ public sealed class SteeringWorkerDefaults
     /// Profile key the follow-up WorkItem is created with when the
     /// originating live work item's profile is unavailable (defensive
     /// only — the resolver always picks up the live item's profile
-    /// first). Default <c>implement</c> matches the chat/intake
+    /// first). Default <c>implement</c> matches the chat/integrations
     /// baselines; a deployment that wants every steer to hit a
     /// "fix-up" profile overrides the section in
     /// <c>appsettings.json</c>.

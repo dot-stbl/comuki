@@ -31,7 +31,7 @@ export function navWord(entry: { label: string; labelKey?: string }): string {
 /**
  * The rail, in two tiers.
  *
- * The upper tier is the duty engineer's day — intake, watching, configuring the
+ * The upper tier is the duty engineer's day — integrations, watching, configuring the
  * swarm's behaviour. The lower one is the platform underneath it: who exists,
  * what machines and models it may spend, where the boards are. They are
  * separated because they are visited on different clocks — the top every few
@@ -48,8 +48,8 @@ export function navWord(entry: { label: string; labelKey?: string }): string {
    and as the fallback a hand-built rail (tests) relies on. */
 export const productNav: SidebarNavGroup[] = [
   {
-    label: "Intake",
-    labelKey: "nav.intake",
+    label: "Integrations",
+    labelKey: "nav.integrations",
     items: [
       // The console is not a section: its one door in the chrome is the
       // floating trigger over the board (see `domains/chat`, the dock), so a

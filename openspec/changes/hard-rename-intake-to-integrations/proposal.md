@@ -17,7 +17,9 @@ can build on `Comuki.Modules.Integrations.*` from day one instead of
   `Comuki.Modules.Integrations.{Domain,Application,Infrastructure}`.
 - Rename the `intake` PostgreSQL schema to `integrations`
   (`IntakeDbContext` → `IntegrationsDbContext`, migrations history
-  `__comuki_intake` → `__comuki_integrations`), and rename tables
+  `__comuki_intake` → `integrations.n_history` — domain convention
+  `<schema>.n_history`; the `__comuki_intake` token does not exist in
+  this repo), and rename tables
   `intake_tickets` → `inbound_items`, `intake_deliveries` → `deliveries`.
 - Rename `IncomingTicket` → `InboundItem` (and its id, status, kind, view,
   and store types) across Domain/Application/Infrastructure/Host.

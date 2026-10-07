@@ -64,7 +64,7 @@ public sealed class ScopeGuardTests
         typeof(Modules.Chat.Infrastructure.Persistence.ChatDbContext),
         typeof(Modules.Costs.Infrastructure.Persistence.CostsDbContext),
         typeof(Modules.Identity.Infrastructure.Persistence.IdentityDbContext),
-        typeof(Modules.Intake.Infrastructure.Persistence.IntakeDbContext),
+        typeof(Modules.Integrations.Infrastructure.Persistence.IntegrationsDbContext),
         typeof(Modules.Knowledge.Infrastructure.Persistence.KnowledgeDbContext),
         typeof(Modules.Memory.Infrastructure.Persistence.MemoryDbContext),
         typeof(Modules.Projects.Infrastructure.Persistence.ProjectsDbContext),

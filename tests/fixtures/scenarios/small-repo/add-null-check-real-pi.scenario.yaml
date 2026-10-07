@@ -31,7 +31,7 @@ ticket:
 worker:
   # Not built/pulled for T2b — RealPiFakeModelHarness runs everything
   # in-process (no container, no Podman/Docker dependency at all). This
-  # is only the claim label RealPiFakeModelHost's Intake:Worker:Image
+  # is only the claim label RealPiFakeModelHost's Integrations:Worker:Image
   # config must match — see RealPiFakeModelHarness for why an actual image
   # is unnecessary here.
   image: comuki-agent-test-worker:ws7-real-pi

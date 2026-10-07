@@ -12,7 +12,7 @@ namespace Comuki.Host.Errors;
 /// Endpoints stay clean of error plumbing; per-error-type rows live in
 /// handler classes, not in catch blocks. The per-module runner era this
 /// class's doc comment once blessed ("until PR #20") is retired: every
-/// module surface (Projects, Intake, Scheduler, Chat, Runs, Learning) now
+/// module surface (Projects, Integrations, Scheduler, Chat, Runs, Learning) now
 /// registers its rows via <c>Add&lt;Module&gt;ProblemHandlers()</c> and
 /// throws straight through.
 /// </summary>

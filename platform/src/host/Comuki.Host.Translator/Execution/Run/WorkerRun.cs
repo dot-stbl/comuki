@@ -80,6 +80,18 @@ public sealed class WorkerRun(
     public bool StopRequested { get; set; }
 
     /// <summary>
+    /// Run-scoped artifact accumulator (harden-pi-worker-sandbox 5.2, spec
+    /// D7). The Translator's <c>WorkerCommandHandler</c> calls
+    /// <see cref="ArtifactAccumulator.Add"/> when the worker SDK drops
+    /// a pin / artifact; the loop reads <see cref="ArtifactAccumulator.Snapshot"/>
+    /// and ships it as a <c>StageDrain</c> event right before
+    /// <c>complete</c> / <c>fail</c>. Always allocated on the run — the
+    /// drain path runs even when the list is empty, so the host journals
+    /// a <c>worker.drained</c> entry on every successful cycle.
+    /// </summary>
+    public ArtifactAccumulator ArtifactAccumulator { get; } = new();
+
+    /// <summary>
     /// True after the harness has emitted an
     /// <see cref="Parsing.PiEvent.AgentSettledEvent"/>.
     /// The <c>WorkerCommandHandler</c> reads this to choose between

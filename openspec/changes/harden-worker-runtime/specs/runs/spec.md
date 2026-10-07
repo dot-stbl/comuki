@@ -57,7 +57,7 @@ The `RunTrustClass` aggregate (on master: `Comuki.Engine.Orchestration.Domain.Ru
 
 ### Requirement: Worker wall-clock budgets are wall-clock on the worker process, not on task completion
 
-The worker's wall-clock budgets (`TurnBudget`, `RunBudget`) are measured in **wall-clock elapsed time** for the worker process and cycle respectively. They are **not** the same as the brain-ops `TurnBudget` (`add-mission-cowork` task-completion semantics, default 5/15/30 minutes by project profile). The two budgets share the **default value** of 5 minutes for tool-call-level work (`TranslatorOptions.ToolCallTimeout` = `brain-ops.ToolCallTimeout`) but are independent axes:
+The worker's wall-clock budgets (`TurnBudget`, `RunBudget`) are measured in **wall-clock elapsed time** for the worker process and cycle respectively. They are **not** the same as the brain-ops `TurnBudget` (`add-mission-cowork` task-completion semantics, default 5/15/30 minutes by project profile). The two budgets are independent axes:
 
 - **Brain-ops TurnBudget** — wall-clock on a Brain task completion attempt; "5 m on a single attempt"; breach → Brain task retries with new attempt.
 - **Worker TurnBudget** — wall-clock on a single worker cycle (claim → spawn → StageReport); breach → tier 2 gentle-kill (the worker process is cancelled; lease is lost; the run reaper handles the next claim).

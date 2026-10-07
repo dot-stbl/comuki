@@ -153,6 +153,78 @@ internal static class WorkerStreamJournalMapping
                 occurredAt);
         }
 
+        // Stall-warning events (harden-worker-runtime Phase 1, design
+        // D1) — the WorkerProgressWatchdog's tier 1 fires this on the
+        // first tick past WorkerProgressTimeout. The host journals
+        // worker.stall_warn with the last-event-age so the operator
+        // can correlate with the surrounding timeline.
+        if (workerEvent.StallWarn is { } stallWarn)
+        {
+            var stallWarnJson = JsonSerializer.Serialize(
+                new StallWarnJournalPayload(
+                    WorkItemId: stallWarn.WorkItemId,
+                    LastEventAgeMs: stallWarn.LastEventAgeMs,
+                    Tier: stallWarn.Tier),
+                JsonSerializerOptions.Web);
+
+            return new RunEventEntry(
+                Guid.NewGuid(),
+                owner,
+                RunEventTypes.WorkerStallWarn,
+                stallWarnJson,
+                occurredAt);
+        }
+
+        // Stall-detected events (harden-worker-runtime Phase 1, design
+        // D1 + D2) — the watchdog's tier 3 fires this on the
+        // fail-item call. The host journals worker.stall_detected
+        // with the same four numbers the worker used to call
+        // api.FailAsync so the dashboard can correlate
+        // progress-stall against wall-clock breaches.
+        if (workerEvent.StallDetected is { } stallDetected)
+        {
+            var stallDetectedJson = JsonSerializer.Serialize(
+                new StallDetectedJournalPayload(
+                    WorkItemId: stallDetected.WorkItemId,
+                    LastEventAgeMs: stallDetected.LastEventAgeMs,
+                    TurnElapsedMs: stallDetected.TurnElapsedMs,
+                    RunElapsedMs: stallDetected.RunElapsedMs,
+                    Tier: stallDetected.Tier,
+                    Reason: stallDetected.Reason),
+                JsonSerializerOptions.Web);
+
+            return new RunEventEntry(
+                Guid.NewGuid(),
+                owner,
+                RunEventTypes.WorkerStallDetected,
+                stallDetectedJson,
+                occurredAt);
+        }
+
+        // Backpressure drop events (harden-worker-runtime Phase 3,
+        // design D4) — the harness events channel dropped a
+        // progress-fragment because the consumer fell behind. The
+        // host journals worker.events_dropped with the drop kind so
+        // the operator can see sustained backpressure on a noisy
+        // harness; the events_dropped_total counter increments
+        // alongside (the counter is wired in Phase 2 — telemetry —
+        // and lives in the worker's own Meter).
+        if (workerEvent.EventsDropped is { } eventsDropped)
+        {
+            var eventsDroppedJson = JsonSerializer.Serialize(
+                new EventsDroppedJournalPayload(
+                    WorkItemId: eventsDropped.WorkItemId,
+                    Kind: eventsDropped.Kind),
+                JsonSerializerOptions.Web);
+
+            return new RunEventEntry(
+                Guid.NewGuid(),
+                owner,
+                RunEventTypes.WorkerEventsDropped,
+                eventsDroppedJson,
+                occurredAt);
+        }
+
         var legacyPayload = workerEvent switch
         {
             { Start: { } start } => JsonSerializer.Serialize(start, JsonSerializerOptions.Web),
@@ -198,4 +270,46 @@ internal static class WorkerStreamJournalMapping
     private sealed record DrainJournalPayload(
         string WorkItemId,
         IReadOnlyList<string> Artifacts);
+
+    /// <summary>
+    /// Shape of the <c>worker.stall_warn</c> jsonb payload
+    /// (harden-worker-runtime Phase 1, design D1). <c>LastEventAgeMs</c>
+    /// is the input that tripped the watchdog; <c>Tier</c> is the
+    /// escalation level (1 = warn, 2 = gentle-kill, 3 = fail-item) so
+    /// the dashboard can render the tier in a separate column.
+    /// </summary>
+    private sealed record StallWarnJournalPayload(
+        string WorkItemId,
+        long LastEventAgeMs,
+        int Tier);
+
+    /// <summary>
+    /// Shape of the <c>worker.stall_detected</c> jsonb payload
+    /// (harden-worker-runtime Phase 1, design D1 + D2). The four
+    /// numbers are the same the worker used to call
+    /// <c>api.FailAsync</c>, so the journal entry is the operator's
+    /// audit trail. <c>Reason</c> is the typed reason string the
+    /// watchdog attached (e.g. <c>"worker.stall_detected"</c>,
+    /// <c>"worker.turn_budget_exceeded"</c>,
+    /// <c>"worker.run_budget_exceeded"</c>).
+    /// </summary>
+    private sealed record StallDetectedJournalPayload(
+        string WorkItemId,
+        long LastEventAgeMs,
+        long TurnElapsedMs,
+        long RunElapsedMs,
+        int Tier,
+        string Reason);
+
+    /// <summary>
+    /// Shape of the <c>worker.events_dropped</c> jsonb payload
+    /// (harden-worker-runtime Phase 3, design D4). <c>Kind</c> is the
+    /// open-set drop reason — <c>"progress"</c> today (text-delta
+    /// dropped on the drop-oldest policy). Mandatory events
+    /// (<c>StageStart</c>, <c>StageReport</c>, <c>agent_end</c>) never
+    /// drop; they wait for the consumer.
+    /// </summary>
+    private sealed record EventsDroppedJournalPayload(
+        string WorkItemId,
+        string Kind);
 }

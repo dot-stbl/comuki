@@ -62,6 +62,17 @@ public sealed class TranslatorLoop(
     ILoggerFactory loggerFactory,
     ILogger<TranslatorLoop> logger)
 {
+    /// <summary>
+    /// Wall-clock instant the worker process itself started
+    /// (harden-worker-runtime Phase 1, design D2). Seeded once at
+    /// construction; the same value is reused for every cycle in
+    /// this process so the <c>DeadlinePolicy</c>'s run-budget
+    /// wall-clock is measured against the process's birth, not
+    /// the cycle's start. The hosted service creates the loop
+    /// once at startup.
+    /// </summary>
+    private readonly DateTimeOffset processStartedAt = clock.GetUtcNow();
+
     /// <summary>Attempts one full work item cycle. False = queue empty.</summary>
     /// <param name="stoppingToken"></param>
     public async Task<bool> TryRunOnceAsync(CancellationToken stoppingToken)
@@ -142,12 +153,20 @@ public sealed class TranslatorLoop(
             return true;
         }
 
+        // Process start time is the same across every cycle inside the
+        // worker process — the deadline policy's run-budget reads it
+        // to compute the wall-clock cap. We seed it from the first
+        // cycle's now and reuse it for every subsequent cycle
+        // (the loop is hosted inside a long-running service).
+        var runStartedAt = clock.GetUtcNow();
         await using var run = new WorkerRun(
             claimed,
             WorkerSession.Open(workerService, opts.WorkerToken, stoppingToken))
         {
             RunCancellation = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken),
             RepositoryDirectory = cloneOutcome.RepositoryDirectory,
+            RunStartedAt = runStartedAt,
+            ProcessStartedAt = processStartedAt,
         };
 
         await run.Session.SendAsync(WorkerEventEnvelope.ToStartEvent(claimed), stoppingToken);
@@ -173,9 +192,8 @@ public sealed class TranslatorLoop(
             claimed.WorkItemId, claimed.Generation, opts.HeartbeatInterval, run.RunCancellation.Token, stoppingToken);
 
         var summary = new WorkerRunSummary();
-        var startedAt = clock.GetUtcNow();
         var outcome = await PiPump.PumpAsync(
-            harness, run, summary, startedAt, clock, loggerFactory.CreateLogger(nameof(PiPump)));
+            api, harness, run, summary, runStartedAt, clock, options, loggerFactory.CreateLogger(nameof(PiPump)), loggerFactory);
 
         // AgentRunning — pi was started and the pump returned (success or
         // otherwise). The pump does not distinguish "started and crashed"

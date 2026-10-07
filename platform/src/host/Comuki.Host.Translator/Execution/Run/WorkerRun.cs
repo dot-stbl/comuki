@@ -27,6 +27,27 @@ public sealed class WorkerRun(
     public required CancellationTokenSource RunCancellation { get; init; }
 
     /// <summary>
+    /// Wall-clock instant the current cycle spawned the harness
+    /// (harden-worker-runtime Phase 1, design D2). The
+    /// <c>DeadlinePolicy</c> reads this to compute
+    /// <c>turn_elapsed_ms</c> against <c>TurnBudget</c>. Set by
+    /// <see cref="Loop.TranslatorLoop"/> right before
+    /// <see cref="Loop.PiPump.PumpAsync"/>.
+    /// </summary>
+    public required DateTimeOffset RunStartedAt { get; init; }
+
+    /// <summary>
+    /// Wall-clock instant the worker process itself started
+    /// (harden-worker-runtime Phase 1, design D2). The
+    /// <c>DeadlinePolicy</c> reads this to compute
+    /// <c>run_elapsed_ms</c> against <c>RunBudget</c>. The
+    /// <see cref="TranslatorHostedService"/> seeds this once at
+    /// startup; the same value is reused across every cycle inside
+    /// the process.
+    /// </summary>
+    public required DateTimeOffset ProcessStartedAt { get; init; }
+
+    /// <summary>
     /// The cloned repository root (harden-pi-worker-sandbox 4.3) — the
     /// working directory the harness, exec commands and restore opcodes run in.
     /// Falls back to the configured working directory when set to

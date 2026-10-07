@@ -87,4 +87,128 @@ public sealed class TranslatorOptions
     /// everything else.
     /// </summary>
     public bool DebugExec { get; init; }
+
+    /// <summary>
+    /// Progress-watchdog threshold (harden-worker-runtime Phase 1, design D1).
+    /// Tracks <c>last_event_age</c> — the time since the last parsed
+    /// stream-event (text delta, tool_use, tool_result, StageStart,
+    /// StageReport, agent_end, system, user, message_end,
+    /// tool_execution_start). Heartbeat is the *liveness* timer; this
+    /// is the *progress* timer — heartbeat without progress = stall.
+    /// Default 60s; range 5s–1h. The escalation path is policy-driven
+    /// (see <see cref="WorkerProgressEscalationPolicy"/>).
+    /// </summary>
+    [Range(typeof(TimeSpan), "00:00:05", "01:00:00")]
+    public TimeSpan WorkerProgressTimeout { get; init; } = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// Per-tool-call budget (harden-worker-runtime Phase 1, design D1,
+    /// coordination note: aligns with brain-ops 5min default for
+    /// default-profiles; different semantics — wall-clock cap on a
+    /// single tool invocation, not on task completion). The watchdog
+    /// resets on each parsed event, so a long-but-active run never
+    /// trips; this is the upper bound on a single idle stretch
+    /// between events. Default 5min.
+    /// </summary>
+    [Range(typeof(TimeSpan), "00:00:10", "01:00:00")]
+    public TimeSpan ToolCallTimeout { get; init; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// Escalation policy the <c>WorkerProgressWatchdog</c> walks
+    /// through when <c>last_event_age &gt; WorkerProgressTimeout</c>
+    /// (harden-worker-runtime Phase 1, design D1):
+    /// <list type="bullet">
+    ///   <item><c>Warn</c> — log + journal <c>worker.stall_warn</c>; no action.</item>
+    ///   <item><c>GentleKill</c> — cancel the harness's <c>RunCancellation</c> token; the pump
+    ///   exits with <c>cancelled</c>, the loop skips complete and lets the
+    ///   reaper own the item.</item>
+    ///   <item><c>FailItem</c> — cancel + <c>api.FailAsync(stall_detected)</c>; the run
+    ///   reports a typed reason and the host can re-queue.</item>
+    /// </list>
+    /// Default <c>WarnGentleKillFailItem</c>: the full escalation chain
+    /// fires at <c>WorkerProgressTimeout</c> intervals (warn → gentle-kill
+    /// → fail-item).
+    /// </summary>
+    public WorkerProgressEscalationPolicy WorkerProgressEscalationPolicy { get; init; } =
+        WorkerProgressEscalationPolicy.WarnGentleKillFailItem;
+
+    /// <summary>
+    /// Wall-clock budget on a single harness cycle (one spawn → one
+    /// StageReport; harden-worker-runtime Phase 1, design D2). On
+    /// breach, escalation path is the same as the progress watchdog
+    /// (gentle-kill on first breach; after
+    /// <see cref="ConsecutiveTurnBreachesBeforeFail"/> consecutive
+    /// breaches inside the same run, the item is failed). Default
+    /// 60min; range 5min–8h.
+    /// </summary>
+    [Range(typeof(TimeSpan), "00:05:00", "08:00:00")]
+    public TimeSpan TurnBudget { get; init; } = TimeSpan.FromMinutes(60);
+
+    /// <summary>
+    /// Wall-clock budget on a single worker process lifetime (one or
+    /// more cycles; harden-worker-runtime Phase 1, design D2). On
+    /// breach, fail-item with reason <c>worker.stall_detected</c> and
+    /// let the host re-queue. Default 480min (8h); range 15min–24h.
+    /// </summary>
+    [Range(typeof(TimeSpan), "00:15:00", "1.00:00:00")]
+    public TimeSpan RunBudget { get; init; } = TimeSpan.FromHours(8);
+
+    /// <summary>
+    /// Number of consecutive turn-budget breaches inside one worker
+    /// process before the item is failed (harden-worker-runtime
+    /// Phase 1, design D2). 1 turn-budget breach = gentle-kill
+    /// (idempotent restart); 3 breaches in a row = fail-item.
+    /// Default 3; range 1–10.
+    /// </summary>
+    [Range(1, 10)]
+    public int ConsecutiveTurnBreachesBeforeFail { get; init; } = 3;
+
+    /// <summary>
+    /// Per-line cap on the pi stream-json reader
+    /// (harden-worker-runtime Phase 3, design D4). Lines longer than
+    /// this are dropped, the
+    /// <c>parse_errors_total{kind = line_too_long}</c> counter is
+    /// incremented, and the worker keeps reading the next line — one
+    /// bad line cannot OOM the process. Default 1 MB; <c>0</c> disables
+    /// the cap (non-production only).
+    /// </summary>
+    [Range(0, 64 * 1024 * 1024)]
+    public int MaxLineLengthBytes { get; init; } = 1 * 1024 * 1024;
+
+    /// <summary>
+    /// Bounded capacity of the harness events channel
+    /// (harden-worker-runtime Phase 3, design D4). The channel drops
+    /// progress-fragments (<c>text_delta</c>) on drop-oldest; mandatory
+    /// events (<c>StageStart</c>, <c>StageReport</c>, <c>agent_end</c>)
+    /// wait for the consumer instead. Default 1024; range 16–16384.
+    /// </summary>
+    [Range(16, 16384)]
+    public int EventsChannelCapacity { get; init; } = 1024;
+}
+
+/// <summary>
+/// Tiered escalation the <c>WorkerProgressWatchdog</c> walks
+/// through (harden-worker-runtime Phase 1, design D1). The flag
+/// encodes the highest tier that fires: Warn-only stops at the
+/// journal; GentleKill cancels the harness on the second tick;
+/// FailItem (Warn + GentleKill + FailItem) calls
+/// <c>api.FailAsync</c> on the third.
+/// </summary>
+[Flags]
+public enum WorkerProgressEscalationPolicy
+{
+    /// <summary>No escalation; the watchdog is a passive gauge.</summary>
+    None = 0,
+
+    /// <summary>Tier 1 — journal <c>worker.stall_warn</c> on the first tick.</summary>
+    Warn = 1,
+
+    /// <summary>Tier 2 — cancel the harness on the second tick.</summary>
+    GentleKill = 2,
+
+    /// <summary>Tier 3 — <c>api.FailAsync</c> with reason on the third tick.</summary>
+    FailItem = 4,
+
+    /// <summary>Default chain — warn, then gentle-kill, then fail-item.</summary>
+    WarnGentleKillFailItem = Warn | GentleKill | FailItem,
 }

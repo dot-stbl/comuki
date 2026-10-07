@@ -53,11 +53,15 @@ internal static class WorkerSessionTestHelpers
     /// the run). Pass a <c>TestFakeHarness</c> session to exercise
     /// the actual session-mode write path.
     /// </param>
+    /// <param name="runStartedAt"></param>
+    /// <param name="processStartedAt"></param>
     public static WorkerRun NewRun(
         IWorkerService service,
         Guid workItemId,
         CancellationTokenSource runCancellation,
-        IHarnessSession? harnessSession = null)
+        IHarnessSession? harnessSession = null,
+        DateTimeOffset? runStartedAt = null,
+        DateTimeOffset? processStartedAt = null)
     {
         var claimed = new ClaimedWorkItemResponse(
             workItemId,
@@ -70,6 +74,48 @@ internal static class WorkerSessionTestHelpers
             Attempt: 1,
             Generation: 1);
         var session = WorkerSession.Open(service, "test-token");
-        return new WorkerRun(claimed, session) { RunCancellation = runCancellation, HarnessSession = harnessSession };
+        // Harden-worker-runtime Phase 1 added RunStartedAt and
+        // ProcessStartedAt as required WorkerRun fields. Tests that
+        // don't exercise the watchdog / deadline policy can leave
+        // them as DateTimeOffset defaults; watchdog / policy tests
+        // pass explicit values through the new optional parameters.
+        return new WorkerRun(claimed, session)
+        {
+            RunCancellation = runCancellation,
+            HarnessSession = harnessSession,
+            RunStartedAt = runStartedAt ?? DateTimeOffset.MinValue,
+            ProcessStartedAt = processStartedAt ?? DateTimeOffset.MinValue,
+        };
+    }
+
+    /// <summary>Builds a fully-populated <see cref="TranslatorOptions"/> with the
+    /// required base fields set to test fakes; the watchdog / policy
+    /// tests override the timeout / policy values they exercise.</summary>
+    /// <param name="workerProgressTimeout">Override for the progress watchdog's stall threshold.</param>
+    /// <param name="turnBudget">Override for the per-cycle wall-clock budget.</param>
+    /// <param name="runBudget">Override for the per-process wall-clock budget.</param>
+    /// <param name="policy">Override for the progress-watchdog escalation policy.</param>
+    /// <param name="consecutiveTurnBreachesBeforeFail">Override for the turn-budget chain threshold.</param>
+    public static TranslatorOptions NewOptions(
+        TimeSpan? workerProgressTimeout = null,
+        TimeSpan? turnBudget = null,
+        TimeSpan? runBudget = null,
+        WorkerProgressEscalationPolicy? policy = null,
+        int? consecutiveTurnBreachesBeforeFail = null)
+    {
+        return new TranslatorOptions
+        {
+            OrchestratorBaseUrl = new Uri("http://localhost:0/"),
+            OrchestratorGrpcUrl = new Uri("http://localhost:0/"),
+            WorkerToken = "test-worker-token-1234567890",
+            ProfileKey = "test-profile",
+            ProfilesRef = "main",
+            WorkerImage = "test-image",
+            WorkerProgressTimeout = workerProgressTimeout ?? TimeSpan.FromSeconds(60),
+            TurnBudget = turnBudget ?? TimeSpan.FromMinutes(60),
+            RunBudget = runBudget ?? TimeSpan.FromHours(8),
+            WorkerProgressEscalationPolicy = policy ?? WorkerProgressEscalationPolicy.WarnGentleKillFailItem,
+            ConsecutiveTurnBreachesBeforeFail = consecutiveTurnBreachesBeforeFail ?? 3,
+        };
     }
 }

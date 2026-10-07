@@ -138,4 +138,34 @@ public static class RunEventTypes
     /// release trains) does not emit this event.
     /// </summary>
     public const string MergeQueueRunReferenced = "merge_queue.run_referenced";
+
+    /// <summary>
+    /// The Translator's <c>WorkerProgressWatchdog</c> detected that
+    /// <c>last_event_age</c> exceeded <c>WorkerProgressTimeout</c> on
+    /// a running cycle (harden-worker-runtime Phase 1, design D1).
+    /// Tier 1 of the escalation chain — log + journal; the harness is
+    /// still alive and the lease is still held. Payload carries
+    /// <c>{ workItemId, last_event_age_ms, tier }</c>.
+    /// </summary>
+    public const string WorkerStallWarn = "worker.stall_warn";
+
+    /// <summary>
+    /// The Translator escalated past gentle-kill and called
+    /// <c>api.FailAsync</c> with reason <c>worker.stall_detected</c>
+    /// (harden-worker-runtime Phase 1, design D1 + D2). Tier 3 of the
+    /// chain — the item is failed and the host can re-queue. Payload
+    /// carries <c>{ workItemId, last_event_age_ms, turn_elapsed_ms,
+    /// run_elapsed_ms, tier }</c> so the operator can correlate
+    /// progress-stall against wall-clock breaches.
+    /// </summary>
+    public const string WorkerStallDetected = "worker.stall_detected";
+
+    /// <summary>
+    /// The harness events channel dropped a progress-fragment because
+    /// the consumer fell behind the producer (harden-worker-runtime
+    /// Phase 3, design D4). Mandatory events (<c>StageStart</c>,
+    /// <c>StageReport</c>, <c>agent_end</c>) never drop — they wait.
+    /// Payload carries <c>{ workItemId, kind = progress }</c>.
+    /// </summary>
+    public const string WorkerEventsDropped = "worker.events_dropped";
 }

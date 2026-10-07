@@ -248,8 +248,7 @@ public sealed class EfMemoryStore(
     public async Task<bool> ForgetAsync(MemoryFactId id, CancellationToken cancellationToken = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-        var fact = await db.MemoryFacts.FirstOrDefaultAsync(fact => fact.Id == id, cancellationToken);
-        if (fact is null)
+        if (await db.MemoryFacts.FirstOrDefaultAsync(fact => fact.Id == id, cancellationToken) is not { } fact)
         {
             return false;
         }

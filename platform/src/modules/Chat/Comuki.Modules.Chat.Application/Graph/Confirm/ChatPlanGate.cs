@@ -30,8 +30,8 @@ public static class ChatPlanGate
         // The brain occasionally prefixes the JSON with prose (a trailing
         // _thinking_ fragment or a one-line preamble) — extract the outermost
         // JSON object and parse that before declaring the payload invalid.
-        var extracted = ExtractJsonObject(finalJson);
-        if (extracted is not null && PlanJson.TryParse(extracted, out plan, out _))
+        if (ExtractJsonObject(finalJson) is { } extracted
+            && PlanJson.TryParse(extracted, out plan, out _))
         {
             return new ChatPlanGateOutcome(plan, PlanJson.Serialize(plan), string.Empty);
         }

@@ -182,8 +182,7 @@ public sealed class IntegrationsStore(IntegrationsDbContext db, TimeProvider clo
     /// <inheritdoc />
     public async Task MarkDeliveryOutcomeAsync(Guid deliveryId, string outcome, string? detail, CancellationToken cancellationToken = default)
     {
-        var delivery = await db.Deliveries.FindAsync([deliveryId], cancellationToken);
-        if (delivery is null)
+        if (await db.Deliveries.FindAsync([deliveryId], cancellationToken) is not { } delivery)
         {
             return;
         }
@@ -294,8 +293,7 @@ public sealed class IntegrationsStore(IntegrationsDbContext db, TimeProvider clo
     /// <inheritdoc />
     public async Task MarkSyncJobDoneAsync(Guid jobId, DateTimeOffset now, CancellationToken cancellationToken = default)
     {
-        var job = await db.SyncJobs.FindAsync([jobId], cancellationToken);
-        if (job is null)
+        if (await db.SyncJobs.FindAsync([jobId], cancellationToken) is not { } job)
         {
             return;
         }
@@ -307,8 +305,7 @@ public sealed class IntegrationsStore(IntegrationsDbContext db, TimeProvider clo
     /// <inheritdoc />
     public async Task MarkSyncJobFailedAsync(Guid jobId, string error, int maxAttempts, TimeSpan backoff, DateTimeOffset now, CancellationToken cancellationToken = default)
     {
-        var job = await db.SyncJobs.FindAsync([jobId], cancellationToken);
-        if (job is null)
+        if (await db.SyncJobs.FindAsync([jobId], cancellationToken) is not { } job)
         {
             return;
         }

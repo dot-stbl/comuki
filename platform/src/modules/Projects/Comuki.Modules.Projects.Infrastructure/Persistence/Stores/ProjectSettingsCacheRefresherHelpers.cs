@@ -45,8 +45,7 @@ internal static class ProjectSettingsCacheRefresherHelpers
         foreach (var entry in fallbackSnapshots)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var age = now - entry.Value.CapturedAt;
-            if (age > fallbackTtl)
+            if (now - entry.Value.CapturedAt > fallbackTtl)
             {
                 fallbackSnapshots.TryRemove(entry.Key, out _);
                 expired++;

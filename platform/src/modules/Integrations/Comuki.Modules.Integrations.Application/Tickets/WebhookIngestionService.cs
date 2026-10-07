@@ -57,16 +57,14 @@ public sealed class WebhookIngestionService(
                 $"source '{sourceKey}' has no webhook surface");
         }
 
-        var provider = providers.FindSource(sourceKey);
-        if (provider is null)
+        if (providers.FindSource(sourceKey) is not { } provider)
         {
             return WebhookReceipt.NotFound(
                 "integration.source_provider_not_found",
                 $"source '{sourceKey}' is not a registered ticket provider");
         }
 
-        var connection = await store.FindConnectionByWebhookAsync(sourceKey, webhookKey, cancellationToken);
-        if (connection is null)
+        if (await store.FindConnectionByWebhookAsync(sourceKey, webhookKey, cancellationToken) is not { } connection)
         {
             return WebhookReceipt.NotFound(
                 "integration.connection_not_found",

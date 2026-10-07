@@ -62,7 +62,7 @@ public static partial class NodeKindDescriptorDocumentParser
             return null;
         }
 
-        var fields = FrontmatterExtract.ParseFields(extracted.Value.Yaml);
+        var fields = FrontmatterExtract.ParseFields(extracted.Yaml);
         var key = FrontmatterExtract.Scalar(fields, KeyKey);
         var title = FrontmatterExtract.Scalar(fields, TitleKey);
         var description = FrontmatterExtract.Scalar(fields, DescriptionKey);
@@ -87,7 +87,7 @@ public static partial class NodeKindDescriptorDocumentParser
             Idempotency: string.IsNullOrWhiteSpace(idempotencyText) ? "inherent" : idempotencyText,
             ApprovalFloor: int.TryParse(approvalText, out var floor) ? floor : 0,
             EditionsFeatureKey: FrontmatterExtract.Scalar(fields, EditionsFeatureKey),
-            Body: extracted.Value.Body);
+            Body: extracted.Body);
     }
 
     /// <summary>Frontmatter key line: <c>key: value</c> with an ASCII key.</summary>
@@ -112,7 +112,7 @@ public static partial class NodeKindDescriptorDocumentParser
 /// </summary>
 file static class FrontmatterExtract
 {
-    public static (string Yaml, string Body)? Extract(string text)
+    public static YamlBody? Extract(string text)
     {
         var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
         if (lines.Length == 0 || lines[0].Trim() != "---")
@@ -132,9 +132,9 @@ file static class FrontmatterExtract
 
         return endIndex < 0
             ? null
-            : (
-            string.Join('\n', lines[1..endIndex]),
-            string.Join('\n', lines[(endIndex + 1)..]));
+            : new YamlBody(
+                Yaml: string.Join('\n', lines[1..endIndex]),
+                Body: string.Join('\n', lines[(endIndex + 1)..]));
     }
 
     public static Dictionary<string, FrontmatterField> ParseFields(string yaml)
@@ -165,11 +165,11 @@ file static class FrontmatterExtract
 
             if (value.Length == 0)
             {
-                var (Values, NextIndex) = TakeBlockListItems(lines, index);
-                if (Values.Count > 0)
+                var slice = TakeBlockListItems(lines, index);
+                if (slice.Values.Count > 0)
                 {
-                    result[key] = new FrontmatterField(null, Values);
-                    index = NextIndex;
+                    result[key] = new FrontmatterField(null, slice.Values);
+                    index = slice.NextIndex;
                 }
 
                 continue;
@@ -200,7 +200,7 @@ file static class FrontmatterExtract
         return field.Scalar is { } scalar ? [scalar] : field.Items;
     }
 
-    public static (List<string> Values, int NextIndex) TakeBlockListItems(string[] lines, int startIndex)
+    public static BlockListSlice TakeBlockListItems(string[] lines, int startIndex)
     {
         var values = new List<string>();
         var index = startIndex;
@@ -217,7 +217,7 @@ file static class FrontmatterExtract
             index++;
         }
 
-        return (values, index);
+        return new BlockListSlice(Values: values, NextIndex: index);
     }
 
     public static IReadOnlyList<string> SplitFlowList(string content)
@@ -248,3 +248,13 @@ file static class FrontmatterExtract
 /// <param name="Scalar"></param>
 /// <param name="Items"></param>
 file sealed record FrontmatterField(string? Scalar, IReadOnlyList<string> Items);
+
+/// <summary>Extracted frontmatter pair: the YAML body between fences plus the markdown body that follows.</summary>
+/// <param name="Yaml">Lines between the opening <c>---</c> and the closing <c>---</c> fence.</param>
+/// <param name="Body">Markdown content after the closing fence.</param>
+file sealed record YamlBody(string Yaml, string Body);
+
+/// <summary>Block-list slice: the values harvested plus the cursor position past the last consumed line.</summary>
+/// <param name="Values">Stripped-and-unquoted list items harvested from the block.</param>
+/// <param name="NextIndex">Index in <c>lines</c> immediately past the last consumed item; the caller resumes from there.</param>
+file sealed record BlockListSlice(List<string> Values, int NextIndex);

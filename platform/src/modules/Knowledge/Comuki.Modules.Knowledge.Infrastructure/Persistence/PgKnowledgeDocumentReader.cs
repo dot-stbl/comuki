@@ -22,7 +22,7 @@ public sealed class PgKnowledgeDocumentReader(
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var (normalizedPage, normalizedSize) = KnowledgeDocumentsPaging.Normalize(page, pageSize);
+        var normalized = KnowledgeDocumentsPaging.Normalize(page, pageSize);
 
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -37,8 +37,8 @@ public sealed class PgKnowledgeDocumentReader(
         var items = await documents
             .OrderByDescending(document => document.CreatedAt)
             .ThenByDescending(document => document.Id)
-            .Skip((normalizedPage - 1) * normalizedSize)
-            .Take(normalizedSize)
+            .Skip((normalized.Page - 1) * normalized.PageSize)
+            .Take(normalized.PageSize)
             .Select(document => new
             {
                 document.Id,
@@ -67,8 +67,8 @@ public sealed class PgKnowledgeDocumentReader(
                 document.ChunkCount,
                 document.TokenCount,
                 document.CreatedAt))],
-            normalizedPage,
-            normalizedSize,
+            normalized.Page,
+            normalized.PageSize,
             total);
     }
 }

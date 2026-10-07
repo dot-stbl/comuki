@@ -15,9 +15,9 @@ public sealed class KnowledgeDocumentsPagingShould
     [InlineData(4, 10, 4, 10)]
     public void NormalizeBounds(int page, int pageSize, int expectedPage, int expectedPageSize)
     {
-        var (normalizedPage, normalizedSize) = KnowledgeDocumentsPaging.Normalize(page, pageSize);
+        var normalized = KnowledgeDocumentsPaging.Normalize(page, pageSize);
 
-        normalizedPage.ShouldBe(expectedPage);
-        normalizedSize.ShouldBe(expectedPageSize);
+        normalized.Page.ShouldBe(expectedPage);
+        normalized.PageSize.ShouldBe(expectedPageSize);
     }
 }

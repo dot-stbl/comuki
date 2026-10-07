@@ -41,8 +41,15 @@ public static class KnowledgeDocumentsPaging
     /// <summary>Clamps the page request to the same bounds the runs page uses: page ≥ 1, size in [1, 100].</summary>
     /// <param name="page"></param>
     /// <param name="pageSize"></param>
-    public static (int Page, int PageSize) Normalize(int page, int pageSize)
+    public static NormalizedPaging Normalize(int page, int pageSize)
     {
-        return (Math.Max(1, page), Math.Clamp(pageSize, 1, 100));
+        return new NormalizedPaging(
+            Page: Math.Max(1, page),
+            PageSize: Math.Clamp(pageSize, 1, 100));
     }
 }
+
+/// <summary>Normalized paging bounds: page ≥ 1 and page-size in [1, 100], as the runs page enforces.</summary>
+/// <param name="Page">1-based page number.</param>
+/// <param name="PageSize">Rows per page.</param>
+public sealed record NormalizedPaging(int Page, int PageSize);

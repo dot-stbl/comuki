@@ -60,7 +60,7 @@ internal sealed class PiLineReader(StreamReader stdout, Action? onLineDropped = 
     {
         if (maxLineLengthBytes <= 0)
         {
-            var line = await stdout.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+            var line = await stdout.ReadLineAsync(cancellationToken);
             return line is null ? ReadLineResult.Eof : ReadLineResult.Ok(line);
         }
 
@@ -74,7 +74,7 @@ internal sealed class PiLineReader(StreamReader stdout, Action? onLineDropped = 
                 {
                     if (dropped)
                     {
-                        NotifyDropped();
+                        PiLineReaderHelpers.NotifyDropped(onLineDropped);
                         return ReadLineResult.Dropped;
                     }
 
@@ -83,14 +83,14 @@ internal sealed class PiLineReader(StreamReader stdout, Action? onLineDropped = 
                         : ReadLineResult.Ok(lineBuffer.ToString());
                 }
 
-                filled = await stdout.ReadAsync(readBuffer.AsMemory(0, ReadBufferSize), cancellationToken).ConfigureAwait(false);
+                filled = await stdout.ReadAsync(readBuffer.AsMemory(0, ReadBufferSize), cancellationToken);
                 position = 0;
                 if (filled == 0)
                 {
                     endOfStream = true;
                     if (dropped)
                     {
-                        NotifyDropped();
+                        PiLineReaderHelpers.NotifyDropped(onLineDropped);
                         return ReadLineResult.Dropped;
                     }
 
@@ -105,7 +105,7 @@ internal sealed class PiLineReader(StreamReader stdout, Action? onLineDropped = 
             {
                 if (dropped)
                 {
-                    NotifyDropped();
+                    PiLineReaderHelpers.NotifyDropped(onLineDropped);
                     return ReadLineResult.Dropped;
                 }
 
@@ -123,17 +123,35 @@ internal sealed class PiLineReader(StreamReader stdout, Action? onLineDropped = 
         }
     }
 
-    private void NotifyDropped()
+}
+
+/// <summary>
+/// File-scoped helpers for <see cref="PiLineReader"/>. The drop
+/// notification sits at the boundary between the read loop and the
+/// pump's journal / test-fake callback; the helper is the single
+/// place where the best-effort contract is enforced.
+/// </summary>
+file static class PiLineReaderHelpers
+{
+    /// <summary>
+    /// Invokes the drop callback at the call site of
+    /// <see cref="PiLineReader"/>. Best-effort: a throw from the
+    /// pump's journal send or the test fake MUST NOT reach the read
+    /// loop — a leaked exception would tear the harness reader down
+    /// and silently drop every event after the first over-cap line.
+    /// </summary>
+    /// <param name="onLineDropped">The callback; <c>null</c> is a no-op.</param>
+    public static void NotifyDropped(Action? onLineDropped)
     {
+        // boundary: callback is best-effort; a throw from the pump's
+        // journal send or the test fake must never reach the read loop.
         try
         {
             onLineDropped?.Invoke();
         }
         catch (Exception)
         {
-            // The pump's existing drop callback is best-effort; a
-            // throw from the test fake or the journal send should
-            // never reach the read loop.
+            // documented above — best-effort, never propagates
         }
     }
 }

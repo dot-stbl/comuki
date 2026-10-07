@@ -163,16 +163,15 @@ public sealed class DeadlinePolicyShould
         //
         // Production note: each cycle creates a fresh WorkerRun
         // with a new RunStartedAt = clock.GetUtcNow() at cycle
-        // start. In this test the WorkerRun is shared (the counter
-        // on the state is the point), so we mutate RunStartedAt
-        // on the run between cycles to mirror the production reset.
+        // start. The test mirrors production by minting a new
+        // WorkerRun on every cycle (init-only RunStartedAt forbids
+        // mutating the existing run).
         var clock = new FakeTimeProvider();
-        var run = NewRun(clock);
         var sharedState = new DeadlineChainState(consecutiveTurnBreachesBeforeFail: 3);
 
         // Cycle 1: 1 breach. Counter = 1.
         var (policy1, _, _) = BuildWithState(
-            run, sharedState, clock,
+            NewRun(clock), sharedState, clock,
             turnBudget: TimeSpan.FromSeconds(12),
             runBudget: TimeSpan.FromHours(1));
         using (policy1)
@@ -185,9 +184,8 @@ public sealed class DeadlinePolicyShould
 
         // Cycle 2: 2nd breach. Counter survives policy recreation.
         // Production: new WorkerRun, new RunStartedAt.
-        run.GetType().GetProperty("RunStartedAt")!.SetValue(run, clock.GetUtcNow());
         var (policy2, _, _) = BuildWithState(
-            run, sharedState, clock,
+            NewRun(clock), sharedState, clock,
             turnBudget: TimeSpan.FromSeconds(12),
             runBudget: TimeSpan.FromHours(1));
         using (policy2)
@@ -199,9 +197,8 @@ public sealed class DeadlinePolicyShould
         }
 
         // Cycle 3: 3rd breach. Threshold tripped, fail-item.
-        run.GetType().GetProperty("RunStartedAt")!.SetValue(run, clock.GetUtcNow());
         var (policy3, _, _) = BuildWithState(
-            run, sharedState, clock,
+            NewRun(clock), sharedState, clock,
             turnBudget: TimeSpan.FromSeconds(12),
             runBudget: TimeSpan.FromHours(1));
         using (policy3)
@@ -219,11 +216,10 @@ public sealed class DeadlinePolicyShould
     public void ResetBreachCounterClearsAcrossCycles()
     {
         var clock = new FakeTimeProvider();
-        var run = NewRun(clock);
         var sharedState = new DeadlineChainState(consecutiveTurnBreachesBeforeFail: 3);
 
         var (policy1, _, _) = BuildWithState(
-            run, sharedState, clock,
+            NewRun(clock), sharedState, clock,
             turnBudget: TimeSpan.FromSeconds(12),
             runBudget: TimeSpan.FromHours(1));
         using (policy1)
@@ -237,9 +233,8 @@ public sealed class DeadlinePolicyShould
 
         // Next cycle starts fresh — 1 breach is gentle-kill.
         // Production: new WorkerRun, new RunStartedAt.
-        run.GetType().GetProperty("RunStartedAt")!.SetValue(run, clock.GetUtcNow());
         var (policy2, _, _) = BuildWithState(
-            run, sharedState, clock,
+            NewRun(clock), sharedState, clock,
             turnBudget: TimeSpan.FromSeconds(12),
             runBudget: TimeSpan.FromHours(1));
         using (policy2)

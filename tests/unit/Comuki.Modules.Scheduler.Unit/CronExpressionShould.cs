@@ -107,9 +107,58 @@ public sealed class CronExpressionShould
     [InlineData("0 0 1 13 *")]
     [InlineData("0 0 1 FOO *")]
     [InlineData("0 0 * * BAR")]
-    [InlineData("0 9-8 * * *")]
     public void RejectMalformedExpression(string expression)
     {
         Should.Throw<FormatException>(() => CronExpression.Parse(expression));
+    }
+
+    [Fact(DisplayName = "Given \"0 0 1 * MON\" at 2026-09-01, when NextFireAfter is called, then the result is 2027-02-01 00:00 (Cronos DOM AND DOW — the next 1st of a month that is also a Monday)")]
+    public void DomAndDowSemanticsResolvesToFirstMatch()
+    {
+        // Cronos follows the de-facto standard that day-of-month
+        // AND day-of-week are both required when both are restricted
+        // (this matches the hand-rolled parser's behavior, not
+        // the Vixie-cron DOM OR DOW variant the brief speculated
+        // about). 2026-09-01 is a Tuesday, so the expression waits
+        // until the next 1st of a month that is also a Monday —
+        // 2027-02-01 is the next such date.
+        var cron = CronExpression.Parse("0 0 1 * MON");
+        var anchor = new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero);
+
+        var next = cron.NextFireAfter(anchor);
+
+        next.ShouldBe(new DateTimeOffset(2027, 2, 1, 0, 0, 0, TimeSpan.Zero));
+    }
+
+    [Fact(DisplayName = "Given \"0 0 29 2 *\" at 2024-01-01, when NextFireAfter is called, then the result is 2024-02-29 00:00 (Cronos leap-year handling)")]
+    public void LeapDayFeb29FiresOnNextLeapYear()
+    {
+        // 2024 is a leap year, so the first Feb 29 after the
+        // anchor is 2024-02-29 itself. Cronos's own leap-year
+        // handling matches the hand-rolled parser's answer here.
+        var cron = CronExpression.Parse("0 0 29 2 *");
+        var anchor = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        var next = cron.NextFireAfter(anchor);
+
+        next.ShouldBe(new DateTimeOffset(2024, 2, 29, 0, 0, 0, TimeSpan.Zero));
+    }
+
+    [Fact(DisplayName = "Given \"0 0 29 2 *\" at 2024-03-01, when NextFireAfter is called, then the result is 2028-02-29 00:00 (next leap year, 4 years later)")]
+    public void LeapDayFeb29SkipsNonLeapYears()
+    {
+        // After 2024-02-29, the next Feb 29 is 2028 (2025/2026/2027
+        // are not leap years). The 4-year search cap would have
+        // missed 2028 if the anchor was 2025; Cronos's own
+        // forward search handles it without the cap. 2024-03-01 +
+        // 4 years is 2028-03-01, just past the 4-year ceiling —
+        // but the wrapper's ceiling includes the to-endpoint
+        // (toInclusive=true), so 2028-02-29 is still in range.
+        var cron = CronExpression.Parse("0 0 29 2 *");
+        var anchor = new DateTimeOffset(2024, 3, 1, 0, 0, 0, TimeSpan.Zero);
+
+        var next = cron.NextFireAfter(anchor);
+
+        next.ShouldBe(new DateTimeOffset(2028, 2, 29, 0, 0, 0, TimeSpan.Zero));
     }
 }

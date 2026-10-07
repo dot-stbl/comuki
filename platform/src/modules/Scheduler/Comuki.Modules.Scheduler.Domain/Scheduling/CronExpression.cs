@@ -1,51 +1,64 @@
+using Cronos;
+
 namespace Comuki.Modules.Scheduler.Domain.Scheduling;
 
 /// <summary>
-/// Minimal 5-field cron parser + next-fire computation. UTC, inclusive lower
+/// 5-field cron parser + next-fire computation. UTC, inclusive lower
 /// bound — the next fire is always strictly after the given anchor (so a
-/// host calling NextFireAsync(now) doesn't loop on the same instant).
+/// host calling <see cref="NextFireAfter"/> doesn't loop on the same
+/// instant).
 /// <para>
-/// Supported token shapes per field (positions 0..4):
+/// Backed by <see cref="Cronos.CronExpression"/> (add-scheduled-jobs
+/// design.md "Cronos preferred; do not hand-roll"). The wrapper preserves
+/// the original public API (<c>Parse</c> + <c>NextFireAfter</c>) so
+/// <c>ScheduledJob</c> doesn't need to change.
 /// </para>
-/// <list type="bullet">
-///   <item><c>*</c> — every step (matches any value in range).</item>
-///   <item><c>n</c> — single value (or month / weekday name).</item>
-///   <item><c>n-m</c> — inclusive range.</item>
-///   <item><c>*/k</c> — every <c>k</c>-th value, anchored at 0.</item>
-///   <item><c>n,m,...</c> — comma list of any of the above.</item>
-/// </list>
 /// <para>
-/// Day-of-week and month accept the canonical English names
-/// (<c>SUN</c>..<c>SAT</c>, <c>JAN</c>..<c>DEC</c>) as a convenience.
+/// <b>Parser delta vs the previous hand-rolled implementation:</b>
+/// Cronos accepts expressions the previous parser rejected — most
+/// notably reversed ranges like <c>0 9-8 * * *</c> (it accepts them
+/// as if they wrapped modulo the field's range; the hand-rolled
+/// parser threw <see cref="FormatException"/>). The semantics
+/// <i>of expressions the original parser accepted</i> are unchanged:
+/// the hand-rolled parser used DOM AND DOW (both required when both
+/// restricted), and so does Cronos. The two cron fields the
+/// scheduler actually uses today (<c>*/5 * * * *</c> and
+/// <c>0 9 * * *</c>) are unaffected. Any saved cron string in the
+/// database whose <i>previous behaviour</i> was "rejected at
+/// parse-time" will now parse to a different firing time on the
+/// next deploy — this is recorded in
+/// <c>openspec/changes/add-scheduled-jobs/tasks.md</c> as a deploy
+/// note so the operator can audit the change.
+/// </para>
+/// <para>
+/// Supported token shapes per field (positions 0..4): the standard
+/// cron shapes delegated to <see cref="Cronos.CronExpression.Parse(string)"/>:
+/// <c>*</c>, <c>n</c>, <c>n-m</c>, <c>*/k</c>, comma list of any of the
+/// above, month and day-of-week name aliases (<c>JAN</c>..<c>DEC</c>,
+/// <c>SUN</c>..<c>SAT</c>). Leap-year Feb-29 (<c>0 0 29 2 *</c>) is
+/// handled by Cronos and returns the next leap-year occurrence
+/// (4 years, 8 years, ...) — verified by the test
+/// <c>LeapDayFeb29FiresOnNextLeapYear</c>.
 /// </para>
 /// <para>
 /// Out of scope: seconds / year fields (Quartz / Vixie cron extensions),
-/// <c>L</c> / <c>W</c> / <c>#</c> anchors, timezone-aware input. The
-/// scheduler is documented as UTC-only — see <see cref="Parse"/>.
+/// <c>L</c> / <c>W</c> / <c>#</c> anchors. The scheduler is documented
+/// as UTC-only — see <see cref="Parse"/>.
 /// </para>
 /// </summary>
 public sealed class CronExpression
 {
-    /// <summary>The 5 field matchers in cron order: minute, hour, day-of-month, month, day-of-week.</summary>
-    private readonly FieldMatcher minute;
-    private readonly FieldMatcher hour;
-    private readonly FieldMatcher dayOfMonth;
-    private readonly FieldMatcher month;
-    private readonly FieldMatcher dayOfWeek;
+    private readonly Cronos.CronExpression cron;
 
-    private CronExpression(FieldMatcher minute, FieldMatcher hour, FieldMatcher dayOfMonth, FieldMatcher month, FieldMatcher dayOfWeek)
+    private CronExpression(Cronos.CronExpression cron)
     {
-        this.minute = minute;
-        this.hour = hour;
-        this.dayOfMonth = dayOfMonth;
-        this.month = month;
-        this.dayOfWeek = dayOfWeek;
+        this.cron = cron;
     }
 
     /// <summary>Parses a 5-field cron expression. Throws <see cref="FormatException"/> on malformed input.</summary>
     /// <param name="expression"></param>
     /// <returns></returns>
-    /// <exception cref="FormatException">Malformed expression.</exception>
+    /// <exception cref="FormatException">Malformed expression (wrong field count, out-of-range value, unparseable alias).</exception>
     public static CronExpression Parse(string expression)
     {
         if (string.IsNullOrWhiteSpace(expression))
@@ -53,205 +66,54 @@ public sealed class CronExpression
             throw new FormatException("cron expression must not be empty");
         }
 
+        // Cronos's Parse(string) accepts 5 OR 6 fields. The original
+        // contract here was 5 fields exactly, so preserve that:
+        // 6-field input is a caller bug, surface it as FormatException
+        // to keep ScheduledJobService's wrap-as-InvalidCronExpression
+        // path the only failure mode callers see.
         var fields = expression.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return fields.Length != 5
-            ? throw new FormatException($"cron expression must have exactly 5 space-separated fields; got {fields.Length}")
-            : new CronExpression(
-            FieldMatcher.Parse(fields[0], FieldKind.Minute),
-            FieldMatcher.Parse(fields[1], FieldKind.Hour),
-            FieldMatcher.Parse(fields[2], FieldKind.DayOfMonth),
-            FieldMatcher.Parse(fields[3], FieldKind.Month),
-            FieldMatcher.Parse(fields[4], FieldKind.DayOfWeek));
+        if (fields.Length != 5)
+        {
+            throw new FormatException($"cron expression must have exactly 5 space-separated fields; got {fields.Length}");
+        }
+
+        try
+        {
+            return new CronExpression(Cronos.CronExpression.Parse(expression));
+        }
+        catch (CronFormatException ex)
+        {
+            throw new FormatException($"invalid cron expression '{expression}': {ex.Message}", ex);
+        }
     }
 
     /// <summary>
     /// Returns the next instant strictly after <paramref name="anchor"/>
     /// at which the expression fires. Returns null only if the search
-    /// window overflows (year &gt; 9999) — i.e. the expression never
-    /// fires again in the supported range.
+    /// overflows the 4-year window — i.e. the expression never fires
+    /// again in the supported range.
     /// </summary>
     /// <param name="anchor">UTC anchor; next fire is strictly greater than this.</param>
     /// <returns>UTC next-fire instant, or null when the search overflows.</returns>
     public DateTimeOffset? NextFireAfter(DateTimeOffset anchor)
     {
-        var candidate = new DateTime(
-            anchor.Year, anchor.Month, anchor.Day,
-            anchor.Hour, anchor.Minute, 0,
-            DateTimeKind.Utc).AddMinutes(1);
-
         // Bounded search: cron expressions with a year look-ahead are rare
         // in practice; cap at 4 years of minute-resolution search so a
-        // pathological schedule cannot pin the host's event loop.
+        // pathological schedule (e.g. 0 0 31 2 * — Feb 31, never fires)
+        // cannot pin the host's event loop. Cronos's GetOccurrences is
+        // a forward-only generator over [from, to] (fromInclusive=false
+        // matches the strictly-after contract), so the first yield
+        // IS the next fire.
         var ceiling = anchor.AddYears(4);
-        while (candidate <= ceiling)
+        foreach (var occurrence in cron.GetOccurrences(
+                     anchor.UtcDateTime,
+                     ceiling.UtcDateTime,
+                     fromInclusive: false,
+                     toInclusive: true))
         {
-            if (month.Matches(candidate.Month)
-                && dayOfMonth.Matches(candidate.Day)
-                && dayOfWeek.Matches((int)candidate.DayOfWeek)
-                && hour.Matches(candidate.Hour)
-                && minute.Matches(candidate.Minute))
-            {
-                return new DateTimeOffset(candidate, TimeSpan.Zero);
-            }
-
-            candidate = candidate.AddMinutes(1);
+            return new DateTimeOffset(occurrence, TimeSpan.Zero);
         }
 
         return null;
-    }
-
-    private enum FieldKind
-    {
-        Minute,
-        Hour,
-        DayOfMonth,
-        Month,
-        DayOfWeek,
-    }
-
-    private sealed class FieldMatcher
-    {
-        private readonly HashSet<int> matches;
-
-        private FieldMatcher(HashSet<int> matches)
-        {
-            this.matches = matches;
-        }
-
-        public bool Matches(int value)
-        {
-            return matches.Contains(value);
-        }
-
-        public static FieldMatcher Parse(string text, FieldKind kind)
-        {
-            var (low, high) = Range(kind);
-            var set = new HashSet<int>();
-
-            foreach (var part in text.Split(',', StringSplitOptions.RemoveEmptyEntries))
-            {
-                AddPart(set, part, kind, low, high);
-            }
-
-            return set.Count == 0 ? throw new FormatException($"no valid values in field '{text}'") : new FieldMatcher(set);
-        }
-
-        private static void AddPart(HashSet<int> set, string part, FieldKind kind, int low, int high)
-        {
-            var (stepText, rangeText) = part.Split('/') is var split && split.Length == 2
-                ? (split[1], split[0])
-                : ("1", part);
-
-            if (!int.TryParse(stepText, out var step) || step <= 0)
-            {
-                throw new FormatException($"step '{stepText}' must be a positive integer");
-            }
-
-            int rangeStart;
-            int rangeEnd;
-
-            if (rangeText == "*")
-            {
-                rangeStart = low;
-                rangeEnd = high;
-            }
-            else if (rangeText.Contains('-'))
-            {
-                var bounds = rangeText.Split('-');
-                rangeStart = ResolveValue(bounds[0], kind);
-                rangeEnd = ResolveValue(bounds[1], kind);
-            }
-            else
-            {
-                rangeStart = ResolveValue(rangeText, kind);
-                rangeEnd = rangeStart;
-            }
-
-            if (rangeStart > rangeEnd)
-            {
-                throw new FormatException($"range start {rangeStart} must be <= end {rangeEnd}");
-            }
-
-            for (var current = rangeStart; current <= rangeEnd; current += step)
-            {
-                set.Add(current);
-            }
-        }
-
-        private static int ResolveValue(string text, FieldKind kind)
-        {
-            return kind switch
-            {
-                FieldKind.Minute => ParseNumber(text, 0, 59),
-                FieldKind.Hour => ParseNumber(text, 0, 23),
-                FieldKind.DayOfMonth => ParseNumber(text, 1, 31),
-                FieldKind.Month => ParseMonth(text),
-                FieldKind.DayOfWeek => ParseDayOfWeek(text),
-                _ => throw new FormatException($"unknown field kind {kind}"),
-            };
-        }
-
-        private static int ParseNumber(string text, int low, int high)
-        {
-            return !int.TryParse(text, out var value)
-                ? throw new FormatException($"expected integer in [{low},{high}], got '{text}'")
-                : value < low || value > high ? throw new FormatException($"value {value} out of range [{low},{high}]") : value;
-        }
-
-        private static int ParseMonth(string text)
-        {
-            return int.TryParse(text, out _)
-                ? ParseNumber(text, 1, 12)
-                : text.ToUpperInvariant() switch
-                {
-                    "JAN" => 1,
-                    "FEB" => 2,
-                    "MAR" => 3,
-                    "APR" => 4,
-                    "MAY" => 5,
-                    "JUN" => 6,
-                    "JUL" => 7,
-                    "AUG" => 8,
-                    "SEP" => 9,
-                    "OCT" => 10,
-                    "NOV" => 11,
-                    "DEC" => 12,
-                    _ => throw new FormatException($"unknown month name '{text}'"),
-                };
-        }
-
-        private static int ParseDayOfWeek(string text)
-        {
-            if (int.TryParse(text, out var numeric))
-            {
-                // Cron convention: 0 = Sunday, 7 also accepted as Sunday.
-                return numeric == 7 ? 0 : ParseNumber(text, 0, 6);
-            }
-
-            return text.ToUpperInvariant() switch
-            {
-                "SUN" => 0,
-                "MON" => 1,
-                "TUE" => 2,
-                "WED" => 3,
-                "THU" => 4,
-                "FRI" => 5,
-                "SAT" => 6,
-                _ => throw new FormatException($"unknown weekday name '{text}'"),
-            };
-        }
-
-        private static (int Low, int High) Range(FieldKind kind)
-        {
-            return kind switch
-            {
-                FieldKind.Minute => (0, 59),
-                FieldKind.Hour => (0, 23),
-                FieldKind.DayOfMonth => (1, 31),
-                FieldKind.Month => (1, 12),
-                FieldKind.DayOfWeek => (0, 6),
-                _ => throw new FormatException($"unknown field kind {kind}"),
-            };
-        }
     }
 }

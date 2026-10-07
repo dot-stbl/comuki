@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Cronos" />
     <ProjectReference Include="..\..\..\shared\Comuki.Shared.Kernel\Comuki.Shared.Kernel.csproj" />
   </ItemGroup>
 

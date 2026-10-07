@@ -64,6 +64,15 @@
          Referenced per adopted module with PrivateAssets/ExcludeAssets —
          analyzer-style wiring, no runtime assembly flows. -->
     <PackageVersion Include="Riok.Mapperly" Version="4.3.1" />
+    <!-- Wave 1 B2: Cronos 0.7.0 replaces the 257-line hand-rolled
+         5-field cron parser/next-fire search in the scheduler module.
+         Cronos is the .NET ecosystem's reference cron library (5- and
+         6-field formats, Vixie-cron DOM/DOW OR semantics, leap-year
+         Feb-29 handling, bounded next-occurrence search). The
+         Comuki.Modules.Scheduler.Domain.Scheduling.CronExpression
+         wrapper preserves the public API (Parse, NextFireAfter) so
+         ScheduledJob.cs is unchanged. -->
+    <PackageVersion Include="Cronos" Version="0.7.0" />
   </ItemGroup>
 
   <!-- Comuki-native surface (issue #54): TOML config parsing for

@@ -41,12 +41,12 @@ public static class FilterOperatorRegistry
     ///     Symbols sorted by descending length, for the lexer's longest-prefix
     ///     matcher. Cache once — the lexer is a hot path.
     /// </summary>
-    public static IReadOnlyList<(string Symbol, FilterOperator Operator)> SymbolsByDescendingLength { get; } =
-    [
-        .. descriptors.Values
-                .OrderByDescending(static d => d.Symbol.Length)
-                .Select(static d => (d.Symbol, d.Operator))
-    ];
+    public static IReadOnlyList<FilterOperatorSymbol> SymbolsByDescendingLength { get; } =
+        [
+            .. descriptors.Values
+                    .OrderByDescending(static d => d.Symbol.Length)
+                    .Select(static d => new FilterOperatorSymbol(d.Symbol, d.Operator))
+        ];
 
     /// <summary>
     ///     Returns the descriptor for <paramref name="operator" />, or throws an
@@ -302,3 +302,13 @@ public static class FilterOperatorRegistry
         return accumulated!;
     }
 }
+
+/// <summary>
+/// One symbol-operator binding, ordered by symbol length for the lexer's
+/// longest-prefix match. Replaces the previous <c>(string Symbol, FilterOperator Operator)</c>
+/// tuple: callers iterate <see cref="FilterOperatorRegistry.SymbolsByDescendingLength"/>
+/// and read <c>entry.Symbol</c> / <c>entry.Operator</c>.
+/// </summary>
+/// <param name="Symbol">Wire string the lexer matches against (e.g. <c>"=="</c>, <c>"~*"</c>).</param>
+/// <param name="Operator">The <see cref="FilterOperator"/> the symbol resolves to.</param>
+public sealed record FilterOperatorSymbol(string Symbol, FilterOperator Operator);

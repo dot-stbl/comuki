@@ -177,11 +177,11 @@ internal sealed class FilterLexer
         // Operator longest-prefix match. The registry sorts symbols by descending
         // length, so `~*` is tested before `~` and `![]=` before `!=`. Adding an
         // operator means adding a symbol to FilterOperatorRegistry — no edit here.
-        foreach (var (symbol, op) in FilterOperatorRegistry.SymbolsByDescendingLength)
+        foreach (var entry in FilterOperatorRegistry.SymbolsByDescendingLength)
         {
-            if (MatchesAt(symbol, start))
+            if (MatchesAt(entry.Symbol, start))
             {
-                return OperatorToken(op, symbol.Length, start);
+                return OperatorToken(entry.Operator, entry.Symbol.Length, start);
             }
         }
 

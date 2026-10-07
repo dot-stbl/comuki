@@ -34,7 +34,7 @@ public sealed class OutboxDispatcher(
     /// undispatched rows, publishes each, returns counts.
     /// </summary>
     /// <param name="cancellationToken"></param>
-    public async Task<(int Dispatched, int DeadLettered)> DispatchAsync(CancellationToken cancellationToken = default)
+    public async Task<OutboxDispatchSummary> DispatchAsync(CancellationToken cancellationToken = default)
     {
         var now = clock.GetUtcNow();
         var batchSize = options.Value.BatchSize;
@@ -88,9 +88,19 @@ public sealed class OutboxDispatcher(
         }
 
         await transaction.CommitAsync(cancellationToken);
-        return (dispatchedCount, deadLetteredCount);
+        return new OutboxDispatchSummary(dispatchedCount, deadLetteredCount);
     }
 }
+
+/// <summary>
+/// One sweep's outcome: how many messages were dispatched successfully and how many
+/// tripped into the dead-letter state. Replaces the previous <c>(int, int)</c> tuple
+/// return — the named fields read at call sites as <c>summary.Dispatched</c> /
+/// <c>summary.DeadLettered</c> instead of two positional ints.
+/// </summary>
+/// <param name="Dispatched">Rows the publisher accepted this sweep.</param>
+/// <param name="DeadLettered">Rows whose failure counter crossed the threshold.</param>
+public sealed record OutboxDispatchSummary(int Dispatched, int DeadLettered);
 
 /// <summary>
 /// Guarded raw SQL + ADO plumbing for <see cref="OutboxDispatcher"/>.

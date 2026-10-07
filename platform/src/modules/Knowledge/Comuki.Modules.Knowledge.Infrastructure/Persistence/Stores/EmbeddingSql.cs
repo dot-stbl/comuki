@@ -88,9 +88,9 @@ public static class EmbeddingSql
     /// computed cosine similarity (1 − distance).
     /// </summary>
     /// <param name="reader"></param>
-    public static (MemoryEmbeddingId Id, SourceDocumentId SourceDocumentId, int ChunkIndex, string ChunkText, int TokenCount, DateTimeOffset CreatedAt, float Similarity) ReadRow(System.Data.Common.DbDataReader reader)
+    public static EmbeddingRowProjection ReadRow(System.Data.Common.DbDataReader reader)
     {
-        return (
+        return new EmbeddingRowProjection(
             Id: new MemoryEmbeddingId(reader.GetGuid(0)),
             SourceDocumentId: new SourceDocumentId(reader.GetGuid(1)),
             ChunkIndex: reader.GetInt32(2),
@@ -100,3 +100,26 @@ public static class EmbeddingSql
             Similarity: reader.GetFloat(6));
     }
 }
+
+/// <summary>
+/// One chunk row read by <see cref="EmbeddingSql.ReadRow"/>: a memory embedding's id +
+/// source document + the chunk metadata + the cosine similarity score. Replaces the
+/// previous 7-component tuple so callers iterate with named fields instead of
+/// positional deconstruction (which silently drops ChunkIndex / TokenCount /
+/// CreatedAt via <c>_</c>).
+/// </summary>
+/// <param name="Id">Memory embedding row id.</param>
+/// <param name="SourceDocumentId">Owning source document.</param>
+/// <param name="ChunkIndex">Zero-based chunk index inside the source document.</param>
+/// <param name="ChunkText">The chunk's text payload.</param>
+/// <param name="TokenCount">Approximate token total for the chunk.</param>
+/// <param name="CreatedAt">When the embedding row was written.</param>
+/// <param name="Similarity">Cosine similarity (1 − distance) for this row.</param>
+public sealed record EmbeddingRowProjection(
+    MemoryEmbeddingId Id,
+    SourceDocumentId SourceDocumentId,
+    int ChunkIndex,
+    string ChunkText,
+    int TokenCount,
+    DateTimeOffset CreatedAt,
+    float Similarity);

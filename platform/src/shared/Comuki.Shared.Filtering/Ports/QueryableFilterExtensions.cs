@@ -77,7 +77,7 @@ public static class QueryableFilterExtensions
     ///     criteria that resolve. Empty / whitespace / no-recognised-criterion yields
     ///     an empty sequence and triggers the default-sort fallback.
     /// </summary>
-    private static IEnumerable<(FilterableField<TEntity> Field, bool Descending)> ParseSortCriteria<TEntity>(
+    private static IEnumerable<SortCriterion<TEntity>> ParseSortCriteria<TEntity>(
         string? sort,
         FilterableFieldSet<TEntity> fields)
     {
@@ -103,19 +103,19 @@ public static class QueryableFilterExtensions
             var descending = parts.Length > 1
                              && parts[1].Equals("desc", StringComparison.OrdinalIgnoreCase);
 
-            yield return (field, descending);
+            yield return new SortCriterion<TEntity>(field, descending);
         }
     }
 
     private static IOrderedQueryable<TEntity> BuildOrderedQueryable<TEntity>(
         IQueryable<TEntity> source,
-        List<(FilterableField<TEntity> Field, bool Descending)> criteria)
+        List<SortCriterion<TEntity>> criteria)
     {
         var ordered = OrderBy(source, criteria[0].Field.Accessor, criteria[0].Descending);
 
-        foreach (var (field, descending) in criteria.Skip(1))
+        foreach (var criterion in criteria.Skip(1))
         {
-            ordered = ThenBy(ordered, field.Accessor, descending);
+            ordered = ThenBy(ordered, criterion.Field.Accessor, criterion.Descending);
         }
 
         return ordered;
@@ -146,6 +146,17 @@ public static class QueryableFilterExtensions
 
         return (IOrderedQueryable<TEntity>)source.Provider.CreateQuery<TEntity>(call);
     }
+
+    /// <summary>
+    /// One sort criterion: the field to sort by and the direction flag. Replaces the
+    /// <c>(FilterableField&lt;T&gt; Field, bool Descending)</c> tuple — callers now read
+    /// <c>criterion.Field</c> / <c>criterion.Descending</c> instead of positional
+    /// decomposition.
+    /// </summary>
+    /// <param name="Field">Sort field whose accessor projects the value to compare.</param>
+    /// <param name="Descending">True when the criterion sorts descending; false for ascending.</param>
+    /// <typeparam name="TEntity">Entity type the field belongs to.</typeparam>
+    internal sealed record SortCriterion<TEntity>(FilterableField<TEntity> Field, bool Descending);
 
     /// <summary>
     ///     Builds the static <see cref="Queryable" /> call for either

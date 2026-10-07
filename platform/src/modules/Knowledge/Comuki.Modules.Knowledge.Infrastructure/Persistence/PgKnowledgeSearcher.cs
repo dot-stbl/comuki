@@ -124,8 +124,8 @@ public sealed class PgKnowledgeSearcher(
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
-            var (id, sourceDocumentId, _, chunkText, _, _, similarity) = EmbeddingSql.ReadRow(reader);
-            hits.Add(new KnowledgeSearchHit(id, sourceDocumentId, chunkText, similarity));
+            var row = EmbeddingSql.ReadRow(reader);
+            hits.Add(new KnowledgeSearchHit(row.Id, row.SourceDocumentId, row.ChunkText, row.Similarity));
         }
 
         return hits;

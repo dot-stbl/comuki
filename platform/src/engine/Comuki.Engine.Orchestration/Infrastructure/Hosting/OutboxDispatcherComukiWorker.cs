@@ -36,15 +36,17 @@ public sealed class OutboxDispatcherComukiWorker(
         await using var scope = scopeFactory.CreateAsyncScope();
         var dispatcher = scope.ServiceProvider.GetRequiredService<OutboxDispatcher>();
 
-        var (dispatched, deadLettered) = await dispatcher.DispatchAsync(cancellationToken);
-        if (dispatched + deadLettered > 0)
+        var summary = await dispatcher.DispatchAsync(cancellationToken);
+        if (summary.Dispatched + summary.DeadLettered > 0)
         {
             logger.LogInformation(
                 "Outbox dispatcher dispatched {DispatchedCount} message(s), dead-lettered {DeadLetteredCount}",
-                dispatched,
-                deadLettered);
+                summary.Dispatched,
+                summary.DeadLettered);
         }
 
-        return WorkerResult.Ok($"dispatched {dispatched}, dead-lettered {deadLettered}", new { dispatched, deadLettered });
+        return WorkerResult.Ok(
+            $"dispatched {summary.Dispatched}, dead-lettered {summary.DeadLettered}",
+            summary);
     }
 }

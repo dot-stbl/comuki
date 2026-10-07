@@ -347,12 +347,15 @@ internal static class HostComposer
         // the orchestration DbContext that Program already wired above.
         // The host driver wraps the in-module polling helper and emits
         // a `run.artifacts_bundled` journal event after each bundle.
+        // Registered as IComukiWorker (not AddHostedService) so the
+        // comuki worker registry owns the supervision loop and
+        // exponential backoff; BackgroundService is gone here.
         builder.Services.AddArtifactsApplication();
         builder.Services.AddArtifactsPersistence(database.ConnectionString, builder.Configuration);
         builder.Services.AddScoped<IRunArtifactJournalSource, OrchestrationArtifactJournalSource>();
         builder.Services.AddScoped<IRunArtifactRunSource, OrchestrationArtifactRunSource>();
         builder.Services.AddScoped<IWorkItemArtifactSource, OrchestrationWorkItemArtifactSource>();
-        builder.Services.AddHostedService<RunArtifactPackagerHostService>();
+        builder.Services.AddSingleton<IComukiWorker, RunArtifactPackagerComukiWorker>();
 
         // Knowledge module (S10 #9): ingest + search over the pgvector
         // knowledge.memory_embeddings table. The ingestor + searcher

@@ -5,6 +5,7 @@ using Comuki.Modules.Knowledge.Infrastructure.Configuration;
 using Comuki.Modules.Knowledge.Infrastructure.Embeddings;
 using Comuki.Modules.Knowledge.Infrastructure.Hosted;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence;
+using Comuki.Shared.Bootstrap.Workers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,7 +50,10 @@ public static class KnowledgeInfrastructureExtensions
         services.AddSingleton<IKnowledgeSearcher>(static sp => sp.GetRequiredService<PgKnowledgeSearcher>());
         services.AddSingleton<IKnowledgeDocumentReader>(static sp => sp.GetRequiredService<PgKnowledgeDocumentReader>());
 
-        services.AddHostedService<KnowledgeIngestBackgroundService>();
+        // IComukiWorker — registered here (not AddHostedService) so the
+        // comuki worker registry owns the supervision loop. The same
+        // shape as Comuki.Host.Artifacts.RunArtifactPackagerComukiWorker.
+        services.AddSingleton<IComukiWorker, KnowledgeIngestComukiWorker>();
 
         return services;
     }

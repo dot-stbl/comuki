@@ -11,6 +11,7 @@ using Comuki.Host.Artifacts;
 using Comuki.Host.Testing;
 using Comuki.Host.Testing.Fixtures;
 using Comuki.Modules.Artifacts.Infrastructure.Store;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -188,10 +189,13 @@ public sealed class ArtifactsEndToEndShould(PostgresCollectionFixture postgres) 
         // it through Running then Succeeded.
         var (projectId, runId) = await SeedTerminalSucceededRunAsync(cancellationToken);
 
-        await using var scope = application.Services.CreateAsyncScope();
-        var hostDriver = scope.ServiceProvider
-            .GetServices<IHostedService>()
-            .OfType<RunArtifactPackagerHostService>()
+        // The packager is now an IComukiWorker (singleton) instead of
+        // an IHostedService; resolve the concrete worker from the root
+        // provider and call PollOnceAsync directly. The comuki worker
+        // registry is the only IHostedService the host exposes now.
+        var hostDriver = application.Services
+            .GetServices<IComukiWorker>()
+            .OfType<RunArtifactPackagerComukiWorker>()
             .Single();
         await hostDriver.PollOnceAsync(cancellationToken);
 
@@ -224,10 +228,11 @@ public sealed class ArtifactsEndToEndShould(PostgresCollectionFixture postgres) 
 
         var (projectId, runId) = await SeedInFlightRunAsync(cancellationToken);
 
-        await using var scope = application.Services.CreateAsyncScope();
-        var hostDriver = scope.ServiceProvider
-            .GetServices<IHostedService>()
-            .OfType<RunArtifactPackagerHostService>()
+        // The packager is now an IComukiWorker (singleton) — see the
+        // note above. Same singleton lookup, no per-test scope needed.
+        var hostDriver = application.Services
+            .GetServices<IComukiWorker>()
+            .OfType<RunArtifactPackagerComukiWorker>()
             .Single();
         await hostDriver.PollOnceAsync(cancellationToken);
 

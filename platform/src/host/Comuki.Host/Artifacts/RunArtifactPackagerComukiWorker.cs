@@ -2,62 +2,63 @@ using System.Text.Json;
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Modules.Artifacts.Application.Packaging;
+using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 
 namespace Comuki.Host.Artifacts;
 
 /// <summary>
-/// Host driver for the run-artifact packager: wraps the in-module polling
-/// helper and appends a <c>run.artifacts_bundled</c> journal event in the
-/// same transaction the module uses for the bundle row. Lives in the
-/// host composition root so the engine schema's append is owned by the
-/// host (the artifacts module never reaches into it). Scoped journal
-/// access through <see cref="IServiceScopeFactory"/> — each cycle creates
-/// its own orchestration context.
+/// Host driver for the run-artifact packager: drives
+/// <see cref="RunArtifactPackagerService.PollOnceAsync"/> on a fixed
+/// interval and appends a <c>run.artifacts_bundled</c> journal event
+/// in the same transaction the module uses for the bundle row. Lives
+/// in the host composition root so the engine schema's append is
+/// owned by the host (the artifacts module never reaches into it).
+/// Scoped journal access through <see cref="IServiceScopeFactory"/>
+/// — each cycle creates its own orchestration context.
+/// <para>
+/// The cadence is owned by the comuki worker registry, not by
+/// <see cref="BackgroundService"/>: the
+/// <see cref="IComukiWorker"/> shape
+/// gives the host one supervision loop per worker, with
+/// exponential backoff on a failed cycle (an <c>HttpRequestException</c>
+/// against MinIO counts as transient; an unhandled <c>JsonException</c>
+/// also backs off rather than spins the registry into a tight retry).
+/// </para>
 /// </summary>
 /// <param name="scopeFactory">Scope factory for the journal + orchestration contexts.</param>
 /// <param name="clock">Wall-clock for the journal event stamp.</param>
 /// <param name="scopeAccessor">Ambient scope — declare system for the journal write.</param>
-/// <param name="logger">Structured logger.</param>
-// TODO(worker-registry): channel-based, needs dedicated adapter
-public sealed class RunArtifactPackagerHostService(
+public sealed class RunArtifactPackagerComukiWorker(
     IServiceScopeFactory scopeFactory,
     TimeProvider clock,
-    ISubjectScopeAccessor scopeAccessor,
-    ILogger<RunArtifactPackagerHostService> logger) : BackgroundService
+    ISubjectScopeAccessor scopeAccessor) : IComukiWorker
 {
     /// <inheritdoc />
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public string Name => "artifact-packager";
+
+    /// <inheritdoc />
+    public WorkerSchedule Schedule => WorkerSchedule.Interval(RunArtifactPackagerService.DefaultPollInterval);
+
+    /// <inheritdoc />
+    public async Task<WorkerResult> ExecuteAsync(WorkerContext context, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Run artifact packager host driver started");
-
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            try
-            {
-                await PollOnceAsync(stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception exception)
-            {
-                logger.LogError(exception, "Run artifact packager cycle failed");
-            }
-
-            try
-            {
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
+            await PollOnceAsync(cancellationToken);
+            return WorkerResult.Ok("cycle complete");
         }
-
-        logger.LogInformation("Run artifact packager host driver stopped");
+        catch (Exception exception) when (exception is HttpRequestException or TimeoutException
+                                   or TaskCanceledException or JsonException)
+        {
+            // boundary: the worker's own supervision loop — transient
+            // MinIO / orchestration failures count as a failed cycle for
+            // the registry (logged, exponential backoff). Next cycle
+            // retries the whole batch; per-candidate isolation lives
+            // inside PollOnceAsync, so one bad run never blocks the rest.
+            return WorkerResult.Fail($"cycle failed: {exception.Message}");
+        }
     }
 
     /// <summary>
@@ -77,7 +78,7 @@ public sealed class RunArtifactPackagerHostService(
             return;
         }
 
-        using var systemScope = scopeAccessor.AsSystem("artifact-packager");
+        using var systemScope = scopeAccessor.AsSystem(Name);
 
         await using var journalScope = scopeFactory.CreateAsyncScope();
         var db = journalScope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();

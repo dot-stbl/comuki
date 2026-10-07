@@ -80,6 +80,10 @@ namespace Comuki.Modules.Verify.Infrastructure.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("status");
 
+                    b.Property<Guid?>("WorkItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_item_id");
+
                     b.HasKey("Id")
                         .HasName("pk_generic_command_runs");
 
@@ -88,6 +92,10 @@ namespace Comuki.Modules.Verify.Infrastructure.Migrations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("ix_generic_command_runs_status");
+
+                    b.HasIndex("ProjectId", "WorkItemId")
+                        .HasDatabaseName("ix_generic_command_runs_project_work_item")
+                        .HasFilter("work_item_id IS NOT NULL");
 
                     b.ToTable("generic_command_runs", "verify");
                 });

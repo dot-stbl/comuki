@@ -78,9 +78,29 @@ public static class Features
         "Live-session steering of in-flight runs (add-orchestra §1 — Baton).",
         minimumRank: EditionTiers.Team.Rank);
 
+    /// <summary>
+    /// Run verification axis (add-orchestra §3 — Coda): the gate-provider
+    /// registry, the <c>gate.evaluated</c> journal event, the
+    /// <c>VerificationRecord</c> per work item, and the derived
+    /// <c>GET /api/v1/runs/{runId}/verification</c> view. The paid
+    /// gate is <c>[RequiresFeature(Features.Verification)]</c> on
+    /// <c>RunsController.GetVerificationAsync</c> — Community-tier
+    /// requests answer 403 <c>edition.feature_unavailable</c>. The
+    /// composition-root extension that wires the gate providers
+    /// (<c>VerificationHostExtensions.AddOrchestrationVerification</c>)
+    /// is intentionally unrestricted: the providers must be live on
+    /// every contour so the host-side adapter and the platform-shipped
+    /// first provider are always wired; the gate is per-endpoint, not
+    /// per-wire.
+    /// </summary>
+    public static readonly Feature Verification = Feature.Define(
+        "verification",
+        "Run verification axis: gate providers, evidence, derived view (add-orchestra §3 — Coda).",
+        minimumRank: EditionTiers.Team.Rank);
+
     /// <summary>Every declared feature, sorted by key. Throws at type-init if two entries share a key.</summary>
     public static readonly IReadOnlyList<Feature> All = EditionCatalogGuard.EnsureUniqueSortedByKey(
-        [EnterpriseSso, ScaleAndIsolation, InfraMemory, BackgroundLlmWatchers, AgentEval, WhiteLabel, MultiRepo, WorkerCommitAttribution, Steering],
+        [EnterpriseSso, ScaleAndIsolation, InfraMemory, BackgroundLlmWatchers, AgentEval, WhiteLabel, MultiRepo, WorkerCommitAttribution, Steering, Verification],
         static feature => feature.Key.Value,
         catalogName: "Features");
 }

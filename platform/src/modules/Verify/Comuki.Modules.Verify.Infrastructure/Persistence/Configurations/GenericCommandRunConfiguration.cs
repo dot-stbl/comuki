@@ -29,6 +29,19 @@ public sealed class GenericCommandRunConfiguration : IEntityTypeConfiguration<Ge
             .HasColumnName("project_id")
             .HasConversion(VerifyValueConverters.ProjectIdToNullableUuid);
 
+        builder.Property(static run => run.WorkItemId)
+            .HasColumnName("work_item_id");
+
+        // Partial index over the (project_id, work_item_id) pair so the
+        // verification evaluator's "latest run for this work item" query
+        // (added in Coda) is a direct index hit. work_item_id can be
+        // null for operator-only global gate runs — the index covers
+        // both with a partial-filter on IS NOT NULL so the global rows
+        // don't take part.
+        builder.HasIndex(static run => new { run.ProjectId, run.WorkItemId })
+            .HasDatabaseName("ix_generic_command_runs_project_work_item")
+            .HasFilter("work_item_id IS NOT NULL");
+
         builder.Property(static run => run.ProfileKey)
             .HasColumnName("profile_key")
             .HasMaxLength(64)

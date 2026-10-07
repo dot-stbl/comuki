@@ -37,7 +37,7 @@ namespace Comuki.Host.Translator.Execution.Loop;
 /// stays unaffected.
 /// </remarks>
 /// <param name="api"></param>
-/// <param name="runner"></param>
+/// <param name="harness">The runtime half of the harness SPI (replaces the v1.x <c>IPiRunner</c>); the <c>PiPump</c> opens the live session through it.</param>
 /// <param name="workerService"></param>
 /// <param name="profilesProvider"></param>
 /// <param name="sourceCloneRunner"></param>
@@ -50,7 +50,7 @@ namespace Comuki.Host.Translator.Execution.Loop;
 /// <param name="logger"></param>
 public sealed class TranslatorLoop(
     IOrchestratorApi api,
-    IPiRunner runner,
+    IHarnessRuntime harness,
     IWorkerService workerService,
     IProfilesProvider profilesProvider,
     SourceCloneRunner sourceCloneRunner,
@@ -175,7 +175,7 @@ public sealed class TranslatorLoop(
         var summary = new WorkerRunSummary();
         var startedAt = clock.GetUtcNow();
         var outcome = await PiPump.PumpAsync(
-            runner, run, summary, startedAt, clock, loggerFactory.CreateLogger(nameof(PiPump)));
+            harness, run, summary, startedAt, clock, loggerFactory.CreateLogger(nameof(PiPump)));
 
         // AgentRunning — pi was started and the pump returned (success or
         // otherwise). The pump does not distinguish "started and crashed"

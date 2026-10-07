@@ -8,8 +8,8 @@ namespace Comuki.Host.Workers.Grpc;
 /// <summary>
 /// Outbound command surface for anything in the orchestrator that needs to
 /// reach a connected worker mid-run (chat Stop, context inject, lease
-/// reaper). Sends are best-effort: a worker without a live stream is a miss,
-/// not an error.
+/// reaper, baton steering). Sends are best-effort: a worker without a live
+/// stream is a miss, not an error.
 /// </summary>
 public interface IWorkerCommandPipe
 {
@@ -26,6 +26,25 @@ public interface IWorkerCommandPipe
     /// <summary>Tells a worker its lease expired and ownership is gone. False when no live stream.</summary>
     /// <param name="workerId"></param>
     public bool TrySendLeaseExpired(WorkerId workerId);
+
+    /// <summary>
+    /// Sends a live-session <see cref="TurnInput"/>
+    /// to a connected worker (add-orchestra Phase 1c — <c>specs/session/spec.md</c>
+    /// Requirement "Steering endpoint resolves runId to a live execution",
+    /// scenario "Steer lands on a live session"). The worker forwards the
+    /// turn to its harness's session transport; the harness decides whether
+    /// the turn is authoritative (its <c>Capabilities.LiveSession</c>
+    /// flag). A worker without a live stream is a miss, not an error —
+    /// the caller may retry.
+    /// </summary>
+    /// <param name="workerId">Worker the turn targets. The v1.x
+    /// <c>WorkerId</c> is the contract; cowork 11.1 will widen the
+    /// parameter to <c>SlotHandle</c> when the slot identity
+    /// lands.</param>
+    /// <param name="turnInput">Structured session turn — <c>Text</c>
+    /// is mandatory, <c>Role</c> defaults to <c>"user"</c>,
+    /// <c>Metadata</c> is opaque to the worker.</param>
+    public bool TrySendTurnInput(WorkerId workerId, TurnInput turnInput);
 }
 
 /// <summary>
@@ -84,6 +103,15 @@ public sealed class WorkerCommandHub() : IWorkerCommandPipe
     public bool TrySendLeaseExpired(WorkerId workerId)
     {
         return WorkerCommandHubWriters.TryWriteTo(channelsByWorker, workerId, new OrchestratorCommand { LeaseExpired = new LeaseExpired() });
+    }
+
+    /// <inheritdoc />
+    public bool TrySendTurnInput(WorkerId workerId, TurnInput turnInput)
+    {
+        return WorkerCommandHubWriters.TryWriteTo(
+            channelsByWorker,
+            workerId,
+            new OrchestratorCommand { TurnInput = turnInput });
     }
 }
 

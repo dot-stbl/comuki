@@ -111,4 +111,31 @@ public static class RunEventTypes
     /// <c>run_events</c> row instead of a <see cref="WorkItemStatusChanged"/>.
     /// </summary>
     public const string RunSteerFollowUpQueued = "run.steer_followup_queued";
+
+    /// <summary>
+    /// A gate provider stamped a verdict for a work item
+    /// (add-orchestra §3 — Coda, <c>verification/spec.md</c> Requirement
+    /// "gate_evaluated journal event"). Payload carries the gate name,
+    /// the verdict, the evidence URIs, the work item id and the
+    /// <c>VerificationRecord.Id</c> so a reader can join the
+    /// <c>verifications</c> row directly. The event is NOT a run
+    /// terminal condition — it sits next to <see cref="VerifyCompleted"/>
+    /// / <see cref="VerifyFailed"/>, which the existing Translator
+    /// emits on the worker stream, but it owns the Coda layer
+    /// (the worker stream's verify events are the agent's per-run
+    /// self-report, this is the platform's per-gate record).
+    /// </summary>
+    public const string GateEvaluated = "gate.evaluated";
+
+    /// <summary>
+    /// A <c>MergeQueueEntry</c> / <c>MergeBatch</c> was created with a
+    /// <c>RunId</c> reference (add-orchestra §3 — Coda, task 3.6
+    /// restore the run link). Payload carries the entry / batch id
+    /// and the run id so the verification view can join the run's
+    /// gate records to the merge-queue row. Emitted in the same
+    /// transaction as the row insert when the platform sets the
+    /// reference; a row with a null <c>RunId</c> (cross-project
+    /// release trains) does not emit this event.
+    /// </summary>
+    public const string MergeQueueRunReferenced = "merge_queue.run_referenced";
 }

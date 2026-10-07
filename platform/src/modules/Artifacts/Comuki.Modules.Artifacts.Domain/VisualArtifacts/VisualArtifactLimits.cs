@@ -19,6 +19,16 @@ public static class VisualArtifactLimits
     /// <summary>Maximum bytes for a PNG publish — 5 MiB per issue #51 slice 1.</summary>
     public const long PngMaxBytes = 5L * 1024 * 1024;
 
+    /// <summary>
+    /// Maximum bytes for a <c>text/x-diff</c> publish — 2 MiB
+    /// (add-orchestra §3 — Coda, task 3.4 extend the mime allow-list
+    /// with <c>text/x-diff</c> for the gate-provider's <c>cmdiff</c>
+    /// evidence pointer). Twice the HTML cap because a busy run's
+    /// diff is usually larger than the rendered preview; the bundle
+    /// size cap (a separate concern) stays where it is.
+    /// </summary>
+    public const long TextDiffMaxBytes = 2L * 1024 * 1024;
+
     /// <summary>Allowed MIME types and their per-publish size cap.</summary>
     public static readonly IReadOnlyDictionary<string, long> MaxBytesByMime =
         new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase)
@@ -26,6 +36,7 @@ public static class VisualArtifactLimits
             ["image/png"] = PngMaxBytes,
             ["text/html"] = HtmlMaxBytes,
             ["image/svg+xml"] = SvgMaxBytes,
+            ["text/x-diff"] = TextDiffMaxBytes,
         };
 
     /// <summary>True when <paramref name="mime"/> is in <see cref="MaxBytesByMime"/>.</summary>
@@ -58,6 +69,19 @@ public static class VisualArtifactLimits
     public static bool IsSvg(string? mime)
     {
         return string.Equals(mime, "image/svg+xml", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// True when the MIME type is a <c>text/x-diff</c> — the bundle
+    /// member a gate provider reads as the <c>cmdiff</c> evidence
+    /// pointer. The visual proxy does not render it; the host-side
+    /// store accepts it so the worker stream can land it under
+    /// <c>{project}/{run}/changeset.diff</c>.
+    /// </summary>
+    /// <param name="mime">Content-Type header value (case-insensitive).</param>
+    public static bool IsTextDiff(string? mime)
+    {
+        return string.Equals(mime, "text/x-diff", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>True when the MIME type is a browser-rendered image (PNG/SVG).</summary>

@@ -50,6 +50,9 @@ public static class ApiRoutes
     /// <summary>One run by id — operator steer (add-orchestra §1 — Baton). Staged as a follow-up WorkItem on the no-LiveSession runtime today; the LiveSession branch lands in Phase 1c.</summary>
     public const string RunSteer = "/api/v1/runs/{runId:guid}/steer";
 
+    /// <summary>One run by id — the per-gate verification view (add-orchestra §3 — Coda). Returns the flat list of evaluated (work item, gate) verdicts; permission run:read.</summary>
+    public const string RunVerification = "/api/v1/runs/{runId:guid}/verification";
+
     /// <summary>Base of the chat session surface (issue #5 slice B).</summary>
     public const string ChatSessions = "/api/v1/chat/sessions";
 

@@ -439,6 +439,33 @@ grpcPort = 17004
 # runTimeout = "00:02:00"
 # outputLogCharCap = 65536
 
+[orchestration.verification]
+# Verification axis (add-orchestra §3 — Coda). The orchestrator
+# re-evaluates every registered gate provider when a work item
+# enters a terminal phase, upserts the verdict into the `verifications`
+# table, and stamps the `gate.evaluated` journal event in the same
+# transaction. The default is ON; flip to false on a contour where
+# the gate evaluation must be skipped (rollback path for the
+# verification axis).
+# enabled = true
+
+[orchestration.verification.commandGate]
+# Generic-command producer (add-orchestra §3 — Coda, task 3.2).
+# Binds the same `CommandGateOptions` the verify module's
+# GenericCommandGateProvider reads on the first evaluation pass to
+# insert a work-item-bound `GenericCommandRun` the verifier worker
+# claims. Empty section = producer stays off and the gate stamps
+# `Pending` until the operator schedules a run by hand. The
+# cross-field validator in `CommandGateOptions.Validate` rejects a
+# half-set pair at boot (Command empty + Arguments / ProfileKey
+# populated) so the all-or-nothing contract is enforced by the
+# type, not by the operator remembering the shape.
+#
+# command = ""
+# profileKey = ""
+# arguments = []
+# expectedExitCode = 0
+
 [redis]
 # Distributed cache for multi-replica Host (issue #11, "Redis cache при
 # multi-replica Host"): when enabled, the Projects settings snapshot

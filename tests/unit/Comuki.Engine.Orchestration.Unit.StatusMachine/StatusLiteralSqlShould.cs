@@ -116,7 +116,7 @@ public sealed class StatusLiteralSqlShould
             + "    LIMIT 1 "
             + "    FOR UPDATE SKIP LOCKED "
             + ") "
-            + "RETURNING id, project_id, branch_name, pull_request_url, status, conflict_resolution, "
+            + "RETURNING id, project_id, run_id, branch_name, pull_request_url, status, conflict_resolution, "
             + "          enqueued_at, claimed_by, claimed_at, merged_at, abandoned_at, abandoned_reason, notes");
     }
 

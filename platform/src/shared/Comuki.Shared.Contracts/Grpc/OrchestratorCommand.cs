@@ -6,9 +6,12 @@ namespace Comuki.Shared.Contracts.Grpc;
 /// Command the Orchestrator pushes to the worker over the bidi stream,
 /// discriminated by which optional field is set:
 /// <see cref="Stop"/> | <see cref="InjectContext"/> | <see cref="LeaseExpired"/>
-/// | <see cref="Exec"/>. Exactly one is meaningful per command; the wire
-/// shape allows more than one to be set (legacy tolerated) and the worker
-/// handler dispatches by first non-null field, stop first.
+/// | <see cref="Exec"/> | <see cref="TurnInput"/>. Exactly one is meaningful
+/// per command; the wire shape allows more than one to be set (legacy
+/// tolerated) and the worker handler dispatches each non-null branch
+/// it understands — <see cref="Stop"/>, <see cref="InjectContext"/>,
+/// <see cref="LeaseExpired"/>, <see cref="Exec"/>, and
+/// <see cref="TurnInput"/> are all consumed.
 /// </summary>
 [ProtoContract]
 public sealed record OrchestratorCommand
@@ -30,4 +33,16 @@ public sealed record OrchestratorCommand
     /// </summary>
     [ProtoMember(4)]
     public Exec? Exec { get; init; }
+
+    /// <summary>
+    /// Live-session turn input (add-orchestra Phase 1c,
+    /// <c>specs/session/spec.md</c> Requirement "TurnInput is the
+    /// authoritative session turn"). Carried as one
+    /// <see cref="TurnInput"/> record — the worker forwards it as a
+    /// session turn on the live agent process when the harness
+    /// declares <c>Capabilities.LiveSession = true</c>; otherwise the
+    /// platform falls back to a follow-up research <c>WorkItem</c>.
+    /// </summary>
+    [ProtoMember(5)]
+    public TurnInput? TurnInput { get; init; }
 }

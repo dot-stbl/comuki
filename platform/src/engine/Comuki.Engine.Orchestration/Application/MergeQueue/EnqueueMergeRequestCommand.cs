@@ -9,9 +9,17 @@ namespace Comuki.Engine.Orchestration.Application.MergeQueue;
 /// <param name="PullRequestUrl">Full PR URL the dashboard deep-links into; non-empty.</param>
 /// <param name="ConflictResolution">Operator-declared strategy hint.</param>
 /// <param name="Notes">Free-text notes; optional.</param>
+/// <param name="RunId">
+/// Originating run (Coda — task 3.6 restore the run link). Null for
+/// operator-driven entries that have no producing run. When supplied,
+/// the platform stamps a <c>merge_queue.run_referenced</c> event in
+/// the same transaction as the row insert. Optional and appended at
+/// the end so pre-Coda callers compile unchanged.
+/// </param>
 public sealed record EnqueueMergeRequestCommand(
     ProjectId? ProjectId,
     string BranchName,
     string PullRequestUrl,
     ConflictResolution ConflictResolution,
-    string? Notes);
+    string? Notes,
+    RunId? RunId = null);

@@ -1,4 +1,5 @@
 using Comuki.Engine.Orchestration.Domain.Exceptions;
+using Comuki.Shared.Kernel.Ids;
 
 namespace Comuki.Engine.Orchestration.Domain.MergeQueue;
 
@@ -24,6 +25,14 @@ public sealed class MergeBatch
     /// <summary>Operator-supplied human-readable name; non-empty, bounded.</summary>
     public string Name { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Run that produced the batch (add-orchestra §3 — Coda, task 3.6
+    /// restore the run link). Null for cross-project release trains or
+    /// a pre-orchestration operator seed; nullable and additive so
+    /// pre-existing rows survive the migration untouched.
+    /// </summary>
+    public RunId? RunId { get; private set; }
+
     /// <summary>PR URLs in the batch — the ordered list the operator declared.</summary>
     public IReadOnlyList<string> PullRequestUrls { get; private set; } = [];
 
@@ -45,16 +54,24 @@ public sealed class MergeBatch
     /// <summary>
     /// Creates a new batch in <see cref="MergeBatchStatus.Pending"/>. The
     /// name and the PR URL list must be non-empty; PR URLs are stored
-    /// as supplied (the engine does not parse them).
+    /// as supplied (the engine does not parse them). The run id is the
+    /// Coda restore — when supplied, the platform emits a
+    /// <c>merge_queue.run_referenced</c> event in the same transaction.
     /// </summary>
     /// <param name="name"></param>
     /// <param name="pullRequestUrls"></param>
     /// <param name="now"></param>
+    /// <param name="runId">
+    /// Originating run; null for cross-project release trains. Optional
+    /// and appended at the end so the pre-Coda call sites compile
+    /// unchanged.
+    /// </param>
     /// <exception cref="ArgumentException"></exception>
     public static MergeBatch Create(
         string name,
         IReadOnlyList<string> pullRequestUrls,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        RunId? runId = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -79,6 +96,7 @@ public sealed class MergeBatch
         {
             Id = id,
             Name = name,
+            RunId = runId,
             PullRequestUrls = pullRequestUrls,
             Status = MergeBatchStatus.Pending,
             CreatedAt = now,
@@ -159,32 +177,5 @@ public sealed class MergeBatch
         TransitionTo(MergeBatchStatus.Abandoned);
         AbandonedAt = now;
         AbandonedReason = reason;
-    }
-
-    /// <summary>
-    /// Internal reconstitute for the EF store. Not part of the public
-    /// domain API; the store is the only caller.
-    /// </summary>
-    internal static MergeBatch Reconstitute(
-        Guid id,
-        string name,
-        IReadOnlyList<string> pullRequestUrls,
-        MergeBatchStatus status,
-        DateTimeOffset createdAt,
-        DateTimeOffset? mergedAt,
-        DateTimeOffset? abandonedAt,
-        string? abandonedReason)
-    {
-        return new MergeBatch
-        {
-            Id = id,
-            Name = name,
-            PullRequestUrls = pullRequestUrls,
-            Status = status,
-            CreatedAt = createdAt,
-            MergedAt = mergedAt,
-            AbandonedAt = abandonedAt,
-            AbandonedReason = abandonedReason,
-        };
     }
 }

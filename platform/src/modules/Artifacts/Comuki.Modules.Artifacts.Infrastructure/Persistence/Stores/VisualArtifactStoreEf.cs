@@ -123,4 +123,26 @@ public sealed class VisualArtifactStoreEf(
             ? null
             : new VisualArtifactContent(body.Body, body.ContentType, body.SizeBytes);
     }
+
+    /// <inheritdoc />
+#pragma warning disable IDE0046 // early-return over ternary (wave-3 reviewer request, cleaner hot path)
+    public async Task<IReadOnlyList<VisualArtifact>> ListByWorkItemsAndFilenameAsync(
+        IReadOnlyCollection<Guid> workItemIds,
+        string filename,
+        CancellationToken cancellationToken = default)
+    {
+        if (workItemIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await db.VisualArtifacts
+            .AsNoTracking()
+            .Where(artifact => artifact.WorkItemId.HasValue
+                && workItemIds.Contains(artifact.WorkItemId.Value)
+                && artifact.Filename == filename)
+            .OrderByDescending(artifact => artifact.Version)
+            .ToListAsync(cancellationToken);
+    }
+#pragma warning restore IDE0046
 }

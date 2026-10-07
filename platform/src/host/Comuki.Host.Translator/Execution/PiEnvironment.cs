@@ -6,8 +6,9 @@ namespace Comuki.Host.Translator.Execution;
 /// Builds the per-execution environment stamp for the pi process from a
 /// claim (issue #122): the proxy base URL and the minted virtual key the
 /// orchestrator handed out at claim. The dict is consumed by
-/// <see cref="Runtime.IPiRunner.RunAsync"/> and applied to that one
-/// process — container-level config is never written.
+/// <see cref="Runtime.IHarnessRuntime.StartSessionAsync"/> as part of
+/// the <see cref="Runtime.HarnessStartRequest"/> and applied to that
+/// one process — container-level config is never written.
 /// </summary>
 public static class PiEnvironment
 {

@@ -317,7 +317,7 @@ public sealed class PiEvalRunner(string repositoryRoot)
         // an unclosed redirected stdin pipe can leave a headless Node/Bun CLI
         // blocked waiting on input that will never arrive (the same class of
         // hang the opencode CLI is documented to hit without `< /dev/null`).
-        // Closing it immediately signals EOF, matching production PiRunner's
+        // Closing it immediately signals EOF, matching production PiHarness's
         // behavior of never redirecting stdin at all.
         process.StandardInput.Close();
 

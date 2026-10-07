@@ -20,7 +20,7 @@ public sealed record ScenarioWorker
     /// Relative path (under the scenario file's directory) to a directory of
     /// pi-native stream-json fixture files TestFakePi should stream. T2a
     /// only — TestFakePi has no seam to receive <c>--fixtures-dir</c> from a
-    /// real claim (<c>Comuki.Host.Translator.Runtime.PiRunner</c> always
+    /// real claim (<c>Comuki.Host.Translator.Runtime.PiHarness</c> always
     /// spawns it bare), so this is honored by baking the directory into the
     /// test worker image at build time, not by an argument. Empty =
     /// TestFakePi's own bundled default fixtures.

@@ -3,9 +3,12 @@ using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Runs;
+using Comuki.Host.Workers.Grpc;
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Shared.Bootstrap.Versioning;
+using Comuki.Shared.Contracts.Grpc;
+using Comuki.Shared.Kernel.Harness;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
@@ -19,12 +22,13 @@ namespace Comuki.Host.Unit.Steer;
 
 /// <summary>
 /// <see cref="HostSteerRunAdapter"/>: the operator-initiated steer
-/// (add-orchestra §1 — Baton, Phase 1a). The InMemory provider
-/// exercises the follow-up staging path; the schema-bound
-/// <c>comuki-injected-context.md</c> delivery and the LiveSession
-/// bidi branch land with Phase 1c. The terminal-run refusal,
-/// the unknown-run path, and the no-live-lease resilience are the
-/// three load-bearing branches of Phase 1a — each gets a test.
+/// (add-orchestra §1 — Baton). The InMemory provider exercises both
+/// the no-LiveSession follow-up staging path (Phase 1a canonical)
+/// and the LiveSession bidi <see cref="TurnInput"/> path (Phase
+/// 1c). The terminal-run refusal, the unknown-run path, the
+/// no-live-lease resilience, the LiveSession=true successful
+/// delivery, and the LiveSession=true miss (worker has no live
+/// stream) are the load-bearing branches — each gets a test.
 /// </summary>
 public sealed class HostSteerRunAdapterShould
 {
@@ -32,11 +36,11 @@ public sealed class HostSteerRunAdapterShould
     public async Task SteerQueuedRunStagesFollowUpAsync()
     {
         var db = NewDb();
-        var resolver = Substitute.For<IExecutionIdResolver>();
-        resolver.ResolveAsync(Arg.Any<RunId>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<WorkerId?>(null));
+        var resolver = NewResolverStub(liveWorker: null);
+        var harnessResolver = NewHarnessResolverStub(liveHarness: null);
+        var commandPipe = NewCommandPipeStub(delivered: true);
         var projects = NewProjectsStub();
-        var adapter = NewAdapter(db, resolver, projects);
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
         var runId = RunId.New();
         await SeedRunAsync(db, runId, status: RunStatus.Queued);
         const string steerText = "redirect to a different approach";
@@ -57,11 +61,11 @@ public sealed class HostSteerRunAdapterShould
     {
         var db = NewDb();
         var liveWorker = WorkerId.New();
-        var resolver = Substitute.For<IExecutionIdResolver>();
-        resolver.ResolveAsync(Arg.Any<RunId>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<WorkerId?>(liveWorker));
+        var resolver = NewResolverStub(liveWorker);
+        var harnessResolver = NewHarnessResolverStub(liveHarness: null);
+        var commandPipe = NewCommandPipeStub(delivered: true);
         var projects = NewProjectsStub();
-        var adapter = NewAdapter(db, resolver, projects);
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
         var runId = RunId.New();
         await SeedRunAsync(db, runId, status: RunStatus.Running);
 
@@ -75,9 +79,11 @@ public sealed class HostSteerRunAdapterShould
     public async Task SteerTerminalRunRefusesAndStagesNothingAsync()
     {
         var db = NewDb();
-        var resolver = Substitute.For<IExecutionIdResolver>();
+        var resolver = NewResolverStub(liveWorker: null);
+        var harnessResolver = NewHarnessResolverStub(liveHarness: null);
+        var commandPipe = NewCommandPipeStub(delivered: true);
         var projects = NewProjectsStub();
-        var adapter = NewAdapter(db, resolver, projects);
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
         var runId = RunId.New();
         await SeedRunAsync(db, runId, status: RunStatus.Succeeded);
 
@@ -92,9 +98,11 @@ public sealed class HostSteerRunAdapterShould
     public async Task SteerFailedRunRefusesAsync()
     {
         var db = NewDb();
-        var resolver = Substitute.For<IExecutionIdResolver>();
+        var resolver = NewResolverStub(liveWorker: null);
+        var harnessResolver = NewHarnessResolverStub(liveHarness: null);
+        var commandPipe = NewCommandPipeStub(delivered: true);
         var projects = NewProjectsStub();
-        var adapter = NewAdapter(db, resolver, projects);
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
         var runId = RunId.New();
         await SeedRunAsync(db, runId, status: RunStatus.Failed);
 
@@ -106,9 +114,11 @@ public sealed class HostSteerRunAdapterShould
     public async Task SteerCancelledRunRefusesAsync()
     {
         var db = NewDb();
-        var resolver = Substitute.For<IExecutionIdResolver>();
+        var resolver = NewResolverStub(liveWorker: null);
+        var harnessResolver = NewHarnessResolverStub(liveHarness: null);
+        var commandPipe = NewCommandPipeStub(delivered: true);
         var projects = NewProjectsStub();
-        var adapter = NewAdapter(db, resolver, projects);
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
         var runId = RunId.New();
         await SeedRunAsync(db, runId, status: RunStatus.Cancelled);
 
@@ -120,11 +130,11 @@ public sealed class HostSteerRunAdapterShould
     public async Task SteerAppendsRunEventAsync()
     {
         var db = NewDb();
-        var resolver = Substitute.For<IExecutionIdResolver>();
-        resolver.ResolveAsync(Arg.Any<RunId>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<WorkerId?>(null));
+        var resolver = NewResolverStub(liveWorker: null);
+        var harnessResolver = NewHarnessResolverStub(liveHarness: null);
+        var commandPipe = NewCommandPipeStub(delivered: true);
         var projects = NewProjectsStub();
-        var adapter = NewAdapter(db, resolver, projects);
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
         var runId = RunId.New();
         await SeedRunAsync(db, runId, status: RunStatus.Running);
         const string steerText = "the dashboard will see this in the timeline";
@@ -142,11 +152,11 @@ public sealed class HostSteerRunAdapterShould
     {
         var db = NewDb();
         var liveWorker = WorkerId.New();
-        var resolver = Substitute.For<IExecutionIdResolver>();
-        resolver.ResolveAsync(Arg.Any<RunId>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<WorkerId?>(liveWorker));
+        var resolver = NewResolverStub(liveWorker);
+        var harnessResolver = NewHarnessResolverStub(liveHarness: null);
+        var commandPipe = NewCommandPipeStub(delivered: true);
         var projects = NewProjectsStub();
-        var adapter = NewAdapter(db, resolver, projects);
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
         var runId = RunId.New();
         await SeedRunAsync(db, runId, status: RunStatus.Running);
         // The in-flight item still exists alongside the follow-up.
@@ -168,12 +178,13 @@ public sealed class HostSteerRunAdapterShould
     {
         var db = NewDb();
         var scopeAccessor = Substitute.For<ISubjectScopeAccessor>();
-        var resolver = Substitute.For<IExecutionIdResolver>();
-        resolver.ResolveAsync(Arg.Any<RunId>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<WorkerId?>(null));
+        var resolver = NewResolverStub(liveWorker: null);
+        var harnessResolver = NewHarnessResolverStub(liveHarness: null);
+        var commandPipe = NewCommandPipeStub(delivered: true);
         var projects = NewProjectsStub();
         var adapter = new HostSteerRunAdapter(
-            db, scopeAccessor, resolver, Options.Create(new SteeringWorkerDefaults()),
+            db, scopeAccessor, resolver, harnessResolver, commandPipe,
+            Options.Create(new SteeringWorkerDefaults()),
             ComukiBuildInformation.Unknown, TimeProvider.System, projects,
             NullLogger<HostSteerRunAdapter>.Instance);
         var runId = RunId.New();
@@ -182,6 +193,130 @@ public sealed class HostSteerRunAdapterShould
         await adapter.SteerAsync(runId, "x", TestContext.Current.CancellationToken);
 
         scopeAccessor.Received().AsSystem("runs-steer");
+    }
+
+    [Fact(DisplayName = "Given a Running run with a live worker and a LiveSession harness, when SteerAsync is called, then the bidi TurnInput path delivers and returns delivered:true with no follow-up")]
+    public async Task SteerLiveSessionDeliversViaTurnInputAsync()
+    {
+        var db = NewDb();
+        var liveWorker = WorkerId.New();
+        var liveHarness = new InProcessHarness(LiveSession: true);
+        var resolver = NewResolverStub(liveWorker);
+        var harnessResolver = NewHarnessResolverStub(liveHarness);
+        var commandPipe = NewCommandPipeStub(delivered: true);
+        var projects = NewProjectsStub();
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
+        var runId = RunId.New();
+        await SeedRunAsync(db, runId, status: RunStatus.Running);
+        const string steerText = "redirect to the live session";
+
+        var result = await adapter.SteerAsync(runId, steerText, TestContext.Current.CancellationToken);
+
+        result.Delivered.ShouldBeTrue();
+        result.FollowUpWorkItemId.ShouldBeNull();
+        // LiveSession path: NO follow-up work item is staged.
+        (await db.WorkItems.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(0);
+        // LiveSession path: NO run_events row of the follow-up kind.
+        (await db.RunEvents.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "Given a Running run with a live worker and a LiveSession harness, but no live bidi stream, when SteerAsync is called, then the result is delivered:false with no follow-up")]
+    public async Task SteerLiveSessionMissesWhenNoLiveStreamAsync()
+    {
+        var db = NewDb();
+        var liveWorker = WorkerId.New();
+        var liveHarness = new InProcessHarness(LiveSession: true);
+        var resolver = NewResolverStub(liveWorker);
+        var harnessResolver = NewHarnessResolverStub(liveHarness);
+        // Hub returns false — the worker has no live stream
+        // (reaper reclaimed the lease between mint and steer).
+        var commandPipe = NewCommandPipeStub(delivered: false);
+        var projects = NewProjectsStub();
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
+        var runId = RunId.New();
+        await SeedRunAsync(db, runId, status: RunStatus.Running);
+
+        var result = await adapter.SteerAsync(runId, "any text", TestContext.Current.CancellationToken);
+
+        result.Delivered.ShouldBeFalse();
+        result.FollowUpWorkItemId.ShouldBeNull();
+        // Miss path: NO follow-up — the spec marks the call
+        // non-fatal; the caller may retry. The follow-up is the
+        // no-LiveSession path's job, not the LiveSession miss.
+        (await db.WorkItems.CountAsync(TestContext.Current.CancellationToken)).ShouldBe(0);
+    }
+
+    [Fact(DisplayName = "Given a Running run with a live worker but no live stream, when SteerAsync is called and the harness declares LiveSession=true, then the response is delivered:false (the harness resolver does not fall back to the follow-up path)")]
+    public async Task SteerLiveSessionNoLiveWorkerReturnsDeliveredFalseAsync()
+    {
+        var db = NewDb();
+        var liveHarness = new InProcessHarness(LiveSession: true);
+        var resolver = NewResolverStub(liveWorker: null);
+        var harnessResolver = NewHarnessResolverStub(liveHarness);
+        var commandPipe = NewCommandPipeStub(delivered: true);
+        var projects = NewProjectsStub();
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
+        var runId = RunId.New();
+        await SeedRunAsync(db, runId, status: RunStatus.Running);
+
+        var result = await adapter.SteerAsync(runId, "any text", TestContext.Current.CancellationToken);
+
+        result.Delivered.ShouldBeFalse();
+        result.FollowUpWorkItemId.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Given a Running run with a no-LiveSession harness, when SteerAsync is called, then the follow-up is staged (Phase 1a canonical path)")]
+    public async Task SteerNoLiveSessionStagesFollowUpAsync()
+    {
+        var db = NewDb();
+        var liveWorker = WorkerId.New();
+        var noLiveSessionHarness = new InProcessHarness(LiveSession: false);
+        var resolver = NewResolverStub(liveWorker);
+        var harnessResolver = NewHarnessResolverStub(noLiveSessionHarness);
+        var commandPipe = NewCommandPipeStub(delivered: true);
+        var projects = NewProjectsStub();
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
+        var runId = RunId.New();
+        await SeedRunAsync(db, runId, status: RunStatus.Running);
+
+        var result = await adapter.SteerAsync(runId, "course-correct", TestContext.Current.CancellationToken);
+
+        result.Delivered.ShouldBeTrue();
+        result.FollowUpWorkItemId.ShouldNotBeNull();
+        // No-LiveSession path: the bidi channel is NOT consulted.
+        // TrySendTurnInput returns sync (bool); NSubstitute's
+        // DidNotReceive().<method>() returns bool synchronously —
+        // no await.
+        commandPipe.DidNotReceive().TrySendTurnInput(
+            Arg.Any<WorkerId>(),
+            Arg.Any<TurnInput>());
+    }
+
+    [Fact(DisplayName = "Given a TurnInput command sent to the bidi channel, when the worker is registered, then the same Text/Role/Metadata are observed end-to-end")]
+    public async Task TurnInputCarriesOperatorTextToBidiChannelAsync()
+    {
+        var db = NewDb();
+        var liveWorker = WorkerId.New();
+        var liveHarness = new InProcessHarness(LiveSession: true);
+        var resolver = NewResolverStub(liveWorker);
+        var harnessResolver = NewHarnessResolverStub(liveHarness);
+        var commandPipe = Substitute.For<IWorkerCommandPipe>();
+        commandPipe.TrySendTurnInput(Arg.Any<WorkerId>(), Arg.Any<TurnInput>())
+            .Returns(true);
+        var projects = NewProjectsStub();
+        var adapter = NewAdapter(db, resolver, harnessResolver, commandPipe, projects);
+        var runId = RunId.New();
+        await SeedRunAsync(db, runId, status: RunStatus.Running);
+        const string steerText = "the operator sees this on the bidi stream";
+
+        await adapter.SteerAsync(runId, steerText, TestContext.Current.CancellationToken);
+
+        // TrySendTurnInput returns sync (bool); NSubstitute's
+        // Received(1).<method>() returns bool synchronously — no
+        // await.
+        commandPipe.Received(1).TrySendTurnInput(
+            Arg.Is<WorkerId>(worker => worker == liveWorker),
+            Arg.Is<TurnInput>(turn => turn.Text == steerText && turn.Role == "user"));
     }
 
     private static OrchestrationDbContext NewDb()
@@ -195,12 +330,16 @@ public sealed class HostSteerRunAdapterShould
     private static HostSteerRunAdapter NewAdapter(
         OrchestrationDbContext db,
         IExecutionIdResolver resolver,
+        IRunHarnessResolver harnessResolver,
+        IWorkerCommandPipe commandPipe,
         IProjectStore projects)
     {
         return new(
             db,
             Substitute.For<ISubjectScopeAccessor>(),
             resolver,
+            harnessResolver,
+            commandPipe,
             Options.Create(new SteeringWorkerDefaults()),
             ComukiBuildInformation.Unknown,
             TimeProvider.System,
@@ -208,9 +347,49 @@ public sealed class HostSteerRunAdapterShould
             NullLogger<HostSteerRunAdapter>.Instance);
     }
 
+    private static IExecutionIdResolver NewResolverStub(WorkerId? liveWorker)
+    {
+        var resolver = Substitute.For<IExecutionIdResolver>();
+        resolver.ResolveAsync(Arg.Any<RunId>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(liveWorker));
+        return resolver;
+    }
+
+    private static IRunHarnessResolver NewHarnessResolverStub(IHarness? liveHarness)
+    {
+        var harnessResolver = Substitute.For<IRunHarnessResolver>();
+        harnessResolver.ResolveAsync(Arg.Any<RunId>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(liveHarness));
+        return harnessResolver;
+    }
+
+    private static IWorkerCommandPipe NewCommandPipeStub(bool delivered)
+    {
+        var commandPipe = Substitute.For<IWorkerCommandPipe>();
+        commandPipe.TrySendTurnInput(Arg.Any<WorkerId>(), Arg.Any<TurnInput>())
+            .Returns(delivered);
+        return commandPipe;
+    }
+
     private static IProjectStore NewProjectsStub()
     {
         return ProjectStoreStub();
+    }
+
+    /// <summary>
+    /// In-process <see cref="IHarness"/> for the unit test surface.
+    /// Mirrors the production <c>TestFakeHarness</c> in
+    /// <c>Comuki.Host.Translator.Runtime</c> without taking a
+    /// Translator project reference from the Host unit test project —
+    /// the test fake is a tiny surface (Name + Capabilities) and the
+    /// harness contract is what the Host's <see cref="HarnessRegistry"/>
+    /// ultimately holds.
+    /// </summary>
+    private sealed class InProcessHarness(bool LiveSession) : IHarness
+    {
+        public string Name => "in-process-harness";
+
+        public HarnessCapabilities Capabilities { get; } = new(liveSession: LiveSession);
     }
 
     /// <summary>

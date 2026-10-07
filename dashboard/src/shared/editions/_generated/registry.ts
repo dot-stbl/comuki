@@ -11,6 +11,7 @@ export const Features = {
   MultiRepo: "multi-repo",
   ScaleAndIsolation: "scale-isolation",
   Steering: "steering",
+  Verification: "verification",
   WhiteLabel: "white-label",
   WorkerCommitAttribution: "worker-commit-attribution",
 } as const;

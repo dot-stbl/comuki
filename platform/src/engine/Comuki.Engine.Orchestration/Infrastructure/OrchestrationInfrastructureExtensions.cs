@@ -9,6 +9,7 @@ using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Stores;
 using Comuki.Engine.Orchestration.Infrastructure.Queue;
+using Comuki.Engine.Orchestration.Infrastructure.Verification;
 using Comuki.Engine.Orchestration.Options;
 using Comuki.Shared.Bootstrap.Workers;
 using Comuki.Shared.Contracts.Journal;
@@ -86,6 +87,20 @@ public static class OrchestrationInfrastructureExtensions
         services.AddSingleton<IComukiWorker, LeaseReaperComukiWorker>();
         services.AddSingleton<IComukiWorker, OutboxDispatcherComukiWorker>();
         services.AddScoped<EscalationTimeoutSweeper>();
+
+        // Verification axis (add-orchestra §3 — Coda): the engine owns
+        // the domain services (record store, provider registry,
+        // evaluation service, options, default IProjectVerificationSettings).
+        // The host composition is left to wire the host-side bits only —
+        // CommandGateOptions, the real IProjectVerificationSettings
+        // adapter, and the gate providers themselves
+        // (HostComposer.AddOrchestrationVerification, which used to call
+        // AddOrchestrationVerificationCore here). WorkItemQueueEf
+        // requires VerificationEvaluationService, so the engine
+        // composition must wire the core on its own — the DiComposition
+        // unit test exercises this path (ValidateOnBuild, no host
+        // composition).
+        services.AddOrchestrationVerificationCore(configuration);
 
         // EscalationTimeout:Enabled=false skips the worker registration
         // entirely (the same pattern the host uses for oidc-sweep) — the

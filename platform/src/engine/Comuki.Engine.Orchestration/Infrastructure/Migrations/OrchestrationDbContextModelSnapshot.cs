@@ -107,6 +107,10 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("pull_request_urls");
 
+                    b.Property<Guid?>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -181,6 +185,10 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                         .HasColumnType("character varying(1024)")
                         .HasColumnName("pull_request_url");
 
+                    b.Property<Guid?>("RunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("run_id");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -192,6 +200,10 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId")
                         .HasDatabaseName("ix_merge_queue_project_id");
+
+                    b.HasIndex("RunId")
+                        .HasDatabaseName("ix_merge_queue_run_id")
+                        .HasFilter("run_id IS NOT NULL");
 
                     b.HasIndex("Status", "EnqueuedAt")
                         .HasDatabaseName("ix_merge_queue_status_enqueued_at");
@@ -309,6 +321,56 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                         .HasDatabaseName("ix_runs_status_updated_at");
 
                     b.ToTable("runs", "orchestration");
+                });
+
+            modelBuilder.Entity("Comuki.Engine.Orchestration.Domain.Verification.VerificationRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("EvaluatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("evaluated_at");
+
+                    b.Property<string>("Evaluator")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("evaluator");
+
+                    b.Property<string>("EvidenceRefs")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("evidence_refs");
+
+                    b.Property<string>("GateName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("gate_name");
+
+                    b.Property<string>("Verdict")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("verdict");
+
+                    b.Property<Guid>("WorkItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("work_item_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_verifications");
+
+                    b.HasIndex("WorkItemId")
+                        .HasDatabaseName("ix_verifications_work_item_id");
+
+                    b.HasIndex("WorkItemId", "GateName")
+                        .IsUnique()
+                        .HasDatabaseName("ux_verifications_work_item_id_gate_name");
+
+                    b.ToTable("verifications", "orchestration");
                 });
 
             modelBuilder.Entity("Comuki.Engine.Orchestration.Domain.WorkItems.WorkItem", b =>

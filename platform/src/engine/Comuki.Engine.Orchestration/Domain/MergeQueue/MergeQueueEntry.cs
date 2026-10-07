@@ -29,6 +29,17 @@ public sealed class MergeQueueEntry
     /// </summary>
     public ProjectId? ProjectId { get; private set; }
 
+    /// <summary>
+    /// Run that produced the PR (add-orchestra §3 — Coda, task 3.6
+    /// restore the run link). Null when the entry is operator-driven
+    /// without an originating run (cross-project release trains, or
+    /// a pre-orchestration operator seed); the verification view joins
+    /// on this field for the gate-evidence trace. The column is
+    /// nullable and additive — the migration only adds the column
+    /// without touching existing rows.
+    /// </summary>
+    public RunId? RunId { get; private set; }
+
     /// <summary>Branch the entry will land; e.g. <c>feature/merge-queue</c>.</summary>
     public string BranchName { get; private set; } = string.Empty;
 
@@ -68,7 +79,9 @@ public sealed class MergeQueueEntry
     /// <summary>
     /// Creates a new entry in <see cref="MergeQueueStatus.Pending"/>. The
     /// branch and PR URL must be non-empty; the project id is optional
-    /// (cross-project merges).
+    /// (cross-project merges). The run id is the Coda restore — when
+    /// supplied, the platform emits a <c>merge_queue.run_referenced</c>
+    /// event in the same transaction.
     /// </summary>
     /// <param name="projectId"></param>
     /// <param name="branchName"></param>
@@ -76,6 +89,11 @@ public sealed class MergeQueueEntry
     /// <param name="conflictResolution"></param>
     /// <param name="notes"></param>
     /// <param name="now"></param>
+    /// <param name="runId">
+    /// Originating run; null for operator-driven entries without a
+    /// producing run. Optional and appended at the end so the
+    /// pre-Coda call sites compile unchanged.
+    /// </param>
     /// <exception cref="ArgumentException"></exception>
     public static MergeQueueEntry Create(
         ProjectId? projectId,
@@ -83,7 +101,8 @@ public sealed class MergeQueueEntry
         string pullRequestUrl,
         ConflictResolution conflictResolution,
         string? notes,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        RunId? runId = null)
     {
         if (string.IsNullOrWhiteSpace(branchName))
         {
@@ -100,6 +119,7 @@ public sealed class MergeQueueEntry
         {
             Id = id,
             ProjectId = projectId,
+            RunId = runId,
             BranchName = branchName,
             PullRequestUrl = pullRequestUrl,
             Status = MergeQueueStatus.Pending,
@@ -234,6 +254,7 @@ public sealed class MergeQueueEntry
     internal static MergeQueueEntry Reconstitute(
         Guid id,
         ProjectId? projectId,
+        RunId? runId,
         string branchName,
         string pullRequestUrl,
         MergeQueueStatus status,
@@ -250,6 +271,7 @@ public sealed class MergeQueueEntry
         {
             Id = id,
             ProjectId = projectId,
+            RunId = runId,
             BranchName = branchName,
             PullRequestUrl = pullRequestUrl,
             Status = status,

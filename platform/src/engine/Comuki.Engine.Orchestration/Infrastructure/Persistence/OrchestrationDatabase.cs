@@ -37,4 +37,13 @@ public static class OrchestrationDatabase
 
     /// <summary>Inbox dedupe receipts (issue #87 WS6) — one row per already-seen wire message id.</summary>
     public const string InboxReceipts = "inbox_receipts";
+
+    /// <summary>
+    /// Per-work-item verification records (add-orchestra §3 — Coda,
+    /// <c>verification/spec.md</c> Requirement "VerificationRecord is a
+    /// per-WorkItem sibling table"). One row per (work item, gate);
+    /// the unique index <c>ux_verifications_work_item_id_gate_name</c>
+    /// is the re-evaluation contract.
+    /// </summary>
+    public const string Verifications = "verifications";
 }

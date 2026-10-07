@@ -32,6 +32,25 @@ public interface IGenericCommandStore
         int limit,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Lists the most recent runs of one work item within a project;
+    /// newest first. Added in Coda (add-orchestra §3) so the
+    /// Verify module's gate provider (in Infrastructure) can look up
+    /// the verdict the verifier worker has already stamped for a
+    /// work-item-bound run. The store's
+    /// <c>ix_generic_command_runs_project_work_item</c> partial index
+    /// (added in this change) covers the filter.
+    /// </summary>
+    /// <param name="projectId">Owning project.</param>
+    /// <param name="workItemId">Bound work item; null returns an empty list (operator-only global runs are not work-item-scoped).</param>
+    /// <param name="limit">Hard cap on rows returned.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    public Task<IReadOnlyList<GenericCommandRun>> ListByWorkItemAsync(
+        ProjectId projectId,
+        Guid? workItemId,
+        int limit,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Persists a mutated run (status / output_log / timestamps).</summary>
     /// <param name="run">The run to persist.</param>
     /// <param name="cancellationToken">Cooperative cancellation.</param>

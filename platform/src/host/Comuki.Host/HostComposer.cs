@@ -37,6 +37,7 @@ using Comuki.Host.Security.RateLimit;
 using Comuki.Host.Security.Tls;
 using Comuki.Host.Settings;
 using Comuki.Host.Workers;
+using Comuki.Host.Workers.Grpc;
 using Comuki.Host.Workers.Read;
 using Comuki.Modules.Artifacts.Application;
 using Comuki.Modules.Artifacts.Application.Packaging;
@@ -85,6 +86,7 @@ using Comuki.Shared.Contracts.Costs;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Editions.Gating;
 using Comuki.Shared.Editions.Installers;
+using Comuki.Shared.Kernel.Harness;
 using Comuki.Shared.Kernel.Secrets;
 using Comuki.Shared.Migrations;
 using Comuki.Shared.Redis;
@@ -269,7 +271,40 @@ internal static class HostComposer
         builder.Services.AddScoped<IApproveRunPort, HostApproveRunAdapter>();
         builder.Services.AddScoped<ICancelRunPort, HostCancelRunAdapter>();
         builder.Services.AddScoped<IExecutionIdResolver, ExecutionIdResolver>();
+        // Phase 1c baton: the live-session path rides the
+        // IWorkerCommandPipe bidi channel; the resolver reads the
+        // active execution's harness to decide whether TurnInput is
+        // authoritative (Capabilities.LiveSession).
+        // Harness catalog (Phase 1c partial). HarnessRegistry
+        // populates itself at construction from the DI-registered
+        // IHarness instances; the host process holds the capability
+        // declarations (Name + Capabilities) and the runtime half —
+        // process spawn, session transport, stdin writer — lives in
+        // the Translator process. The two halves share IHarness.Name
+        // (HarnessIds.Pi / HarnessIds.TestFakePi) as the contract
+        // identifier: the Host's resolver reads the capability, the
+        // Translator's runtime reads the name and spawns the
+        // matching process. Phase 8 / Instrument replaces these
+        // capability-only holders with a profile-frontmatter-driven
+        // catalog; the resolver path stays the same.
+        builder.Services.AddSingleton<HarnessRegistry>();
+        // Resolver holds OrchestrationDbContext (scoped) — same lifetime
+        // as its peer ExecutionIdResolver (line above). Singleton here
+        // was a captive-dependency landmine.
+        builder.Services.AddScoped<IRunHarnessResolver, RunHarnessResolver>();
+        builder.Services.AddSingleton<IWorkerCommandPipe, WorkerCommandHub>();
         builder.Services.AddScoped<ISteerRunPort, HostSteerRunAdapter>();
+        builder.Services.AddSingleton<IHarness, PiHarnessCapability>();
+        // TestFakeHarnessCapability's ctor takes a `bool liveSession` flag
+        // the DI container cannot infer. The production host registers
+        // the no-LiveSession variant (matches the test fake's spec
+        // scenario at worker-runtime/spec.md:186: "TestFakeHarness
+        // declares Capabilities.LiveSession = false"). Tests that want
+        // the LiveSession=true variant construct InProcessHarness (the
+        // private class in HostSteerRunAdapterShould) — they don't go
+        // through this registry. The factory is the only way to land a
+        // ctor argument here.
+        builder.Services.AddSingleton<IHarness>(_ => new TestFakeHarnessCapability(liveSession: false));
         builder.Services.AddScoped<ChatRunStarter>();
         builder.Services.AddOptions<ChatWorkerDefaults>()
             .Bind(builder.Configuration.GetSection(ChatWorkerDefaults.SectionName))
@@ -641,6 +676,13 @@ internal static class HostComposer
                 seedResult.Superseded,
                 seedResult.Unchanged);
         }
+
+        // The harness catalog (HarnessRegistry) populates itself at
+        // construction from the DI-registered IHarness instances —
+        // no post-Build step is needed; the catalog is ready the
+        // moment the service provider materialises the registry.
+        // The first read happens lazily through RunHarnessResolver;
+        // the registration itself is enough for DI to construct it.
 
         HostDatabase.WarnLegacyAlias(database, app.Logger);
 

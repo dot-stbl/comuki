@@ -28,6 +28,10 @@ public sealed class MergeQueueConfiguration : IEntityTypeConfiguration<MergeQueu
             .HasColumnName("project_id")
             .HasConversion(OrchestrationIdConverters.ProjectIdToUuid);
 
+        builder.Property(static entry => entry.RunId)
+            .HasColumnName("run_id")
+            .HasConversion(OrchestrationIdConverters.RunIdToNullableUuid);
+
         builder.Property(static entry => entry.BranchName)
             .HasColumnName("branch_name")
             .HasMaxLength(256)
@@ -82,5 +86,17 @@ public sealed class MergeQueueConfiguration : IEntityTypeConfiguration<MergeQueu
 
         builder.HasIndex(static entry => entry.ProjectId)
             .HasDatabaseName("ix_merge_queue_project_id");
+
+        // Run-reference scan path (add-orchestra §3 — Coda, task 3.6):
+        // the merge-queue/run link surfaced in wave-3 enables a future
+        // "entries for this run" lookup the engine never queries itself
+        // (the read goes via the journal, not the table), but the
+        // merge-queue dashboard cross-references the run on every
+        // batch detail render. The partial index keeps the cost on
+        // rows that have a run stamp — operator seeds and global
+        // cross-project releases stay out of the index entirely.
+        builder.HasIndex(static entry => entry.RunId)
+            .HasDatabaseName("ix_merge_queue_run_id")
+            .HasFilter("run_id IS NOT NULL");
     }
 }

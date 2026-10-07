@@ -43,6 +43,33 @@ public sealed class GenericCommandStore(VerifyDbContext db) : IGenericCommandSto
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<GenericCommandRun>> ListByWorkItemAsync(
+        ProjectId projectId,
+        Guid? workItemId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        // Operator-only runs carry no work item id; the platform
+        // surface is the empty list (the gate provider stamps
+        // Pending, the journal notes "no run for this work item").
+        if (workItemId is null)
+        {
+            return [];
+        }
+
+        // The captured local silences IDE0046 inside the expression
+        // tree — the compiler can't see the null-check above through
+        // the lambda boundary.
+        var workItem = workItemId.Value;
+        return await db.GenericCommandRuns
+            .AsNoTracking()
+            .Where(run => run.ProjectId == projectId && run.WorkItemId == workItem)
+            .OrderByDescending(run => run.CreatedAt)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task UpdateAsync(GenericCommandRun run, CancellationToken cancellationToken = default)
     {
         db.GenericCommandRuns.Update(run);

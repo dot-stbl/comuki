@@ -55,6 +55,19 @@ public sealed class GenericCommandRun
     public ProjectId? ProjectId { get; private set; }
 
     /// <summary>
+    /// Optional work item the run gates
+    /// (add-orchestra §3 — Coda, task 3.2 "first registered provider is
+    /// the existing Verify module"; the brief: "GenericCommandRun
+    /// получает WorkItemId-ссылку (nullable для operator-only запусков)").
+    /// Null for operator-only runs that aren't bound to a work item —
+    /// the global gate runs the scheduler dispatcher always supplies a
+    /// project, the operator-triggered gate can leave both null. The
+    /// verification evaluation joins on this field to look up the
+    /// row's verdict when stamping <c>VerificationRecord</c>.
+    /// </summary>
+    public Guid? WorkItemId { get; private set; }
+
+    /// <summary>
     /// Profile key the worker should resolve through the control plane.
     /// Empty when the run bypasses the profile system (smoke tests,
     /// operator one-offs).
@@ -108,6 +121,11 @@ public sealed class GenericCommandRun
     /// <param name="arguments">Positional arguments, passed verbatim to <c>ArgumentList</c>.</param>
     /// <param name="expectedExitCode">The code that maps to Green (default 0).</param>
     /// <param name="now">Wall-clock source.</param>
+    /// <param name="workItemId">
+    /// Optional work item the run gates (Coda — verification's
+    /// first provider reads this). Null for operator-only runs that
+    /// aren't bound to a work item.
+    /// </param>
     /// <exception cref="ArgumentException"><paramref name="executable"/> is blank.</exception>
     public static GenericCommandRun Create(
         ProjectId? projectId,
@@ -115,7 +133,8 @@ public sealed class GenericCommandRun
         string executable,
         IReadOnlyList<string> arguments,
         int expectedExitCode,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        Guid? workItemId = null)
     {
         var trimmedExecutable = (executable ?? string.Empty).Trim();
         // The project rule bans ArgumentException.ThrowIf*; the explicit
@@ -132,6 +151,7 @@ public sealed class GenericCommandRun
         {
             Id = GenericCommandRunId.New(),
             ProjectId = projectId,
+            WorkItemId = workItemId,
             ProfileKey = (profileKey ?? string.Empty).Trim(),
             Executable = trimmedExecutable,
             Arguments = arguments ?? [],

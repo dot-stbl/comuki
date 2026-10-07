@@ -70,9 +70,14 @@ public static class StreamJsonParser
                 StreamJsonWire.ResultType => StreamJsonEventMapping.MapResult(root),
                 StreamJsonWire.SessionType => StreamJsonEventMapping.MapSessionHeader(root),
                 StreamJsonWire.MessageUpdateType => StreamJsonEventMapping.MapMessageUpdate(root),
+                StreamJsonWire.MessageStartType => StreamJsonEventMapping.MapMessageStart(root),
                 StreamJsonWire.MessageEndType => StreamJsonEventMapping.MapAssistant(root),
                 StreamJsonWire.ToolExecutionStartType => StreamJsonEventMapping.MapToolExecutionStart(root),
+                StreamJsonWire.AgentStartType => new PiEvent.AgentStartEvent(),
                 StreamJsonWire.AgentEndType => new PiEvent.AgentEndEvent(),
+                StreamJsonWire.AgentSettledType => new PiEvent.AgentSettledEvent(),
+                StreamJsonWire.TurnStartType => new PiEvent.TurnStartEvent(),
+                StreamJsonWire.TurnEndType => new PiEvent.TurnEndEvent(),
                 _ => new PiEvent.UnknownEvent(type, root.Clone()),
             };
         }
@@ -103,9 +108,15 @@ file static class StreamJsonWire
     // pi-native json-mode event types (pi --mode json; see the pi docs/json.md).
     public const string SessionType = "session";
     public const string MessageUpdateType = "message_update";
+    public const string MessageStartType = "message_start";
     public const string MessageEndType = "message_end";
     public const string ToolExecutionStartType = "tool_execution_start";
+    public const string AgentStartType = "agent_start";
     public const string AgentEndType = "agent_end";
+    public const string AgentSettledType = "agent_settled";
+    public const string TurnStartType = "turn_start";
+    public const string TurnEndType = "turn_end";
+    public const string RoleField = "role";
 
     public const string VersionField = "version";
     public const string IdField = "id";
@@ -210,6 +221,50 @@ file static class StreamJsonEventMapping
     public static PiEvent MapUser(JsonElement root)
     {
         return new PiEvent.UserEvent(ExtractUserContent(root));
+    }
+
+    public static PiEvent MapMessageStart(JsonElement root)
+    {
+        // message_start carries {message: {role, content: [...]}}; the
+        // worker reads the role (user / assistant / system) and the
+        // authoritative text the inbound operator turn produced. We
+        // collapse the content blocks to a single string the same way
+        // the user-event mapping does — the worker doesn't care
+        // about the per-block structure for the journal.
+        var role = root.TryGetProperty(StreamJsonWire.MessageField, out var message)
+            && message.TryGetProperty(StreamJsonWire.RoleField, out var roleElement)
+            && roleElement.ValueKind == JsonValueKind.String
+                ? roleElement.GetString() ?? string.Empty
+                : string.Empty;
+        var content = role == "user"
+            ? ExtractUserContent(root)
+            : ExtractAssistantContent(root);
+        return new PiEvent.MessageStartEvent(role, content);
+    }
+
+    private static string ExtractAssistantContent(JsonElement root)
+    {
+        if (!root.TryGetProperty(StreamJsonWire.MessageField, out var message)
+            || message.ValueKind != JsonValueKind.Object
+            || !message.TryGetProperty(StreamJsonWire.ContentField, out var content)
+            || content.ValueKind != JsonValueKind.Array)
+        {
+            return string.Empty;
+        }
+
+        var combined = string.Empty;
+        foreach (var block in content.EnumerateArray())
+        {
+            if (block.ValueKind == JsonValueKind.Object
+                && block.TryGetProperty(StreamJsonWire.TextField, out var textElement)
+                && textElement.ValueKind == JsonValueKind.String
+                && textElement.GetString() is { } text)
+            {
+                combined += text;
+            }
+        }
+
+        return combined;
     }
 
     public static PiEvent MapAssistant(JsonElement root)

@@ -335,7 +335,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         services.AddLogging();
         services.AddSingleton(Options.Create(options));
         services.AddSingleton(TimeProvider.System);
-        services.AddSingleton<IPiRunner, PiRunner>();
+        services.AddSingleton<IHarnessRuntime, PiHarness>();
         services.AddSingleton<IProfilesProvider, ProfilesProvider>();
         services.AddSingleton<HeartbeatMonitor>();
         services.AddSingleton<TranslatorLoop>();

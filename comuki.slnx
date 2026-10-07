@@ -76,6 +76,7 @@
     <Project Path="tests/unit/Comuki.Host.Translator.Unit.StreamJson/Comuki.Host.Translator.Unit.StreamJson.csproj" />
     <Project Path="tests/unit/Comuki.Host.Translator.Unit.Runtime/Comuki.Host.Translator.Unit.Runtime.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.ProfileCatalog/Comuki.Host.Unit.ProfileCatalog.csproj" />
+    <Project Path="tests/unit/Comuki.Host.Unit.Verification/Comuki.Host.Unit.Verification.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.WorkerRuntime/Comuki.Host.Unit.WorkerRuntime.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.StatusMachine/Comuki.Engine.Orchestration.Unit.StatusMachine.csproj" />
     <Project Path="tests/unit/Comuki.Engine.Orchestration.Unit.Eval/Comuki.Engine.Orchestration.Unit.Eval.csproj" />

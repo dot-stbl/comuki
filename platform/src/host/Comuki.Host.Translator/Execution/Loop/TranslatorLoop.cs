@@ -206,6 +206,14 @@ public sealed class TranslatorLoop(
             return true;
         }
 
+        // Drain (harden-pi-worker-sandbox 5.2, spec D7) — ship the
+        // accumulated artifact list to the host right before complete /
+        // fail. The packager reads the journal's worker.drained entry
+        // and skips any prefix it has already bundled; a drain send
+        // failure is logged and never blocks the complete / fail
+        // (the artifact list is a hint, not a gate).
+        await SendDrainAsync(run, stoppingToken);
+
         if (outcome.Status == PiOutcome.SuccessStatus)
         {
             var reportJson = JsonSerializer.Serialize(
@@ -238,6 +246,33 @@ public sealed class TranslatorLoop(
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Drains the run-scoped <see cref="ArtifactAccumulator"/> as a single
+    /// <c>worker.drained</c> event (harden-pi-worker-sandbox 5.2, spec
+    /// D7). Best-effort: a transport failure is logged at warning and
+    /// never propagated — the work item's complete/fail path stays
+    /// unaffected (the drain is a journal hint, not a gate, per the
+    /// packager's <c>IsBundledAsync</c> idempotence contract).
+    /// </summary>
+    /// <param name="run">The gRPC-bound worker run.</param>
+    /// <param name="cancellationToken">Cancellation for the send.</param>
+    private async Task SendDrainAsync(WorkerRun run, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await run.Session.SendAsync(
+                WorkerEventEnvelope.ToDrainEvent(run.Claimed.WorkItemId, run.ArtifactAccumulator.Snapshot()),
+                cancellationToken);
+        }
+        catch (RpcException exception)
+        {
+            logger.LogWarning(
+                exception,
+                "Drain of work item {WorkItemId} could not be delivered",
+                run.Claimed.WorkItemId);
+        }
     }
 
     /// <summary>

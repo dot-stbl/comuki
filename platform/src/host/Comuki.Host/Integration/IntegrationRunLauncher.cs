@@ -5,10 +5,12 @@ using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Inbox;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Projects;
+using Comuki.Engine.Compute.Options;
 using Comuki.Modules.Integrations.Application.Ports.Admission;
 using Comuki.Modules.Integrations.Domain.Connections;
 using Comuki.Modules.Integrations.Domain.Items;
 using Comuki.Modules.Projects.Application.Ports;
+using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -40,6 +42,7 @@ namespace Comuki.Host.Integration;
 /// <param name="inbox">WS6 dedupe ledger — guards the admission call.</param>
 /// <param name="profileRouter">Profile-key resolver (PRs vs. issues).</param>
 /// <param name="defaults">Claim labels for integrations-created items.</param>
+/// <param name="buildInformation">Build identity — pins the item image to the running version (release contract).</param>
 /// <param name="clock">Time source for domain stamps.</param>
 /// <param name="projects">Projects module port — stamps <c>Project.EnvClass</c> onto the work item (task 3.1).</param>
 public sealed class IntegrationRunLauncher(
@@ -47,6 +50,7 @@ public sealed class IntegrationRunLauncher(
     IInbox inbox,
     IIntegrationProfileRouter profileRouter,
     IOptions<IntegrationWorkerDefaults> defaults,
+    ComukiBuildInformation buildInformation,
     TimeProvider clock,
     IProjectStore projects) : IRunLauncher
 {
@@ -86,10 +90,16 @@ public sealed class IntegrationRunLauncher(
         }
 
         var run = Run.Create(projectId, now, messageId);
+        // Claim matching compares the item's image with the worker's
+        // labels for equality — the supervisor pins its spawn through
+        // WorkerImagePinning, so the item side must resolve through the
+        // same function or no worker ever matches (release contract,
+        // see WorkerImagePinning).
+        var image = WorkerImagePinning.Resolve(defaults.Value.Image, buildInformation);
         var workItem = WorkItem.Create(
             run.Id,
             profileRouter.ResolveProfileKey(connection, ticket),
-            defaults.Value.Image,
+            image,
             await EnvClassResolver.ResolveAsync(projects, projectId, "integrations admission", cancellationToken),
             defaults.Value.ProfilesRef,
             InboundItemBrief.ToJson(ticket),

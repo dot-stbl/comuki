@@ -52,8 +52,7 @@ public static class ProxyKeyAdminEndpoints
         CancellationToken cancellationToken)
     {
         var keys = await keyStore.ListAsync(cancellationToken);
-        var match = keys.SingleOrDefault(key => VirtualKeyFingerprint.Of(key.Token) == keyId);
-        if (match is null)
+        if (keys.SingleOrDefault(key => VirtualKeyFingerprint.Of(key.Token) == keyId) is not { } match)
         {
             return ProxyKeyAdminResults.KeyNotFound(keyId);
         }

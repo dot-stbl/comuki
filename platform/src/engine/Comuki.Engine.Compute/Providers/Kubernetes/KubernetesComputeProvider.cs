@@ -70,8 +70,7 @@ public sealed class KubernetesComputeProvider(
     /// <inheritdoc />
     public async Task<WorkerHandle> StartAsync(ComputeStartRequest request, CancellationToken cancellationToken = default)
     {
-        var kubernetes = Kubernetes;
-        if (kubernetes is null)
+        if (Kubernetes is not { } kubernetes)
         {
             logger.LogWarning(
                 "KubernetesComputeProvider.StartAsync invoked without a configured client "
@@ -154,8 +153,7 @@ public sealed class KubernetesComputeProvider(
     /// <inheritdoc />
     public async Task StopAsync(WorkerId workerId, ComputeStopReason reason, CancellationToken cancellationToken = default)
     {
-        var kubernetes = Kubernetes;
-        if (kubernetes is null)
+        if (Kubernetes is not { } kubernetes)
         {
             logger.LogDebug(
                 "KubernetesComputeProvider.StopAsync invoked without a configured client "
@@ -203,8 +201,7 @@ public sealed class KubernetesComputeProvider(
     /// <inheritdoc />
     public async Task<IReadOnlyList<WorkerInfo>> ListAsync(ProjectId projectId, CancellationToken cancellationToken = default)
     {
-        var kubernetes = Kubernetes;
-        if (kubernetes is null)
+        if (Kubernetes is not { } kubernetes)
         {
             return [];
         }

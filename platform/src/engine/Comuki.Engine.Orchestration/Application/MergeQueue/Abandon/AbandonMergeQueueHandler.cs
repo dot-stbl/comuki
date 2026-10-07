@@ -27,8 +27,7 @@ public sealed class AbandonMergeQueueHandler(
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
 
-        var entry = await store.FindByIdAsync(command.EntryId, cancellationToken);
-        if (entry is null)
+        if (await store.FindByIdAsync(command.EntryId, cancellationToken) is not { } entry)
         {
             return null;
         }

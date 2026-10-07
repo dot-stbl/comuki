@@ -94,10 +94,9 @@ public sealed class VerificationEvaluationService(
         // project id. The query uses AsNoTracking + the primary key
         // so it never loads the work item into the change tracker —
         // the terminalization path already has a tracked instance.
-        var workItem = await db.WorkItems
-            .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == workItemId, cancellationToken);
-        if (workItem is null)
+        if (await db.WorkItems
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Id == workItemId, cancellationToken) is not { } workItem)
         {
             // The work item row was deleted between terminalization
             // and the verification call (e.g. by a concurrent reaper
@@ -111,10 +110,9 @@ public sealed class VerificationEvaluationService(
         // null project (cross-project global runs) short-circuits to
         // false. The host-level adapter reads the cached snapshot the
         // settings refresher keeps warm, so the call is allocation-free.
-        var run = await db.Runs
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Id == runId, cancellationToken);
-        if (run is null)
+        if (await db.Runs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == runId, cancellationToken) is not { } run)
         {
             return;
         }

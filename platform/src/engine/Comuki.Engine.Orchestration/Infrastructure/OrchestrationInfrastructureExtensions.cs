@@ -106,9 +106,8 @@ public static class OrchestrationInfrastructureExtensions
         // entirely (the same pattern the host uses for oidc-sweep) — the
         // registry collects its workers at Build, so the kill-switch is
         // resolved synchronously from the bound section here.
-        var escalationEnabled = configuration.GetSection(EscalationTimeoutOptions.SectionName)
-            .Get<EscalationTimeoutOptions>()?.Enabled ?? true;
-        if (escalationEnabled)
+        if (configuration.GetSection(EscalationTimeoutOptions.SectionName)
+                .Get<EscalationTimeoutOptions>()?.Enabled ?? true)
         {
             services.AddSingleton<IComukiWorker, EscalationTimeoutComukiWorker>();
         }

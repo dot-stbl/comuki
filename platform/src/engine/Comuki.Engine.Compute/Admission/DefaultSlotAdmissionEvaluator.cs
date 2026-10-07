@@ -39,8 +39,6 @@ namespace Comuki.Engine.Compute.Admission;
 /// <param name="environmentCatalog">Catalog the two wired checks (class / publisher) read against.</param>
 public class DefaultSlotAdmissionEvaluator(IEnvironmentCatalog environmentCatalog) : ISlotAdmissionEvaluator
 {
-    private readonly IEnvironmentCatalog environmentCatalog = environmentCatalog;
-
     /// <inheritdoc />
     public async Task<SlotAdmissionResult> EvaluateAsync(
         SlotAdmissionRequest request,
@@ -56,12 +54,12 @@ public class DefaultSlotAdmissionEvaluator(IEnvironmentCatalog environmentCatalo
         // `admission.capacity` instead of the truthful `env_unconfirmed`.
         if (string.IsNullOrWhiteSpace(request.EnvClass))
         {
-            return Deny(AdmissionCodes.EnvUnconfirmed);
+            return SlotAdmissionResults.Deny(AdmissionCodes.EnvUnconfirmed);
         }
 
         if (!environmentCatalog.TryGet(request.EnvClass, out var bundle) || bundle is null)
         {
-            return Deny(AdmissionCodes.EnvUnconfirmed);
+            return SlotAdmissionResults.Deny(AdmissionCodes.EnvUnconfirmed);
         }
 
         // Check (2) — fleet publisher allowlist (worker-admission spec
@@ -71,34 +69,34 @@ public class DefaultSlotAdmissionEvaluator(IEnvironmentCatalog environmentCatalo
         // is created.
         if (!environmentCatalog.IsAllowed(bundle.Publisher.Value))
         {
-            return Deny(AdmissionCodes.Publisher);
+            return SlotAdmissionResults.Deny(AdmissionCodes.Publisher);
         }
 
         // Check (3) — advertised capacity for the class. Sibling hook:
         // the fleet pool advertisement is wired by the worker-pools slice;
         // until then this returns pass and the rest of the pipeline is
         // gated by the four upstream checks.
-        var capacityResult = await EvaluateCapacityAsync(request, bundle, cancellationToken).ConfigureAwait(false);
-        if (capacityResult is not null)
+        var capacityResult = await EvaluateCapacityAsync(request, bundle, cancellationToken);
+        if (capacityResult is { } capacity)
         {
-            return capacityResult;
+            return capacity;
         }
 
         // Check (4) — isolation class the host can honor. Sibling hook
         // landed by `harden-pi-worker-sandbox`; today it always passes.
-        var isolationResult = await EvaluateIsolationAsync(request, bundle, cancellationToken).ConfigureAwait(false);
-        if (isolationResult is not null)
+        var isolationResult = await EvaluateIsolationAsync(request, bundle, cancellationToken);
+        if (isolationResult is { } isolation)
         {
-            return isolationResult;
+            return isolation;
         }
 
         // Check (5) — edition coverage for the class/runtime. Sibling hook
         // wired to the editions registry; today `RequestEdition` is honored
         // unconditionally and we always pass.
-        var editionResult = await EvaluateEditionAsync(request, bundle, cancellationToken).ConfigureAwait(false);
-        if (editionResult is not null)
+        var editionResult = await EvaluateEditionAsync(request, bundle, cancellationToken);
+        if (editionResult is { } edition)
         {
-            return editionResult;
+            return edition;
         }
 
         // Check (6) — secret refs resolvable under the worker subject.
@@ -106,8 +104,8 @@ public class DefaultSlotAdmissionEvaluator(IEnvironmentCatalog environmentCatalo
         // empty ref list passes by default and any non-empty list fails
         // loudly so a slot carrying refs cannot slip through silently
         // until the catalog lookup is wired.
-        var secretsResult = await EvaluateSecretsAsync(request, bundle, cancellationToken).ConfigureAwait(false);
-        return secretsResult is not null ? secretsResult : Admit();
+        var secretsResult = await EvaluateSecretsAsync(request, bundle, cancellationToken);
+        return secretsResult is { } secrets ? secrets : SlotAdmissionResults.Admit();
     }
 
     /// <summary>
@@ -182,16 +180,27 @@ public class DefaultSlotAdmissionEvaluator(IEnvironmentCatalog environmentCatalo
         CancellationToken cancellationToken)
     {
         return request.SecretRefs.Count > 0
-            ? Task.FromResult<SlotAdmissionResult?>(Deny(AdmissionCodes.Secrets))
+            ? Task.FromResult<SlotAdmissionResult?>(SlotAdmissionResults.Deny(AdmissionCodes.Secrets))
             : Task.FromResult<SlotAdmissionResult?>(null);
     }
+}
 
-    private static SlotAdmissionResult Admit()
+/// <summary>
+/// Admit / deny factories for <see cref="SlotAdmissionResult"/>: only the
+/// evaluator needs them today, so they live here file-static rather than
+/// on the shared <c>SlotAdmissionResult</c> record (the contract surface
+/// stays data-only). Adding a static factory to the shared record would
+/// pull admission-time semantics into the contract for no current
+/// consumer — the surface stays pure.
+/// </summary>
+file static class SlotAdmissionResults
+{
+    public static SlotAdmissionResult Admit()
     {
         return new SlotAdmissionResult(Admitted: true, AdmissionId: Guid.CreateVersion7(), DenialCode: null);
     }
 
-    private static SlotAdmissionResult Deny(string code)
+    public static SlotAdmissionResult Deny(string code)
     {
         return new SlotAdmissionResult(Admitted: false, AdmissionId: null, DenialCode: code);
     }

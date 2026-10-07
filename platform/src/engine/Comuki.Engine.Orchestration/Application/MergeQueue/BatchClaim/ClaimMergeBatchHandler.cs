@@ -25,8 +25,7 @@ public sealed class ClaimMergeBatchHandler(
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
 
-        var batch = await store.FindByIdAsync(command.BatchId, cancellationToken);
-        if (batch is null)
+        if (await store.FindByIdAsync(command.BatchId, cancellationToken) is not { } batch)
         {
             return null;
         }

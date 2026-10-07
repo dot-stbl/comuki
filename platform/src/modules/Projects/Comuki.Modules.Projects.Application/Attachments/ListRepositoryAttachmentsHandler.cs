@@ -1,10 +1,14 @@
+using Comuki.Modules.Projects.Application.Views;
 using Comuki.Modules.Projects.Domain.Attachments;
 
 namespace Comuki.Modules.Projects.Application.Attachments;
 
 /// <summary>Lists every attachment pointing at one Repository, oldest first — the "which projects hold this repo" view.</summary>
-/// <param name="attachments"></param>
-public sealed class ListRepositoryAttachmentsHandler(IProjectRepositoryAttachmentStore attachments)
+/// <param name="attachments">Attachment persistence port.</param>
+/// <param name="mapper">Mapperly-driven view projections (stateless, singleton).</param>
+public sealed class ListRepositoryAttachmentsHandler(
+    IProjectRepositoryAttachmentStore attachments,
+    IProjectsMapper mapper)
 {
     /// <summary>Returns the attachment list as views.</summary>
     /// <param name="repositoryId"></param>
@@ -16,6 +20,6 @@ public sealed class ListRepositoryAttachmentsHandler(IProjectRepositoryAttachmen
     {
         var listed = await attachments.ListByRepositoryAsync(repositoryId, cancellationToken);
 
-        return [.. listed.Select(static attachment => ProjectRepositoryAttachmentMapper.ToView(attachment))];
+        return [.. listed.Select(mapper.ToView)];
     }
 }

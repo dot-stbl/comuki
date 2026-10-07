@@ -1,3 +1,4 @@
+using Comuki.Modules.Projects.Domain.Attachments;
 using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Modules.Projects.Domain.Settings;
 
@@ -19,4 +20,9 @@ public interface IProjectsMapper
     /// <param name="source"></param>
     /// <returns></returns>
     public ProjectSettingsView ToView(ProjectSettings source);
+
+    /// <summary>Maps a project repository attachment entity to its read model.</summary>
+    /// <param name="source"></param>
+    /// <returns></returns>
+    public ProjectRepositoryAttachmentView ToView(ProjectRepositoryAttachment source);
 }

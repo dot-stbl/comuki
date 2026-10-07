@@ -1,5 +1,6 @@
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Application.Projects;
+using Comuki.Modules.Projects.Application.Views;
 using Comuki.Modules.Projects.Domain.Attachments;
 
 namespace Comuki.Modules.Projects.Application.Attachments;
@@ -14,10 +15,12 @@ namespace Comuki.Modules.Projects.Application.Attachments;
 /// </summary>
 /// <param name="attachments">Attachment persistence port.</param>
 /// <param name="projects">Project persistence port.</param>
+/// <param name="mapper">Mapperly-driven view projections (stateless, singleton).</param>
 /// <param name="clock">Time source for the attachment's created/updated timestamps.</param>
 public sealed class AttachRepositoryHandler(
     IProjectRepositoryAttachmentStore attachments,
     IProjectStore projects,
+    IProjectsMapper mapper,
     TimeProvider clock)
 {
     /// <summary>Attaches the repository.</summary>
@@ -50,6 +53,6 @@ public sealed class AttachRepositoryHandler(
 
         await attachments.AddAsync(attachment, cancellationToken);
 
-        return ProjectRepositoryAttachmentMapper.ToView(attachment);
+        return mapper.ToView(attachment);
     }
 }

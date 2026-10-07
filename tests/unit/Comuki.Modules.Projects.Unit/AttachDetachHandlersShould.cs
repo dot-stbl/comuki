@@ -1,6 +1,7 @@
 using Comuki.Modules.Projects.Application.Attachments;
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Application.Projects;
+using Comuki.Modules.Projects.Application.Views;
 using Comuki.Modules.Projects.Domain.Attachments;
 using Comuki.Modules.Projects.Domain.Projects;
 using Comuki.Shared.Kernel.Ids;
@@ -26,6 +27,7 @@ public sealed class AttachDetachHandlersShould
     {
         var projects = Substitute.For<IProjectStore>();
         var attachments = Substitute.For<IProjectRepositoryAttachmentStore>();
+        var mapper = Substitute.For<IProjectsMapper>();
         var projectId = ProjectId.New();
         var repositoryId = RepositoryId.New();
         projects.FindByIdAsync(projectId, Arg.Any<CancellationToken>())
@@ -33,7 +35,22 @@ public sealed class AttachDetachHandlersShould
         attachments.FindAsync(projectId, repositoryId, Arg.Any<CancellationToken>())
             .Returns((ProjectRepositoryAttachment?)null);
         var clock = new FakeTime(now);
-        var handler = new AttachRepositoryHandler(attachments, projects, clock);
+        // The mapper is a stateless projection; the handler invokes
+        // mapper.ToView(attachment) and returns whatever the mapper
+        // produces. We stub a return value so NSubstitute doesn't NRE.
+        mapper.ToView(Arg.Any<ProjectRepositoryAttachment>())
+            .Returns(callInfo => new ProjectRepositoryAttachmentView
+            {
+                Id = callInfo.Arg<ProjectRepositoryAttachment>().Id,
+                ProjectId = callInfo.Arg<ProjectRepositoryAttachment>().ProjectId,
+                RepositoryId = callInfo.Arg<ProjectRepositoryAttachment>().RepositoryId,
+                Role = callInfo.Arg<ProjectRepositoryAttachment>().Role.Value,
+                Access = callInfo.Arg<ProjectRepositoryAttachment>().Access,
+                CredentialOverrideRef = callInfo.Arg<ProjectRepositoryAttachment>().CredentialOverrideRef,
+                CreatedAt = callInfo.Arg<ProjectRepositoryAttachment>().CreatedAt,
+                UpdatedAt = callInfo.Arg<ProjectRepositoryAttachment>().UpdatedAt,
+            });
+        var handler = new AttachRepositoryHandler(attachments, projects, mapper, clock);
 
         var view = await handler.HandleAsync(
             new AttachRepositoryCommand(projectId, repositoryId, " Primary ", AttachmentAccess.Write, "integration-a"),
@@ -57,10 +74,11 @@ public sealed class AttachDetachHandlersShould
     {
         var projects = Substitute.For<IProjectStore>();
         var attachments = Substitute.For<IProjectRepositoryAttachmentStore>();
+        var mapper = Substitute.For<IProjectsMapper>();
         var projectId = ProjectId.New();
         projects.FindByIdAsync(projectId, Arg.Any<CancellationToken>())
             .Returns((Project?)null);
-        var handler = new AttachRepositoryHandler(attachments, projects, new FakeTime(now));
+        var handler = new AttachRepositoryHandler(attachments, projects, mapper, new FakeTime(now));
 
         await Should.ThrowAsync<ProjectNotFoundException>(
             () => handler.HandleAsync(
@@ -75,13 +93,14 @@ public sealed class AttachDetachHandlersShould
     {
         var projects = Substitute.For<IProjectStore>();
         var attachments = Substitute.For<IProjectRepositoryAttachmentStore>();
+        var mapper = Substitute.For<IProjectsMapper>();
         var projectId = ProjectId.New();
         var repositoryId = RepositoryId.New();
         projects.FindByIdAsync(projectId, Arg.Any<CancellationToken>())
             .Returns(Project.Create("Acme", "acme", null, null, null, now));
         attachments.FindAsync(projectId, repositoryId, Arg.Any<CancellationToken>())
             .Returns(ProjectRepositoryAttachment.Create(projectId, repositoryId, "primary", AttachmentAccess.Write, null, now));
-        var handler = new AttachRepositoryHandler(attachments, projects, new FakeTime(now));
+        var handler = new AttachRepositoryHandler(attachments, projects, mapper, new FakeTime(now));
 
         var exception = await Should.ThrowAsync<ProjectRepositoryAttachmentConflictException>(
             () => handler.HandleAsync(
@@ -127,11 +146,27 @@ public sealed class AttachDetachHandlersShould
     public async Task ListByProjectMapsViewsAsync()
     {
         var attachments = Substitute.For<IProjectRepositoryAttachmentStore>();
+        var mapper = Substitute.For<IProjectsMapper>();
         var projectId = ProjectId.New();
         var first = ProjectRepositoryAttachment.Create(projectId, RepositoryId.New(), "primary", AttachmentAccess.Write, null, now);
         var second = ProjectRepositoryAttachment.Create(projectId, RepositoryId.New(), "library", AttachmentAccess.Read, null, now);
         attachments.ListByProjectAsync(projectId, Arg.Any<CancellationToken>()).Returns([first, second]);
-        var handler = new ListProjectAttachmentsHandler(attachments);
+        // The mapper is a stateless projection; the handler invokes
+        // mapper.ToView(attachment) for each row and we round-trip the
+        // role so the assertions below stay meaningful.
+        mapper.ToView(Arg.Any<ProjectRepositoryAttachment>())
+            .Returns(static callInfo => new ProjectRepositoryAttachmentView
+            {
+                Id = callInfo.Arg<ProjectRepositoryAttachment>().Id,
+                ProjectId = callInfo.Arg<ProjectRepositoryAttachment>().ProjectId,
+                RepositoryId = callInfo.Arg<ProjectRepositoryAttachment>().RepositoryId,
+                Role = callInfo.Arg<ProjectRepositoryAttachment>().Role.Value,
+                Access = callInfo.Arg<ProjectRepositoryAttachment>().Access,
+                CredentialOverrideRef = callInfo.Arg<ProjectRepositoryAttachment>().CredentialOverrideRef,
+                CreatedAt = callInfo.Arg<ProjectRepositoryAttachment>().CreatedAt,
+                UpdatedAt = callInfo.Arg<ProjectRepositoryAttachment>().UpdatedAt,
+            });
+        var handler = new ListProjectAttachmentsHandler(attachments, mapper);
 
         var views = await handler.HandleAsync(projectId, TestContext.Current.CancellationToken);
 
@@ -144,11 +179,24 @@ public sealed class AttachDetachHandlersShould
     public async Task ListByRepositoryMapsViewsAsync()
     {
         var attachments = Substitute.For<IProjectRepositoryAttachmentStore>();
+        var mapper = Substitute.For<IProjectsMapper>();
         var repositoryId = RepositoryId.New();
         var first = ProjectRepositoryAttachment.Create(ProjectId.New(), repositoryId, "primary", AttachmentAccess.Write, null, now);
         var second = ProjectRepositoryAttachment.Create(ProjectId.New(), repositoryId, "library", AttachmentAccess.Read, null, now);
         attachments.ListByRepositoryAsync(repositoryId, Arg.Any<CancellationToken>()).Returns([first, second]);
-        var handler = new ListRepositoryAttachmentsHandler(attachments);
+        mapper.ToView(Arg.Any<ProjectRepositoryAttachment>())
+            .Returns(static callInfo => new ProjectRepositoryAttachmentView
+            {
+                Id = callInfo.Arg<ProjectRepositoryAttachment>().Id,
+                ProjectId = callInfo.Arg<ProjectRepositoryAttachment>().ProjectId,
+                RepositoryId = callInfo.Arg<ProjectRepositoryAttachment>().RepositoryId,
+                Role = callInfo.Arg<ProjectRepositoryAttachment>().Role.Value,
+                Access = callInfo.Arg<ProjectRepositoryAttachment>().Access,
+                CredentialOverrideRef = callInfo.Arg<ProjectRepositoryAttachment>().CredentialOverrideRef,
+                CreatedAt = callInfo.Arg<ProjectRepositoryAttachment>().CreatedAt,
+                UpdatedAt = callInfo.Arg<ProjectRepositoryAttachment>().UpdatedAt,
+            });
+        var handler = new ListRepositoryAttachmentsHandler(attachments, mapper);
 
         var views = await handler.HandleAsync(repositoryId, TestContext.Current.CancellationToken);
 

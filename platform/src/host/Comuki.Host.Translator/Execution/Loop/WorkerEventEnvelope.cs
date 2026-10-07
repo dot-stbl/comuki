@@ -119,11 +119,16 @@ public static class WorkerEventEnvelope
     /// <summary>
     /// Stall-detected event (harden-worker-runtime Phase 1, design D1 + D2).
     /// The <c>WorkerProgressWatchdog</c> / <c>DeadlinePolicy</c> reached
-    /// tier 3 (fail-item) and called <c>api.FailAsync</c>; the worker
-    /// journals the same event for the operator. The host journal
-    /// reads the four numbers off the payload so the dashboard can
-    /// render stall / wall-clock correlation without re-parsing the
-    /// timeline.
+    /// tier 3 (fail-item) and set <c>ShouldFailItem = true</c> with a
+    /// typed <c>FailReason</c> (<c>worker.stall_detected</c>,
+    /// <c>worker.turn_budget_exceeded</c>,
+    /// <c>worker.run_budget_exceeded</c>); the worker journals the
+    /// same event for the operator. The host journal reads the
+    /// payload so the dashboard can render stall / wall-clock
+    /// correlation without re-parsing the timeline. The actual
+    /// <c>api.FailAsync</c> REST call is the loop's
+    /// (<c>TranslatorLoop</c>) existing path — the watchdog / policy
+    /// only set the flag and reason, the loop handles the REST.
     /// </summary>
     /// <param name="workItemId">Work item the stall is bound to.</param>
     /// <param name="lastEventAgeMs">Time since the last parsed stream-event, in milliseconds.</param>

@@ -52,7 +52,7 @@ public static class RunEventTypes
     public const string WorkerAdmissionDenied = "worker.admission_denied";
 
     /// <summary>
-    /// The Translator's <c>VerifyRunner</c> finished a verify-profile
+    /// The Translator's verify-profile runner finished a verify-profile
     /// work item; every declared opcode exited zero. Payload carries
     /// <c>{ workItemId, opcodes[] }</c> so the dashboard / journal
     /// reader can see the verify scope without re-parsing
@@ -63,8 +63,8 @@ public static class RunEventTypes
     public const string VerifyCompleted = "verify.completed";
 
     /// <summary>
-    /// The Translator's <c>VerifyRunner</c> failed a verify-profile work
-    /// item: an opcode exited non-zero, failed to launch, or hit its
+    /// The Translator's verify-profile runner failed a verify-profile
+    /// work item: an opcode exited non-zero, failed to launch, or hit its
     /// timeout. Payload carries <c>{ workItemId, opcode, exitCode?,
     /// reason }</c>. The Host stays up — a non-zero exit is a verify
     /// report, not a Host crash (isolate-verifier-runtime spec scenario

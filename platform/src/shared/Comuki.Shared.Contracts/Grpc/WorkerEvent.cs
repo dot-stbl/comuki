@@ -27,7 +27,7 @@ public sealed record WorkerEvent
     [ProtoMember(3)]
     public StageReport? Report { get; init; }
 
-    /// <summary>Set when the Translator's <c>VerifyRunner</c> finishes a
+    /// <summary>Set when the Translator's verify-profile runner finishes a
     /// verify-profile item; the host-side journal maps it to
     /// <c>verify.completed</c> / <c>verify.failed</c> entries.</summary>
     [ProtoMember(4)]

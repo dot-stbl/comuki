@@ -22,7 +22,7 @@ namespace Comuki.Shared.Contracts.Environments;
 /// <param name="Verify">Optional table of verify-time opcodes (isolate-verifier-runtime
 ///     1.1, spec scenario "Verify uses the item's class"). Keys are opcodes the bound
 ///     class advertises (the same set as <c>Restore</c>); values are positional targets
-///     the Translator's <c>VerifyRunner</c> iterates after restore and before the
+///     the Translator's verify-profile runner iterates after restore and before the
 ///     work item is reported complete. The table is optional — a repo with no
 ///     <c>[verify]</c> table skips the verify step (no behaviour change for
 ///     existing dogfood files).</param>

@@ -53,8 +53,10 @@ public sealed class HeartbeatMonitor(IOrchestratorApi api, ILogger<HeartbeatMoni
             }
             catch (OperationCanceledException)
             {
-                // Run-token tripped during the in-flight heartbeat call —
-                // the run is shutting down on its own, treat as a clean exit.
+                // stoppingToken tripped during the in-flight heartbeat
+                // call — the run is shutting down on its own (host
+                // shutdown or the surrounding TryRunOnceAsync's
+                // stoppingToken), treat as a clean exit.
                 return true;
             }
             catch (Exception exception)

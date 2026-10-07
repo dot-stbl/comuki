@@ -107,8 +107,18 @@ internal sealed class FakeHarnessSession : IHarnessSession
     public int ProcessId { get; }
 
     /// <inheritdoc />
-    /// <remarks>Always <c>null</c> — the in-process fake has no OS process to inspect. The <c>PiPump</c> treats a null exit code as "not applicable" and leaves the outcome's status alone (no spurious FailedStatus from this fake).</remarks>
-    public int? ExitCode => null;
+    /// <remarks>Always <c>null</c> by default — the in-process fake has no OS process to inspect. Tests that exercise the <c>PiPump</c>'s non-zero-exit path set <see cref="ExitCodeOverride"/> on the session before disposing it; the value is then surfaced as <see cref="ExitCode"/>.</remarks>
+    public int? ExitCode => ExitCodeOverride;
+
+    /// <summary>Test-only injection point for the post-disposal <see cref="ExitCode"/> read by <c>PiPump</c>.</summary>
+    internal int? ExitCodeOverride { get; set; }
+
+    /// <inheritdoc />
+    /// <remarks>Always <c>null</c> by default — the in-process fake never spawns an OS process. Tests set <see cref="StderrTailOverride"/> before disposal to drive the stderr-appended outcome path.</remarks>
+    public string? StderrTail => StderrTailOverride;
+
+    /// <summary>Test-only injection point for the post-disposal <see cref="StderrTail"/> read by <c>PiPump</c>.</summary>
+    internal string? StderrTailOverride { get; set; }
 
     public IAsyncEnumerable<PiEvent> Events => events.Reader.ReadAllAsync(disposedCts.Token);
 

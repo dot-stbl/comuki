@@ -422,6 +422,10 @@ internal static class CancelTransition
             .Where(item => item.RunId == runId
                 && item.Status == WorkItemStatus.Running
                 && item.LeasedBy != null)
+            // boundary: EF's translation of `LeasedBy != null` matches
+            // `WHERE leased_by IS NOT NULL`, so the projected `.Value`
+            // cannot be null at materialisation — `!` is the null-state
+            // annotation for EF LINQ, not an assertion.
             .Select(item => item.LeasedBy!.Value)
             .ToListAsync(cancellationToken);
 

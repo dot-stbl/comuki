@@ -461,7 +461,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
             .AsSystem("translator-e2e-fixture");
         var db = scope.ServiceProvider.GetRequiredService<OrchestrationDbContext>();
         var run = Run.Create(ProjectId.New(), DateTimeOffset.UtcNow);
-        var item = WorkItem.Create(run.Id, ProfileKey, Image, "net10-sdk-bun", ProfilesRef, brief, WorkItemStatus.Queued, DateTimeOffset.UtcNow);
+        var item = WorkItem.Create(run.Id, ProfileKey, Image, EnvClass, ProfilesRef, brief, WorkItemStatus.Queued, DateTimeOffset.UtcNow);
         db.Runs.Add(run);
         db.WorkItems.Add(item);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -564,7 +564,7 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
                 null,
                 null,
                 new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
-                envClass: "net10-sdk-bun"));
+                envClass: EnvClass));
         return stub;
     }
 

@@ -74,6 +74,23 @@ public interface IHarnessSession : IAsyncDisposable
     public int? ExitCode { get; }
 
     /// <summary>
+    /// A bounded tail of the harness process's stderr, captured during
+    /// disposal. <c>pi --mode rpc</c> writes diagnostics to stderr on
+    /// crash (the spec scenario "Non-zero pi exit fails the item" requires
+    /// the outcome to carry stderr alongside the exit code); the
+    /// <c>PiPump</c> appends the tail to <c>PiOutcome.ErrorText</c>
+    /// on a non-zero <see cref="ExitCode"/> so the operator can see the
+    /// last lines without the full log. <c>null</c> before disposal
+    /// completes, or when the implementation did not capture stderr
+    /// (the in-process <c>FakeHarnessSession</c> — no OS process). The
+    /// tail is capped to a safe size (see
+    /// <c>PiRpcSession.StderrTailMaxChars</c>); the head of the stderr
+    /// stream is dropped, not the tail, because the failing line lands
+    /// at the end of the capture.
+    /// </summary>
+    public string? StderrTail { get; }
+
+    /// <summary>
     /// The stream of <see cref="PiEvent"/>s the harness emits on
     /// stdout (or, for the in-process test fake, the synthesised
     /// echo of each command). Cancellation trips the iterator

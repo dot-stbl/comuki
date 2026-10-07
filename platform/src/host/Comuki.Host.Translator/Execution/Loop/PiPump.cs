@@ -117,6 +117,16 @@ public static class PiPump
             && session.ExitCode is int exitCode
             && exitCode != 0)
         {
+            // StderrTail is the operator-facing slice of the harness's
+            // captured stderr (production: bounded tail, the production
+            // PiRpcSession trims to a 4 KiB cap; the in-process fake
+            // returns null). Append it to the ErrorText so the operator
+            // sees the failing harness's last lines alongside the exit
+            // code, per the spec scenario "outcome is failed carrying
+            // the exit code and stderr".
+            var errorText = session.StderrTail is { Length: > 0 } stderrTail
+                ? $"harness exited with code {exitCode}\nstderr:\n{stderrTail}"
+                : $"harness exited with code {exitCode}";
             logger.LogError(
                 "Harness run of work item {WorkItemId} finished cleanly but exited with code {ExitCode} — failing the item",
                 run.Claimed.WorkItemId,
@@ -125,7 +135,7 @@ public static class PiPump
                 PiOutcome.FailedStatus,
                 outcome.DurationMs,
                 outcome.ResultText,
-                $"harness exited with code {exitCode}");
+                errorText);
         }
 
         return outcome;

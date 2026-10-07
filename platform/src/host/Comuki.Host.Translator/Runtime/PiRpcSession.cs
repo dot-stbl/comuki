@@ -28,6 +28,9 @@ internal sealed class PiRpcSession(
 
     public int ProcessId { get; } = processId;
 
+    /// <inheritdoc />
+    public int? ExitCode { get; private set; }
+
     public IAsyncEnumerable<PiEvent> Events { get; } = events;
 
     public ITurnInputWriter TurnInputs { get; } = turnInputs;
@@ -106,6 +109,13 @@ internal sealed class PiRpcSession(
         {
             logger.LogDebug(exception, "wait-for-exit on {Executable} (PID {Pid}) ended with an exception", executable, ProcessId);
         }
+
+        // ExitCode is now the authoritative OS-level code (zero on a
+        // clean shutdown via stdin close, non-zero on any crash Test
+        // — pi could be triggered either way). Spec surfaced for a
+        // non-zero value above; capture regardless so callers can read
+        // it (Loop.PiPump consumes this after DisposeAsync returns).
+        ExitCode = process.ExitCode;
 
         if (stderr.Length > 0)
         {

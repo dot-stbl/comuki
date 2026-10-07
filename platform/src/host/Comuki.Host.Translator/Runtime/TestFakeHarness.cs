@@ -106,6 +106,10 @@ internal sealed class FakeHarnessSession : IHarnessSession
 
     public int ProcessId { get; }
 
+    /// <inheritdoc />
+    /// <remarks>Always <c>null</c> — the in-process fake has no OS process to inspect. The <c>PiPump</c> treats a null exit code as "not applicable" and leaves the outcome's status alone (no spurious FailedStatus from this fake).</remarks>
+    public int? ExitCode => null;
+
     public IAsyncEnumerable<PiEvent> Events => events.Reader.ReadAllAsync(disposedCts.Token);
 
     public ITurnInputWriter TurnInputs => writer;

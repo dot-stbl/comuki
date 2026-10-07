@@ -48,7 +48,13 @@ public static class PiPump
             Environment: piEnvironment.Environment,
             WorkingDirectory: run.RepositoryDirectory);
 
-        await using var session = await harness.StartSessionAsync(
+        // Disposal is hand-rolled (not `await using var session`) so the
+        // post-disposal step below can read `session.ExitCode` — the
+        // `using var` form disposes at method exit, *after* we've already
+        // returned. The harness session's `DisposeAsync` waits for the
+        // process to exit and captures `process.ExitCode` there, so
+        // `session.ExitCode` is only valid *after* this `try/finally`.
+        var session = await harness.StartSessionAsync(
             request, run.RunCancellation.Token);
         run.HarnessSession = session;
         logger.LogInformation(
@@ -56,6 +62,7 @@ public static class PiPump
             run.Claimed.WorkItemId,
             session.ProcessId);
 
+        PiOutcome outcome;
         try
         {
             await foreach (var piEvent in session.Events.WithCancellation(run.RunCancellation.Token))
@@ -69,7 +76,7 @@ public static class PiPump
             }
 
             logger.LogInformation("Harness run of work item {WorkItemId} finished", run.Claimed.WorkItemId);
-            return new PiOutcome(
+            outcome = new PiOutcome(
                 PiOutcome.SuccessStatus,
                 (long)(clock.GetUtcNow() - startedAt).TotalMilliseconds,
                 summary.ResultText,
@@ -78,7 +85,7 @@ public static class PiPump
         catch (OperationCanceledException)
         {
             logger.LogWarning("Harness run of work item {WorkItemId} cancelled", run.Claimed.WorkItemId);
-            return new PiOutcome(
+            outcome = new PiOutcome(
                 PiOutcome.CancelledStatus,
                 (long)(clock.GetUtcNow() - startedAt).TotalMilliseconds,
                 summary.ResultText,
@@ -87,11 +94,40 @@ public static class PiPump
         catch (InvalidOperationException exception)
         {
             logger.LogError(exception, "Harness run of work item {WorkItemId} failed", run.Claimed.WorkItemId);
-            return new PiOutcome(
+            outcome = new PiOutcome(
                 PiOutcome.FailedStatus,
                 (long)(clock.GetUtcNow() - startedAt).TotalMilliseconds,
                 summary.ResultText,
                 exception.Message);
         }
+        finally
+        {
+            await session.DisposeAsync();
+        }
+
+        // Exit-code harness check (worker-runtime spec scenario "Non-zero
+        // pi exit fails the item"). The events iterator completes on
+        // stdout EOF; the process then either exits 0 (orderly shutdown
+        // via stdin close — pi's documented path) or crashes. A
+        // non-zero ExitCode on an otherwise-Success outcome means the
+        // run streamed its events but the harness died mid-run —
+        // fail the item rather than report success. Cancellation/InvalidOp
+        // outcomes already carry their own failure shape and pass through.
+        if (outcome.Status == PiOutcome.SuccessStatus
+            && session.ExitCode is int exitCode
+            && exitCode != 0)
+        {
+            logger.LogError(
+                "Harness run of work item {WorkItemId} finished cleanly but exited with code {ExitCode} — failing the item",
+                run.Claimed.WorkItemId,
+                exitCode);
+            return new PiOutcome(
+                PiOutcome.FailedStatus,
+                outcome.DurationMs,
+                outcome.ResultText,
+                $"harness exited with code {exitCode}");
+        }
+
+        return outcome;
     }
 }

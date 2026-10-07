@@ -60,6 +60,20 @@ public interface IHarnessSession : IAsyncDisposable
     public int ProcessId { get; }
 
     /// <summary>
+    /// The harness process's OS exit code (production: <c>pi --mode rpc</c>;
+    /// tests: <c>TestFakePi</c>'s <c>--exit-code=N</c>). <c>null</c>
+    /// before disposal completes — the <c>PiPump</c> reads this after
+    /// the session's <see cref="IAsyncDisposable.DisposeAsync"/> to
+    /// decide whether a successful events-iterator completion was a
+    /// genuine clean exit (0) or a mid-run crash (≠ 0, see
+    /// <c>openspec/specs/worker-runtime/spec.md</c> Requirement
+    /// "Translator loop", scenario "Non-zero pi exit fails the item").
+    /// The in-process <c>FakeHarnessSession</c> always returns <c>null</c>
+    /// — there is no OS process to inspect.
+    /// </summary>
+    public int? ExitCode { get; }
+
+    /// <summary>
     /// The stream of <see cref="PiEvent"/>s the harness emits on
     /// stdout (or, for the in-process test fake, the synthesised
     /// echo of each command). Cancellation trips the iterator

@@ -11,11 +11,17 @@ using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing.Fixtures;
 using Comuki.Host.Translator.Api.Registration;
+using Comuki.Host.Translator.Execution.Clone;
+using Comuki.Host.Translator.Execution.Commands;
 using Comuki.Host.Translator.Execution.Loop;
+using Comuki.Host.Translator.Execution.Restore;
 using Comuki.Host.Translator.Grpc;
 using Comuki.Host.Translator.Profiles;
 using Comuki.Host.Translator.Runtime;
 using Comuki.Host.Workers;
+using Comuki.Modules.Projects.Application.Ports;
+using Comuki.Modules.Projects.Domain.Projects;
+using Comuki.Modules.Projects.Domain.Settings;
 using Comuki.Modules.Proxy.Application;
 using Comuki.Shared.Bootstrap;
 using Comuki.Shared.Contracts.Journal;
@@ -24,6 +30,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -94,6 +101,10 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         // stays up either way).
         host = await TestWorkerHost.StartAsync(services =>
         {
+            var projectStore = NewProjectStoreStub();
+            var projectSettingsStore = NewProjectSettingsStoreStub();
+            services.AddSingleton(typeof(IProjectStore), projectStore);
+            services.AddSingleton(typeof(IProjectSettingsStore), projectSettingsStore);
             services.AddSingleton(TimeProvider.System);
             services
                 .AddOrchestrationPersistence(postgres.ConnectionString)
@@ -230,6 +241,73 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         timeline.ShouldContain(static entry => entry.Type == "work_item.status_changed" && entry.PayloadJson.Contains("Failed", StringComparison.Ordinal), "the failure is journaled");
     }
 
+    [Fact(DisplayName = "Worker-runtime spec: 'Non-zero pi exit fails the item' — TestFakePi streams a few events then exits with code 3, the loop catches the non-zero exit and fails the item (not success)")]
+    public async Task FailTheItemWhenTestFakePiExitsNonZeroMidRunAsync()
+    {
+        // Set the exit-code env var before the loop runs. PiHarness spawns
+        // TestFakePi as a child process; the child inherits this env var,
+        // reads it via Comuki.TestFakePi.Program.Main, and exits with the
+        // configured code after streaming its event set + agent_end.
+        Environment.SetEnvironmentVariable("COMUKI_FAKE_PI_EXIT_CODE", "3");
+        try
+        {
+            var (runId, workItemId) = await SeedQueuedItemAsync(/*lang=json,strict*/ """{"goal":"exit-code-3"}""");
+
+            var loop = translatorProvider.GetRequiredService<TranslatorLoop>();
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            var ran = await loop.TryRunOnceAsync(timeout.Token);
+
+            ran.ShouldBeTrue("the seeded item should have been claimed");
+
+            var item = await LoadItemAsync(workItemId);
+            item.Status.ShouldBe(WorkItemStatus.Failed, "non-zero pi exit must fail the item, not return success");
+            item.LeaseUntil.ShouldBeNull("failure releases the lease");
+
+            var timeline = await ReadTimelineAsync(runId);
+            // The StageReport must carry the exit code in the ErrorText
+            // (worker-runtime spec scenario: "outcome is failed carrying
+            // the exit code"), and the failure is journaled.
+            timeline.ShouldContain(
+                static entry => entry.Type == "worker.reported" && entry.PayloadJson.Contains("failed", StringComparison.Ordinal),
+                "the failure StageReport is journaled");
+            timeline.ShouldContain(
+                static entry => entry.Type == "worker.reported" && entry.PayloadJson.Contains("exit code 3", StringComparison.Ordinal),
+                "the StageReport carries the exit code in ErrorText");
+            timeline.ShouldContain(
+                static entry => entry.Type == "work_item.status_changed" && entry.PayloadJson.Contains("Failed", StringComparison.Ordinal),
+                "the failure status change is journaled");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("COMUKI_FAKE_PI_EXIT_CODE", null);
+        }
+    }
+
+    [Fact(DisplayName = "Harden-pi-worker-sandbox 5.2 / spec D7: TranslatorLoop emits a worker.drained event before complete, even when the artifact list is empty")]
+    public async Task EmitWorkerDrainedBeforeCompleteAsync()
+    {
+        var (runId, workItemId) = await SeedQueuedItemAsync(/*lang=json,strict*/ """{"goal":"drain empty"}""");
+
+        var loop = translatorProvider.GetRequiredService<TranslatorLoop>();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        var ran = await loop.TryRunOnceAsync(timeout.Token);
+
+        ran.ShouldBeTrue("the seeded item should have been claimed");
+
+        var item = await LoadItemAsync(workItemId);
+        item.Status.ShouldBe(WorkItemStatus.Succeeded);
+
+        var timeline = await ReadTimelineAsync(runId);
+        // The drain event must land before the StageReport so the host
+        // packager can pre-skip already-bundled prefixes; an empty
+        // artifact list is still journaled.
+        var drainedIndex = IndexOfEntryType(timeline, "worker.drained");
+        var reportIndex = IndexOfEntryType(timeline, "worker.reported");
+        drainedIndex.ShouldBeGreaterThanOrEqualTo(0, "the worker.drained event must be journaled");
+        reportIndex.ShouldBeGreaterThanOrEqualTo(0, "the worker.reported StageReport must be journaled");
+        drainedIndex.ShouldBeLessThan(reportIndex, "the drain event precedes the StageReport (pre-complete flush)");
+    }
+
     [Fact]
     public async Task MintOnClaimRevokeOnCompleteAndKeepTheJournalCleanAsync()
     {
@@ -337,6 +415,31 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IHarnessRuntime, PiHarness>();
         services.AddSingleton<IProfilesProvider, ProfilesProvider>();
+        // TranslatorLoop's ctor needs both runners (the claim cycle
+        // walks Clone → Restore → harness) and the debug-exec host.
+        // The production Program.cs registers all of them; the
+        // in-test composition was lagging after the runner-rework
+        // and 8.4 — all surface here so the harness-spawn tests
+        // resolve the loop.
+        services.AddSingleton<IRestoreProcessRunner, RestoreProcessRunner>();
+        services.AddSingleton<RestoreRunner>();
+        services.AddSingleton<ISourceCloneProcessRunner, SourceCloneProcessRunner>();
+        services.AddSingleton<SourceCloneRunner>();
+        services.AddSingleton<IDebugExecHost, DebugExecHost>();
+        // ClaimSourceGitResolver (harden-pi-worker-sandbox 4.3) walks
+        // the project tree to resolve the work item's SourceGitUrl /
+        // SourceGitRef / GitCredential. The fixture's seeded items
+        // don't carry source-git fields, so stubs are enough — the
+        // resolver treats missing data as "anonymous clone", which the
+        // production SourceCloneRunner rejects later on the worker
+        // side. Stubs keep this fixture independent of the real
+        // Projects persistence (which would drag the project schema,
+        // the settings cache refresher worker, and AddMemoryCache
+        // side-effects in).
+        var projectStore = NewProjectStoreStub();
+        var projectSettingsStore = NewProjectSettingsStoreStub();
+        services.AddSingleton(typeof(IProjectStore), projectStore);
+        services.AddSingleton(typeof(IProjectSettingsStore), projectSettingsStore);
         services.AddSingleton<HeartbeatMonitor>();
         services.AddSingleton<TranslatorLoop>();
         services.AddOrchestratorApi();
@@ -393,6 +496,26 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
     }
 
     /// <summary>
+    /// First index in <paramref name="timeline"/> whose entry's
+    /// <c>Type</c> matches <paramref name="type"/>, or -1 when no such
+    /// entry exists. The <see cref="IReadOnlyList{T}"/> does not
+    /// expose <c>FindIndex</c> directly, so this is the explicit
+    /// per-entry loop the drain-then-report ordering assertion needs.
+    /// </summary>
+    private static int IndexOfEntryType(IReadOnlyList<RunEventEntry> timeline, string type)
+    {
+        for (var i = 0; i < timeline.Count; i++)
+        {
+            if (string.Equals(timeline[i].Type, type, StringComparison.Ordinal))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
     /// Stands in for the scale supervisor's <see cref="WorkerPoolState"/>:
     /// this fixture asserts the claim/heartbeat/complete/fail REST flow, not
     /// pool bookkeeping, so every call is a no-op rather than wiring a real
@@ -417,5 +540,46 @@ public sealed class TranslatorE2EShould(PostgresCollectionFixture postgres) : IA
         public void Touch(WorkerId workerId)
         {
         }
+    }
+
+    /// <summary>
+    /// In-memory <see cref="IProjectStore"/> stub the host's
+    /// <c>ClaimSourceGitResolver</c> walks to surface the work item's
+    /// source-git metadata. The fixture never sets source-git fields on
+    /// its seeded items, but the resolver must still be constructible
+    /// when the claim endpoint runs; the stub returns a project with
+    /// the canonical <c>net10-sdk-bun</c> env class so the seeded
+    /// items remain claimable.
+    /// </summary>
+    private static IProjectStore NewProjectStoreStub()
+    {
+        var stub = Substitute.For<IProjectStore>();
+        stub.FindByIdAsync(Arg.Any<ProjectId>(), Arg.Any<CancellationToken>())
+            .Returns(static callInfo => Project.Create(
+                "Test project",
+                "test-project",
+                null,
+                null,
+                null,
+                new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                envClass: "net10-sdk-bun"));
+        return stub;
+    }
+
+    /// <summary>
+    /// Companion stub for <see cref="IProjectSettingsStore"/>:
+    /// <c>ClaimSourceGitResolver</c> also reads the project's git
+    /// credential ref before the claim endpoint can resolve a
+    /// work item. The fixture never sets a ref, so the stub
+    /// returns <c>null</c> on every query (resolver treats that
+    /// as "no credential" — the anonymous clone path the spec
+    /// documents for items without source-git metadata).
+    /// </summary>
+    private static IProjectSettingsStore NewProjectSettingsStoreStub()
+    {
+        var stub = Substitute.For<IProjectSettingsStore>();
+        stub.FindAsync(Arg.Any<ProjectId>(), Arg.Any<CancellationToken>())
+            .Returns(static _ => Task.FromResult<ProjectSettings?>(null));
+        return stub;
     }
 }

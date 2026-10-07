@@ -16,6 +16,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Refit;
 
 namespace Comuki.Modules.Identity.Application;
 
@@ -60,8 +61,21 @@ public static class IdentityApplicationExtensions
         services.AddScoped<SetUserDisabledHandler>();
         services.AddScoped<OidcAccountLinker>();
         services.AddSingleton<IOidcClientSecrets, OidcClientSecrets>();
+        // OIDC discovery: stays on a raw HttpClient. The hand-rolled
+        // JsonDocument parse in OidcDiscoveryCache is the whole point
+        // — Keycloak 26's bool-as-bool discovery fields break strict
+        // STJ deserialization of the framework's OpenIdConnectConfiguration
+        // type, which is what a Refit-generated proxy would use.
         services.AddHttpClient<IOidcDiscovery, OidcDiscoveryCache>();
-        services.AddHttpClient<IOidcTokenExchange, OidcTokenExchange>();
+        // OIDC token exchange: Refit-typed. The token-endpoint wire
+        // shape is RFC-stable so the typed proxy is the right
+        // abstraction here (the deprecated AddHttpClient<TInterface, TImpl>
+        // typed-client factory is gone — Refit owns the HttpClient).
+        services
+            .AddRefitClient<IOidcTokenExchangeApi>()
+            .AddStandardResilienceHandler();
+        services.AddScoped<OidcTokenExchange>();
+        services.AddScoped<IOidcTokenExchange>(static sp => sp.GetRequiredService<OidcTokenExchange>());
         services.AddSingleton<IOidcIdTokenValidator, OidcIdTokenValidator>();
         services.AddSingleton<OidcProviderResolver>();
         services.AddScoped<OidcStartHandler>();

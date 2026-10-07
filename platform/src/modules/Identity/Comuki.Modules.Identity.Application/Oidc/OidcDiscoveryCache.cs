@@ -21,6 +21,18 @@ namespace Comuki.Modules.Identity.Application.Oidc;
 /// use (issuer, authorize, token, jwks_uri) and only populate the JWKS
 /// signing keys — the rest of the doc is not consulted downstream.
 /// </para>
+/// <para>
+/// boundary: this class stays on <see cref="HttpClient"/> (not Refit)
+/// because the hand-rolled <c>JsonDocument</c> parse is the whole
+/// point — adopting Refit would force strict STJ deserialization of
+/// <see cref="OpenIdConnectConfiguration"/>, which is exactly the
+/// constraint that rejects Keycloak 26's bool-as-bool fields. The
+/// sibling <c>IOidcTokenExchangeApi</c> IS Refit-typed because the
+/// token endpoint's wire shape is RFC-stable; discovery is the one
+/// place we keep the manual path. State archetype
+/// (position / cursor over a JSON document) — see
+/// <c>class-layout-and-tooling.md</c> §1a п.8 parser/lexer exemption.
+/// </para>
 /// </summary>
 /// <param name="cache"></param>
 /// <param name="httpClient">Injected — uses the typed client the host registers.</param>

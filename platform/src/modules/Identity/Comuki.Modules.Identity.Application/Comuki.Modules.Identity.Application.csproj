@@ -13,6 +13,15 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
+    <!-- Wave 1 B4b: Refit replaces the deprecated
+         AddHttpClient<IOidcTokenExchange, OidcTokenExchange> typed-
+         client factory for the OIDC token endpoint. Discovery
+         stays on a raw HttpClient — see OidcDiscoveryCache for why
+         (Keycloak 26's bool-as-bool discovery fields break strict
+         STJ deserialization of the framework's OpenIdConnectConfiguration). -->
+    <PackageReference Include="Refit" />
+    <PackageReference Include="Refit.HttpClientFactory" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
   </ItemGroup>
 
   <ItemGroup>

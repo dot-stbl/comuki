@@ -56,9 +56,28 @@ tiers (warn → gentle-kill → fail item). Wall-clock budget'ы (turn + run)
 - [ ] 1.3.1 Add a process-exit handler in `TranslatorLoop` (already on master at `platform/src/host/Comuki.Host.Translator/Execution/TranslatorLoop.cs:93-115`): on `pi` process exit with no final StageReport, record `worker.exit_code{worker_id, exit_code, stderr_safe}` journal event and increment `parse_errors_total{kind = exit_no_stage_report}` counter. **Translator still waits for `StageReport`; this is visibility, not authority.**
   - Verify: a unit test that runs a TestFakeHarness with `--exit-code=2` and no final StageReport → the journal carries `worker.exit_code{exit_code = 2}` and the counter increments. A unit test that runs with `--exit-code=0` and a `StageReport{success}` → the journal is silent (no spurious `worker.exit_code`). `dotnet run --project tests/unit/Comuki.Host.Translator.Unit.Pi` exits 0.
 
-### 1.4 Cross-phase gate (Phase 1)
+### 1.4 Heartbeat-failure isolation (scope fix on the existing rule)
 
-- [ ] 1.4.1 `dotnet build comuki.slnx -c Debug` exits 0; `dotnet run --project tests/unit/Comuki.Host.Translator.Unit.Runtime` exits 0; `dotnet run --project tests/unit/Comuki.Host.Translator.Unit.Pi` exits 0.
+> **Implementation note.** The fix landed in the worker-runtime bug-batch
+> (commit `5df85ec8` on `fix/worker-runtime-bugs`; folded into the
+> squash `[.stbl](feat/worker-runtime): drain before close, stderr
+> outcome, pump tests` at the time of the heartbeat-isolation commit).
+> Scoped: the spec's "Failures propagate and stop the host" rule
+> (master `openspec/specs/worker-runtime/spec.md:89`) was too broad —
+> it lumped heartbeat-call exceptions (Polly timeout, `HttpRequestException`,
+> orchestrator 5xx) with fatal host failures, and made any transient
+> network blip take the worker process down. The actual semantic is
+> lease-lost: a heartbeat that cannot prove the lease is still held
+> means ownership is uncertain, so the run is failed and the host
+> keeps running.
+
+- [ ] 1.4.1 `HeartbeatMonitor.RunAsync` (master `platform/src/host/Comuki.Host.Translator/Execution/Loop/HeartbeatMonitor.cs`) catches the generic `Exception` arm of the heartbeat REST call (Polly timeout, `HttpRequestException`, orchestrator 5xx) and returns `false` ("lease-lost") instead of letting the exception bubble up and kill the host. The exception is logged at error so the operator can investigate. The two paths (rejected heartbeat AND heartbeat call that threw) share semantics: ownership is no longer certain, so completion is skipped — the reaper owns the item. The TranslatorLoop's existing "lease-lost skips completion" path takes over without killing the host process.
+  - Spec delta: `### Requirement: Translator loop` — "Failures propagate and stop the host" is now scoped: heartbeat-failure (non-2xx response OR exception from the REST call) = lease-lost semantics, fail item, host keeps running; other failures (file-I/O, `OutOfMemory`, etc.) still stop the host. The Scenario "Heartbeat call throws — lease-lost, not host-stop" is added.
+  - Verify: a unit test that throws from `IOrchestratorApi.HeartbeatAsync` (NSubstitute `ThrowsAsync(new HttpRequestException("..."))`) returns `false` and logs the exception. A unit test that throws from `HeartbeatAsync` mid-run, with an in-flight claim, sees the run fail (not skip-completed) and the heartbeat monitor returns `false`. `dotnet run --project tests/unit/Comuki.Host.Translator.Unit.Runtime` exits 0.
+
+### 1.5 Cross-phase gate (Phase 1)
+
+- [ ] 1.5.1 `dotnet build comuki.slnx -c Debug` exits 0; `dotnet run --project tests/unit/Comuki.Host.Translator.Unit.Runtime` exits 0; `dotnet run --project tests/unit/Comuki.Host.Translator.Unit.Pi` exits 0.
 
 ## 2. Phase — Worker telemetry (OTel)
 

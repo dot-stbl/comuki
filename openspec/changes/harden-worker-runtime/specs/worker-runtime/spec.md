@@ -116,13 +116,13 @@ The worker's outer loop SHALL run claim → execute → report → repeat until 
 4. spawn the agent executable through the harness abstraction (`IHarness.StartAsync`, `harness-spi` capability per `add-orchestra` §8) and pump its stream-json output into a **bounded `Channel<WorkerEvent>` (default 1024) with drop-oldest policy on progress-fragments and no-drop on mandatory events**, forwarding text deltas / authoritative assistant text / tool invocations as Activity events while:
    - a **progress watchdog** tracks `last_event_age` and escalates (`stall_warn` → `gentle_kill` → `fail-item`) when `last_event_age > TranslatorOptions.WorkerProgressTimeout`
    - a **deadline policy** enforces `TranslatorOptions.TurnBudget` (per cycle) and `RunBudget` (per worker process); a `RunBudget` breach after `red_pattern = 3` consecutive turn-budget breaches fails the item
-   - a heartbeat task extends the lease every interval (default 30 seconds) and a command task consumes orchestrator commands
+   - a heartbeat task extends the lease every interval (default 30 seconds) and a command task consumes orchestrator commands. **A heartbeat failure (non-2xx response, or an exception from the REST call — Polly timeout, `HttpRequestException`, orchestrator 5xx) SHALL be treated as lease-lost semantics, not as a fatal host failure.** The TranslatorLoop's existing "lease-lost skips completion" path takes over: the in-flight item is failed (not skip-completed, since the run was on the wire), the worker does not authoritatively own the item, and the host process keeps running
    - on a pi process exit without `StageReport`, the Translator journals `worker.exit_code{worker_id, exit_code, stderr_safe}` and increments `parse_errors_total{kind = exit_no_stage_report}` (visibility, not authority — full exit-code-as-authority fix is a separate bug-batch)
 5. send the final StageReport, close the session
-6. if the lease was lost (rejected heartbeat or a `LeaseExpired` command): skip completion entirely — the reaper owns the item
+6. if the lease was lost (rejected heartbeat or a `LeaseExpired` command, or a heartbeat call that threw — see the heartbeat-failure clause on step 4): skip completion entirely — the reaper owns the item
 7. else complete on `success` (result JSON = the serialized StageReport) or fail with a `status: error-text` reason otherwise
 
-Failures propagate and stop the host — an ephemeral worker is meant to die and be replaced, not limp along.
+Failures propagate and stop the host, **except for heartbeat failures (a non-2xx heartbeat response, or an exception from the heartbeat REST call — Polly timeout, `HttpRequestException`, orchestrator 5xx), which are scoped to lease-lost semantics**: the in-flight item is failed, the host process keeps running. An ephemeral worker is meant to die and be replaced, not limp along.
 
 #### Scenario: traceparent propagates from claim
 
@@ -173,6 +173,11 @@ Failures propagate and stop the host — an ephemeral worker is meant to die and
 
 - **WHEN** a heartbeat is rejected while the agent still runs
 - **THEN** that agent is cancelled and the worker does not complete or fail the item authoritatively
+
+#### Scenario: Heartbeat call throws — lease-lost, not host-stop
+
+- **WHEN** the heartbeat REST call throws (Polly timeout, `HttpRequestException`, orchestrator 5xx)
+- **THEN** the heartbeat task returns `false` (lease-lost), the run is failed (not skip-completed, since the run was on the wire), the host process keeps running, and the exception is logged for the operator to investigate; the next claim cycle begins normally
 
 ## ADDED Requirements
 

@@ -102,15 +102,15 @@ public sealed class AgentLoopHost : IAsyncLifetime
         builder.Configuration["Host:RateLimit:LoginPermitsPerMinute"] = "10000";
 
         // Claim labels every scenario in this suite's fixture corpus uses —
-        // fixed at host boot (Intake:Worker:* binds once); a scenario's own
+        // fixed at host boot (Integrations:Worker:* binds once); a scenario's own
         // worker.image/profileKey/profilesRef only drive what
         // AgentLoopHarness.StartWorkerAsync stamps on the real container,
         // and must equal these for a real claim to match (WorkItemQueueSql's
         // claim predicate is exact-string, not fuzzy).
-        builder.Configuration["Intake:Worker:Image"] = WorkerTestImage.Tag;
-        builder.Configuration["Intake:Worker:ProfilesRef"] = "test";
-        builder.Configuration["Intake:Worker:IssueDefaultProfileKey"] = "implement";
-        builder.Configuration["Intake:BridgeInterval"] = "00:00:01";
+        builder.Configuration["Integrations:Worker:Image"] = WorkerTestImage.Tag;
+        builder.Configuration["Integrations:Worker:ProfilesRef"] = "test";
+        builder.Configuration["Integrations:Worker:IssueDefaultProfileKey"] = "implement";
+        builder.Configuration["Integrations:BridgeInterval"] = "00:00:01";
 
         Environment.SetEnvironmentVariable(HookSecretEnv, HookSecret, EnvironmentVariableTarget.Process);
 
@@ -190,11 +190,11 @@ public sealed class AgentLoopHost : IAsyncLifetime
         return new Uri($"http://{containerReachableHost}:{workerGrpcPort}/");
     }
 
-    /// <summary>Posts a GitHub issue webhook through the real webhook endpoint and returns the run/work-item <c>IntakeRunLauncher</c> created.</summary>
+    /// <summary>Posts a GitHub issue webhook through the real webhook endpoint and returns the run/work-item <c>IntegrationRunLauncher</c> created.</summary>
     /// <param name="title"></param>
     /// <param name="body"></param>
     /// <param name="labels"></param>
-    /// <param name="issueNumber">A unique issue number so two scenarios in the same suite never collide on intake's duplicate-active-ticket check.</param>
+    /// <param name="issueNumber">A unique issue number so two scenarios in the same suite never collide on the Integrations module's duplicate-active-ticket check.</param>
     /// <param name="cancellationToken"></param>
     public async Task<SeededWorkItem> SeedTicketAsync(
         string title,
@@ -220,7 +220,7 @@ public sealed class AgentLoopHost : IAsyncLifetime
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
         document.RootElement.GetProperty("outcome").GetString().ShouldBe("admitted");
 
-        // IntakeItemBrief.ToJson (Comuki.Host.Intake.IntakeRunLauncher) embeds
+        // InboundItemBrief.ToJson (Comuki.Host.Integration.IntegrationRunLauncher) embeds
         // the ticket's externalId as "{repository.full_name}#{issueNumber}"
         // (GitHubPayloadMapper.MapIssue) — matches the payload built above.
         var externalId = $"comuki/agent-loop-fixture#{issueNumber}";

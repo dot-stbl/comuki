@@ -6,7 +6,7 @@ namespace Comuki.Shared.Kernel.Secrets;
 /// Renamed from <c>SecretEnvRefUnsetException</c> in issue #52 because
 /// "env" no longer covers the surface: file / vault / consul refs hit
 /// the same path. The composition-root problem-handler registry answers
-/// it with a 400 (<c>intake.secret_env_ref_unset</c>) — a misconfigured
+/// it with a 400 (<c>integration.secret_env_ref_unset</c>) — a misconfigured
 /// reference is the operator's mistake, not a server fault.
 /// </summary>
 /// <param name="reference">The original operator reference (e.g. <c>env:GH_TOKEN</c>).</param>

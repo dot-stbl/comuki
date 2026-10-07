@@ -54,13 +54,13 @@ describe("the rail, filtered by what the session may do", () => {
   })
 
   it("drops a group whose items all vanished", () => {
-    // A viewer holds runs.view and nothing else, so Intake and Configure lose
+    // A viewer holds runs.view and nothing else, so Integrations and Configure lose
     // every item they had — and a heading standing over nothing is a worse
     // artefact than the missing item.
     expect(railFor(["viewer"]).groups).toEqual(["Observe"])
   })
 
-  it("opens intake and knowledge for a member, and still hides approvals", () => {
+  it("opens integrations and knowledge for a member, and still hides approvals", () => {
     const { labels } = railFor(["member"])
 
     expect(labels).toContain("Inbox")
@@ -92,7 +92,7 @@ describe("the rail, filtered by what the session may do", () => {
     ])
     // The upper tier entire, and not one item of the lower one: administering
     // a project is not the same as administering the platform it runs on.
-    expect(groups).toEqual(["Intake", "Observe", "Configure"])
+    expect(groups).toEqual(["Integrations", "Observe", "Configure"])
   })
 
   it("gives an operator the platform tier without the identity registry", () => {

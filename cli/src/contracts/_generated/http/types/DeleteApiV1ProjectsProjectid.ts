@@ -12,14 +12,14 @@ export type DeleteApiV1ProjectsProjectidPathParams = {
 };
 
 /**
- * @description OK
+ * @description No Content
 */
-export type DeleteApiV1ProjectsProjectid200 = any;
+export type DeleteApiV1ProjectsProjectid204 = any;
 
-export type DeleteApiV1ProjectsProjectidMutationResponse = DeleteApiV1ProjectsProjectid200;
+export type DeleteApiV1ProjectsProjectidMutationResponse = DeleteApiV1ProjectsProjectid204;
 
 export type DeleteApiV1ProjectsProjectidMutation = {
-    Response: DeleteApiV1ProjectsProjectid200;
+    Response: DeleteApiV1ProjectsProjectid204;
     PathParams: DeleteApiV1ProjectsProjectidPathParams;
     Errors: any;
 };

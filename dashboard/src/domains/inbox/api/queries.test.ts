@@ -43,8 +43,8 @@ describe("queries.ts mock-first path", () => {
         title: seed.title,
         url: `https://comuki.local/inbox/${seed.id}`,
         status: seed.straightToWork
-          ? ("claimed" as const)
-          : ("pending" as const),
+          ? ("Claimed" as const)
+          : ("Pending" as const),
         runId: seed.straightToWork
           ? "00000000-0000-0000-0000-runstub000001"
           : null,

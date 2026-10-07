@@ -1,0 +1,70 @@
+using Comuki.Modules.Integrations.Application.Ports.Sources;
+using Comuki.Modules.Integrations.Application.Ports.Sync;
+using Comuki.Modules.Integrations.Domain.Connections;
+using Comuki.Modules.Integrations.Domain.Items;
+using Comuki.Shared.Kernel.Secrets;
+
+namespace Comuki.Modules.Integrations.Infrastructure.Providers.YandexTracker;
+
+/// <summary>
+/// The Yandex Tracker source provider: webhook acceptance (shared-secret
+/// header, body-hash delivery id — Tracker sends no delivery guid) and
+/// the poll-based catalog over the issues search API.
+/// </summary>
+/// <param name="clients"></param>
+/// <param name="secrets"></param>
+/// <param name="clock"></param>
+public sealed class YandexTrackerTicketSourceProvider(
+    TrackerClientFactory clients,
+    ISecretResolver secrets,
+    TimeProvider clock) : ITicketSourceProvider
+{
+    private const int PageSize = 25;
+
+    /// <inheritdoc />
+    public string SourceKey => TicketProviderKeys.YandexTracker;
+
+    /// <inheritdoc />
+    public string DeliveryIdOf(WebhookDelivery delivery)
+    {
+        // Tracker webhooks carry no delivery guid — the raw body hash is
+        // the stable letter id
+        return ProviderDeliveryIds.BodyHash(delivery.Body);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> VerifySignatureAsync(SourceConnection connection, WebhookDelivery delivery, CancellationToken cancellationToken = default)
+    {
+        var settings = YandexTrackerSettings.Parse(connection.SettingsJson);
+        var secret = await secrets.ResolveAsync(connection.SecretEnvRef, cancellationToken);
+        return YandexTrackerWebhookVerifier.Verify(
+            secret,
+            delivery.Header(settings.WebhookSecretHeader));
+    }
+
+    /// <inheritdoc />
+    public InboundItem? Normalize(WebhookDelivery delivery, SourceConnection connection)
+    {
+        return YandexTrackerPayloadMapper.ToTicket(delivery.Body, connection.ProjectId, clock.GetUtcNow());
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<InboundItem>> FetchCatalogAsync(SourceConnection connection, int page, CancellationToken cancellationToken = default)
+    {
+        var settings = YandexTrackerSettings.Parse(connection.SettingsJson);
+        var api = clients.YandexTracker(
+            settings.ApiBase,
+            await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken),
+            settings.OrgId);
+        var issues = await api.SearchIssuesAsync(
+            new TrackerSearchBody($"Queue: \"{settings.Queue}\" Status: \"Open\""),
+            cancellationToken);
+
+        // the API pages via the find/limit fields; the provider keeps the
+        // single most recent page — enough for the inbox browse view
+        return [.. issues
+            .Skip((page - 1) * PageSize)
+            .Take(PageSize)
+            .Select(issue => YandexTrackerPayloadMapper.ToTicket(issue, connection.ProjectId, clock.GetUtcNow()))];
+    }
+}

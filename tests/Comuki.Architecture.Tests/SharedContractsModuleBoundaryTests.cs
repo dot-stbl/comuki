@@ -15,7 +15,7 @@ public sealed class SharedContractsModuleBoundaryTests
 {
     private const string IdentityDomain = "Comuki.Modules.Identity.Domain";
     private const string CostsDomain = "Comuki.Modules.Costs.Domain";
-    private const string IntakeDomain = "Comuki.Modules.Intake.Domain";
+    private const string IntegrationsDomain = "Comuki.Modules.Integrations.Domain";
     private const string ProxyDomain = "Comuki.Modules.Proxy.Domain";
     private const string ChatDomain = "Comuki.Modules.Chat.Domain";
     private const string KnowledgeDomain = "Comuki.Modules.Knowledge.Domain";
@@ -33,7 +33,7 @@ public sealed class SharedContractsModuleBoundaryTests
             .HaveDependencyOnAny(
                 IdentityDomain,
                 CostsDomain,
-                IntakeDomain,
+                IntegrationsDomain,
                 ProxyDomain,
                 ChatDomain,
                 KnowledgeDomain,

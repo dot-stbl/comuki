@@ -9,7 +9,7 @@ namespace Comuki.Architecture.Tests;
 /// Layer rules for the Projects module (comuki-project-structure.md §2 and
 /// <c>architecture.md</c> laws 1–3): Domain is innermost and framework-free,
 /// Application sits on it through ports, and neither layer reaches into a
-/// sibling module, the engine or a host. The domain-user intake work added
+/// sibling module, the engine or a host. The domain-user integrations work added
 /// a second aggregate to the module, so the boundary is asserted, not
 /// assumed.
 /// </summary>
@@ -22,7 +22,7 @@ public sealed class ProjectsModuleLayerTests
     private const string Host = "Comuki.Host";
     private const string Translator = "Comuki.Host.Translator";
     private const string Migrator = "Comuki.Migrator";
-    private const string SiblingModules = "Comuki.Modules.Intake";
+    private const string SiblingModules = "Comuki.Modules.Integrations";
 
     [Fact]
     public void ProjectsDomainMustNotDependOnOuterLayers()
@@ -73,8 +73,9 @@ public sealed class ProjectsModuleLayerTests
     [Fact]
     public void ProjectsModuleMustNotDependOnSiblingModules()
     {
-        // Law 3: the admission policy stores intake source keys as plain
-        // strings precisely so the module never references Intake.
+        // Law 3: the admission policy stores integrations source keys as
+        // plain strings precisely so the module never references
+        // Integrations.
         var domain = Types
             .InAssembly(typeof(DomainTypeAdmission).Assembly)
             .ShouldNot()

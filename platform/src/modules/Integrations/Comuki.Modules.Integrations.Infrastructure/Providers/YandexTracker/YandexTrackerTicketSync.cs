@@ -1,0 +1,40 @@
+using Comuki.Modules.Integrations.Application.Ports.Sync;
+using Comuki.Modules.Integrations.Application.Ports.Tickets;
+using Comuki.Modules.Integrations.Domain.Connections;
+using Comuki.Modules.Integrations.Domain.Items;
+using Comuki.Shared.Contracts.Runs;
+using Comuki.Shared.Kernel.Secrets;
+
+namespace Comuki.Modules.Integrations.Infrastructure.Providers.YandexTracker;
+
+/// <summary>
+/// The Yandex Tracker sync-back port: a status comment with the run
+/// link on every terminal transition and the configured resolved
+/// transition when the run succeeded.
+/// </summary>
+/// <param name="clients"></param>
+/// <param name="secrets"></param>
+public sealed class YandexTrackerTicketSync(
+    TrackerClientFactory clients,
+    ISecretResolver secrets) : IIntegrationSyncPort
+{
+    /// <inheritdoc />
+    public string SourceKey => TicketProviderKeys.YandexTracker;
+
+    /// <inheritdoc />
+    public async Task TransitionAsync(SourceConnection connection, InboundItemTransition transition, CancellationToken cancellationToken = default)
+    {
+        var settings = YandexTrackerSettings.Parse(connection.SettingsJson);
+        var api = clients.YandexTracker(
+            settings.ApiBase,
+            await secrets.ResolveAsync(settings.ApiTokenEnv, cancellationToken),
+            settings.OrgId);
+
+        await api.PostCommentAsync(transition.ExternalId, new TrackerCommentBody(TrackerSyncComments.Of(transition)), cancellationToken);
+
+        if (transition.RunStatus == RunStatuses.Succeeded)
+        {
+            await api.TransitionAsync(transition.ExternalId, settings.ResolvedTransition, cancellationToken);
+        }
+    }
+}

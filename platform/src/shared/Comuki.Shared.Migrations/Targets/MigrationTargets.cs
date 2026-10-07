@@ -3,7 +3,7 @@ using Comuki.Modules.Artifacts.Infrastructure.Persistence;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Intake.Infrastructure.Persistence;
+using Comuki.Modules.Integrations.Infrastructure.Persistence;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Procedures.Infrastructure.Persistence;
@@ -65,11 +65,11 @@ public static class MigrationTargets
             ChatDbContext.ApplyOptions(builder, connectionString);
             return new ChatDbContext(builder.Options);
         }),
-        new("intake", IntakeDatabase.Schema, static connectionString =>
+        new("integrations", IntegrationsDatabase.Schema, static connectionString =>
         {
-            var builder = new DbContextOptionsBuilder<IntakeDbContext>();
-            IntakeDbContext.ApplyOptions(builder, connectionString);
-            return new IntakeDbContext(builder.Options);
+            var builder = new DbContextOptionsBuilder<IntegrationsDbContext>();
+            IntegrationsDbContext.ApplyOptions(builder, connectionString);
+            return new IntegrationsDbContext(builder.Options);
         }),
         new("costs", CostsDatabase.Schema, static connectionString =>
         {

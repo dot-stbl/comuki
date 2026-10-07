@@ -282,7 +282,7 @@ public sealed class CrownScenarioShould(CrownScenarioHost host)
         itemAfter.Generation.ShouldNotBe(staleGeneration);
     }
 
-    /// <summary>Returns the run(s) for <paramref name="projectId"/> — system scope via no accessor (HostIntakeServer.NewSystemDbContext precedent).</summary>
+    /// <summary>Returns the run(s) for <paramref name="projectId"/> — system scope via no accessor (HostIntegrationServer.NewSystemDbContext precedent).</summary>
     private async Task<List<Run>> LoadRunsForProjectAsync(Guid projectId)
     {
         var cancellationToken = TestContext.Current.CancellationToken;

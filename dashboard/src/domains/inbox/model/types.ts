@@ -5,27 +5,27 @@ import type { ProviderKey } from "@/domains/sources/model/types"
  *
  * A ticket is a single row, regardless of which side it came from: a webhook
  * parked it on the local pending list (the inbox proper) or a person typed it
- * straight into the product's own intake (the native surface). Both speak the
- * same `IntakeTicketView` on the wire; the catalog browse of an external
+ * straight into the product's own integrations surface (the native flow). Both speak the
+ * same `InboundItemView` on the wire; the catalog browse of an external
  * connection is the same shape again, viewed from the other side.
  *
- * The lifecycle the host returns is the closed set of <c>IntakeTicketStatus</c>
+ * The lifecycle the host returns is the closed set of <c>InboundItemStatus</c>
  * — `Pending | Claimed | Done | Dismissed`. The wire carries the enum's
  * <c>ToString()</c> rather than the integer, so we type the status as the
  * string union that stringifies to. A value the host has not taught us is
- * mapped to `"pending"` so a partial upgrade of the backend does not crash
+ * mapped to `"Pending"` so a partial upgrade of the backend does not crash
  * the dashboard.
  */
 
 /**
- * Lifecycle of an intake ticket.
+ * Lifecycle of an inbound item on the integrations side.
  *
- * Mirrors the backend <c>IntakeTicketStatus</c>; the wire carries the
+ * Mirrors the backend <c>InboundItemStatus</c>; the wire carries the
  * <c>ToString()</c> of that enum. The domain treats unknown statuses as
- * <c>"pending"</c> rather than throwing — a partial backend rollout should
+ * <c>"Pending"</c> rather than throwing — a partial backend rollout should
  * degrade the row, not the screen.
  */
-export type TicketStatus = "pending" | "claimed" | "done" | "dismissed"
+export type TicketStatus = "Pending" | "Claimed" | "Done" | "Dismissed"
 
 /**
  * What a ticket represents on the tracker side.
@@ -45,7 +45,7 @@ export type TicketKind = "issue" | "pull-request"
 /**
  * One row of the inbox, list or detail.
  *
- * The wire row (<c>IntakeTicketView</c>) is intentionally sparse — the host's
+ * The wire row (<c>InboundItemView</c>) is intentionally sparse — the host's
  * read model keeps a ticket small. The dashboard adds nothing of its own:
  * <c>kind</c> defaults to <c>"issue"</c> (not yet on the wire), and every
  * other field is the host's own value, verbatim.
@@ -85,7 +85,7 @@ export interface Ticket {
    * pending; the screen hides "open run" affordances on <c>null</c>.
    */
   runId: string | null
-  /** Ticket's intake time, ISO-8601. */
+  /** Ticket's ingestion time, ISO-8601. */
   createdAt: string
   /**
    * Tracker-side object kind (issue vs PR). The wire does not yet carry the
@@ -99,7 +99,7 @@ export interface Ticket {
  * <c>connectionId</c>.
  *
  * The catalog endpoint takes a connection id and a 1-based page number and
- * returns the same <c>IntakeTicketView</c> shape the local inbox returns.
+ * returns the same <c>InboundItemView</c> shape the local inbox returns.
  * The projection carries the connection id because the response itself does
  * not echo it, and the screen has to know whose queue it is showing.
  */
@@ -124,7 +124,7 @@ export interface InboxFilters {
 /**
  * The body of a manual claim — the only field is which ticket.
  *
- * Mirrors the kubb-generated <c>ClaimTicketRequest</c>; the mapper below
+ * Mirrors the kubb-generated <c>ClaimInboundItemRequest</c>; the mapper below
  * turns this into it. The host treats this as exactly-once: a repeat claim
  * answers 409, the screen's error boundary reads that.
  */
@@ -133,10 +133,10 @@ export interface ClaimTicketInput {
 }
 
 /**
- * The body of the native intake — what a person typed here rather than in a
- * tracker.
+ * The body of the native integrations submission — what a person typed here
+ * rather than in a tracker.
  *
- * Mirrors the kubb-generated <c>CreateNativeTicketRequest</c>. <c>body</c>,
+ * Mirrors the kubb-generated <c>CreateNativeInboundItemRequest</c>. <c>body</c>,
  * <c>externalId</c> and <c>author</c> are optional on the wire (the host
  * fills in a generated externalId and stamps the session user as author
  * when they're empty).

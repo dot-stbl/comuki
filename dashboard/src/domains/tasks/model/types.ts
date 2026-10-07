@@ -12,7 +12,7 @@ import type { ProviderKey } from "@/domains/sources/model/types"
  * the operator and two places for a sixth provider to be forgotten.
  *
  * `native` is the surviving word for the product's own intake, because it is
- * the word on the wire: `IntakeTicketView.source` carries it, the webhook
+ * the word on the wire: `InboundItemView.source` carries it, the webhook
  * route segment is built from it, and `manual` appears nowhere the host can
  * see. `manual` also named the wrong thing — it described a gesture (somebody
  * typed this) rather than a provider, and this form deliberately lets a person

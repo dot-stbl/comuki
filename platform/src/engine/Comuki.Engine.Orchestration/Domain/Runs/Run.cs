@@ -4,7 +4,7 @@ using Comuki.Shared.Kernel.Ids;
 namespace Comuki.Engine.Orchestration.Domain.Runs;
 
 /// <summary>
-/// Run aggregate — one goal from intake (ticket / chat) decomposed by the
+/// Run aggregate — one goal from integrations (ticket / chat) decomposed by the
 /// brain into a plan of work items. Ids are UUIDv7 generated client-side;
 /// status transitions are guarded by <see cref="RunTransitions"/>.
 /// </summary>
@@ -55,7 +55,7 @@ public sealed class Run
     /// <param name="now"></param>
     /// <param name="admissionMessageId">
     /// Optional WS9 admission idempotency key (the inbox <c>message_id</c>
-    /// the launcher claimed). Set by <c>IntakeRunLauncher.LaunchAsync</c>
+    /// the launcher claimed). Set by <c>IntegrationRunLauncher.LaunchAsync</c>
     /// after a successful <see cref="Infrastructure.Inbox.IInbox.TryClaimAsync"/>
     /// so a losing / retried caller can find the winner's run. Null for
     /// every other launcher (chat / scheduler).

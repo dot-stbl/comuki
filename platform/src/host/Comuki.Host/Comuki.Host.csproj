@@ -55,8 +55,8 @@
     <ProjectReference Include="..\..\modules\Proxy\Comuki.Modules.Proxy.Application\Comuki.Modules.Proxy.Application.csproj" />
     <ProjectReference Include="..\..\modules\Proxy\Comuki.Modules.Proxy.Infrastructure\Comuki.Modules.Proxy.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Identity\Comuki.Modules.Identity.Infrastructure\Comuki.Modules.Identity.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Application\Comuki.Modules.Intake.Application.csproj" />
-    <ProjectReference Include="..\..\modules\Intake\Comuki.Modules.Intake.Infrastructure\Comuki.Modules.Intake.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Integrations\Comuki.Modules.Integrations.Application\Comuki.Modules.Integrations.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Integrations\Comuki.Modules.Integrations.Infrastructure\Comuki.Modules.Integrations.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Knowledge\Comuki.Modules.Knowledge.Application\Comuki.Modules.Knowledge.Application.csproj" />
     <ProjectReference Include="..\..\modules\Knowledge\Comuki.Modules.Knowledge.Infrastructure\Comuki.Modules.Knowledge.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Memory\Comuki.Modules.Memory.Application\Comuki.Modules.Memory.Application.csproj" />
@@ -96,7 +96,7 @@
     <InternalsVisibleTo Include="Comuki.Host.Integration.Compute" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Costs" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Errors" />
-    <InternalsVisibleTo Include="Comuki.Host.Integration.Intake" />
+    <InternalsVisibleTo Include="Comuki.Host.Integration.Integrations" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Oidc" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Realtime" />
     <InternalsVisibleTo Include="Comuki.Host.Integration.Runs" />

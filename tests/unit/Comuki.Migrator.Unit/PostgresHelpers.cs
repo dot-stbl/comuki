@@ -3,7 +3,7 @@ using Comuki.Modules.Artifacts.Infrastructure.Persistence;
 using Comuki.Modules.Chat.Infrastructure.Persistence;
 using Comuki.Modules.Costs.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence;
-using Comuki.Modules.Intake.Infrastructure.Persistence;
+using Comuki.Modules.Integrations.Infrastructure.Persistence;
 using Comuki.Modules.Knowledge.Infrastructure.Persistence;
 using Comuki.Modules.Memory.Infrastructure.Persistence;
 using Comuki.Modules.Projects.Infrastructure.Persistence;
@@ -40,7 +40,7 @@ internal static class PostgresHelpers
         yield return ProjectsDatabase.Schema;
         yield return MemoryDatabase.Schema;
         yield return ChatDatabase.Schema;
-        yield return IntakeDatabase.Schema;
+        yield return IntegrationsDatabase.Schema;
         yield return CostsDatabase.Schema;
         yield return KnowledgeDatabase.Schema;
         yield return ArtifactsDatabase.Schema;

@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { inboxQueryKey } from "@/domains/inbox/api/queries"
-import { intakeTicketViewsToTasks, toTask } from "@/domains/tasks/api/mappers"
+import { inboundItemViewsToTasks, toTask } from "@/domains/tasks/api/mappers"
 import type { CreateTaskInput, Task } from "@/domains/tasks/model/types"
-import { postApiV1InboxClaim } from "@/shared/api/_generated/clients/postApiV1InboxClaim"
-import { postApiV1Tickets } from "@/shared/api/_generated/clients/postApiV1Tickets"
-import { getApiV1Inbox } from "@/shared/api/_generated/clients/getApiV1Inbox"
+import { postApiV1IntegrationInboxClaim } from "@/shared/api/_generated/clients/postApiV1IntegrationInboxClaim"
+import { postApiV1IntegrationItems } from "@/shared/api/_generated/clients/postApiV1IntegrationItems"
+import { getApiV1IntegrationInbox } from "@/shared/api/_generated/clients/getApiV1IntegrationInbox"
 import { INBOX_POLL_INTERVAL_MS, livePolling } from "@/shared/api/polling"
 import { TASKS_SEED } from "@/shared/api/mock/tasks.seed"
 import { env } from "@/shared/config/env"
@@ -26,11 +26,11 @@ function ensureQueue(): Task[] {
  *
  * `VITE_USE_MOCK=true` reads the mutable seed store (the only way a freshly
  * created task sticks across refetches); `VITE_USE_MOCK=false` calls
- * `GET /api/v1/inbox` on the host. The endpoint takes an optional `projectId`
+ * `GET /api/v1/integration/inbox` on the host. The endpoint takes an optional `projectId`
  * filter, which the page does not yet promote into a UI control — we send
  * none today and let the host return every pending ticket the session can see.
  *
- * The wire returns the host's flat `IntakeTicketView[]`; the mapper in
+ * The wire returns the host's flat `InboundItemView[]`; the mapper in
  * `mappers.ts` translates to the dashboard's richer `Task` shape (the wire
  * provider key passes through as `Task.source`, `app` is defaulted from the
  * source, `age` is formatted from `createdAt`).
@@ -39,8 +39,8 @@ async function listTasks(): Promise<Task[]> {
   if (env.useMock) {
     return [...ensureQueue()]
   }
-  const views = await getApiV1Inbox()
-  return intakeTicketViewsToTasks(views)
+  const views = await getApiV1IntegrationInbox()
+  return inboundItemViewsToTasks(views)
 }
 
 /**
@@ -49,7 +49,7 @@ async function listTasks(): Promise<Task[]> {
  * Mock-first: the seed store appends and returns the full queue, which the
  * mutation's `onSuccess` writes straight into the cache (the only way a
  * freshly created task sticks across refetches in mock mode). Real mode
- * posts to `POST /api/v1/tickets` (the host's native intake) and returns
+ * posts to `POST /api/v1/integration/items` (the host's native intake) and returns
  * nothing — `onSuccess` invalidates the tasks key and the inbox domain's
  * list key, and the refetch picks up the freshly-queued ticket alongside
  * everything else. The form's `source` field is dashboard-only — the wire
@@ -78,7 +78,7 @@ async function createTask(input: CreateTaskInput): Promise<Task[] | undefined> {
     mockQueue = [next, ...ensureQueue()]
     return [...mockQueue]
   }
-  await postApiV1Tickets({
+  await postApiV1IntegrationItems({
     projectId: input.projectId,
     title: input.title,
     // Wire's `body` is `string | undefined` (kubb's loose typing of the
@@ -96,12 +96,12 @@ async function dispatchTask(id: string): Promise<Task[] | undefined> {
     )
     return [...mockQueue]
   }
-  // `POST /api/v1/inbox/claim` launches the ticket's run (the host returns
+  // `POST /api/v1/integration/inbox/claim` launches the ticket's run (the host returns
   // the ticket in `Claimed` status — the run id rides on the same view).
   // The mutation returns nothing; the invalidation in `onSuccess` refetches
   // the inbox, and the claimed ticket leaves the pending list (the host's
   // `ListPendingAsync` filters it out) — the honest reading of a claim.
-  await postApiV1InboxClaim({ ticketId: id })
+  await postApiV1IntegrationInboxClaim({ ticketId: id })
   return undefined
 }
 

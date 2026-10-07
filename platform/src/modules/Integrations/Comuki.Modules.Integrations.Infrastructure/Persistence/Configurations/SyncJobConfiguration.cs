@@ -1,0 +1,97 @@
+using Comuki.Modules.Integrations.Domain.Items;
+using Comuki.Modules.Integrations.Domain.Sync;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Comuki.Modules.Integrations.Infrastructure.Persistence.Configurations;
+
+/// <summary>
+/// sync_jobs mapping: the ticket FK cascades inside the integrations context;
+/// the run id is a plain uuid value (the runs table belongs to the
+/// orchestration context — no cross-context FK). Idempotency: unique
+/// run_id (a run reaches its single terminal status only once).
+/// </summary>
+public sealed class SyncJobConfiguration : IEntityTypeConfiguration<SyncJob>
+{
+    /// <summary>
+    /// Pending-only predicate, composed from <see cref="SyncJobStatus"/> via
+    /// <c>nameof</c> so a rename fails the build instead of leaving
+    /// <c>ix_sync_jobs_due</c> silently stale.
+    /// </summary>
+    internal const string PendingStatusFilter =
+        "status = '" + nameof(SyncJobStatus.Pending) + "'";
+
+    /// <inheritdoc />
+    public void Configure(EntityTypeBuilder<SyncJob> builder)
+    {
+        builder.ToTable(IntegrationsDatabase.SyncJobs, IntegrationsDatabase.Schema);
+        builder.HasKey(static job => job.Id);
+
+        builder.Property(static job => job.Id)
+            .HasColumnName("id")
+            .ValueGeneratedNever();
+
+        builder.Property(static job => job.TicketId)
+            .HasColumnName("ticket_id")
+            .HasConversion(IntegrationsIdConverters.TicketIdToUuid);
+
+        builder.HasOne<InboundItem>()
+            .WithMany()
+            .HasForeignKey(static job => job.TicketId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(static job => job.ConnectionId)
+            .HasColumnName("connection_id")
+            .HasConversion(IntegrationsIdConverters.ConnectionIdToUuid);
+
+        builder.Property(static job => job.RunId)
+            .HasColumnName("run_id")
+            .HasConversion(IntegrationsIdConverters.RunIdToUuid);
+
+        builder.Property(static job => job.ExternalId)
+            .HasColumnName("external_id")
+            .HasMaxLength(512)
+            .IsRequired();
+
+        builder.Property(static job => job.ExternalUrl)
+            .HasColumnName("external_url")
+            .HasMaxLength(2048);
+
+        builder.Property(static job => job.RunStatus)
+            .HasColumnName("run_status")
+            .HasMaxLength(32)
+            .IsRequired();
+
+        builder.Property(static job => job.Status)
+            .HasColumnName("status")
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired();
+
+        builder.Property(static job => job.Attempts)
+            .HasColumnName("attempts")
+            .HasDefaultValue(0);
+
+        builder.Property(static job => job.LastError)
+            .HasColumnName("last_error")
+            .HasMaxLength(2048);
+
+        builder.Property(static job => job.NextAttemptAt)
+            .HasColumnName("next_attempt_at");
+
+        builder.Property(static job => job.CreatedAt)
+            .HasColumnName("created_at");
+
+        builder.Property(static job => job.UpdatedAt)
+            .HasColumnName("updated_at");
+
+        // terminal-once idempotency: one job per finished run
+        builder.HasIndex(static job => job.RunId)
+            .IsUnique()
+            .HasDatabaseName("ux_sync_jobs_run_id");
+
+        builder.HasIndex(static job => job.NextAttemptAt)
+            .HasDatabaseName("ix_sync_jobs_due")
+            .HasFilter(PendingStatusFilter);
+    }
+}

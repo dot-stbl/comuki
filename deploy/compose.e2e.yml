@@ -189,7 +189,7 @@ services:
       # "e2e-smoke-hook-secret" by default). MUST live on the host
       # container, not just the smoke script — the host resolves the env
       # var by name at signature-verification time
-      # (platform/src/modules/Intake/Comuki.Modules.Intake.Domain/Connections/SourceConnection.cs).
+      # (platform/src/modules/Integrations/Comuki.Modules.Integrations.Domain/Connections/SourceConnection.cs).
       COMUKI_E2E_GH_HOOK_SECRET: ${COMUKI_E2E_GH_HOOK_SECRET:-e2e-smoke-hook-secret}
       # RunAsUser matches the worker-test image's USER 1000:1000 directive
       # (tests/tools/Comuki.TestFakePi/worker-test.Dockerfile). The Docker

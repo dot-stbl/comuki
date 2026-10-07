@@ -25,7 +25,7 @@ ticket:
     ref: main
 worker:
   # Same label as the WS7/WS8 harnesses — RealPiFakeModelHost's
-  # Intake:Worker:Image config matches a single label across the
+  # Integrations:Worker:Image config matches a single label across the
   # collection so the queue claim SQL finds the in-flight run regardless
   # of which scenario-name harness served it.
   image: comuki-agent-test-worker:ws7-real-pi

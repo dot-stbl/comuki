@@ -15,13 +15,13 @@ using Comuki.Host.Errors;
 using Comuki.Host.Errors.Core;
 using Comuki.Host.Errors.Handlers.Chat;
 using Comuki.Host.Errors.Handlers.Identity;
-using Comuki.Host.Errors.Handlers.Intake;
+using Comuki.Host.Errors.Handlers.Integration;
 using Comuki.Host.Errors.Handlers.Learning;
 using Comuki.Host.Errors.Handlers.Projects;
 using Comuki.Host.Errors.Handlers.Runs;
 using Comuki.Host.Errors.Handlers.Scheduler;
 using Comuki.Host.HealthChecks;
-using Comuki.Host.Intake;
+using Comuki.Host.Integration;
 using Comuki.Host.Knowledge;
 using Comuki.Host.Mcp;
 using Comuki.Host.OpenApi;
@@ -52,10 +52,10 @@ using Comuki.Modules.Identity.Application;
 using Comuki.Modules.Identity.Application.Oidc;
 using Comuki.Modules.Identity.Infrastructure;
 using Comuki.Modules.Identity.Infrastructure.Security.Authorization;
-using Comuki.Modules.Intake.Application;
-using Comuki.Modules.Intake.Application.Options;
-using Comuki.Modules.Intake.Application.Ports.Admission;
-using Comuki.Modules.Intake.Infrastructure;
+using Comuki.Modules.Integrations.Application;
+using Comuki.Modules.Integrations.Application.Options;
+using Comuki.Modules.Integrations.Application.Ports.Admission;
+using Comuki.Modules.Integrations.Infrastructure;
 using Comuki.Modules.Knowledge.Application;
 using Comuki.Modules.Knowledge.Infrastructure;
 using Comuki.Modules.Memory.Application;
@@ -315,28 +315,29 @@ internal static class HostComposer
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        // Intake module (issue #6): webhooks + native tickets over the
-        // intake schema, the tracker Refit providers, and the run status
-        // bridge worker. Runs launch through the host-composed port
-        // (IntakeRunLauncher) — the module never references the engine;
-        // bridge intervals are bound from Intake:* configuration.
+        // Integrations module (issue #6, renamed from Intake per the
+        // hard-rename change): webhooks + native inbound items over the
+        // integrations schema, the tracker Refit providers, and the run
+        // status bridge worker. Runs launch through the host-composed port
+        // (IntegrationRunLauncher) — the module never references the engine;
+        // bridge intervals are bound from Integrations:* configuration.
         builder.Services
-            .AddIntakeApplication()
-            .AddIntakePersistence(database.ConnectionString)
-            .AddIntakeProviders();
-        builder.Services.AddOptions<IntakeOptions>()
-            .Bind(builder.Configuration.GetSection(IntakeOptions.SectionName))
+            .AddIntegrationsApplication()
+            .AddIntegrationsPersistence(database.ConnectionString)
+            .AddIntegrationsProviders();
+        builder.Services.AddOptions<IntegrationsOptions>()
+            .Bind(builder.Configuration.GetSection(IntegrationsOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        builder.Services.AddScoped<IRunLauncher, IntakeRunLauncher>();
+        builder.Services.AddScoped<IRunLauncher, IntegrationRunLauncher>();
         builder.Services.AddScoped<IRunStatusReader, OrchestrationRunStatusReader>();
-        builder.Services.AddOptions<IntakeWorkerDefaults>()
-            .Bind(builder.Configuration.GetSection(IntakeWorkerDefaults.SectionName))
+        builder.Services.AddOptions<IntegrationWorkerDefaults>()
+            .Bind(builder.Configuration.GetSection(IntegrationWorkerDefaults.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        builder.Services.AddScoped<IIntakeProfileRouter, Modules.Intake.Infrastructure.Admission.IntakeProfileRouter>(static serviceProvider =>
-            new Modules.Intake.Infrastructure.Admission.IntakeProfileRouter(
-                serviceProvider.GetRequiredService<IOptions<IntakeWorkerDefaults>>().Value.IssueDefaultProfileKey));
+        builder.Services.AddScoped<IIntegrationProfileRouter, Modules.Integrations.Infrastructure.Admission.IntegrationProfileRouter>(static serviceProvider =>
+            new Modules.Integrations.Infrastructure.Admission.IntegrationProfileRouter(
+                serviceProvider.GetRequiredService<IOptions<IntegrationWorkerDefaults>>().Value.IssueDefaultProfileKey));
 
         // Artifacts module (issue #28): MinIO-backed run bundle store +
         // the polling packager driver. The two adapters
@@ -538,7 +539,7 @@ internal static class HostComposer
         builder.Services.AddExceptionHandler<ProviderExceptionHandler>();
         builder.Services.AddCoreProblemHandlers();
         builder.Services.AddProjectsProblemHandlers();
-        builder.Services.AddIntakeProblemHandlers();
+        builder.Services.AddIntegrationProblemHandlers();
         builder.Services.AddSchedulerProblemHandlers();
         builder.Services.AddChatProblemHandlers();
         builder.Services.AddRunsProblemHandlers();

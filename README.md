@@ -62,7 +62,7 @@ Polyglot monorepo, top level by stack:
 
 | Path | Stack | Role |
 |------|-------|------|
-| `platform/` | C# / .NET 10 | Orchestrator host, 11 modules (Identity, Projects, Chat, Memory, Intake, Costs, Artifacts, Proxy, Knowledge, Verify, Scheduler), compute engine, YARP proxy, Translator |
+| `platform/` | C# / .NET 10 | Orchestrator host, 11 modules (Identity, Projects, Chat, Memory, Integrations, Costs, Artifacts, Proxy, Knowledge, Verify, Scheduler), compute engine, YARP proxy, Translator |
 | `agents/` | TypeScript (bun) | `comuki-agent-core` · `comuki-worker-sdk` (pi runtime) · `comuki-dev-sdk` (Claude Code) |
 | `dashboard/` | React 19 + Vite + shadcn | Operational UI — runs, inbox, projects, live journal over SignalR |
 | `control-plane/` | markdown / configs | Swarm rules and skills (not product code) |
@@ -174,7 +174,7 @@ Env vars, worker compute providers, troubleshooting, and a hardening checklist: 
 | Translator · worker image · gRPC end to end | Autonomy ratchet: confidence scoring, daily decay |
 | Identity: users · API keys · RBAC · OIDC | Merge-queue multi-feature batching |
 | Chat with brain · approve/cancel | |
-| Intake: GH · GL · Jira · Tracker · PR-review · sync-back | |
+| Integrations: GH · GL · Jira · Tracker · PR-review · sync-back | |
 | Proxy: virtual keys · budgets · metering | |
 | Knowledge: pgvector · MCP endpoint · docs worker | |
 | Artifacts: MinIO run bundles · scheduler · verify | |

@@ -5,18 +5,18 @@ namespace Comuki.Modules.Projects.Domain.DomainTypes;
 /// <summary>
 /// Per-project admission policy for one user-facing domain type
 /// (<c>code</c>, <c>data</c>, <c>infra</c>, <c>research</c>, …) — the
-/// "domain-user intake" gate of issue #11. Routing answers *which
+/// "domain-user integrations" gate of issue #11. Routing answers *which
 /// profile* handles a domain type
 /// (<see cref="Settings.ProjectDomainType"/>); admission answers the
 /// prior question — *may this domain type run at all, and from where*.
 /// <para>
 /// Two independent switches, both stored as <c>text[]</c>:
 /// <list type="bullet">
-///     <item><see cref="AllowedSources"/> — allow-list of intake source
+///     <item><see cref="AllowedSources"/> — allow-list of integrations source
 ///     keys (<c>github</c>, <c>gitlab</c>, <c>jira</c>, <c>native</c>, …).
 ///     Empty means "any source"; non-empty admits only the listed keys.
 ///     Source keys are plain strings on purpose — the policy must not
-///     depend on the Intake module (modules never reference siblings).</item>
+///     depend on the Integrations module (modules never reference siblings).</item>
 ///     <item><see cref="DeniedReasons"/> — stable reason codes that hold
 ///     this domain type back regardless of source (e.g.
 ///     <c>needs_human_review</c>). Empty means "nothing blocks it";
@@ -49,7 +49,7 @@ public sealed class DomainTypeAdmission
     /// <summary>Normalized (trimmed, lower-cased) user-facing domain type key.</summary>
     public string DomainType { get; private set; } = string.Empty;
 
-    /// <summary>Allow-list of intake source keys; empty means "any source".</summary>
+    /// <summary>Allow-list of integrations source keys; empty means "any source".</summary>
     public string[] AllowedSources { get; private set; } = [];
 
     /// <summary>Stable reason codes blocking this domain type; empty means "not blocked".</summary>
@@ -145,7 +145,7 @@ public sealed class DomainTypeAdmission
     /// blocks, then the source allow-list — so the most specific
     /// human-authored reason wins over the generic one.
     /// </summary>
-    /// <param name="source">Intake source key (<c>github</c>, <c>native</c>, …).</param>
+    /// <param name="source">Integrations source key (<c>github</c>, <c>native</c>, …).</param>
     /// <returns>Reason codes; empty when the work is admitted.</returns>
     public IReadOnlyList<string> EvaluateDenials(string source)
     {

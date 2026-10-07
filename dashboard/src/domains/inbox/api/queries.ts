@@ -10,8 +10,8 @@ import type {
   InboxFilters,
   Ticket,
 } from "@/domains/inbox/model/types"
-import { getApiV1Inbox } from "@/shared/api/_generated/clients/getApiV1Inbox"
-import { getApiV1InboxCatalog } from "@/shared/api/_generated/clients/getApiV1InboxCatalog"
+import { getApiV1IntegrationInbox } from "@/shared/api/_generated/clients/getApiV1IntegrationInbox"
+import { getApiV1IntegrationInboxCatalog } from "@/shared/api/_generated/clients/getApiV1IntegrationInboxCatalog"
 import { INBOX_POLL_INTERVAL_MS, livePolling } from "@/shared/api/polling"
 import {
   findSeedInboxTicket,
@@ -31,12 +31,12 @@ import { env } from "@/shared/config/env"
  *
  * Three endpoints are wired today:
  *
- *   - `GET /api/v1/inbox`              → pending list (newest first)
- *   - `GET /api/v1/inbox/catalog`      → one page of a connection's external
+ *   - `GET /api/v1/integration/inbox`              → pending list (newest first)
+ *   - `GET /api/v1/integration/inbox/catalog`      → one page of a connection's external
  *                                        issue catalog (browse then take)
  *   - (no detail endpoint)             → a single ticket is pulled out of the
  *                                        cached list. The host's `InboxController`
- *                                        does not expose `/api/v1/inbox/{id}`;
+ *                                        does not expose `/api/v1/integration/inbox/{id}`;
  *                                        the list-page approach is intentional
  *                                        and a single function changes when
  *                                        the detail endpoint lands.
@@ -65,7 +65,7 @@ async function listInbox(filters: InboxFilters): Promise<Ticket[]> {
   if (env.useMock) {
     return listSeedInboxTickets(filters.projectId).map(mapSeedTicketToTicket)
   }
-  const page = await getApiV1Inbox({
+  const page = await getApiV1IntegrationInbox({
     projectId: filters.projectId,
   })
   return mapInboxToTickets(page)
@@ -86,7 +86,7 @@ async function getInboxCatalog(
   if (env.useMock) {
     return mapInboxCatalogToConnections([], connectionId)
   }
-  const rows = await getApiV1InboxCatalog({
+  const rows = await getApiV1IntegrationInboxCatalog({
     connectionId,
     page,
   })
@@ -130,7 +130,7 @@ async function getInboxTicket(ticketId: string): Promise<Ticket | null> {
   // whole platform's pending queue. The list-page approach is intentionally
   // broad: it survives partial unique-key mismatches and the absence of a
   // dedicated detail endpoint. A detail endpoint would replace this body.
-  const page = await getApiV1Inbox({})
+  const page = await getApiV1IntegrationInbox({})
   const tickets = mapInboxToTickets(page)
   return tickets.find((entry) => entry.id === ticketId) ?? null
 }
@@ -139,7 +139,7 @@ export function useInboxQuery(filters: InboxFilters) {
   return useQuery({
     queryKey: [...inboxQueryKey, filters] as const,
     queryFn: () => listInbox(filters),
-    // The intake list — a claimed ticket should leave the pending queue
+    // The inbox list — a claimed ticket should leave the pending queue
     // within a minute even with no socket.
     refetchInterval: livePolling(INBOX_POLL_INTERVAL_MS),
   })

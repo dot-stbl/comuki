@@ -21,7 +21,7 @@ the only place its concern lives; reordering breaks the wiring.
 | **3 — Projects** | `AddProjectsApplication` · `AddProjectsPersistence`. |
 | **4 — Costs** | `IBudgetGate` host-composed `OrchestrationBudgetGate` · `IProjectBudgetSettings` adapter · `AddCostsApplication` · `AddCostsPersistence`. |
 | **5 — Chat** | `AddChatApplication` · `AddChatPersistence` · `IBrainClient` (in-process stub fallback) · `IMemoryDigest` (empty fallback) · `IChatToolExecutor` (host-composed, scopes into orchestration) · `IRunsReader` adapter · `RunsListHandler` · approve/cancel ports · `ChatRunStarter`. |
-| **6 — Intake** | `AddIntakeApplication` · `AddIntakePersistence` · `AddIntakeProviders` (Refit) · `IRunLauncher` adapter · `IRunStatusReader` adapter · `IntakeProfileRouter`. |
+| **6 — Integrations** | `AddIntegrationsApplication` · `AddIntegrationsPersistence` · `AddIntegrationsProviders` (Refit) · `IRunLauncher` adapter · `IRunStatusReader` adapter · `IntegrationProfileRouter`. |
 | **7 — Artifacts** | `AddArtifactsApplication` · `AddArtifactsPersistence` · `IRunArtifactJournalSource` adapter · `IRunArtifactRunSource` adapter · `RunArtifactPackagerHostService` (BackgroundService). |
 | **8 — Knowledge** | `AddKnowledgeApplication` · `AddKnowledgePersistence` · `AddKnowledgeInfrastructure` (pgvector embeddings + `KnowledgeIngestBackgroundService`). |
 | **9 — MCP server** | `McpServer` singleton — JSON-RPC 2.0 over `/api/v1/mcp`. |
@@ -56,8 +56,8 @@ the module boundary goes through an **adapter** registered in
 | `IRunsReader` → `OrchestrationRunsReader` | Reads runs from the orchestration schema (chat needs the run list). | Chat tools |
 | `IApproveRunPort` → `HostApproveRunAdapter` | Approves a run from chat (`approve_run` tool). | Voluta graph |
 | `ICancelRunPort` → `HostCancelRunAdapter` | Cancels a run from chat (`stop_run` tool). | Voluta graph |
-| `IRunLauncher` → `IntakeRunLauncher` | Creates a run from an intake admission. | Intake module |
-| `IRunStatusReader` → `OrchestrationRunStatusReader` | Sync-back: feeds run status into the intake tracker. | `RunStatusBridge` (intake) |
+| `IRunLauncher` → `IntegrationRunLauncher` | Creates a run from an integration admission. | Integrations module |
+| `IRunStatusReader` → `OrchestrationRunStatusReader` | Sync-back: feeds run status into the integration tracker. | `RunStatusBridge` (integrations) |
 | `IRunArtifactJournalSource` → `OrchestrationArtifactJournalSource` | Reads journal rows from the orchestration schema for the bundle packager. | `RunArtifactPackager` |
 | `IRunArtifactRunSource` → `OrchestrationArtifactRunSource` | Reads run metadata for the bundle. | `RunArtifactPackager` |
 | `IProjectScaleSettings` → `ProjectScaleSettingsAdapter` | Live project settings back into compute scale decisions. | `ScaleSupervisor` |

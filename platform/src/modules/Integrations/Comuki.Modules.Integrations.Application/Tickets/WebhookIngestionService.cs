@@ -1,0 +1,139 @@
+using Comuki.Modules.Integrations.Application.Admission;
+using Comuki.Modules.Integrations.Application.Ports.Admission;
+using Comuki.Modules.Integrations.Application.Ports.Sync;
+using Comuki.Modules.Integrations.Application.Ports.Tickets;
+using Comuki.Modules.Integrations.Application.Sync;
+using Comuki.Modules.Integrations.Domain.Deliveries;
+using Comuki.Modules.Integrations.Domain.Items;
+using Comuki.Modules.Integrations.Domain.Rules;
+using Comuki.Shared.Kernel.Scoping;
+using Microsoft.Extensions.Logging;
+
+namespace Comuki.Modules.Integrations.Application.Tickets;
+
+/// <summary>
+/// The webhook pipeline (scope-draft §1 "оба замка"): insert-first
+/// delivery lock → signature verify → tolerant normalize → admission →
+/// ticket upsert → run launch (watch mode). Every non-2xx path is
+/// narrow: unknown provider/connection (404) and a bad signature (401);
+/// everything else — replays, skips, filtered tickets, duplicates — is a
+/// 200 with an outcome label, so trackers never retry letters we
+/// deliberately dropped.
+/// </summary>
+public sealed class WebhookIngestionService(
+    ISubjectScopeAccessor scopeAccessor,
+    IIntegrationsStore store,
+    TicketProviderRegistry providers,
+    IRunLauncher runLauncher,
+    TimeProvider clock,
+    ILogger<WebhookIngestionService> logger)
+{
+    /// <summary>Runs one webhook delivery through the pipeline.</summary>
+    /// <param name="sourceKey">Kebab-case provider key from the route.</param>
+    /// <param name="webhookKey">Per-connection routing key from the route.</param>
+    /// <param name="delivery"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public async Task<WebhookReceipt> HandleAsync(
+        string sourceKey,
+        string webhookKey,
+        WebhookDelivery delivery,
+        CancellationToken cancellationToken = default)
+    {
+        // A webhook arrives anonymous — the signature is the auth on this
+        // surface, so no subject is ever established and the ambient scope
+        // is `SubjectScope.Nothing`. Every Integrations table this pipeline
+        // reads (connections, items, admission rules) is query-filtered by
+        // project, so without a system scope the filter matches nothing and
+        // the connection is never found. The scope wraps the whole method
+        // rather than the lookup: all thirteen store calls below run on
+        // behalf of the tracker, not of a person.
+        using var systemScope = scopeAccessor.AsSystem("integration-webhook");
+
+        if (sourceKey == TicketProviderKeys.Native)
+        {
+            return WebhookReceipt.NotFound(
+                "integration.source_provider_not_found",
+                $"source '{sourceKey}' has no webhook surface");
+        }
+
+        var provider = providers.FindSource(sourceKey);
+        if (provider is null)
+        {
+            return WebhookReceipt.NotFound(
+                "integration.source_provider_not_found",
+                $"source '{sourceKey}' is not a registered ticket provider");
+        }
+
+        var connection = await store.FindConnectionByWebhookAsync(sourceKey, webhookKey, cancellationToken);
+        if (connection is null)
+        {
+            return WebhookReceipt.NotFound(
+                "integration.connection_not_found",
+                $"no enabled connection for source '{sourceKey}' with this webhook key");
+        }
+
+        // Lock #1 — insert-first idempotency: the unique index on
+        // (source, delivery_id) rejects the same letter twice.
+        var deliveryRow = Delivery.Create(sourceKey, provider.DeliveryIdOf(delivery), clock.GetUtcNow());
+        if (!await store.TryInsertDeliveryAsync(deliveryRow, cancellationToken))
+        {
+            logger.LogInformation("Webhook replay skipped for source {Source} delivery {DeliveryId}", sourceKey, deliveryRow.DeliveryId);
+            return WebhookReceipt.Ok(DeliveryOutcomes.Replay, deliveryRow.DeliveryId);
+        }
+
+        // The signature IS the auth on this surface.
+        if (!await provider.VerifySignatureAsync(connection, delivery, cancellationToken))
+        {
+            logger.LogWarning("Webhook signature rejected for source {Source} connection {ConnectionId}", sourceKey, connection.Id);
+            await store.MarkDeliveryOutcomeAsync(deliveryRow.Id, DeliveryOutcomes.Rejected, "signature mismatch", cancellationToken);
+            return WebhookReceipt.SignatureInvalid("webhook signature verification failed");
+        }
+
+        var ticket = provider.Normalize(delivery, connection);
+        if (ticket is null)
+        {
+            logger.LogDebug("Webhook skipped for source {Source} delivery {DeliveryId}: not a ticket event", sourceKey, deliveryRow.DeliveryId);
+            await store.MarkDeliveryOutcomeAsync(deliveryRow.Id, DeliveryOutcomes.Skipped, "not a ticket event", cancellationToken);
+            return WebhookReceipt.Ok(DeliveryOutcomes.Skipped, deliveryRow.DeliveryId);
+        }
+
+        var rules = await store.ListEnabledRulesAsync(connection.ProjectId, cancellationToken);
+        var admittedMode = AdmissionEvaluator.Evaluate(rules, ticket);
+
+        if (admittedMode is null)
+        {
+            ticket.MarkDismissed(clock.GetUtcNow());
+            await store.AddDismissedTicketAsync(ticket, cancellationToken);
+            logger.LogInformation("Ticket {ExternalId} filtered out by admission rules of project {ProjectId}", ticket.ExternalId, ticket.ProjectId);
+            await store.MarkDeliveryOutcomeAsync(deliveryRow.Id, DeliveryOutcomes.Filtered, ticket.ExternalId, cancellationToken);
+            return WebhookReceipt.Ok(DeliveryOutcomes.Filtered, ticket.ExternalId);
+        }
+
+        // bind the sync-back routing target before storing
+        ticket.BindConnection(connection.Id);
+
+        // Lock #2 — one live run per issue: the partial unique index over
+        // the active statuses rejects a second active ticket.
+        var stored = await store.TryInsertTicketAsync(ticket, cancellationToken);
+        if (stored is null)
+        {
+            logger.LogInformation("Ticket {ExternalId} skipped: an active ticket/run already exists in project {ProjectId}", ticket.ExternalId, ticket.ProjectId);
+            await store.MarkDeliveryOutcomeAsync(deliveryRow.Id, DeliveryOutcomes.Duplicate, ticket.ExternalId, cancellationToken);
+            return WebhookReceipt.Ok(DeliveryOutcomes.Duplicate, ticket.ExternalId);
+        }
+
+        if (admittedMode == AdmissionMode.Watch)
+        {
+            var runId = await runLauncher.LaunchAsync(connection.ProjectId, connection, stored, cancellationToken);
+            await store.TryMarkClaimedAsync(stored.Id, runId, cancellationToken);
+            logger.LogInformation("Ticket {ExternalId} admitted into run {RunId} (watch)", stored.ExternalId, runId);
+            await store.MarkDeliveryOutcomeAsync(deliveryRow.Id, DeliveryOutcomes.Admitted, stored.ExternalId, cancellationToken);
+            return WebhookReceipt.Ok(DeliveryOutcomes.Admitted, stored.ExternalId);
+        }
+
+        logger.LogInformation("Ticket {ExternalId} parked in the inbox of project {ProjectId}", stored.ExternalId, stored.ProjectId);
+        await store.MarkDeliveryOutcomeAsync(deliveryRow.Id, DeliveryOutcomes.Pending, stored.ExternalId, cancellationToken);
+        return WebhookReceipt.Ok(DeliveryOutcomes.Pending, stored.ExternalId);
+    }
+}

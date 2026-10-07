@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 import {
   mapClaimTicketInputToClaimRequest,
-  mapIntakeTicketViewToTicket,
+  mapInboundItemViewToTicket,
   mapNativeTicketInputToCreateRequest,
 } from "@/domains/inbox/api/mappers"
 import { inboxQueryKey } from "@/domains/inbox/api/queries"
@@ -11,8 +11,8 @@ import type {
   CreateNativeTicketInput,
   Ticket,
 } from "@/domains/inbox/model/types"
-import { postApiV1InboxClaim } from "@/shared/api/_generated/clients/postApiV1InboxClaim"
-import { postApiV1Tickets } from "@/shared/api/_generated/clients/postApiV1Tickets"
+import { postApiV1IntegrationInboxClaim } from "@/shared/api/_generated/clients/postApiV1IntegrationInboxClaim"
+import { postApiV1IntegrationItems } from "@/shared/api/_generated/clients/postApiV1IntegrationItems"
 import { postApiHooksProviderKey } from "@/shared/api/_generated/clients/postApiHooksProviderKey"
 import type { WebhookAcceptedResponse } from "@/shared/api/_generated/types/WebhookAcceptedResponse"
 import { createSeedNativeTicket } from "@/shared/api/mock/sources.store"
@@ -68,22 +68,22 @@ export function useClaimTicketMutation() {
           labels: [],
           straightToWork: true,
         } satisfies SeedTicketDraft)
-        return mapIntakeTicketViewToTicket({
+        return mapInboundItemViewToTicket({
           id: `00000000-0000-0000-0000-${Date.now().toString(16).padStart(12, "0").slice(0, 12)}`,
           projectId: seed.projectId,
           source: "native",
           externalId: seed.id,
           title: seed.title,
           url: `https://comuki.local/inbox/${seed.id}`,
-          status: "claimed",
+          status: "Claimed",
           runId: `00000000-0000-0000-0000-${Date.now().toString(16).padStart(12, "0").slice(0, 12)}`,
           createdAt: new Date().toISOString(),
         })
       }
-      const view = await postApiV1InboxClaim(
+      const view = await postApiV1IntegrationInboxClaim(
         mapClaimTicketInputToClaimRequest(input)
       )
-      return mapIntakeTicketViewToTicket(view)
+      return mapInboundItemViewToTicket(view)
     },
     onSettled: async () => {
       await client.invalidateQueries({ queryKey: inboxQueryKey })
@@ -92,7 +92,7 @@ export function useClaimTicketMutation() {
 }
 
 /**
- * File a new native ticket — `POST /api/v1/tickets`.
+ * File a new native ticket — `POST /api/v1/integration/items`.
  *
  * The host creates the ticket AND launches its run in one motion when the
  * caller asks for `straightToWork: true`. The native form already routes
@@ -116,22 +116,22 @@ export function useCreateNativeTicketMutation() {
           labels: [],
           straightToWork: false,
         } satisfies SeedTicketDraft)
-        return mapIntakeTicketViewToTicket({
+        return mapInboundItemViewToTicket({
           id: `00000000-0000-0000-0000-${seed.id.padStart(12, "0").slice(0, 12)}`,
           projectId: seed.projectId,
           source: "native",
           externalId: seed.id,
           title: seed.title,
           url: `https://comuki.local/inbox/${seed.id}`,
-          status: "pending",
+          status: "Pending",
           runId: null,
           createdAt: new Date().toISOString(),
         })
       }
-      const view = await postApiV1Tickets(
+      const view = await postApiV1IntegrationItems(
         mapNativeTicketInputToCreateRequest(input)
       )
-      return mapIntakeTicketViewToTicket(view)
+      return mapInboundItemViewToTicket(view)
     },
     onSettled: async () => {
       await client.invalidateQueries({ queryKey: inboxQueryKey })

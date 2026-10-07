@@ -11,7 +11,7 @@ describe("pickActiveSection — which section owns this pathname", () => {
     expect(pickActiveSection(productNavSections, "/approvals")?.id).toBe(
       "observe"
     )
-    expect(pickActiveSection(productNavSections, "/tasks")?.id).toBe("intake")
+    expect(pickActiveSection(productNavSections, "/tasks")?.id).toBe("integrations")
   })
 
   it("matches a child route to its non-exact parent", () => {
@@ -53,7 +53,7 @@ describe("pickActiveSection — which section owns this pathname", () => {
     // The exact `/runs` wins over the parent match for `/runs/something`.
     const sections: NavSection[] = [
       {
-        id: "intake",
+        id: "integrations",
         label: "Exact",
         icon: { displayName: "X" } as never,
         items: [{ label: "Runs", href: "/runs", exact: false }],
@@ -65,7 +65,7 @@ describe("pickActiveSection — which section owns this pathname", () => {
         items: [{ label: "Archive", href: "/runs-archive", exact: false }],
       },
     ]
-    expect(pickActiveSection(sections, "/runs/4711")?.id).toBe("intake")
+    expect(pickActiveSection(sections, "/runs/4711")?.id).toBe("integrations")
     expect(pickActiveSection(sections, "/runs-archive")?.id).toBe("observe")
   })
 })

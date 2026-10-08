@@ -81,7 +81,7 @@ public static class YandexTrackerPayloadMapper
             now);
     }
 
-    private static string ReadCreatedBy(JsonElement issue)
+    public static string ReadCreatedBy(JsonElement issue)
     {
         return issue.TryGetProperty("createdBy", out var user)
             && user.ValueKind is JsonValueKind.Object
@@ -89,7 +89,7 @@ public static class YandexTrackerPayloadMapper
             : string.Empty;
     }
 
-    private static string ReadQueueKey(JsonElement issue)
+    public static string ReadQueueKey(JsonElement issue)
     {
         return issue.TryGetProperty("queue", out var queue)
             && queue.ValueKind is JsonValueKind.Object
@@ -97,7 +97,7 @@ public static class YandexTrackerPayloadMapper
             : string.Empty;
     }
 
-    private static string[] ReadTags(JsonElement issue)
+    public static string[] ReadTags(JsonElement issue)
     {
         return !issue.TryGetProperty("tags", out var tags) || tags.ValueKind is not JsonValueKind.Array
             ? []
@@ -107,7 +107,7 @@ public static class YandexTrackerPayloadMapper
             .Where(static tag => tag.Length > 0)];
     }
 
-    private static string ReadString(JsonElement element, string property)
+    public static string ReadString(JsonElement element, string property)
     {
         return element.TryGetProperty(property, out var value)
             && value.ValueKind is JsonValueKind.String

@@ -101,7 +101,7 @@ public static class JiraPayloadMapper
             now);
     }
 
-    private static string ReadCreator(JsonElement? fields)
+    public static string ReadCreator(JsonElement? fields)
     {
         return fields is { } element
             && element.TryGetProperty("creator", out var creator)
@@ -110,7 +110,7 @@ public static class JiraPayloadMapper
             : string.Empty;
     }
 
-    private static string ReadProjectKey(JsonElement? fields)
+    public static string ReadProjectKey(JsonElement? fields)
     {
         return fields is { } element
             && element.TryGetProperty("project", out var project)
@@ -119,7 +119,7 @@ public static class JiraPayloadMapper
             : string.Empty;
     }
 
-    private static string[] ReadLabels(JsonElement? fields)
+    public static string[] ReadLabels(JsonElement? fields)
     {
         return fields is not { } element
             || !element.TryGetProperty("labels", out var labels)
@@ -131,12 +131,12 @@ public static class JiraPayloadMapper
             .Where(static label => label.Length > 0)];
     }
 
-    private static string ReadString(JsonElement? element, string property)
+    public static string ReadString(JsonElement? element, string property)
     {
-        return element is { } value
-            && value.TryGetProperty(property, out var propertyValue)
-            && propertyValue.ValueKind is JsonValueKind.String
-            && propertyValue.GetString() is { } text
+        return element is { ValueKind: JsonValueKind.Object }
+            && element.Value.TryGetProperty(property, out var value)
+            && value.ValueKind is JsonValueKind.String
+            && value.GetString() is { } text
             ? text
             : string.Empty;
     }

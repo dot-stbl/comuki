@@ -112,7 +112,7 @@ public static class GitLabPayloadMapper
             now);
     }
 
-    private static InboundItem? MapIssue(JsonElement root, JsonElement attributes, JsonElement project, ProjectId projectId, DateTimeOffset now)
+    public static InboundItem? MapIssue(JsonElement root, JsonElement attributes, JsonElement project, ProjectId projectId, DateTimeOffset now)
     {
         // update events carry no action for label-only changes via API —
         // absent action counts as relevant
@@ -144,7 +144,7 @@ public static class GitLabPayloadMapper
             now);
     }
 
-    private static InboundItem? MapMergeRequest(JsonElement root, JsonElement attributes, JsonElement project, ProjectId projectId, DateTimeOffset now)
+    public static InboundItem? MapMergeRequest(JsonElement root, JsonElement attributes, JsonElement project, ProjectId projectId, DateTimeOffset now)
     {
         if (attributes.TryGetProperty("action", out var actionElement)
             && actionElement.GetString() is { } action
@@ -174,7 +174,7 @@ public static class GitLabPayloadMapper
             now);
     }
 
-    private static string ReadAuthor(JsonElement root)
+    public static string ReadAuthor(JsonElement root)
     {
         return root.TryGetProperty("user", out var user)
             && user.ValueKind is JsonValueKind.Object
@@ -182,7 +182,7 @@ public static class GitLabPayloadMapper
             : string.Empty;
     }
 
-    private static string[] ReadLabels(JsonElement root)
+    public static string[] ReadLabels(JsonElement root)
     {
         return !root.TryGetProperty("labels", out var labels) || labels.ValueKind is not JsonValueKind.Array
             ? []
@@ -192,7 +192,7 @@ public static class GitLabPayloadMapper
             .Where(static title => title.Length > 0)];
     }
 
-    private static string ReadString(JsonElement element, string property)
+    public static string ReadString(JsonElement element, string property)
     {
         return element.TryGetProperty(property, out var value)
             && value.ValueKind is JsonValueKind.String

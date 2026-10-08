@@ -7,7 +7,6 @@ using Comuki.Modules.Integrations.Domain.Rules;
 using Comuki.Modules.Integrations.Domain.Sync;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace Comuki.Modules.Integrations.Infrastructure.Persistence.Stores;
 
@@ -67,37 +66,9 @@ public sealed class IntegrationsStore(IntegrationsDbContext db, TimeProvider clo
         // scope) must be detached first — otherwise EF throws on the
         // duplicate-key attach. Then explicitly attach as Modified so EF
         // never acts on a Detached entry.
-        DetachTrackedInstance(connection.Id);
+        db.ChangeTracker.DetachTrackedBy<SourceConnection>(c => c.Id == connection.Id);
         db.Entry(connection).State = EntityState.Modified;
         await db.SaveChangesAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// Detaches any tracked instance with the given id so the next
-    /// <c>db.Entry(...).State = Modified</c> attach does not collide on
-    /// the duplicate-key guard.
-    /// </summary>
-    /// <param name="connectionId"></param>
-    private void DetachTrackedInstance(SourceConnectionId connectionId)
-    {
-        var tracked = db.ChangeTracker
-            .Entries<SourceConnection>()
-            .FirstOrDefault(entry => entry.Entity.Id == connectionId);
-        tracked?.State = EntityState.Detached;
-    }
-
-    /// <summary>
-    /// Same as <see cref="DetachTrackedInstance"/> for admission rules —
-    /// the rule update path hits the same EF duplicate-key guard when a
-    /// prior request left the entity in the tracker.
-    /// </summary>
-    /// <param name="ruleId"></param>
-    private void DetachTrackedRule(AdmissionRuleId ruleId)
-    {
-        var tracked = db.ChangeTracker
-            .Entries<AdmissionRule>()
-            .FirstOrDefault(entry => entry.Entity.Id == ruleId);
-        tracked?.State = EntityState.Detached;
     }
 
     /// <inheritdoc />
@@ -159,7 +130,7 @@ public sealed class IntegrationsStore(IntegrationsDbContext db, TimeProvider clo
         // Same detach-first pattern as UpdateConnectionAsync — Update() on a
         // duplicate-key entity throws on the EF tracker; detach the
         // previously-tracked instance before attaching the new one.
-        DetachTrackedRule(rule.Id);
+        db.ChangeTracker.DetachTrackedBy<AdmissionRule>(r => r.Id == rule.Id);
         db.Rules.Update(rule);
         await db.SaveChangesAsync(cancellationToken);
     }
@@ -176,7 +147,7 @@ public sealed class IntegrationsStore(IntegrationsDbContext db, TimeProvider clo
     public async Task<bool> TryInsertDeliveryAsync(Delivery delivery, CancellationToken cancellationToken = default)
     {
         db.Deliveries.Add(delivery);
-        return await TrySaveUniqueAsync(delivery, cancellationToken);
+        return await db.TrySaveUniqueAsync(delivery, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -195,7 +166,7 @@ public sealed class IntegrationsStore(IntegrationsDbContext db, TimeProvider clo
     public async Task<InboundItem?> TryInsertTicketAsync(InboundItem ticket, CancellationToken cancellationToken = default)
     {
         db.Tickets.Add(ticket);
-        return await TrySaveUniqueAsync(ticket, cancellationToken) ? ticket : null;
+        return await db.TrySaveUniqueAsync(ticket, cancellationToken) ? ticket : null;
     }
 
     /// <inheritdoc />
@@ -277,7 +248,7 @@ public sealed class IntegrationsStore(IntegrationsDbContext db, TimeProvider clo
     public async Task EnqueueSyncJobAsync(SyncJob job, CancellationToken cancellationToken = default)
     {
         db.SyncJobs.Add(job);
-        await TrySaveUniqueAsync(job, cancellationToken);
+        await db.TrySaveUniqueAsync(job, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -312,22 +283,5 @@ public sealed class IntegrationsStore(IntegrationsDbContext db, TimeProvider clo
 
         job.MarkFailed(error, maxAttempts, backoff, now);
         await db.SaveChangesAsync(cancellationToken);
-    }
-
-    private async Task<bool> TrySaveUniqueAsync(object entity, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await db.SaveChangesAsync(cancellationToken);
-            return true;
-        }
-        catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: "23505" })
-        {
-            // 23505 = unique_violation: the index already holds this
-            // letter/ticket/job — a replay/duplicate, not an error;
-            // detach so the scope stays clean
-            db.Entry(entity).State = EntityState.Detached;
-            return false;
-        }
     }
 }

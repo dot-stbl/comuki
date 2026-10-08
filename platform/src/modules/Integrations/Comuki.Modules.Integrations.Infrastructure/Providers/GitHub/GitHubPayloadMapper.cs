@@ -114,7 +114,7 @@ public static class GitHubPayloadMapper
             : (parts[0], parts[1], number);
     }
 
-    private static InboundItem? MapIssue(JsonElement issue, string fullName, ProjectId projectId, DateTimeOffset now)
+    public static InboundItem? MapIssue(JsonElement issue, string fullName, ProjectId projectId, DateTimeOffset now)
     {
         var number = ReadNumber(issue, "number");
         return number == 0
@@ -133,7 +133,7 @@ public static class GitHubPayloadMapper
             now);
     }
 
-    private static InboundItem? MapPullRequest(JsonElement pullRequest, string fullName, ProjectId projectId, DateTimeOffset now)
+    public static InboundItem? MapPullRequest(JsonElement pullRequest, string fullName, ProjectId projectId, DateTimeOffset now)
     {
         var number = ReadNumber(pullRequest, "number");
         return number == 0
@@ -152,7 +152,7 @@ public static class GitHubPayloadMapper
             now);
     }
 
-    private static int ReadNumber(JsonElement element, string property)
+    public static int ReadNumber(JsonElement element, string property)
     {
         return element.TryGetProperty(property, out var numberElement)
             && numberElement.ValueKind is JsonValueKind.Number
@@ -161,7 +161,7 @@ public static class GitHubPayloadMapper
             : 0;
     }
 
-    private static string ReadAuthor(JsonElement issue)
+    public static string ReadAuthor(JsonElement issue)
     {
         return issue.TryGetProperty("user", out var user)
             && user.ValueKind is JsonValueKind.Object
@@ -169,7 +169,7 @@ public static class GitHubPayloadMapper
             : string.Empty;
     }
 
-    private static string[] ReadLabels(JsonElement issue)
+    public static string[] ReadLabels(JsonElement issue)
     {
         return !issue.TryGetProperty("labels", out var labels) || labels.ValueKind is not JsonValueKind.Array
             ? []
@@ -179,7 +179,7 @@ public static class GitHubPayloadMapper
             .Where(static name => name.Length > 0)];
     }
 
-    private static string ReadString(JsonElement element, string property)
+    public static string ReadString(JsonElement element, string property)
     {
         return element.TryGetProperty(property, out var value)
             && value.ValueKind is JsonValueKind.String

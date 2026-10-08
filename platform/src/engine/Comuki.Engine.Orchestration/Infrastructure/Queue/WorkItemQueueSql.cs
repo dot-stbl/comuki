@@ -225,16 +225,13 @@ internal static class WorkItemQueueSql
         DateTimeOffset leaseUntil,
         DateTimeOffset now)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = ClaimSql;
-        AddParameter(command, "@workerId", workerId.Value);
-        AddParameter(command, "@profileKey", labels.ProfileKey);
-        AddParameter(command, "@envClass", labels.EnvClass);
-        AddParameter(command, "@profilesRef", labels.ProfilesRef);
-        AddParameter(command, "@leaseUntil", leaseUntil);
-        AddParameter(command, "@now", now);
-        return command;
+        return CreateCommand(transaction, ClaimSql,
+            new CommandParam("@workerId", workerId.Value),
+            new CommandParam("@profileKey", labels.ProfileKey),
+            new CommandParam("@envClass", labels.EnvClass),
+            new CommandParam("@profilesRef", labels.ProfilesRef),
+            new CommandParam("@leaseUntil", leaseUntil),
+            new CommandParam("@now", now));
     }
 
     /// <summary>Creates a prepared heartbeat command on the transaction's connection.</summary>
@@ -252,15 +249,12 @@ internal static class WorkItemQueueSql
         DateTimeOffset leaseUntil,
         DateTimeOffset now)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = HeartbeatSql;
-        AddParameter(command, "@workItemId", workItemId);
-        AddParameter(command, "@workerId", workerId.Value);
-        AddParameter(command, "@generation", generation);
-        AddParameter(command, "@leaseUntil", leaseUntil);
-        AddParameter(command, "@now", now);
-        return command;
+        return CreateCommand(transaction, HeartbeatSql,
+            new CommandParam("@workItemId", workItemId),
+            new CommandParam("@workerId", workerId.Value),
+            new CommandParam("@generation", generation),
+            new CommandParam("@leaseUntil", leaseUntil),
+            new CommandParam("@now", now));
     }
 
     /// <summary>Creates a prepared complete command on the transaction's connection.</summary>
@@ -271,14 +265,11 @@ internal static class WorkItemQueueSql
     /// <param name="now"></param>
     public static DbCommand CreateCompleteCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, int generation, DateTimeOffset now)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = CompleteSql;
-        AddParameter(command, "@workItemId", workItemId);
-        AddParameter(command, "@workerId", workerId.Value);
-        AddParameter(command, "@generation", generation);
-        AddParameter(command, "@now", now);
-        return command;
+        return CreateCommand(transaction, CompleteSql,
+            new CommandParam("@workItemId", workItemId),
+            new CommandParam("@workerId", workerId.Value),
+            new CommandParam("@generation", generation),
+            new CommandParam("@now", now));
     }
 
     /// <summary>Creates a prepared fail command on the transaction's connection.</summary>
@@ -289,14 +280,11 @@ internal static class WorkItemQueueSql
     /// <param name="now"></param>
     public static DbCommand CreateFailCommand(DbTransaction transaction, Guid workItemId, WorkerId workerId, int generation, DateTimeOffset now)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = FailSql;
-        AddParameter(command, "@workItemId", workItemId);
-        AddParameter(command, "@workerId", workerId.Value);
-        AddParameter(command, "@generation", generation);
-        AddParameter(command, "@now", now);
-        return command;
+        return CreateCommand(transaction, FailSql,
+            new CommandParam("@workItemId", workItemId),
+            new CommandParam("@workerId", workerId.Value),
+            new CommandParam("@generation", generation),
+            new CommandParam("@now", now));
     }
 
     /// <summary>Creates a prepared unblock-dependents command on the transaction's connection.</summary>
@@ -305,12 +293,9 @@ internal static class WorkItemQueueSql
     /// <param name="now"></param>
     public static DbCommand CreateUnblockDependentsCommand(DbTransaction transaction, Guid workItemId, DateTimeOffset now)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = UnblockDependentsSql;
-        AddParameter(command, "@workItemId", workItemId);
-        AddParameter(command, "@now", now);
-        return command;
+        return CreateCommand(transaction, UnblockDependentsSql,
+            new CommandParam("@workItemId", workItemId),
+            new CommandParam("@now", now));
     }
 
     /// <summary>Creates a prepared reap-requeue command on the transaction's connection.</summary>
@@ -320,13 +305,10 @@ internal static class WorkItemQueueSql
     /// <param name="now"></param>
     public static DbCommand CreateReapRequeueCommand(DbTransaction transaction, DateTimeOffset cutoff, int maxAttempts, DateTimeOffset now)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = ReapRequeueSql;
-        AddParameter(command, "@cutoff", cutoff);
-        AddParameter(command, "@maxAttempts", maxAttempts);
-        AddParameter(command, "@now", now);
-        return command;
+        return CreateCommand(transaction, ReapRequeueSql,
+            new CommandParam("@cutoff", cutoff),
+            new CommandParam("@maxAttempts", maxAttempts),
+            new CommandParam("@now", now));
     }
 
     /// <summary>Creates a prepared reap-fail command on the transaction's connection.</summary>
@@ -336,13 +318,10 @@ internal static class WorkItemQueueSql
     /// <param name="now"></param>
     public static DbCommand CreateReapFailCommand(DbTransaction transaction, DateTimeOffset cutoff, int maxAttempts, DateTimeOffset now)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = ReapFailSql;
-        AddParameter(command, "@cutoff", cutoff);
-        AddParameter(command, "@maxAttempts", maxAttempts);
-        AddParameter(command, "@now", now);
-        return command;
+        return CreateCommand(transaction, ReapFailSql,
+            new CommandParam("@cutoff", cutoff),
+            new CommandParam("@maxAttempts", maxAttempts),
+            new CommandParam("@now", now));
     }
 
     /// <summary>Creates a prepared run-activation command on the transaction's connection.</summary>
@@ -351,12 +330,9 @@ internal static class WorkItemQueueSql
     /// <param name="now"></param>
     public static DbCommand CreateRunActivationCommand(DbTransaction transaction, RunId runId, DateTimeOffset now)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = RunActivationSql;
-        AddParameter(command, "@runId", runId.Value);
-        AddParameter(command, "@now", now);
-        return command;
+        return CreateCommand(transaction, RunActivationSql,
+            new CommandParam("@runId", runId.Value),
+            new CommandParam("@now", now));
     }
 
     /// <summary>Creates a prepared run-finalization command on the transaction's connection.</summary>
@@ -365,12 +341,9 @@ internal static class WorkItemQueueSql
     /// <param name="now"></param>
     public static DbCommand CreateRunFinalizationCommand(DbTransaction transaction, RunId runId, DateTimeOffset now)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = RunFinalizationSql;
-        AddParameter(command, "@runId", runId.Value);
-        AddParameter(command, "@now", now);
-        return command;
+        return CreateCommand(transaction, RunFinalizationSql,
+            new CommandParam("@runId", runId.Value),
+            new CommandParam("@now", now));
     }
 
     /// <summary>Creates a prepared run-lock command (run before
@@ -378,11 +351,8 @@ internal static class WorkItemQueueSql
     /// see <see cref="LockRunForFinalizationSql"/> remarks).</summary>
     public static DbCommand CreateLockRunForFinalizationCommand(DbTransaction transaction, RunId runId)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = LockRunForFinalizationSql;
-        AddParameter(command, "@runId", runId.Value);
-        return command;
+        return CreateCommand(transaction, LockRunForFinalizationSql,
+            new CommandParam("@runId", runId.Value));
     }
 
     /// <summary>Creates a prepared lock command for this completing item's
@@ -391,11 +361,8 @@ internal static class WorkItemQueueSql
     /// see <see cref="LockBlockedDependentsSql"/> remarks.</summary>
     public static DbCommand CreateLockBlockedDependentsCommand(DbTransaction transaction, Guid workItemId)
     {
-        // boundary: ADO contract — Connection is always set on a live transaction
-        var command = transaction.Connection!.CreateCommand();
-        command.CommandText = LockBlockedDependentsSql;
-        AddParameter(command, "@workItemId", workItemId);
-        return command;
+        return CreateCommand(transaction, LockBlockedDependentsSql,
+            new CommandParam("@workItemId", workItemId));
     }
 
     /// <summary>Materialises the single <c>RETURNING</c> row of a claim into the contract DTO.</summary>
@@ -424,5 +391,36 @@ internal static class WorkItemQueueSql
         parameter.ParameterName = name;
         parameter.Value = value;
         command.Parameters.Add(parameter);
+    }
+
+    /// <summary>Typed SQL parameter pair — feeds the <see cref="CreateCommand"/> params array.</summary>
+    /// <param name="Name">Parameter name with the <c>@</c> prefix.</param>
+    /// <param name="Value">CLR value to bind; Npgsql infers uuid / timestamptz / text from the type.</param>
+    public sealed record CommandParam(string Name, object Value);
+
+    /// <summary>
+    /// Creates a prepared command on the transaction's connection, binds the supplied
+    /// typed parameters, and returns it. The eleven per-statement factories below all
+    /// collapse to a single <c>CreateCommand(transaction, sql, params)</c> call
+    /// instead of re-stating the connection / command / parameter dance.
+    /// </summary>
+    /// <param name="transaction">Open transaction whose connection the command runs on.</param>
+    /// <param name="sql">Parameterised SQL to execute.</param>
+    /// <param name="parameters">Typed parameters in the order they appear in <paramref name="sql"/>.</param>
+    public static DbCommand CreateCommand(DbTransaction transaction, string sql, params CommandParam[] parameters)
+    {
+        // boundary: ADO contract — Connection is always set on a live transaction.
+        // Sql is always a hardcoded constant from this class (ClaimSql, HeartbeatSql, ...)
+        // — never user input.
+#pragma warning disable CA2100 // Review SQL injection. See comment above.
+        var command = transaction.Connection!.CreateCommand();
+        command.CommandText = sql;
+#pragma warning restore CA2100
+        foreach (var parameter in parameters)
+        {
+            AddParameter(command, parameter.Name, parameter.Value);
+        }
+
+        return command;
     }
 }

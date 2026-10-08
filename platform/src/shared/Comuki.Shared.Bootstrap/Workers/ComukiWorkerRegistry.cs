@@ -55,12 +55,10 @@ public sealed class ComukiWorkerRegistry(
     ILogger<ComukiWorkerRegistry> logger,
     IEdition? edition = null) : BackgroundService
 {
-    private const int MaxBackoffFactor = 10;
-
     // Partition is computed exactly once at construction via the static
     // helper below; both fields are derived from it in the same call
     // so per-deferred-worker Warning lines are not logged twice.
-    private readonly InitialState initial = BuildInitial(registeredWorkers, edition, logger);
+    private readonly InitialState initial = ComukiWorkerRegistryHelpers.BuildInitial(registeredWorkers, edition, logger);
 
     // Loops the supervisor started for promoted deferred workers. Only the
     // supervisor thread mutates it; ExecuteAsync reads it after awaiting
@@ -70,6 +68,8 @@ public sealed class ComukiWorkerRegistry(
 
     private Dictionary<string, WorkerRuntime> runtimes => initial.Runtimes;
     private List<WorkerFeatureGate.DeferredWorker> deferred => initial.Deferred;
+
+    private WorkerLoopRunner? loopRunner;
 
     /// <summary>
     /// Interval between supervisor polls of <see cref="IEdition"/> for
@@ -98,6 +98,19 @@ public sealed class ComukiWorkerRegistry(
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Lazy: don't construct the runner until we actually have
+        // workers — HostZeroWorkersGracefullyAsync test relies on this
+        // short-circuit firing without ever touching the loop surface.
+        loopRunner = new WorkerLoopRunner(
+            scopeFactory: scopeFactory,
+            clock: clock,
+            loggerFactory: loggerFactory,
+            promotedLoops: promotedLoops,
+            runtimes: runtimes,
+            deferred: deferred,
+            edition: edition,
+            logger: logger);
+
         // The zero-workers early-return must hold for BOTH the included
         // and the deferred buckets — a host that registered only deferred
         // workers must still exit cleanly when those workers never become
@@ -119,10 +132,10 @@ public sealed class ComukiWorkerRegistry(
         // gain entries at runtime when the supervisor promotes deferred
         // workers, so lookups by name are unsafe outside the supervisor).
         var startedAtBoot = runtimes.Values
-            .Select(runtime => RunWorkerAsync(runtime, stoppingToken))
+            .Select(runtime => loopRunner.RunAsync(runtime, stoppingToken))
             .ToArray();
 
-        var supervisor = SuperviseDeferredAsync(stoppingToken);
+        var supervisor = loopRunner.SuperviseDeferredAsync(stoppingToken, DeferredRecheckInterval);
 
         await Task.WhenAll([.. startedAtBoot, supervisor]);
 
@@ -133,13 +146,125 @@ public sealed class ComukiWorkerRegistry(
         await Task.WhenAll([.. promotedLoops]);
     }
 
-    private async Task SuperviseDeferredAsync(CancellationToken stoppingToken)
+    /// <summary>Boot-time state bundle — both pieces come from one Partition call so the warning log lines are emitted exactly once per deferred worker.</summary>
+    internal sealed record InitialState(Dictionary<string, WorkerRuntime> Runtimes, List<WorkerFeatureGate.DeferredWorker> Deferred);
+
+    /// <summary>One promotion decided outside the <c>runtimes</c> lock and applied under it: the deferred entry and the runtime created for it.</summary>
+    internal sealed record Promotion(WorkerFeatureGate.DeferredWorker Deferred, WorkerRuntime Runtime);
+
+    /// <summary>Mutable per-worker state, guarded by <see cref="Sync"/>; mutated by the worker's loop, read by <see cref="Snapshot"/>.</summary>
+    internal sealed class WorkerRuntime(IComukiWorker worker)
+    {
+        public IComukiWorker Worker => worker;
+
+        public object Sync { get; } = new();
+
+        public DateTimeOffset? LastRunAt { get; set; }
+
+        public DateTimeOffset? NextRunAt { get; set; }
+
+        public WorkerResult? LastResult { get; set; }
+
+        public int Failures { get; set; }
+
+        public WorkerStatus Status()
+        {
+            return new WorkerStatus(worker.Name, LastRunAt, NextRunAt, LastResult, Failures, IsHealthy: Failures == 0);
+        }
+    }
+}
+
+/// <summary>
+/// Pure helpers backing <see cref="ComukiWorkerRegistry"/>: backoff
+/// math + boot partition. Stateless, so they live next to the registry
+/// rather than as private members (per the no-private-methods rule).
+/// </summary>
+file static class ComukiWorkerRegistryHelpers
+{
+    /// <summary>Cap on the exponential factor; matches the registries of the <c>interval × 2^failures</c> curve.</summary>
+    private const int MaxBackoffFactor = 10;
+
+    /// <summary>
+    /// interval × 2^failures, capped at <see cref="MaxBackoffFactor"/>× the interval. A
+    /// fresh worker (failures = 0) keeps its plain interval. The exponent is
+    /// clamped first so the shift cannot overflow before the cap bites.
+    /// </summary>
+    public static TimeSpan BackoffDelay(TimeSpan interval, int failures)
+    {
+        var factor = Math.Min(1L << Math.Min(failures, 30), MaxBackoffFactor);
+
+        return TimeSpan.FromTicks(interval.Ticks * factor);
+    }
+
+    /// <summary>
+    /// One pass over the worker list to build the runtimes map and the
+    /// deferred list; both come out of the same
+    /// <see cref="WorkerFeatureGate.PartitionWorkers"/> call so per-deferred-
+    /// worker Warning lines are not logged twice.
+    /// </summary>
+    public static ComukiWorkerRegistry.InitialState BuildInitial(
+        IEnumerable<IComukiWorker> workers,
+        IEdition? edition,
+        ILogger logger)
+    {
+        var partition = WorkerFeatureGate.PartitionWorkers(workers, edition, logger);
+        var runtimes = new Dictionary<string, ComukiWorkerRegistry.WorkerRuntime>(StringComparer.Ordinal);
+        foreach (var ungated in partition.Ungated)
+        {
+            runtimes[ungated.Name] = new ComukiWorkerRegistry.WorkerRuntime(ungated);
+        }
+
+        foreach (var covered in partition.Covered)
+        {
+            runtimes[covered.Worker.Name] = new ComukiWorkerRegistry.WorkerRuntime(covered.Worker);
+        }
+
+        return new ComukiWorkerRegistry.InitialState(runtimes, [.. partition.Deferred]);
+    }
+}
+
+/// <summary>
+/// Per-cycle loop orchestrator for <see cref="ComukiWorkerRegistry"/>:
+/// the deferred-worker supervisor, the worker-loop body, and one cycle
+/// execution. Lives next to the registry because its state shape — a
+/// shared runtimes dictionary, the deferred list, the promoted-loops
+/// tracking, and the per-worker runtime — is the registry's domain, not
+/// the loop runner's. Extracted from the registry so the registry stays
+/// a thin lifecycle surface (Snapshot + ExecuteAsync override).
+/// </summary>
+internal sealed class WorkerLoopRunner(
+    IServiceScopeFactory scopeFactory,
+    TimeProvider clock,
+    ILoggerFactory loggerFactory,
+    IList<Task> promotedLoops,
+    Dictionary<string, ComukiWorkerRegistry.WorkerRuntime> runtimes,
+    List<WorkerFeatureGate.DeferredWorker> deferred,
+    IEdition? edition,
+    ILogger logger)
+{
+    private readonly IServiceScopeFactory scopeFactory = scopeFactory;
+    private readonly TimeProvider clock = clock;
+    private readonly ILoggerFactory loggerFactory = loggerFactory;
+    private readonly ILogger logger = logger;
+
+    private readonly Dictionary<string, ComukiWorkerRegistry.WorkerRuntime> runtimes = runtimes;
+    private readonly List<WorkerFeatureGate.DeferredWorker> deferred = deferred;
+    private readonly IList<Task> promotedLoops = promotedLoops;
+    private readonly IEdition? edition = edition;
+
+    /// <summary>
+    /// Polls the runtime edition for newly-covered feature gates and
+    /// promotes the matching deferred workers into the running set.
+    /// Exits on stoppingToken cancellation or once the deferred list is
+    /// empty (every gate either covered or abandoned).
+    /// </summary>
+    public async Task SuperviseDeferredAsync(CancellationToken stoppingToken, TimeSpan recheckInterval)
     {
         while (!stoppingToken.IsCancellationRequested && deferred.Count > 0)
         {
             try
             {
-                await Task.Delay(DeferredRecheckInterval, stoppingToken);
+                await Task.Delay(recheckInterval, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -175,7 +300,7 @@ public sealed class ComukiWorkerRegistry(
             // we just created so the start below doesn't have to re-look-up
             // runtimes (which is unsafe without the lock — Snapshot may
             // have read it concurrently, but never writes).
-            var startArgs = new List<Promotion>(promotions.Count);
+            var startArgs = new List<ComukiWorkerRegistry.Promotion>(promotions.Count);
             lock (runtimes)
             {
                 for (var index = deferred.Count - 1; index >= 0; index--)
@@ -192,10 +317,10 @@ public sealed class ComukiWorkerRegistry(
                         continue;
                     }
 
-                    var runtime = new WorkerRuntime(candidate.Worker);
+                    var runtime = new ComukiWorkerRegistry.WorkerRuntime(candidate.Worker);
                     runtimes[candidate.Worker.Name] = runtime;
                     deferred.RemoveAt(index);
-                    startArgs.Add(new Promotion(candidate, runtime));
+                    startArgs.Add(new ComukiWorkerRegistry.Promotion(candidate, runtime));
                 }
             }
 
@@ -211,12 +336,18 @@ public sealed class ComukiWorkerRegistry(
                     promotion.Deferred.Worker.Name,
                     promotion.Deferred.FeatureKey);
 
-                promotedLoops.Add(RunWorkerAsync(promotion.Runtime, stoppingToken));
+                promotedLoops.Add(RunAsync(promotion.Runtime, stoppingToken));
             }
         }
     }
 
-    private async Task RunWorkerAsync(WorkerRuntime runtime, CancellationToken stoppingToken)
+    /// <summary>
+    /// Per-worker loop body: startup workers run once, everything else
+    /// polls on its schedule interval with exponential backoff on
+    /// failures. The runner's clock drives the NextRunAt stamps;
+    /// Snapshot() reads them under <see cref="ComukiWorkerRegistry.WorkerRuntime.Sync"/>.
+    /// </summary>
+    public async Task RunAsync(ComukiWorkerRegistry.WorkerRuntime runtime, CancellationToken stoppingToken)
     {
         var worker = runtime.Worker;
 
@@ -234,7 +365,7 @@ public sealed class ComukiWorkerRegistry(
         {
             await ExecuteCycleAsync(runtime, stoppingToken);
 
-            var delay = BackoffDelay(interval, runtime.Failures);
+            var delay = ComukiWorkerRegistryHelpers.BackoffDelay(interval, runtime.Failures);
             lock (runtime.Sync)
             {
                 runtime.NextRunAt = clock.GetUtcNow() + delay;
@@ -251,7 +382,12 @@ public sealed class ComukiWorkerRegistry(
         }
     }
 
-    private async Task ExecuteCycleAsync(WorkerRuntime runtime, CancellationToken stoppingToken)
+    /// <summary>
+    /// Opens one DI scope, runs the worker's cycle, writes back the
+    /// outcome to <see cref="ComukiWorkerRegistry.WorkerRuntime"/> under the
+    /// per-runtime sync. Exception → failed cycle, never host crash.
+    /// </summary>
+    public async Task ExecuteCycleAsync(ComukiWorkerRegistry.WorkerRuntime runtime, CancellationToken stoppingToken)
     {
         lock (runtime.Sync)
         {
@@ -307,61 +443,6 @@ public sealed class ComukiWorkerRegistry(
             }
 
             logger.LogError(exception, "worker {WorkerName} threw ({FailureCount} consecutive failure(s))", runtime.Worker.Name, runtime.Failures);
-        }
-    }
-
-    private static TimeSpan BackoffDelay(TimeSpan interval, int failures)
-    {
-        // interval x 2^failures, capped at 10x the interval; a fresh
-        // worker (failures = 0) keeps its plain interval. The exponent is
-        // clamped first so the shift cannot overflow before the cap bites.
-        var factor = Math.Min(1L << Math.Min(failures, 30), MaxBackoffFactor);
-
-        return TimeSpan.FromTicks(interval.Ticks * factor);
-    }
-
-    private static InitialState BuildInitial(
-        IEnumerable<IComukiWorker> workers,
-        IEdition? edition,
-        ILogger logger)
-    {
-        var partition = WorkerFeatureGate.PartitionWorkers(workers, edition, logger);
-        var runtimes = new Dictionary<string, WorkerRuntime>(StringComparer.Ordinal);
-        foreach (var ungated in partition.Ungated)
-        {
-            runtimes[ungated.Name] = new WorkerRuntime(ungated);
-        }
-        foreach (var covered in partition.Covered)
-        {
-            runtimes[covered.Worker.Name] = new WorkerRuntime(covered.Worker);
-        }
-        return new InitialState(runtimes, [.. partition.Deferred]);
-    }
-
-    /// <summary>Boot-time state bundle — both pieces come from one Partition call so the warning log lines are emitted exactly once per deferred worker.</summary>
-    private sealed record InitialState(Dictionary<string, WorkerRuntime> Runtimes, List<WorkerFeatureGate.DeferredWorker> Deferred);
-
-    /// <summary>One promotion decided outside the <c>runtimes</c> lock and applied under it: the deferred entry and the runtime created for it.</summary>
-    private sealed record Promotion(WorkerFeatureGate.DeferredWorker Deferred, WorkerRuntime Runtime);
-
-    /// <summary>Mutable per-worker state, guarded by <see cref="Sync"/>; mutated by the worker's loop, read by <see cref="Snapshot"/>.</summary>
-    private sealed class WorkerRuntime(IComukiWorker worker)
-    {
-        public IComukiWorker Worker => worker;
-
-        public object Sync { get; } = new();
-
-        public DateTimeOffset? LastRunAt { get; set; }
-
-        public DateTimeOffset? NextRunAt { get; set; }
-
-        public WorkerResult? LastResult { get; set; }
-
-        public int Failures { get; set; }
-
-        public WorkerStatus Status()
-        {
-            return new WorkerStatus(worker.Name, LastRunAt, NextRunAt, LastResult, Failures, IsHealthy: Failures == 0);
         }
     }
 }

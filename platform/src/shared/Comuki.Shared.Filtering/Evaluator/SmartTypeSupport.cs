@@ -57,7 +57,7 @@ internal static class SmartTypeSupport
         return factories.GetOrAdd(type, static t => BuildFactory(t));
     }
 
-    private static Func<string, object>? BuildFactory(Type type)
+    public static Func<string, object>? BuildFactory(Type type)
     {
         if (!type.IsValueType || type.IsEnum || type.IsPrimitive)
         {

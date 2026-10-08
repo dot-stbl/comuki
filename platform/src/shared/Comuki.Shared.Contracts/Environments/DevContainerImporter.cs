@@ -130,7 +130,7 @@ public static class DevContainerImporter
     /// Best-effort class hint from the <c>image</c> field: a manifest
     /// pulling a dotnet SDK image maps to the Comuki golden class.
     /// </summary>
-    private static void TryProposeFromImage(JsonElement element, ref string? proposedClass)
+    public static void TryProposeFromImage(JsonElement element, ref string? proposedClass)
     {
         if (proposedClass is not null)
         {
@@ -157,7 +157,7 @@ public static class DevContainerImporter
     /// ignored because the platform does not execute the Dev Container
     /// feature catalogue.
     /// </summary>
-    private static void WalkFeatures(JsonElement element, ref string? proposedClass, List<string> ignored)
+    public static void WalkFeatures(JsonElement element, ref string? proposedClass, List<string> ignored)
     {
         if (element.ValueKind != JsonValueKind.Object)
         {
@@ -194,7 +194,7 @@ public static class DevContainerImporter
     /// because the Comuki golden classes do not advertise GPU; a
     /// future slice may add a GPU class and lift this into a class hint.
     /// </summary>
-    private static void WalkHostRequirements(JsonElement element, List<string> ignored)
+    public static void WalkHostRequirements(JsonElement element, List<string> ignored)
     {
         if (element.ValueKind != JsonValueKind.Object)
         {

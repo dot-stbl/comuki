@@ -53,11 +53,29 @@ internal sealed class KubernetesClientConfigurationFactory : IKubernetesClientCo
         }
         catch (KubernetesClientException exception)
         {
-            throw new KubernetesConfigUnavailableException(BuildHintMessage(), exception);
+            throw new KubernetesConfigUnavailableException(
+                KubernetesClientConfigurationFactoryHelpers.BuildHintMessage(),
+                exception);
         }
     }
+}
 
-    private static string BuildHintMessage()
+/// <summary>
+/// Pure helpers for <see cref="KubernetesClientConfigurationFactory"/>:
+/// the actionable in-cluster-failure message text. Extracted per the
+/// no-private-methods rule.
+/// </summary>
+file static class KubernetesClientConfigurationFactoryHelpers
+{
+    /// <summary>
+    /// Operator-facing hint explaining why in-cluster config could not be
+    /// built and pointing at the four remediation knobs
+    /// (<c>Compute:Provider=docker</c>,
+    /// <c>automountServiceAccountToken: true</c>,
+    /// <c>Compute:Kubernetes:KubeconfigPath</c>,
+    /// <c>Compute:Kubernetes:SkipKubernetesConfig=true</c>).
+    /// </summary>
+    public static string BuildHintMessage()
     {
         return "Kubernetes in-cluster configuration is unavailable "
             + "(KUBERNETES_SERVICE_HOST / KUBERNETES_SERVICE_PORT / service account token "

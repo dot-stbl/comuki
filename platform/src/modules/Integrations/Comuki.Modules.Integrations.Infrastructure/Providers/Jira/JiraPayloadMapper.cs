@@ -22,7 +22,7 @@ public static class JiraPayloadMapper
     /// <param name="site">Connection site base URL (browse links).</param>
     /// <param name="projectId">Project scope of the connection.</param>
     /// <param name="now">Ticket timestamp.</param>
-    /// <returns></returns>
+    /// 
     public static InboundItem? ToTicket(ReadOnlyMemory<byte> body, string site, ProjectId projectId, DateTimeOffset now)
     {
         try
@@ -41,7 +41,7 @@ public static class JiraPayloadMapper
     /// <param name="site"></param>
     /// <param name="projectId"></param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static InboundItem? ToTicket(JsonElement root, string site, ProjectId projectId, DateTimeOffset now)
     {
         if (root.ValueKind is not JsonValueKind.Object
@@ -83,7 +83,7 @@ public static class JiraPayloadMapper
     /// <param name="site">Connection site base URL.</param>
     /// <param name="projectId"></param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static InboundItem ToTicket(JiraIssue issue, string site, ProjectId projectId, DateTimeOffset now)
     {
         var fields = issue.Fields;

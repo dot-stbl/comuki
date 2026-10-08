@@ -85,7 +85,6 @@ public static class Chunker
     }
 
     /// <summary>Token estimate for one paragraph — used by the caller to populate <c>token_count</c> in the row.</summary>
-    /// <param name="text"></param>
     public static int EstimateTokens(string text)
     {
         if (string.IsNullOrWhiteSpace(text))

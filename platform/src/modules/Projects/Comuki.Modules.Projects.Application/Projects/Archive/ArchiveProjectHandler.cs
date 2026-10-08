@@ -12,7 +12,7 @@ public sealed class ArchiveProjectHandler(IProjectStore projects, TimeProvider c
     /// <summary>Archives the project.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="ProjectNotFoundException">No project with the given id.</exception>
     public async Task<ProjectView> HandleAsync(ArchiveProjectCommand command, CancellationToken cancellationToken = default)
     {

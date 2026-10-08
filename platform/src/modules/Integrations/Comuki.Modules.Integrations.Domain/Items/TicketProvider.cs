@@ -51,8 +51,7 @@ public static class TicketProviderKeys
         new HashSet<string>([GitHub, GitLab, YandexTracker, Jira, Native], StringComparer.Ordinal);
 
     /// <summary>The kebab-case key of a provider.</summary>
-    /// <param name="provider"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="ArgumentOutOfRangeException">Unknown provider.</exception>
     public static string Key(TicketProvider provider)
     {
@@ -68,8 +67,7 @@ public static class TicketProviderKeys
     }
 
     /// <summary>Parses a key back to the provider; unknown keys answer null.</summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// 
     public static TicketProvider? TryParse(string? key)
     {
         return key switch

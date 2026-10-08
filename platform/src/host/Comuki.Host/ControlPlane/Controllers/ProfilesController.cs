@@ -9,14 +9,12 @@ namespace Comuki.Host.ControlPlane.Controllers;
 /// <c>plan:read</c> — the enforcement filter answers 401 for anonymous
 /// callers and 403 <c>permission.denied</c> for subjects without the key.
 /// </summary>
-/// <param name="catalog"></param>
 [ApiController]
 [Route(ApiRoutes.Profiles)]
 [RequiresPermission("plan:read")]
 public sealed class ProfilesController(IProfileCatalog catalog) : ControllerBase
 {
     /// <summary>Lists every worker profile.</summary>
-    /// <param name="cancellationToken"></param>
     [HttpGet("")]
     [ProducesResponseType<IReadOnlyList<ProfileDefinition>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ProfileDefinition>>> ListAsync(CancellationToken cancellationToken = default)

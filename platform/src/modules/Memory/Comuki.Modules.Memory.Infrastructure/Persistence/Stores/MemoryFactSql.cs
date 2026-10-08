@@ -118,7 +118,6 @@ public static class MemoryFactSql
         + "LIMIT @limit";
 
     /// <summary>Formats a vector as a pgvector literal (<c>[1,0.5,…]</c>, invariant, round-trippable).</summary>
-    /// <param name="vector"></param>
     public static string VectorLiteral(float[] vector)
     {
         return string.Create(
@@ -127,7 +126,6 @@ public static class MemoryFactSql
     }
 
     /// <summary>Reads one <see cref="MemoryFactView"/> from the current row of a cosine search.</summary>
-    /// <param name="reader"></param>
     public static MemoryFactView ReadView(System.Data.Common.DbDataReader reader)
     {
         return ReadViewCore(reader) with { VectorRank = reader.GetFloat(9) };
@@ -141,7 +139,6 @@ public static class MemoryFactSql
     /// RRF fusion — see <see cref="EfMemoryStore.SearchAsync"/> and
     /// <c>MemoryHybridRanking</c>.
     /// </summary>
-    /// <param name="reader"></param>
     public static LexicalRankedRow ReadViewWithLexicalRank(System.Data.Common.DbDataReader reader)
     {
         return new LexicalRankedRow(ReadViewCore(reader), reader.GetFloat(9));
@@ -155,7 +152,6 @@ public static class MemoryFactSql
     /// cast it to <see cref="MemoryFactView.VectorRank"/> or
     /// <see cref="LexicalRankedRow.LexicalRank"/> respectively.
     /// </summary>
-    /// <param name="reader"></param>
     internal static MemoryFactView ReadViewCore(System.Data.Common.DbDataReader reader)
     {
         return new MemoryFactView(

@@ -52,7 +52,6 @@ public sealed record MergeQueueEntryView
     public string? Notes { get; init; }
 
     /// <summary>Projection from the domain aggregate — wire timestamps as unix ms per time-and-wire-format.md.</summary>
-    /// <param name="entry"></param>
     public static MergeQueueEntryView FromEntry(MergeQueueEntry entry)
     {
         return new MergeQueueEntryView

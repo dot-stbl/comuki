@@ -3,6 +3,7 @@ using Comuki.Host.Workers.Grpc;
 using Comuki.Shared.Contracts.Grpc;
 using Comuki.Shared.Contracts.Journal;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -185,6 +186,3 @@ public sealed class WorkerStreamJournalShould
         await journal.DidNotReceiveWithAnyArgs().AppendAsync(default!, TestContext.Current.CancellationToken);
     }
 }
-
-/// <summary>Deterministic clock for journal timestamps.</summary>
-internal sealed class FakeTimeProvider : TimeProvider;

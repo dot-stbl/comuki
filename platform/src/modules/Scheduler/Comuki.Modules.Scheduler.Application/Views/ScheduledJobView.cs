@@ -30,7 +30,6 @@ public sealed record ScheduledJobView(
     DateTimeOffset UpdatedAt)
 {
     /// <summary>Maps a domain aggregate to its read projection.</summary>
-    /// <param name="job"></param>
     public static ScheduledJobView Of(ScheduledJob job)
     {
         return new ScheduledJobView(
@@ -48,7 +47,6 @@ public sealed record ScheduledJobView(
     }
 
     /// <summary>Maps a list of domain aggregates to their read projections.</summary>
-    /// <param name="jobs"></param>
     public static IReadOnlyList<ScheduledJobView> OfAll(IEnumerable<ScheduledJob> jobs)
     {
         return [.. jobs.Select(Of)];

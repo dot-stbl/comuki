@@ -16,7 +16,6 @@ namespace Comuki.Modules.Costs.Infrastructure.Persistence.Stores;
 /// <see cref="UsageEventSummary"/> for read paths so the boundary never
 /// leaks the Costs.Domain type.
 /// </summary>
-/// <param name="factory"></param>
 public sealed class EfUsageEventStore(IDbContextFactory<CostsDbContext> factory) : IUsageEventStore
 {
     /// <inheritdoc />

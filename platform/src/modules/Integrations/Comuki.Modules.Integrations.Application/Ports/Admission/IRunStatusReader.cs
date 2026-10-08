@@ -13,7 +13,7 @@ public interface IRunStatusReader
     /// <summary>Reads the current status names (PascalCase) of the given runs; missing runs are absent.</summary>
     /// <param name="runIds"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<IReadOnlyDictionary<RunId, string>> ReadStatusesAsync(
         IReadOnlyCollection<RunId> runIds,
         CancellationToken cancellationToken = default);

@@ -10,6 +10,7 @@ using Comuki.Shared.Contracts.Verification;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Xunit;
 
@@ -82,7 +83,7 @@ public sealed class VerificationEvaluationServiceShould
             journal,
             projectSettings,
             options,
-            new VerificationFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<VerificationEvaluationService>.Instance);
 
         await service.EvaluateAsync(workItem.Id, run.Id, TestContext.Current.CancellationToken);
@@ -157,7 +158,7 @@ public sealed class VerificationEvaluationServiceShould
             journal,
             projectSettings,
             options,
-            new VerificationFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<VerificationEvaluationService>.Instance);
 
         await service.EvaluateAsync(workItem.Id, run.Id, TestContext.Current.CancellationToken);
@@ -217,7 +218,7 @@ public sealed class VerificationEvaluationServiceShould
             journal,
             projectSettings,
             options,
-            new VerificationFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<VerificationEvaluationService>.Instance);
 
         await service.EvaluateAsync(workItem.Id, run.Id, TestContext.Current.CancellationToken);
@@ -250,13 +251,3 @@ public sealed class VerificationEvaluationServiceShould
     }
 }
 
-/// <summary>Deterministic clock for the verification evaluation tests.</summary>
-internal sealed class VerificationFakeTimeProvider(DateTimeOffset initial) : TimeProvider
-{
-    private readonly DateTimeOffset utcNow = initial;
-
-    public override DateTimeOffset GetUtcNow()
-    {
-        return utcNow;
-    }
-}

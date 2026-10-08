@@ -197,7 +197,6 @@ public sealed class WorkItem
     }
 
     /// <summary>True when <paramref name="generation"/> — the value a heartbeat/complete/fail caller presents — still matches the generation this item was leased under.</summary>
-    /// <param name="generation"></param>
     public bool MatchesGeneration(int generation)
     {
         return Generation == generation;
@@ -227,7 +226,6 @@ public sealed class WorkItem
     /// <see cref="TransitionTo"/>(<see cref="WorkItemStatus.Failed"/>) via the
     /// max-attempts policy.
     /// </summary>
-    /// <param name="now"></param>
     /// <exception cref="InvalidOperationException"></exception>
     public void ReleaseLease(DateTimeOffset now)
     {

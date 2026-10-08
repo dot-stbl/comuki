@@ -15,7 +15,7 @@ public interface IGitLabApi
     /// <param name="perPage">Page size.</param>
     /// <param name="page">1-based page number.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Get("/projects/{projectId}/issues")]
     public Task<IReadOnlyList<GitLabIssue>> ListIssuesAsync(
         int projectId,
@@ -30,7 +30,7 @@ public interface IGitLabApi
     /// <param name="perPage">Page size.</param>
     /// <param name="page">1-based page number.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Get("/projects/{projectId}/merge_requests")]
     public Task<IReadOnlyList<GitLabMergeRequest>> ListMergeRequestsAsync(
         int projectId,
@@ -44,7 +44,7 @@ public interface IGitLabApi
     /// <param name="issueIid"></param>
     /// <param name="body"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Post("/projects/{projectId}/issues/{issueIid}/notes")]
     public Task PostNoteAsync(int projectId, int issueIid, [Body] GitLabNoteBody body, CancellationToken cancellationToken);
 
@@ -53,7 +53,7 @@ public interface IGitLabApi
     /// <param name="mergeRequestIid"></param>
     /// <param name="body"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Post("/projects/{projectId}/merge_requests/{mergeRequestIid}/notes")]
     public Task PostMergeRequestNoteAsync(int projectId, int mergeRequestIid, [Body] GitLabNoteBody body, CancellationToken cancellationToken);
 
@@ -62,7 +62,7 @@ public interface IGitLabApi
     /// <param name="issueIid"></param>
     /// <param name="body"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Put("/projects/{projectId}/issues/{issueIid}")]
     public Task UpdateIssueAsync(int projectId, int issueIid, [Body] GitLabIssueUpdate body, CancellationToken cancellationToken);
 }

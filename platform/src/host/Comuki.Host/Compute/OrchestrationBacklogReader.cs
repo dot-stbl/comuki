@@ -14,7 +14,6 @@ namespace Comuki.Host.Compute;
 /// introspection (OpenAPI generation, no DB) does not fail DI validation —
 /// a missing registration reads as zero backlog.
 /// </summary>
-/// <param name="serviceProvider"></param>
 public sealed class OrchestrationBacklogReader(IServiceProvider serviceProvider) : IBacklogReader
 {
     /// <inheritdoc />

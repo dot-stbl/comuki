@@ -12,16 +12,14 @@ namespace Comuki.Host.Realtime;
 public static class RealtimeGroups
 {
     /// <summary>The timeline group of one run — join requires <c>run:read</c> on the run's project.</summary>
-    /// <param name="runId"></param>
-    /// <returns></returns>
+    /// 
     public static string RunGroup(RunId runId)
     {
         return "run:" + runId.Value.ToString("D");
     }
 
     /// <summary>The attention group of one project — join requires <c>project:read</c> on that project.</summary>
-    /// <param name="projectId"></param>
-    /// <returns></returns>
+    /// 
     public static string ProjectAttentionGroup(ProjectId projectId)
     {
         return "project:" + projectId.Value.ToString("D") + ":attention";
@@ -33,8 +31,7 @@ public static class RealtimeGroups
     /// chat REST surface applies). Carries <c>ChatChunk</c> while a turn
     /// streams and <c>ChatTurnComplete</c> when it ends.
     /// </summary>
-    /// <param name="sessionId"></param>
-    /// <returns></returns>
+    /// 
     public static string ChatGroup(ChatSessionId sessionId)
     {
         return "chat:" + sessionId.Value.ToString("D");

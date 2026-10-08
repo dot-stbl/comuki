@@ -12,8 +12,7 @@ namespace Comuki.Modules.Identity.Infrastructure.Security;
 public static class IdentityPrincipalBuilder
 {
     /// <summary>The principal a successful login cookie carries.</summary>
-    /// <param name="user"></param>
-    /// <returns></returns>
+    /// 
     public static ClaimsPrincipal BuildForCookie(User user)
     {
         var claims = new List<Claim>

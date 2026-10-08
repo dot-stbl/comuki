@@ -17,7 +17,6 @@ public static class VisualArtifactApplicationExtensions
     /// Registers <see cref="VisualArtifactService"/>, the null store,
     /// and the no-op work-item source.
     /// </summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddVisualArtifactsApplication(this IServiceCollection services)
     {
         services.TryAddSingleton<IVisualArtifactStore, NullVisualArtifactStore>();

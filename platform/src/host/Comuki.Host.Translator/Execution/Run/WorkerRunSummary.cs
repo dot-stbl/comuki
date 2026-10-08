@@ -22,7 +22,6 @@ public sealed class WorkerRunSummary()
     private readonly StringBuilder text = new();
 
     /// <summary>Observes one pi event, folding text-producing events into the summary.</summary>
-    /// <param name="piEvent"></param>
     public void Observe(PiEvent piEvent)
     {
         switch (piEvent)

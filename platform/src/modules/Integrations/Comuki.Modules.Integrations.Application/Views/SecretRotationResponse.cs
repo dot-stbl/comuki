@@ -21,7 +21,7 @@ public sealed record SecretRotationResponse(
     /// <summary>Maps the rotation outcome.</summary>
     /// <param name="connection"></param>
     /// <param name="newSecret"></param>
-    /// <returns></returns>
+    /// 
     public static SecretRotationResponse Of(SourceConnection connection, string newSecret)
     {
         return new SecretRotationResponse(

@@ -11,7 +11,6 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Persistence;
 /// <see cref="KnowledgeDbContext"/> applies to both halves — out-of-scope
 /// documents and chunks are invisible.
 /// </summary>
-/// <param name="contextFactory"></param>
 public sealed class PgKnowledgeDocumentReader(
     IDbContextFactory<KnowledgeDbContext> contextFactory) : IKnowledgeDocumentReader
 {

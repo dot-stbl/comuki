@@ -23,16 +23,14 @@ public sealed record SubjectAuthorization(
         FrozenDictionary<ProjectId, IReadOnlySet<PermissionKey>>.Empty);
 
     /// <summary>Whether the key is held at platform scope.</summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// 
     public bool IsPermittedGlobally(PermissionKey key)
     {
         return PlatformPermissions.Contains(key);
     }
 
     /// <summary>Whether the key is held anywhere (platform or any project).</summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// 
     public bool IsPermitted(PermissionKey key)
     {
         return IsPermittedGlobally(key)
@@ -45,7 +43,7 @@ public sealed record SubjectAuthorization(
     /// </summary>
     /// <param name="key"></param>
     /// <param name="project"></param>
-    /// <returns></returns>
+    /// 
     public bool IsPermittedIn(PermissionKey key, ProjectId project)
     {
         return IsPermittedGlobally(key)

@@ -4,7 +4,6 @@ using Comuki.Shared.Kernel.Exceptions;
 namespace Comuki.Modules.Scheduler.Domain.Jobs;
 
 /// <summary>Scheduled job lookup miss.</summary>
-/// <param name="id"></param>
 public sealed class ScheduledJobNotFoundException(ScheduledJobId id) : DomainException(
     ErrorCode,
     $"scheduled job {id} not found")

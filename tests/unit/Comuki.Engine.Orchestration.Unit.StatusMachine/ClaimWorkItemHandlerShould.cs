@@ -5,6 +5,7 @@ using Comuki.Engine.Orchestration.Options;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Ids;
 using FluentValidation;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -21,11 +22,10 @@ public sealed class ClaimWorkItemHandlerShould
 {
     private static readonly WorkItemLabels labels = new("ghcr.io/comuki/worker@sha256:9f86d0", "refs/heads/main", "implement", "net10-sdk-bun");
     private static readonly DateTimeOffset now = new(2026, 8, 31, 12, 0, 0, TimeSpan.Zero);
-
     [Fact(DisplayName = "Given a valid command, when HandleAsync is called, then it claims with a lease of the configured ttl")]
     public async Task ClaimWithConfiguredLeaseTtlAsync()
     {
-        var clock = new FakeTimeProvider();
+        var clock = new FakeTimeProvider(now);
         var leaseOptions = OptionsFactory.Create(new LeaseOptions { LeaseTtl = TimeSpan.FromMinutes(5) });
         var queue = Substitute.For<IWorkItemQueue>();
         var claimed = new ClaimedWorkItem(Guid.CreateVersion7(), RunId.New(), Guid.CreateVersion7(), "implement", "net10-sdk-bun", /*lang=json,strict*/ """{"goal":"x"}""", now.AddMinutes(5), 1, 1);
@@ -52,7 +52,7 @@ public sealed class ClaimWorkItemHandlerShould
     {
         var queue = Substitute.For<IWorkItemQueue>();
         var handler = new ClaimWorkItemHandler(
-            new ClaimWorkItemValidator(), queue, new FakeTimeProvider(), OptionsFactory.Create(new LeaseOptions()));
+            new ClaimWorkItemValidator(), queue, new FakeTimeProvider(now), OptionsFactory.Create(new LeaseOptions()));
 
         await Should.ThrowAsync<ValidationException>(
             () => handler.HandleAsync(new ClaimWorkItemCommand(WorkerId.New(), new WorkItemLabels("", "refs/heads/main", "implement", "net10-sdk-bun")), TestContext.Current.CancellationToken));
@@ -66,29 +66,10 @@ public sealed class ClaimWorkItemHandlerShould
         queue.ClaimAsync(Arg.Any<WorkerId>(), Arg.Any<WorkItemLabels>(), Arg.Any<DateTimeOffset>(), Arg.Any<DateTimeOffset>(), TestContext.Current.CancellationToken)
             .Returns((ClaimedWorkItem?)null);
         var handler = new ClaimWorkItemHandler(
-            new ClaimWorkItemValidator(), queue, new FakeTimeProvider(), OptionsFactory.Create(new LeaseOptions()));
+            new ClaimWorkItemValidator(), queue, new FakeTimeProvider(now), OptionsFactory.Create(new LeaseOptions()));
 
         var result = await handler.HandleAsync(new ClaimWorkItemCommand(WorkerId.New(), labels), TestContext.Current.CancellationToken);
 
         result.ShouldBeNull();
-    }
-}
-
-/// <summary>
-/// Deterministic clock for lease-ttl tests — the handler reads time
-/// exclusively through the injected <see cref="TimeProvider"/>.
-/// </summary>
-internal sealed class FakeTimeProvider : TimeProvider
-{
-    private DateTimeOffset utcNow = new(2026, 8, 31, 12, 0, 0, TimeSpan.Zero);
-
-    public void Advance(TimeSpan duration)
-    {
-        utcNow = utcNow.Add(duration);
-    }
-
-    public override DateTimeOffset GetUtcNow()
-    {
-        return utcNow;
     }
 }

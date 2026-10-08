@@ -16,7 +16,6 @@ public static class ScalePolicy
     /// and <c>StopIdleWorkers = clamp(min(StaleIdleCount, IdleCount - MinIdle), 0, ...)</c>.
     /// A null <c>FreeSlots</c> skips the capacity clamp.
     /// </summary>
-    /// <param name="input"></param>
     public static ScaleDecision Decide(ScalePolicyInput input)
     {
         var concurrentCap = Math.Max(0, input.MaxConcurrent - input.RunningCount);

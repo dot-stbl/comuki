@@ -17,7 +17,6 @@ public static class WikiPageLinkKindKeys
     public const string DerivedFrom = "derived-from";
 
     /// <summary>Maps a kind to its wire key.</summary>
-    /// <param name="kind"></param>
     public static string Key(WikiPageLinkKind kind)
     {
         return kind switch
@@ -30,7 +29,6 @@ public static class WikiPageLinkKindKeys
     }
 
     /// <summary>Parses a wire key; null when unknown.</summary>
-    /// <param name="key"></param>
     public static WikiPageLinkKind? Parse(string key)
     {
         return key switch
@@ -43,7 +41,6 @@ public static class WikiPageLinkKindKeys
     }
 
     /// <summary>Parses a wire key or throws — used by the EF converter path.</summary>
-    /// <param name="key"></param>
     /// <exception cref="InvalidOperationException">The key is unknown.</exception>
     public static WikiPageLinkKind ParseRequired(string key)
     {

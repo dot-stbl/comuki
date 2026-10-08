@@ -21,7 +21,7 @@ public sealed class LinkOidcSubjectHandler(
     /// <summary>Persists the link.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">Unknown user, or the provider/subject is already bound.</exception>
     public async Task<OidcLinkView> HandleAsync(LinkOidcSubjectCommand command, CancellationToken cancellationToken = default)
     {

@@ -22,7 +22,7 @@ public static class WorkerTestImage
     /// process — Testcontainers/Podman layer-caches the build.
     /// </summary>
     /// <param name="repositoryRoot">The repo root — the Dockerfile's build context.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cooperative cancellation token propagated from the caller.</param>
     public static async Task BuildAsync(string repositoryRoot, CancellationToken cancellationToken = default)
     {
         var image = new ImageFromDockerfileBuilder()

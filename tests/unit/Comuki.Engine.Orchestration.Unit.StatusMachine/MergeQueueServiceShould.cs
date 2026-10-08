@@ -9,6 +9,7 @@ using Comuki.Shared.Kernel.Ids;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -44,7 +45,7 @@ public sealed class MergeQueueServiceShould
             new MergeQueueValidator(),
             journal,
             context,
-            new MergeQueueFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<MergeQueueService>.Instance);
 
         var view = await service.EnqueueAsync(
@@ -88,7 +89,7 @@ public sealed class MergeQueueServiceShould
             new MergeQueueValidator(),
             journal,
             context,
-            new MergeQueueFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<MergeQueueService>.Instance);
 
         await service.EnqueueAsync(
@@ -127,7 +128,7 @@ public sealed class MergeQueueServiceShould
             new MergeQueueValidator(),
             journal,
             context,
-            new MergeQueueFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<MergeQueueService>.Instance);
 
         var exception = await Should.ThrowAsync<ValidationException>(
@@ -157,7 +158,7 @@ public sealed class MergeQueueServiceShould
             new MergeQueueValidator(),
             journal,
             context,
-            new MergeQueueFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<MergeQueueService>.Instance);
 
         var view = await service.ClaimNextAsync(null, "operator-alice", TestContext.Current.CancellationToken);
@@ -176,13 +177,3 @@ public sealed class MergeQueueServiceShould
     }
 }
 
-/// <summary>Deterministic clock for the merge-queue service tests.</summary>
-internal sealed class MergeQueueFakeTimeProvider(DateTimeOffset initial) : TimeProvider
-{
-    private readonly DateTimeOffset utcNow = initial;
-
-    public override DateTimeOffset GetUtcNow()
-    {
-        return utcNow;
-    }
-}

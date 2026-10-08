@@ -40,7 +40,7 @@ public sealed class OidcAccountLinker(
     /// <summary>Resolves or provisions the local account for the external identity.</summary>
     /// <param name="request"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">A stored link points at a missing account.</exception>
     /// <exception cref="ProviderForbiddenException">
     /// The resolved local user is disabled — OIDC login is refused with

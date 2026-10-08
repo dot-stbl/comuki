@@ -9,6 +9,7 @@ using Comuki.Shared.Kernel.Ids;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -43,7 +44,7 @@ public sealed class MergeBatchServiceShould
             new MergeBatchValidator(),
             journal,
             context,
-            new MergeBatchFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<MergeBatchService>.Instance);
 
         var view = await service.CreateAsync(
@@ -83,7 +84,7 @@ public sealed class MergeBatchServiceShould
             new MergeBatchValidator(),
             journal,
             context,
-            new MergeBatchFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<MergeBatchService>.Instance);
 
         await service.CreateAsync(
@@ -122,7 +123,7 @@ public sealed class MergeBatchServiceShould
             new MergeBatchValidator(),
             journal,
             context,
-            new MergeBatchFakeTimeProvider(now),
+            new FakeTimeProvider(now),
             NullLogger<MergeBatchService>.Instance);
 
         var exception = await Should.ThrowAsync<ValidationException>(
@@ -147,13 +148,3 @@ public sealed class MergeBatchServiceShould
     }
 }
 
-/// <summary>Deterministic clock for the merge-batch service tests.</summary>
-internal sealed class MergeBatchFakeTimeProvider(DateTimeOffset initial) : TimeProvider
-{
-    private readonly DateTimeOffset utcNow = initial;
-
-    public override DateTimeOffset GetUtcNow()
-    {
-        return utcNow;
-    }
-}

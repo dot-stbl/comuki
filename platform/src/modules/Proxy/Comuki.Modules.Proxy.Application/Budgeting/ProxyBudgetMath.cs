@@ -11,7 +11,6 @@ namespace Comuki.Modules.Proxy.Application.Budgeting;
 internal static class ProxyBudgetMath
 {
     /// <summary>First instant of the calendar month that contains <paramref name="instant"/>.</summary>
-    /// <param name="instant"></param>
     public static DateTimeOffset StartOfMonth(DateTimeOffset instant)
     {
         return new DateTimeOffset(instant.Year, instant.Month, 1, 0, 0, 0, instant.Offset);
@@ -22,7 +21,6 @@ internal static class ProxyBudgetMath
     /// <see cref="int.MaxValue"/> to fit the <c>ProxyBudgetVerdict</c> contract).
     /// Zero when <paramref name="instant"/> is already a month boundary.
     /// </summary>
-    /// <param name="instant"></param>
     public static int SecondsUntilNextMonth(DateTimeOffset instant)
     {
         var nextMonth = instant.Month == 12
@@ -33,7 +31,6 @@ internal static class ProxyBudgetMath
     }
 
     /// <summary>USD → USD micros (1 USD = 1_000_000).</summary>
-    /// <param name="usd"></param>
     public static long ToMicros(decimal usd)
     {
         var scaled = usd * 1_000_000m;

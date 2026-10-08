@@ -148,7 +148,6 @@ public sealed class ApiKeyAuthenticationHandler(
     /// set <see cref="TenantMismatchFlag"/> — the bearer authenticated,
     /// but not against the requested tenant.
     /// </summary>
-    /// <param name="properties"></param>
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
     {
         if (Context.Items[TenantMismatchFlag] is true)

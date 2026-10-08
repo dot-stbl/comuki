@@ -95,7 +95,6 @@ public sealed class MinioRunArtifactStore(
     /// at startup when <see cref="ArtifactsOptions.AutoCreateBucket"/> is on
     /// (e.g. the integration test against a fresh Testcontainers MinIO).
     /// </summary>
-    /// <param name="cancellationToken"></param>
     public async Task EnsureBucketAsync(CancellationToken cancellationToken = default)
     {
         var exists = await client.BucketExistsAsync(
@@ -170,7 +169,6 @@ public sealed class MinioRunArtifactStore(
     }
 
     /// <summary>True when the SDK raised "bucket already exists" — a race, not a failure.</summary>
-    /// <param name="exception"></param>
     internal static bool IsMinioAlreadyExists(MinioException exception)
     {
         return exception.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase);

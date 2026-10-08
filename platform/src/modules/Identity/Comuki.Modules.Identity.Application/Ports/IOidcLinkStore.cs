@@ -9,7 +9,7 @@ public interface IOidcLinkStore
     /// <param name="provider"></param>
     /// <param name="subject"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<OidcLink?> FindAsync(string provider, string subject, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -26,6 +26,6 @@ public interface IOidcLinkStore
     /// <summary>Persists a new link.</summary>
     /// <param name="link"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task SaveAsync(OidcLink link, CancellationToken cancellationToken = default);
 }

@@ -6,7 +6,6 @@ namespace Comuki.Modules.Projects.Domain.Attachments;
 /// pair. UUIDv7 so the "list by project" query benefits from the monotonic
 /// order.
 /// </summary>
-/// <param name="Value"></param>
 public readonly record struct ProjectRepositoryAttachmentId(Guid Value)
 {
     /// <summary>Generates a new UUIDv7 identifier.</summary>

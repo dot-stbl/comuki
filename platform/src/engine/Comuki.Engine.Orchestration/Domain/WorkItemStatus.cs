@@ -52,7 +52,6 @@ public readonly record struct WorkItemStatus
     }
 
     /// <summary>Parse a stored wire-form string back into the smart-type; throws on unknown values.</summary>
-    /// <param name="wire"></param>
     public static WorkItemStatus FromWire(string wire)
     {
         return wire switch

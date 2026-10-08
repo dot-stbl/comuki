@@ -21,7 +21,6 @@ namespace Comuki.Modules.Identity.Infrastructure.Security.Authorization;
 /// covered by <see cref="RequiresPermissionMiddleware"/>; both share
 /// <see cref="PermissionGate"/> so the decision exists once.
 /// </summary>
-/// <param name="evaluator"></param>
 /// <remarks>
 /// A resource filter rather than an authorization filter deliberately:
 /// this filter owns the whole check inline, and the resource stage wraps

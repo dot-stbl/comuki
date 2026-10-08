@@ -19,7 +19,7 @@ public sealed class SetUserDisabledHandler(IUserAccountStore userStore, TimeProv
     /// <summary>Updates the disabled flag.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">Unknown user id.</exception>
     public async Task<UserAccountView> HandleAsync(SetUserDisabledCommand command, CancellationToken cancellationToken = default)
     {

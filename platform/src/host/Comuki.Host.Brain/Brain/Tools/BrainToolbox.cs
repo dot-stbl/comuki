@@ -125,14 +125,12 @@ public sealed class BrainToolbox(
     }
 
     /// <summary>Resolves a built function by tool name.</summary>
-    /// <param name="name"></param>
     public AIFunction? FindFunction(string name)
     {
         return functions.FirstOrDefault(function => function.Name == name);
     }
 
     /// <summary>True when a valid plan was emitted; consumes it exactly once.</summary>
-    /// <param name="planJson"></param>
     public bool TryConsumeEmittedPlan(out string planJson)
     {
         if (emittedPlanJson is { } captured)
@@ -304,7 +302,6 @@ public sealed class BrainToolbox(
     /// the catalog) and captures it; the first invalid attempt feeds the
     /// errors back for the model's retry, the second fails the brain call.
     /// </summary>
-    /// <param name="planJson"></param>
     public async Task<string> EmitPlanAsync(string planJson)
     {
         List<string> errors;

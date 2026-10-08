@@ -3,6 +3,7 @@ using Comuki.Engine.Orchestration.Domain.MergeQueue;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
 using FluentValidation;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -23,7 +24,7 @@ public sealed class AbandonMergeBatchHandlerShould
     public async Task RejectAbandonWithoutReasonAsync()
     {
         var store = Substitute.For<IMergeBatchStore>();
-        var handler = new AbandonMergeBatchHandler(store, new AbandonMergeBatchValidator(), new MergeBatchFakeTimeProvider(now), NullLogger<AbandonMergeBatchHandler>.Instance);
+        var handler = new AbandonMergeBatchHandler(store, new AbandonMergeBatchValidator(), new FakeTimeProvider(now), NullLogger<AbandonMergeBatchHandler>.Instance);
 
         var exception = await Should.ThrowAsync<ValidationException>(
             () => handler.HandleAsync(
@@ -39,7 +40,7 @@ public sealed class AbandonMergeBatchHandlerShould
     {
         var store = Substitute.For<IMergeBatchStore>();
         store.FindByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((MergeBatch?)null);
-        var handler = new AbandonMergeBatchHandler(store, new AbandonMergeBatchValidator(), new MergeBatchFakeTimeProvider(now), NullLogger<AbandonMergeBatchHandler>.Instance);
+        var handler = new AbandonMergeBatchHandler(store, new AbandonMergeBatchValidator(), new FakeTimeProvider(now), NullLogger<AbandonMergeBatchHandler>.Instance);
 
         var view = await handler.HandleAsync(
             new AbandonMergeBatchCommand(Guid.CreateVersion7(), "stale batch"),

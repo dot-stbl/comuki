@@ -8,7 +8,6 @@ namespace Comuki.Modules.Chat.Application.Sessions;
 /// approve would race the graph state; maps to HTTP 409. The caller must
 /// resolve <c>/approve</c> first.
 /// </summary>
-/// <param name="sessionId"></param>
 public sealed class ChatApprovePendingException(ChatSessionId sessionId)
     : DomainException(ErrorCode, $"chat session '{sessionId}' is waiting for a plan approve/reject decision")
 {

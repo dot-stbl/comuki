@@ -38,15 +38,14 @@ public sealed record LoginResult
     /// <summary>Builds the success outcome.</summary>
     /// <param name="userId"></param>
     /// <param name="tokensVersion"></param>
-    /// <returns></returns>
+    /// 
     public static LoginResult Succeeded(UserId userId, int tokensVersion)
     {
         return new LoginResult { Success = true, UserId = userId, TokensVersion = tokensVersion };
     }
 
     /// <summary>Builds a failure outcome.</summary>
-    /// <param name="failureCode"></param>
-    /// <returns></returns>
+    /// 
     public static LoginResult Failed(string failureCode)
     {
         return new LoginResult { Success = false, FailureCode = failureCode };

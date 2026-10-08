@@ -90,8 +90,7 @@ file static class DomainTypeAdmissionSteps
     /// Default denials for a domain type the project declared no policy for:
     /// closed for <see cref="ProjectDomainType.Custom"/>, open otherwise.
     /// </summary>
-    /// <param name="mode"></param>
-    /// <returns></returns>
+    /// 
     public static IReadOnlyList<string> MissingPolicyDenials(ProjectDomainType mode)
     {
         return mode is ProjectDomainType.Custom
@@ -109,7 +108,7 @@ file static class DomainTypeAdmissionSteps
     /// <param name="resolver"></param>
     /// <param name="settings"></param>
     /// <param name="domainType"></param>
-    /// <returns></returns>
+    /// 
     public static DomainTypeAdmissionDecision RouteProfile(
         IProjectDomainTypeResolver resolver,
         ProjectSettings settings,

@@ -38,7 +38,6 @@ public sealed class RunsHub(
     /// hub methods must not take a <see cref="CancellationToken"/> parameter
     /// or clients serialise it as an invocation argument.
     /// </summary>
-    /// <param name="runId"></param>
     public async Task JoinRunAsync(Guid runId)
     {
         var cancellationToken = Context.ConnectionAborted;
@@ -55,7 +54,6 @@ public sealed class RunsHub(
     }
 
     /// <summary>Leaves the <c>run:{id}</c> group; leaving is always allowed.</summary>
-    /// <param name="runId"></param>
     public Task LeaveRunAsync(Guid runId)
     {
         return Groups.RemoveFromGroupAsync(
@@ -70,7 +68,6 @@ public sealed class RunsHub(
     /// live in the projects module context, and joining an unknown project
     /// at worst subscribes to a group nobody broadcasts into.
     /// </summary>
-    /// <param name="projectId"></param>
     public async Task JoinProjectAsync(Guid projectId)
     {
         var cancellationToken = Context.ConnectionAborted;
@@ -83,7 +80,6 @@ public sealed class RunsHub(
     }
 
     /// <summary>Leaves the <c>project:{id}:attention</c> group; leaving is always allowed.</summary>
-    /// <param name="projectId"></param>
     public Task LeaveProjectAsync(Guid projectId)
     {
         return Groups.RemoveFromGroupAsync(
@@ -100,7 +96,6 @@ public sealed class RunsHub(
     /// <c>ChatChunk</c> while a turn streams and <c>ChatTurnComplete</c>
     /// when it ends.
     /// </summary>
-    /// <param name="sessionId"></param>
     public async Task JoinChatAsync(Guid sessionId)
     {
         var cancellationToken = Context.ConnectionAborted;
@@ -126,7 +121,6 @@ public sealed class RunsHub(
     }
 
     /// <summary>Leaves the <c>chat:{id}</c> group; leaving is always allowed.</summary>
-    /// <param name="sessionId"></param>
     public Task LeaveChatAsync(Guid sessionId)
     {
         return Groups.RemoveFromGroupAsync(

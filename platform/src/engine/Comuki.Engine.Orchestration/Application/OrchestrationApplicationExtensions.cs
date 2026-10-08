@@ -24,7 +24,6 @@ namespace Comuki.Engine.Orchestration.Application;
 public static class OrchestrationApplicationExtensions
 {
     /// <summary>Adds status machines, <see cref="ClaimWorkItemHandler"/> and its validator.</summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddOrchestrationApplication(this IServiceCollection services)
     {
         services.AddSingleton<RunStatusMachine>();

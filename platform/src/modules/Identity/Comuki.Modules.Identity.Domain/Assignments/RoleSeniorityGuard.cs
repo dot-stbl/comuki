@@ -14,7 +14,7 @@ public static class RoleSeniorityGuard
     /// <summary>Whether the grant is legal for a granter of the given seniority.</summary>
     /// <param name="target"></param>
     /// <param name="granterSeniority">The granter's highest role seniority (0 when the granter holds no roles).</param>
-    /// <returns></returns>
+    /// 
     public static bool CanGrant(Role target, int granterSeniority)
     {
         return RoleMatrix.SeniorityOf(target) <= granterSeniority;

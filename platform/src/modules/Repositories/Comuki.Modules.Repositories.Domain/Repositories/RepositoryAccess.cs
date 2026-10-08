@@ -53,7 +53,7 @@ public readonly record struct RepositoryAccess
     /// </summary>
     /// <param name="left"></param>
     /// <param name="right"></param>
-    /// <returns></returns>
+    /// 
     public static RepositoryAccess Min(RepositoryAccess left, RepositoryAccess right)
     {
         return (Rank(left), Rank(right)) switch
@@ -65,7 +65,6 @@ public readonly record struct RepositoryAccess
     }
 
     /// <summary>Parse a stored wire-form string back into the smart-type; throws on unknown values.</summary>
-    /// <param name="wire"></param>
     public static RepositoryAccess FromWire(string wire)
     {
         return wire switch

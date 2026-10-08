@@ -13,7 +13,6 @@ namespace Comuki.EndToEnd.AgentLoop;
 /// everything <see cref="ScenarioRunner"/> needs, all
 /// backed by <see cref="AgentLoopHost"/>.
 /// </summary>
-/// <param name="host"></param>
 public sealed class AgentLoopHarness(AgentLoopHost host) : IAgentLoopHarness
 {
     /// <summary>

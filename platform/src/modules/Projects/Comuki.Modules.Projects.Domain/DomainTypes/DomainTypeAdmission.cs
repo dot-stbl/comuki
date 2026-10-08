@@ -70,8 +70,7 @@ public sealed class DomainTypeAdmission
     /// application layer and the store look up rows with the very same key
     /// the entity persisted.
     /// </summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// 
     public static string NormalizeKey(string key)
     {
         return key.Trim().ToLowerInvariant();
@@ -83,7 +82,7 @@ public sealed class DomainTypeAdmission
     /// <param name="allowedSources">Allow-list of source keys; empty means "any source".</param>
     /// <param name="deniedReasons">Blocking reason codes; empty means "not blocked".</param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static DomainTypeAdmission Create(
         ProjectId projectId,
         string domainType,
@@ -177,8 +176,7 @@ file static class AdmissionKeys
     /// de-duplicate, keep the caller's order. Materialized as an array so
     /// Npgsql maps it straight onto a <c>text[]</c> column.
     /// </summary>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// 
     public static string[] NormalizeSet(IReadOnlyList<string> keys)
     {
         return

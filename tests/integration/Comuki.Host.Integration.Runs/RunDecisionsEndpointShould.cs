@@ -376,10 +376,10 @@ public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgre
     }
 
     /// <summary>Projection returned by <see cref="SeedRunningRunWithMixedItemsAsync"/>.</summary>
-    /// <param name="RunId"></param>
-    /// <param name="RunningWorkItemId"></param>
-    /// <param name="QueuedWorkItemId"></param>
-    /// <param name="BlockedWorkItemId"></param>
+    /// <param name="RunId">The seeded run.</param>
+    /// <param name="RunningWorkItemId">The Running work item under the run.</param>
+    /// <param name="QueuedWorkItemId">The Queued work item under the run.</param>
+    /// <param name="BlockedWorkItemId">The Blocked work item under the run.</param>
     /// <param name="Generation">Generation the Running item was claimed under.</param>
     private sealed record MixedWorkItemSeed(Guid RunId, Guid RunningWorkItemId, Guid QueuedWorkItemId, Guid BlockedWorkItemId, int Generation);
 
@@ -437,10 +437,6 @@ public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgre
     /// <summary>Projection returned by <see cref="SeedRunningRunWithClaimedItemAsync"/>
     /// — the run/work-item ids + worker id + claimed generation the two WS5 acceptance
     /// tests then drive against.</summary>
-    /// <param name="RunId"></param>
-    /// <param name="WorkItemId"></param>
-    /// <param name="WorkerId"></param>
-    /// <param name="Generation"></param>
     private sealed record LiveWorkItemSeed(Guid RunId, Guid WorkItemId, WorkerId WorkerId, int Generation);
 
     private OrchestrationDbContext NewSystemDbContext()
@@ -482,7 +478,6 @@ public sealed class RunDecisionsEndpointShould(PostgresCollectionFixture postgre
     /// Map a target <see cref="RunStatus"/> to the legal sequence of
     /// transitions needed to reach it from <see cref="RunStatus.Queued"/>.
     /// </summary>
-    /// <param name="target"></param>
     private static IReadOnlyList<RunStatus> ResolveChain(RunStatus target)
     {
         if (target == RunStatus.Queued)

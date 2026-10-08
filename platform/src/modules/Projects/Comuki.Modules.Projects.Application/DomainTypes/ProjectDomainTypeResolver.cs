@@ -47,7 +47,7 @@ file static class DomainTypeRouting
     /// <summary>Custom: only the JSON map; missing throws.</summary>
     /// <param name="settings"></param>
     /// <param name="domainType"></param>
-    /// <returns></returns>
+    /// 
     public static string ResolveCustom(ProjectSettings settings, string domainType)
     {
         var map = ParseMap(settings, domainType, settings.DomainType);
@@ -62,7 +62,7 @@ file static class DomainTypeRouting
     /// <summary>Hybrid: JSON map wins when present, otherwise the default.</summary>
     /// <param name="settings"></param>
     /// <param name="domainType"></param>
-    /// <returns></returns>
+    /// 
     public static string ResolveHybrid(ProjectSettings settings, string domainType)
     {
         return ParseMap(settings, domainType, settings.DomainType) is { } map
@@ -80,7 +80,7 @@ file static class DomainTypeRouting
     /// <param name="settings"></param>
     /// <param name="domainType"></param>
     /// <param name="mode"></param>
-    /// <returns></returns>
+    /// 
     private static IReadOnlyDictionary<string, string>? ParseMap(
         ProjectSettings settings,
         string domainType,

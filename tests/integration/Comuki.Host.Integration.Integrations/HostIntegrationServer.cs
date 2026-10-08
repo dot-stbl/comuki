@@ -96,7 +96,7 @@ public sealed class HostIntegrationServer : IAsyncLifetime
     }
 
     /// <summary>One fresh orchestration context for direct asserts.</summary>
-    /// <returns></returns>
+    /// 
     public OrchestrationDbContext CreateOrchestrationDb()
     {
         var options = new DbContextOptionsBuilder<OrchestrationDbContext>();
@@ -105,7 +105,7 @@ public sealed class HostIntegrationServer : IAsyncLifetime
     }
 
     /// <summary>One fresh integration context for direct asserts.</summary>
-    /// <returns></returns>
+    /// 
     public IntegrationsDbContext CreateIntegrationDb()
     {
         var options = new DbContextOptionsBuilder<IntegrationsDbContext>();
@@ -114,8 +114,6 @@ public sealed class HostIntegrationServer : IAsyncLifetime
     }
 
     /// <summary>Polls until the condition holds or the timeout expires.</summary>
-    /// <param name="condition"></param>
-    /// <param name="timeout"></param>
     public static async Task WaitForAsync(Func<Task<bool>> condition, TimeSpan timeout)
     {
         var deadline = DateTimeOffset.UtcNow + timeout;

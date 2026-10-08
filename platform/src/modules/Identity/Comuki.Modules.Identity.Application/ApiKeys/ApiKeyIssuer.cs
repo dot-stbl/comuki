@@ -28,7 +28,7 @@ public sealed class ApiKeyIssuer(
     /// requests that carry the matching <c>X-Comuki-Tenant</c> header.
     /// </param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<IssuedApiKeyCredential> IssueAsync(
         UserId userId,
         string name,

@@ -6,7 +6,6 @@ namespace Comuki.Modules.Identity.Domain.Ids;
 /// <c>uuid</c>, exposed to the API as strings. Lives in the Identity module
 /// (not Shared.Kernel) — other modules learn about users through contracts.
 /// </summary>
-/// <param name="Value"></param>
 public readonly record struct UserId(Guid Value)
 {
     /// <summary>Creates a fresh UUIDv7 id.</summary>

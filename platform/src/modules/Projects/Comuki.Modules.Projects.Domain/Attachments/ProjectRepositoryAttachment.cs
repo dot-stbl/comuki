@@ -63,7 +63,7 @@ public sealed class ProjectRepositoryAttachment
     /// <param name="access"></param>
     /// <param name="credentialOverrideRef"></param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static ProjectRepositoryAttachment Create(
         ProjectId projectId,
         RepositoryId repositoryId,

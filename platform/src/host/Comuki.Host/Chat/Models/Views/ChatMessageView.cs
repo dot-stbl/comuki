@@ -35,7 +35,6 @@ public sealed class ChatMessageView
     public required DateTimeOffset CreatedAt { get; init; }
 
     /// <summary>Maps the domain row.</summary>
-    /// <param name="message"></param>
     public static ChatMessageView Of(ChatMessage message)
     {
         return new ChatMessageView

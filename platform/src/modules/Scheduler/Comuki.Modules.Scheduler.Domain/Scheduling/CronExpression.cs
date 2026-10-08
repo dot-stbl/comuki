@@ -56,8 +56,7 @@ public sealed class CronExpression
     }
 
     /// <summary>Parses a 5-field cron expression. Throws <see cref="FormatException"/> on malformed input.</summary>
-    /// <param name="expression"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="FormatException">Malformed expression (wrong field count, out-of-range value, unparseable alias).</exception>
     public static CronExpression Parse(string expression)
     {

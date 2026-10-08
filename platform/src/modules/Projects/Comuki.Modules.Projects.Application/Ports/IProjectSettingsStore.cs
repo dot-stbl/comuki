@@ -18,7 +18,7 @@ public interface IProjectSettingsStore
     /// <summary>Reads the settings row, refreshing the cached snapshot on the way.</summary>
     /// <param name="projectId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<ProjectSettings?> FindAsync(ProjectId projectId, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -29,7 +29,7 @@ public interface IProjectSettingsStore
     /// </summary>
     /// <param name="settings"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<ProjectSettings> SaveAsync(ProjectSettings settings, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -38,12 +38,10 @@ public interface IProjectSettingsStore
     /// fall back to their own defaults. Kept warm by the infrastructure
     /// refresher and by every write.
     /// </summary>
-    /// <param name="projectId"></param>
-    /// <returns></returns>
+    /// 
     public ProjectSettings? GetCached(ProjectId projectId);
 
     /// <summary>Change token that fires when the project's settings are written.</summary>
-    /// <param name="projectId"></param>
-    /// <returns></returns>
+    /// 
     public IChangeToken GetChangeToken(ProjectId projectId);
 }

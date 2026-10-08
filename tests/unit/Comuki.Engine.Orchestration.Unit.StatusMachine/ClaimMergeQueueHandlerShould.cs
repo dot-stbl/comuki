@@ -3,6 +3,7 @@ using Comuki.Engine.Orchestration.Domain.MergeQueue;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
 using FluentValidation;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -26,7 +27,7 @@ public sealed class ClaimMergeQueueHandlerShould
         var entry = MergeQueueEntry.Create(projectId, "feature/x", "https://example.com/pr/2", ConflictResolution.None, null, now);
         var store = Substitute.For<IMergeQueueStore>();
         store.FindByIdAsync(entryId, Arg.Any<CancellationToken>()).Returns(entry);
-        var handler = new ClaimMergeQueueHandler(store, new ClaimMergeQueueValidator(), new MergeQueueFakeTimeProvider(now), NullLogger<ClaimMergeQueueHandler>.Instance);
+        var handler = new ClaimMergeQueueHandler(store, new ClaimMergeQueueValidator(), new FakeTimeProvider(now), NullLogger<ClaimMergeQueueHandler>.Instance);
 
         var view = await handler.HandleAsync(
             new ClaimMergeQueueCommand(entryId, "operator-bob"),
@@ -44,7 +45,7 @@ public sealed class ClaimMergeQueueHandlerShould
     public async Task RejectClaimWithoutOperatorIdAsync()
     {
         var store = Substitute.For<IMergeQueueStore>();
-        var handler = new ClaimMergeQueueHandler(store, new ClaimMergeQueueValidator(), new MergeQueueFakeTimeProvider(now), NullLogger<ClaimMergeQueueHandler>.Instance);
+        var handler = new ClaimMergeQueueHandler(store, new ClaimMergeQueueValidator(), new FakeTimeProvider(now), NullLogger<ClaimMergeQueueHandler>.Instance);
 
         var exception = await Should.ThrowAsync<ValidationException>(
             () => handler.HandleAsync(
@@ -60,7 +61,7 @@ public sealed class ClaimMergeQueueHandlerShould
     {
         var store = Substitute.For<IMergeQueueStore>();
         store.FindByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((MergeQueueEntry?)null);
-        var handler = new ClaimMergeQueueHandler(store, new ClaimMergeQueueValidator(), new MergeQueueFakeTimeProvider(now), NullLogger<ClaimMergeQueueHandler>.Instance);
+        var handler = new ClaimMergeQueueHandler(store, new ClaimMergeQueueValidator(), new FakeTimeProvider(now), NullLogger<ClaimMergeQueueHandler>.Instance);
 
         var view = await handler.HandleAsync(
             new ClaimMergeQueueCommand(Guid.CreateVersion7(), "operator-bob"),

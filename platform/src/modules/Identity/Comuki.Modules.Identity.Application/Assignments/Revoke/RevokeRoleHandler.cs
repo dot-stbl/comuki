@@ -22,7 +22,7 @@ public sealed class RevokeRoleHandler(
     /// <summary>Revokes the assignment.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">No such active assignment, or the revoker is too junior.</exception>
     public async Task<RoleAssignmentView> HandleAsync(RevokeRoleCommand command, CancellationToken cancellationToken = default)
     {

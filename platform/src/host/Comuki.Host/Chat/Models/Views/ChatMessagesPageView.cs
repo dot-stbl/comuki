@@ -18,7 +18,6 @@ public sealed class ChatMessagesPageView
     public required int Total { get; init; }
 
     /// <summary>Maps the application page.</summary>
-    /// <param name="page"></param>
     public static ChatMessagesPageView Of(ChatMessagePage page)
     {
         return new ChatMessagesPageView

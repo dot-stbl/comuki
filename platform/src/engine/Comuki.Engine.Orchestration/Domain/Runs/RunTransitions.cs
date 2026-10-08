@@ -32,7 +32,6 @@ public static class RunTransitions
     }
 
     /// <summary>All statuses reachable from <paramref name="from"/> in one hop.</summary>
-    /// <param name="from"></param>
     public static IReadOnlyCollection<RunStatus> TargetsFrom(RunStatus from)
     {
         return table.TryGetValue(from, out var targets) ? targets : [];

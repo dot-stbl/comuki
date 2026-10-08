@@ -18,7 +18,6 @@ public static class CostsApplicationExtensions
     /// Projects settings + cancel/journal adapters via <c>AddSingleton</c>
     /// before or after this call (<c>TryAddSingleton</c>).
     /// </summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddCostsApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);

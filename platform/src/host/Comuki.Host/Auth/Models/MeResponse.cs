@@ -40,8 +40,7 @@ public sealed record MeResponse
         IReadOnlyDictionary<string, IReadOnlyList<string>> Projects)
     {
         /// <summary>Flattens a <see cref="SubjectAuthorization"/> into ordered wire strings.</summary>
-        /// <param name="authorization"></param>
-        /// <returns></returns>
+        /// 
         public static PermissionsView From(SubjectAuthorization authorization)
         {
             return new PermissionsView(

@@ -56,7 +56,6 @@ public sealed class ChatSession
     }
 
     /// <summary>Soft-archives the session; archiving twice is a no-op.</summary>
-    /// <param name="now"></param>
     public void Archive(DateTimeOffset now)
     {
         if (Status == ChatSessionStatus.Archived)
@@ -69,7 +68,6 @@ public sealed class ChatSession
     }
 
     /// <summary>Stamps activity; called on every appended message.</summary>
-    /// <param name="now"></param>
     public void Touch(DateTimeOffset now)
     {
         UpdatedAt = now;

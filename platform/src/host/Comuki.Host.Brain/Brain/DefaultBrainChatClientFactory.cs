@@ -35,7 +35,6 @@ public sealed class DefaultBrainChatClientFactory : IBrainChatClientFactory
 file static class BrainChatClientBuildHelpers
 {
     /// <summary>Builds the chat client when every field is set, null otherwise.</summary>
-    /// <param name="config"></param>
     public static IChatClient? TryBuild(ModelConfig config)
     {
         return IsComplete(config.Endpoint, config.ApiKey, config.ModelId)

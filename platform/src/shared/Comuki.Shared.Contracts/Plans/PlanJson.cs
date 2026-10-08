@@ -48,7 +48,6 @@ public static class PlanJson
     }
 
     /// <summary>Parses and validates a plan document; errors cover both JSON shape and plan rules.</summary>
-    /// <param name="json"></param>
     public static PlanValidationResult Parse(string json)
     {
         TryParse(json, out _, out var validation);
@@ -56,7 +55,6 @@ public static class PlanJson
     }
 
     /// <summary>Serializes a plan in the canonical camelCase wire form (what finalJson carries).</summary>
-    /// <param name="plan"></param>
     public static string Serialize(Plan plan)
     {
         return JsonSerializer.Serialize(plan, JsonSerializerOptions.Web);

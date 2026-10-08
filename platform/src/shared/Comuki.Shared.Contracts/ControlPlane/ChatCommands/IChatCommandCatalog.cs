@@ -8,6 +8,5 @@ namespace Comuki.Shared.Contracts.ControlPlane.ChatCommands;
 public interface IChatCommandCatalog
 {
     /// <summary>Every valid built-in command, ordered by key. Malformed documents are skipped with a warning, not fatal.</summary>
-    /// <param name="cancellationToken"></param>
     public Task<IReadOnlyList<ChatCommandDefinition>> ListCommandsAsync(CancellationToken cancellationToken = default);
 }

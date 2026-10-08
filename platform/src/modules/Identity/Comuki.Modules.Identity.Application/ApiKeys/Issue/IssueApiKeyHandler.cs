@@ -19,7 +19,7 @@ public sealed class IssueApiKeyHandler(
     /// <summary>Issues the key.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">The user is unknown or disabled.</exception>
     public async Task<IssuedApiKeyCredential> HandleAsync(IssueApiKeyCommand command, CancellationToken cancellationToken = default)
     {

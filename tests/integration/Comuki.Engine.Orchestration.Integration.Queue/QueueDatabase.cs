@@ -97,7 +97,6 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
     }
 
     /// <summary>Seeds a run with one queued item for the default implement labels.</summary>
-    /// <param name="profileKey"></param>
     protected async Task<WorkItem> SeedQueuedItemAsync(string profileKey = "implement")
     {
         using var scope = CreateScope();
@@ -114,7 +113,6 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
     }
 
     /// <summary>Re-reads one work item from a fresh scope (no tracking).</summary>
-    /// <param name="workItemId"></param>
     protected async Task<WorkItem?> LoadItemAsync(Guid workItemId)
     {
         using var scope = CreateScope();
@@ -123,7 +121,6 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
     }
 
     /// <summary>Re-reads one run from a fresh scope (no tracking).</summary>
-    /// <param name="runId"></param>
     protected async Task<Run> LoadRunAsync(RunId runId)
     {
         using var scope = CreateScope();
@@ -132,7 +129,6 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
     }
 
     /// <summary>Re-reads the journal of a run from a fresh scope (no tracking).</summary>
-    /// <param name="runId"></param>
     protected async Task<List<RunEvent>> LoadEventsAsync(RunId runId)
     {
         using var scope = CreateScope();

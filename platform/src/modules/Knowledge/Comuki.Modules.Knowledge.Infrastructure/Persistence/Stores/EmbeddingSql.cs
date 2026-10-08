@@ -73,7 +73,6 @@ public static class EmbeddingSql
         + "LIMIT @limit";
 
     /// <summary>Formats a vector as a pgvector literal (<c>[1,0.5,…]</c>, invariant, round-trippable).</summary>
-    /// <param name="vector"></param>
     public static string VectorLiteral(float[] vector)
     {
         return string.Create(
@@ -87,7 +86,6 @@ public static class EmbeddingSql
     /// <see cref="MemoryEmbeddingId"/>; the similarity score carries the
     /// computed cosine similarity (1 − distance).
     /// </summary>
-    /// <param name="reader"></param>
     public static EmbeddingRowProjection ReadRow(System.Data.Common.DbDataReader reader)
     {
         return new EmbeddingRowProjection(

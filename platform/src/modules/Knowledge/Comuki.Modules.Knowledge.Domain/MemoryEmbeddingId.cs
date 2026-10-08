@@ -5,7 +5,6 @@ namespace Comuki.Modules.Knowledge.Domain;
 /// UUIDv7 (<see cref="Guid.CreateVersion7()"/>); stored as Postgres
 /// <c>uuid</c>.
 /// </summary>
-/// <param name="Value"></param>
 public readonly record struct MemoryEmbeddingId(Guid Value)
 {
     /// <summary>Creates a fresh UUIDv7 id.</summary>

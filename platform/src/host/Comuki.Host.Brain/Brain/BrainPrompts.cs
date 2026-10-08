@@ -94,7 +94,6 @@ public static class BrainPrompts
         """;
 
     /// <summary>Picks the system prompt for a validated request kind key.</summary>
-    /// <param name="kindKey"></param>
     public static string For(string kindKey)
     {
         return kindKey switch

@@ -24,7 +24,7 @@ public static class ProjectsPersistenceExtensions
     /// </summary>
     /// <param name="services"></param>
     /// <param name="connectionString"></param>
-    /// <returns></returns>
+    /// 
     public static IServiceCollection AddProjectsPersistence(
         this IServiceCollection services,
         string connectionString)

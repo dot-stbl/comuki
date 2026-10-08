@@ -23,7 +23,6 @@ internal static class MemoryFactMissionQuery
     /// pre-flight reachability check and the SQL filter handle the
     /// fail-closed property.
     /// </summary>
-    /// <param name="query"></param>
     public static EffectiveFactScope Normalize(MemoryFactQuery query)
     {
         if (query.MissionId is { } missionId)

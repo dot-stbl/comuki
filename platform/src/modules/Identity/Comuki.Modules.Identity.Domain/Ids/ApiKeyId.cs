@@ -4,7 +4,6 @@ namespace Comuki.Modules.Identity.Domain.Ids;
 /// Strong-typed identifier of an API key row. UUIDv7 like every Identity
 /// entity id.
 /// </summary>
-/// <param name="Value"></param>
 public readonly record struct ApiKeyId(Guid Value)
 {
     /// <summary>Creates a fresh UUIDv7 id.</summary>

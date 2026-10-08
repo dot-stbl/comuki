@@ -10,7 +10,6 @@ namespace Comuki.Shared.Contracts.ControlPlane.Profiles;
 public interface IProfileCatalog
 {
     /// <summary>Every valid profile, ordered by key. Malformed documents are skipped with a warning, not fatal.</summary>
-    /// <param name="cancellationToken"></param>
     public Task<IReadOnlyList<ProfileDefinition>> ListAsync(CancellationToken cancellationToken = default);
 
     /// <summary>One profile by key (the document file stem, e.g. <c>implement</c>). Null when unknown.</summary>

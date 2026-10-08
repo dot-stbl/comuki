@@ -8,7 +8,6 @@ namespace Comuki.Host.Translator.Api.Handlers;
 /// call as a Bearer credential. The token is fixed for the container's
 /// lifetime.
 /// </summary>
-/// <param name="options"></param>
 public sealed class WorkerTokenHandler(IOptions<TranslatorOptions> options) : DelegatingHandler
 {
     /// <inheritdoc />

@@ -25,11 +25,9 @@ public abstract record PiEvent
     public sealed record SystemEvent(string Subtype, string Cwd, IReadOnlyList<string> Tools) : PiEvent;
 
     /// <summary>User-prompt echo from the model. Useful for correlating what was actually sent.</summary>
-    /// <param name="Content"></param>
     public sealed record UserEvent(string Content) : PiEvent;
 
     /// <summary>Text chunk from the assistant (streaming output).</summary>
-    /// <param name="Text"></param>
     public sealed record AssistantTextEvent(string Text) : PiEvent;
 
     /// <summary>Tool invocation by the assistant (Bash, Read, Write, Edit, …).</summary>

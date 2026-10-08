@@ -191,11 +191,11 @@ public sealed class AgentLoopHost : IAsyncLifetime
     }
 
     /// <summary>Posts a GitHub issue webhook through the real webhook endpoint and returns the run/work-item <c>IntegrationRunLauncher</c> created.</summary>
-    /// <param name="title"></param>
-    /// <param name="body"></param>
-    /// <param name="labels"></param>
+    /// <param name="title">Issue title sent in the webhook payload.</param>
+    /// <param name="body">Issue body sent in the webhook payload.</param>
+    /// <param name="labels">Issue labels sent in the webhook payload.</param>
     /// <param name="issueNumber">A unique issue number so two scenarios in the same suite never collide on the Integrations module's duplicate-active-ticket check.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cooperative cancellation token propagated from the caller.</param>
     public async Task<SeededWorkItem> SeedTicketAsync(
         string title,
         string body,

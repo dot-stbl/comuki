@@ -2,6 +2,7 @@ using Comuki.Engine.Orchestration.Application.MergeQueue.BatchMerge;
 using Comuki.Engine.Orchestration.Domain.MergeQueue;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence.Ports;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -25,7 +26,7 @@ public sealed class MergeMergeBatchHandlerShould
         batch.Claim();
         var store = Substitute.For<IMergeBatchStore>();
         store.FindByIdAsync(batchId, Arg.Any<CancellationToken>()).Returns(batch);
-        var clock = new MergeBatchFakeTimeProvider(now);
+        var clock = new FakeTimeProvider(now);
         var handler = new MergeMergeBatchHandler(store, new MergeMergeBatchValidator(), clock, NullLogger<MergeMergeBatchHandler>.Instance);
 
         var view = await handler.HandleAsync(
@@ -42,7 +43,7 @@ public sealed class MergeMergeBatchHandlerShould
     {
         var store = Substitute.For<IMergeBatchStore>();
         store.FindByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((MergeBatch?)null);
-        var clock = new MergeBatchFakeTimeProvider(now);
+        var clock = new FakeTimeProvider(now);
         var handler = new MergeMergeBatchHandler(store, new MergeMergeBatchValidator(), clock, NullLogger<MergeMergeBatchHandler>.Instance);
 
         var view = await handler.HandleAsync(

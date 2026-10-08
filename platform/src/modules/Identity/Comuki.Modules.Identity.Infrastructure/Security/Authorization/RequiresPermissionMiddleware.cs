@@ -12,7 +12,6 @@ namespace Comuki.Modules.Identity.Infrastructure.Security.Authorization;
 /// answer the same 401 / 403 problem shapes. Endpoints without a demand
 /// (health, login, the worker runtime) pass straight through.
 /// </summary>
-/// <param name="next"></param>
 public sealed class RequiresPermissionMiddleware(RequestDelegate next)
 {
     /// <inheritdoc />

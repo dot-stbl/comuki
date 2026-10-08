@@ -23,7 +23,7 @@ public static class SchedulerPersistenceExtensions
     /// </summary>
     /// <param name="services"></param>
     /// <param name="connectionString"></param>
-    /// <returns></returns>
+    /// 
     public static IServiceCollection AddSchedulerPersistence(
         this IServiceCollection services,
         string connectionString)

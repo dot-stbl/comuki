@@ -20,7 +20,6 @@ public static class BrainRequestKindKeys
     public const string Answer = "answer";
 
     /// <summary>Parses a wire key; null when unknown.</summary>
-    /// <param name="key"></param>
     public static string? Parse(string key)
     {
         return key switch

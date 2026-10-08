@@ -13,7 +13,6 @@ public static class MemoryFactKindKeys
     public const string BlackboardFinding = "blackboard-finding";
 
     /// <summary>Maps a kind to its wire key.</summary>
-    /// <param name="kind"></param>
     public static string Key(MemoryFactKind kind)
     {
         return kind switch
@@ -26,7 +25,6 @@ public static class MemoryFactKindKeys
     }
 
     /// <summary>Parses a wire key; null when unknown.</summary>
-    /// <param name="key"></param>
     public static MemoryFactKind? Parse(string key)
     {
         return key switch
@@ -39,7 +37,6 @@ public static class MemoryFactKindKeys
     }
 
     /// <summary>Parses a wire key or throws — the EF converter path (expression trees cannot inline throws).</summary>
-    /// <param name="key"></param>
     /// <exception cref="InvalidOperationException">The key is unknown.</exception>
     public static MemoryFactKind ParseRequired(string key)
     {

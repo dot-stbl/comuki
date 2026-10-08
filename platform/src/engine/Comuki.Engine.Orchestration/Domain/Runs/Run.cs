@@ -100,7 +100,6 @@ public sealed class Run
     /// are no-ops (already at the top rung). Changes update
     /// <see cref="UpdatedAt"/>.
     /// </summary>
-    /// <param name="now"></param>
     public void PromoteTo(DateTimeOffset now)
     {
         RunTrustClass next;
@@ -127,7 +126,6 @@ public sealed class Run
     /// intermediate <c>Pilot</c>-demote state. Calls when already at
     /// <see cref="RunTrustClass.Supervised"/> are no-ops.
     /// </summary>
-    /// <param name="now"></param>
     public void DemoteTo(DateTimeOffset now)
     {
         if (TrustClass == RunTrustClass.Supervised)

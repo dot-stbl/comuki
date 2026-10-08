@@ -13,7 +13,7 @@ public interface IJiraApi
     /// <param name="maxResults">Page size.</param>
     /// <param name="startAt">Offset paging.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Get("/rest/api/2/search")]
     public Task<JiraSearchResult> SearchAsync(
         [AliasAs("jql")] string jql,
@@ -25,7 +25,7 @@ public interface IJiraApi
     /// <param name="issueKey">Issue key (e.g. COM-9).</param>
     /// <param name="body"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Post("/rest/api/2/issue/{issueKey}/comment")]
     public Task PostCommentAsync(string issueKey, [Body] JiraCommentBody body, CancellationToken cancellationToken);
 
@@ -33,7 +33,7 @@ public interface IJiraApi
     /// <param name="issueKey">Issue key.</param>
     /// <param name="body">The transition (by id) with an optional comment.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Post("/rest/api/2/issue/{issueKey}/transitions")]
     public Task TransitionAsync(string issueKey, [Body] JiraTransitionBody body, CancellationToken cancellationToken);
 }

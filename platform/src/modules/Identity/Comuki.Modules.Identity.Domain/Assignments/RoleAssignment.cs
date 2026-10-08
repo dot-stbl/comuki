@@ -62,7 +62,7 @@ public sealed class RoleAssignment
     /// <param name="scope"></param>
     /// <param name="grantedBy"></param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="ArgumentException">The scope level and project id disagree.</exception>
     public static RoleAssignment Create(
         RoleSubject subject,
@@ -88,7 +88,6 @@ public sealed class RoleAssignment
     }
 
     /// <summary>Revokes the grant; idempotent.</summary>
-    /// <param name="now"></param>
     public void Revoke(DateTimeOffset now)
     {
         RevokedAt ??= now;

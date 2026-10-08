@@ -18,7 +18,6 @@ namespace Comuki.Host.Auth.Security;
 public sealed class SubjectScopeMiddleware(RequestDelegate next)
 {
     /// <summary>Installs the scope for the rest of the request pipeline.</summary>
-    /// <param name="context"></param>
     public async Task InvokeAsync(HttpContext context)
     {
         var accessor = context.RequestServices.GetRequiredService<ISubjectScopeAccessor>();

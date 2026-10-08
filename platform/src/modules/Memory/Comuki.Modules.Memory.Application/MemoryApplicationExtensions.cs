@@ -17,7 +17,6 @@ namespace Comuki.Modules.Memory.Application;
 public static class MemoryApplicationExtensions
 {
     /// <summary>Registers the Memory application services.</summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddMemoryApplication(this IServiceCollection services)
     {
         services.TryAddSingleton<MemoryDigest>();

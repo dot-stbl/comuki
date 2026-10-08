@@ -12,7 +12,6 @@ namespace Comuki.Host.Chat.Controllers;
 public static class ChatProblems
 {
     /// <summary>404 for an unknown (or foreign) session.</summary>
-    /// <param name="sessionId"></param>
     public static ActionResult NotFound(Guid sessionId)
     {
         // Build with TypedResults.Problem so the title/type defaults and

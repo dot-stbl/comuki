@@ -15,7 +15,7 @@ public static class YandexTrackerPayloadMapper
     /// <param name="body">Raw payload bytes.</param>
     /// <param name="projectId">Project scope of the connection.</param>
     /// <param name="now">Ticket timestamp.</param>
-    /// <returns></returns>
+    /// 
     public static InboundItem? ToTicket(ReadOnlyMemory<byte> body, ProjectId projectId, DateTimeOffset now)
     {
         try
@@ -33,7 +33,7 @@ public static class YandexTrackerPayloadMapper
     /// <param name="root"></param>
     /// <param name="projectId"></param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static InboundItem? ToTicket(JsonElement root, ProjectId projectId, DateTimeOffset now)
     {
         if (root.ValueKind is not JsonValueKind.Object
@@ -64,7 +64,7 @@ public static class YandexTrackerPayloadMapper
     /// <param name="issue"></param>
     /// <param name="projectId"></param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static InboundItem ToTicket(TrackerIssue issue, ProjectId projectId, DateTimeOffset now)
     {
         return InboundItem.Create(

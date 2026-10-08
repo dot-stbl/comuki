@@ -20,8 +20,7 @@ internal static class RunEventViewMapping
     public const int MaxPayloadJsonChars = 32_768;
 
     /// <summary>Maps one journal entry to its slim broadcast shape.</summary>
-    /// <param name="entry"></param>
-    /// <returns></returns>
+    /// 
     public static RunEventView ToView(RunEventEntry entry)
     {
         var payloadOmitted = entry.PayloadJson.Length > MaxPayloadJsonChars;
@@ -39,8 +38,7 @@ internal static class RunEventViewMapping
     /// Reads <c>itemId</c> out of a work-item payload; run events and
     /// unparsable payloads yield null.
     /// </summary>
-    /// <param name="entry"></param>
-    /// <returns></returns>
+    /// 
     public static Guid? ReadWorkItemId(RunEventEntry entry)
     {
         return !entry.Type.StartsWith("work_item.", StringComparison.Ordinal) || !TryParse(entry.PayloadJson, out var itemId) ? null : itemId;
@@ -49,7 +47,7 @@ internal static class RunEventViewMapping
     /// <summary>Extracts the <c>itemId</c> property of a payload document; false when absent or not a guid.</summary>
     /// <param name="payloadJson"></param>
     /// <param name="itemId"></param>
-    /// <returns></returns>
+    /// 
     public static bool TryParse(string payloadJson, out Guid itemId)
     {
         try

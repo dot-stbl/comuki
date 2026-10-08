@@ -61,7 +61,6 @@ public sealed class OidcStateSweeper(
     }
 
     /// <summary>Runs one sweep now — also the test entry point.</summary>
-    /// <param name="cancellationToken"></param>
     public async Task<int> SweepOnceAsync(CancellationToken cancellationToken = default)
     {
         await using var scope = scopeFactory.CreateAsyncScope();

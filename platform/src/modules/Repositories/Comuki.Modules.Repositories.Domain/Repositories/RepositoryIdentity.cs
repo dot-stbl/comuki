@@ -14,7 +14,7 @@ public readonly record struct RepositoryIdentity(string Host, string Url)
     /// <summary>Constructs a normalized (host, url) pair from raw user input.</summary>
     /// <param name="host">The git host (<c>github.com</c>, <c>gitlab.com</c>, …).</param>
     /// <param name="url">The repository url.</param>
-    /// <returns></returns>
+    /// 
     public static RepositoryIdentity Of(string host, string url)
     {
         return new RepositoryIdentity(

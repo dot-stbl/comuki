@@ -18,7 +18,7 @@ public sealed class LoginHandler(
     /// <summary>Checks the credentials and returns the login outcome.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<LoginResult> HandleAsync(LoginCommand command, CancellationToken cancellationToken = default)
     {
         if (await userStore.FindByEmailAsync(command.Email, cancellationToken) is not { } user)

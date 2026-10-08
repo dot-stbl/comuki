@@ -29,8 +29,7 @@ namespace Comuki.Modules.Identity.Application;
 public static class IdentityApplicationExtensions
 {
     /// <summary>Registers the Identity application services.</summary>
-    /// <param name="services"></param>
-    /// <returns></returns>
+    /// 
     public static IServiceCollection AddIdentityApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);

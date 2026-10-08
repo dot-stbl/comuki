@@ -91,7 +91,6 @@ public sealed class SyncJob
     }
 
     /// <summary>Marks the job done — the tracker accepted the transition.</summary>
-    /// <param name="now"></param>
     public void MarkDone(DateTimeOffset now)
     {
         Status = SyncJobStatus.Done;

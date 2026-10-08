@@ -25,7 +25,7 @@ public sealed class AdmissionRuleService(
     /// <summary>Creates a rule.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<AdmissionRuleView> CreateAsync(CreateAdmissionRuleCommand command, CancellationToken cancellationToken = default)
     {
         await validator.ValidateAndThrowAsync(command, cancellationToken);
@@ -42,7 +42,7 @@ public sealed class AdmissionRuleService(
     /// <summary>Lists rules, optionally per project.</summary>
     /// <param name="projectId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<IReadOnlyList<AdmissionRuleView>> ListAsync(ProjectId? projectId, CancellationToken cancellationToken = default)
     {
         var rules = await store.ListRulesAsync(projectId, cancellationToken);
@@ -52,7 +52,7 @@ public sealed class AdmissionRuleService(
     /// <summary>Reads one rule.</summary>
     /// <param name="ruleId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="AdmissionRuleNotFoundException">Unknown id.</exception>
     public async Task<AdmissionRuleView> GetAsync(AdmissionRuleId ruleId, CancellationToken cancellationToken = default)
     {
@@ -68,7 +68,7 @@ public sealed class AdmissionRuleService(
     /// <param name="filterJson"></param>
     /// <param name="enabled"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="AdmissionRuleNotFoundException">Unknown id.</exception>
     public async Task<AdmissionRuleView> UpdateAsync(
         AdmissionRuleId ruleId,
@@ -98,7 +98,7 @@ public sealed class AdmissionRuleService(
     /// <summary>Deletes a rule (idempotent).</summary>
     /// <param name="ruleId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task DeleteAsync(AdmissionRuleId ruleId, CancellationToken cancellationToken = default)
     {
         return store.DeleteRuleAsync(ruleId, cancellationToken);

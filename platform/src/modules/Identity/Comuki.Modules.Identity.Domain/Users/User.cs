@@ -68,7 +68,6 @@ public sealed class User
     }
 
     /// <summary>Bumps the security stamp — every outstanding cookie dies at its next validation.</summary>
-    /// <param name="now"></param>
     public void BumpTokensVersion(DateTimeOffset now)
     {
         TokensVersion++;
@@ -76,7 +75,6 @@ public sealed class User
     }
 
     /// <summary>Disables the account and kills its cookie sessions.</summary>
-    /// <param name="now"></param>
     public void Disable(DateTimeOffset now)
     {
         Disabled = true;
@@ -84,7 +82,6 @@ public sealed class User
     }
 
     /// <summary>Re-enables the account.</summary>
-    /// <param name="now"></param>
     public void Enable(DateTimeOffset now)
     {
         Disabled = false;

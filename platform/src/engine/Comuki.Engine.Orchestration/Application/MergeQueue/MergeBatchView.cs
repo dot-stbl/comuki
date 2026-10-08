@@ -34,7 +34,6 @@ public sealed record MergeBatchView
     public string? AbandonedReason { get; init; }
 
     /// <summary>Projection from the domain aggregate.</summary>
-    /// <param name="batch"></param>
     public static MergeBatchView FromBatch(MergeBatch batch)
     {
         return new MergeBatchView

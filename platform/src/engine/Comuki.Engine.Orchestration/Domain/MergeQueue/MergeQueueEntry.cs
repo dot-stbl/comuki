@@ -130,7 +130,6 @@ public sealed class MergeQueueEntry
     }
 
     /// <summary>Applies a status transition; illegal transitions throw — see <see cref="MergeQueueTransitions"/>.</summary>
-    /// <param name="to"></param>
     /// <exception cref="OrchestrationDomainException">the transition is not in <see cref="MergeQueueTransitions"/>.</exception>
     public void TransitionTo(MergeQueueStatus to)
     {
@@ -194,7 +193,6 @@ public sealed class MergeQueueEntry
     /// <see cref="MergeQueueStatus.InProgress"/>; sets the merge
     /// timestamp and clears the claim fields.
     /// </summary>
-    /// <param name="now"></param>
     /// <exception cref="InvalidOperationException"></exception>
     public void MarkMerged(DateTimeOffset now)
     {
@@ -239,7 +237,6 @@ public sealed class MergeQueueEntry
     }
 
     /// <summary>Updates free-text notes. Any status.</summary>
-    /// <param name="notes"></param>
     public void SetNotes(string? notes)
     {
         Notes = notes;

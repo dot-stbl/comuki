@@ -82,8 +82,7 @@ file static class DomainMapJsonRules
     /// with a separate <c>NotEmpty</c> rule that depends on
     /// <see cref="ProjectDomainType"/>.
     /// </summary>
-    /// <param name="json"></param>
-    /// <returns></returns>
+    /// 
     public static bool IsValid(string json)
     {
         try

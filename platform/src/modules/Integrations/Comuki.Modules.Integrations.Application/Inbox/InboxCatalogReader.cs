@@ -26,7 +26,7 @@ public sealed class InboxCatalogReader(
     /// <summary>The pending tickets of the inbox, newest first.</summary>
     /// <param name="projectId">Optional project filter.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<IReadOnlyList<InboundItemView>> ListPendingAsync(ProjectId? projectId, CancellationToken cancellationToken = default)
     {
         var pending = await store.ListPendingAsync(projectId, options.Value.InboxListLimit, cancellationToken);
@@ -37,7 +37,7 @@ public sealed class InboxCatalogReader(
     /// <param name="connectionId"></param>
     /// <param name="page">1-based page number.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="SourceConnectionNotFoundException">Unknown connection id.</exception>
     public async Task<IReadOnlyList<InboundItemView>> FetchCatalogAsync(
         SourceConnectionId connectionId,

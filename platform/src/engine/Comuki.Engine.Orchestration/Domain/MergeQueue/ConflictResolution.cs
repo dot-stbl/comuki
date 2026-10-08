@@ -47,7 +47,6 @@ public readonly record struct ConflictResolution
     }
 
     /// <summary>Parse a stored wire-form string back into the smart-type; throws on unknown values.</summary>
-    /// <param name="wire"></param>
     public static ConflictResolution FromWire(string wire)
     {
         return wire switch

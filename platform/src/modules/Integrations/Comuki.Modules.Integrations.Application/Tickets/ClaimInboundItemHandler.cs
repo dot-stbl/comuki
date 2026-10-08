@@ -23,7 +23,7 @@ public sealed class ClaimInboundItemHandler(
     /// <summary>Claims the ticket; returns the updated view carrying the run id.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InboundItemNotFoundException">Unknown ticket id.</exception>
     /// <exception cref="InboundItemConflictException">The ticket is not pending (already claimed, done or dismissed).</exception>
     public async Task<InboundItemView> HandleAsync(ClaimInboundItemCommand command, CancellationToken cancellationToken = default)

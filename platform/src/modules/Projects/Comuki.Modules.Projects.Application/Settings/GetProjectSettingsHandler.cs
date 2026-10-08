@@ -13,7 +13,7 @@ public sealed class GetProjectSettingsHandler(IProjectSettingsStore settings, IP
     /// <summary>Returns the settings view, version included (the client echoes it on the next PUT).</summary>
     /// <param name="projectId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="ProjectNotFoundException">No settings row for the project.</exception>
     public async Task<ProjectSettingsView> HandleAsync(ProjectId projectId, CancellationToken cancellationToken = default)
     {

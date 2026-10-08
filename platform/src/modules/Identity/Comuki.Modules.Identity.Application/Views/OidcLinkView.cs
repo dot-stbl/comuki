@@ -21,8 +21,7 @@ public sealed record OidcLinkView(
     DateTimeOffset CreatedAt)
 {
     /// <summary>Maps the domain entity.</summary>
-    /// <param name="link"></param>
-    /// <returns></returns>
+    /// 
     public static OidcLinkView Of(OidcLink link)
     {
         return new OidcLinkView(

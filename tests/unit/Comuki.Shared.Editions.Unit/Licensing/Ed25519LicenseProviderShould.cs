@@ -7,6 +7,7 @@ using Comuki.Shared.Editions.Licensing.Grants;
 using Comuki.Shared.Editions.Licensing.Modes;
 using Comuki.Shared.Editions.Tiers;
 using Comuki.Shared.Editions.Unit.Fixtures;
+using Microsoft.Extensions.Time.Testing;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Shouldly;
@@ -222,14 +223,6 @@ public sealed class Ed25519LicenseProviderShould
         var key = provider.Verify(token);
 
         key.VerifiedAt.ShouldBe(fixedNow);
-    }
-
-    private sealed class FakeTimeProvider(DateTimeOffset now) : TimeProvider
-    {
-        public override DateTimeOffset GetUtcNow()
-        {
-            return now;
-        }
     }
 
     [Fact(DisplayName = "Given a valid dev-audience token signed by the dev key and a provider with both keys, when Verify runs, then Tier is Team, Audience is Dev, and VerifiedWith equals the dev key fingerprint")]

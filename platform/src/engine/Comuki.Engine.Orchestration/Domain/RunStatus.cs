@@ -67,7 +67,6 @@ public readonly record struct RunStatus
     }
 
     /// <summary>Parse a stored wire-form string back into the smart-type; throws on unknown values.</summary>
-    /// <param name="wire"></param>
     public static RunStatus FromWire(string wire)
     {
         return wire switch

@@ -82,14 +82,12 @@ public sealed class ApiKey
     }
 
     /// <summary>Records a successful use.</summary>
-    /// <param name="now"></param>
     public void MarkUsed(DateTimeOffset now)
     {
         LastUsedAt = now;
     }
 
     /// <summary>Revokes the key; idempotent.</summary>
-    /// <param name="now"></param>
     public void Revoke(DateTimeOffset now)
     {
         RevokedAt ??= now;

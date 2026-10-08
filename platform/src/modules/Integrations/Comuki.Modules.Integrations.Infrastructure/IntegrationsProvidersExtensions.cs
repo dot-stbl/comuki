@@ -21,8 +21,7 @@ namespace Comuki.Modules.Integrations.Infrastructure;
 public static class IntegrationsProvidersExtensions
 {
     /// <summary>Registers the tracker HTTP clients and provider implementations.</summary>
-    /// <param name="services"></param>
-    /// <returns></returns>
+    /// 
     public static IServiceCollection AddIntegrationsProviders(this IServiceCollection services)
     {
         services.AddHttpClient(TrackerHttp.GitHubClient)

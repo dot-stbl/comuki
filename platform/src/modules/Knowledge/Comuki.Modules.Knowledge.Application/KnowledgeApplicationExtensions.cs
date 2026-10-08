@@ -13,7 +13,6 @@ namespace Comuki.Modules.Knowledge.Application;
 public static class KnowledgeApplicationExtensions
 {
     /// <summary>Registers the Knowledge application services.</summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddKnowledgeApplication(this IServiceCollection services)
     {
         return services;

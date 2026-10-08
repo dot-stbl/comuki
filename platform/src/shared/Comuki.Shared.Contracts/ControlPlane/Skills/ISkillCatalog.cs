@@ -9,7 +9,6 @@ namespace Comuki.Shared.Contracts.ControlPlane.Skills;
 public interface ISkillCatalog
 {
     /// <summary>Every valid skill, ordered by key. Malformed documents are skipped with a warning, not fatal.</summary>
-    /// <param name="cancellationToken"></param>
     public Task<IReadOnlyList<SkillDefinition>> ListAsync(CancellationToken cancellationToken = default);
 
     /// <summary>One skill by key (the document's directory name, e.g. <c>citation-cleanup</c>). Null when unknown.</summary>

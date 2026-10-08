@@ -4,7 +4,6 @@ namespace Comuki.Modules.Knowledge.Domain;
 /// Strong-typed identifier of a <see cref="SourceDocument"/>. UUIDv7
 /// (<see cref="Guid.CreateVersion7()"/>); stored as Postgres <c>uuid</c>.
 /// </summary>
-/// <param name="Value"></param>
 public readonly record struct SourceDocumentId(Guid Value)
 {
     /// <summary>Creates a fresh UUIDv7 id.</summary>

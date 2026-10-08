@@ -22,8 +22,7 @@ public interface ITicketSourceProvider
     /// The stable provider-side delivery identifier: the provider's id
     /// header when it has one, a SHA-256 of the raw body otherwise.
     /// </summary>
-    /// <param name="delivery"></param>
-    /// <returns></returns>
+    /// 
     public string DeliveryIdOf(WebhookDelivery delivery);
 
     /// <summary>
@@ -51,7 +50,7 @@ public interface ITicketSourceProvider
     /// </summary>
     /// <param name="delivery"></param>
     /// <param name="connection"></param>
-    /// <returns></returns>
+    /// 
     public InboundItem? Normalize(WebhookDelivery delivery, SourceConnection connection);
 
     /// <summary>
@@ -61,7 +60,7 @@ public interface ITicketSourceProvider
     /// <param name="connection"></param>
     /// <param name="page">1-based page number.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<IReadOnlyList<InboundItem>> FetchCatalogAsync(
         SourceConnection connection,
         int page,

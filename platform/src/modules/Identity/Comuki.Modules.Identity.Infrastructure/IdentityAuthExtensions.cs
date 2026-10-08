@@ -32,7 +32,7 @@ public static class IdentityAuthExtensions
     /// <param name="services"></param>
     /// <param name="configuration"></param>
     /// <param name="scanAssemblies"></param>
-    /// <returns></returns>
+    /// 
     public static IServiceCollection AddIdentityAuth(
         this IServiceCollection services,
         IConfiguration configuration,

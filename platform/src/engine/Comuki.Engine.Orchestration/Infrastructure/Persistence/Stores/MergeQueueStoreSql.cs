@@ -70,7 +70,6 @@ internal static class MergeQueueStoreSql
     }
 
     /// <summary>Materialises one <c>RETURNING</c> row into an entry. Caller checks ReadAsync first.</summary>
-    /// <param name="reader"></param>
     public static MergeQueueEntry ReadClaimed(DbDataReader reader)
     {
         var projectIdOrdinal = reader.GetOrdinal("project_id");

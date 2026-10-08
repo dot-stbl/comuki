@@ -25,7 +25,7 @@ public interface IRepositoryStore
     /// <summary>Tracked find by id; null when no row exists.</summary>
     /// <param name="repositoryId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<Repository?> FindByIdAsync(RepositoryId repositoryId, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -36,12 +36,11 @@ public interface IRepositoryStore
     /// <param name="host"></param>
     /// <param name="url"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<Repository?> FindByIdentityAsync(string host, string url, CancellationToken cancellationToken = default);
 
     /// <summary>No-tracking list ordered by creation time (UUIDv7 monotonic).</summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<IReadOnlyList<Repository>> ListAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -55,7 +54,7 @@ public interface IRepositoryStore
     /// <param name="policy">The policy snapshot to persist alongside the new row.</param>
     /// <param name="credentialRef">The credential reference to persist alongside the new row.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<Repository> GetOrRegisterAsync(
         Repository candidate,
         RepositoryPolicy policy,
@@ -65,6 +64,6 @@ public interface IRepositoryStore
     /// <summary>Persists a tracked graph (used after <see cref="Repository.Update"/> on a previously loaded row).</summary>
     /// <param name="repository"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task SaveAsync(Repository repository, CancellationToken cancellationToken = default);
 }

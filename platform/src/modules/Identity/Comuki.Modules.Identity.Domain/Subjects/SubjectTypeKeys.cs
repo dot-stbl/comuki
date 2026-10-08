@@ -10,8 +10,7 @@ public static class SubjectTypeKeys
     public const string ApiKey = "api-key";
 
     /// <summary>Returns the key of a subject type; total over the enum.</summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
+    /// 
     public static string Key(SubjectType type)
     {
         return type switch

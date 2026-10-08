@@ -8,6 +8,5 @@ namespace Comuki.Host.Brain.Ports.Exploration;
 public interface IExplorerReportReader
 {
     /// <summary>The latest explorer report text, or null when none exists yet.</summary>
-    /// <param name="cancellationToken"></param>
     public Task<string?> ReadLatestAsync(CancellationToken cancellationToken = default);
 }

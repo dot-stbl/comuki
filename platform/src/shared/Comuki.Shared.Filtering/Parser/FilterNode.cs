@@ -68,7 +68,6 @@ public sealed class ComparisonNode(
 /// <summary>
 ///     Logical AND over child nodes. <c>a ; b ; c</c>.
 /// </summary>
-/// <param name="children"></param>
 public sealed class AndNode(params FilterNode[] children) : FilterNode
 {
     /// <summary>The child nodes.</summary>
@@ -78,7 +77,6 @@ public sealed class AndNode(params FilterNode[] children) : FilterNode
 /// <summary>
 ///     Logical OR over child nodes. <c>a | b | c</c>.
 /// </summary>
-/// <param name="children"></param>
 public sealed class OrNode(params FilterNode[] children) : FilterNode
 {
     /// <summary>The child nodes.</summary>

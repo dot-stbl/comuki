@@ -28,8 +28,7 @@ internal static class AttentionMap
     public const string RunStatusChanged = "run.status_changed";
 
     /// <summary>Maps one entry to its attention draft; null when the transition is not attention-worthy.</summary>
-    /// <param name="entry"></param>
-    /// <returns></returns>
+    /// 
     public static AttentionDraft? FromEntry(RunEventEntry entry)
     {
         return entry.Type switch

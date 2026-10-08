@@ -50,7 +50,6 @@ public static class WikiFrontmatter
     }
 
     /// <summary>Returns the body after the frontmatter block (the actual markdown content), or the original body when none.</summary>
-    /// <param name="body"></param>
     public static string StripFrontmatter(string body)
     {
         var extracted = YamlishFrontmatter.Extract(body);

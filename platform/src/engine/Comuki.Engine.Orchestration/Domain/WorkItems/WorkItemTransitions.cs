@@ -31,7 +31,6 @@ public static class WorkItemTransitions
     }
 
     /// <summary>All statuses reachable from <paramref name="from"/> in one hop.</summary>
-    /// <param name="from"></param>
     public static IReadOnlyCollection<WorkItemStatus> TargetsFrom(WorkItemStatus from)
     {
         return table.TryGetValue(from, out var targets) ? targets : [];

@@ -40,8 +40,7 @@ public sealed class Repository
     /// (trim + lower-case, invariant culture). Public so callers comparing
     /// identity pairs use the very same key the entity persists.
     /// </summary>
-    /// <param name="value"></param>
-    /// <returns></returns>
+    /// 
     public static string Normalize(string value)
     {
         return value.Trim().ToLowerInvariant();
@@ -52,7 +51,7 @@ public sealed class Repository
     /// <param name="host">Host key (<c>github.com</c>, …).</param>
     /// <param name="defaultBranch">Default branch name; blank becomes <c>main</c>.</param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static Repository Create(
         string url,
         string host,

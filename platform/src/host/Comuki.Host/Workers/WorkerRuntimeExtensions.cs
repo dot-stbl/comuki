@@ -98,7 +98,6 @@ public static class WorkerRuntimeExtensions
     }
 
     /// <summary>Maps the worker REST claim/heartbeat/complete/fail surface.</summary>
-    /// <param name="app"></param>
     public static void MapWorkerRest(this WebApplication app)
     {
         WorkerEndpoints.MapWorkerEndpoints(app);

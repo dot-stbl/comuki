@@ -12,13 +12,13 @@ public interface IUserAccountStore
     /// <summary>Finds an account by (lower-cased) email.</summary>
     /// <param name="email"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<User?> FindByEmailAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>Finds an account by id.</summary>
     /// <param name="userId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<User?> FindByIdAsync(UserId userId, CancellationToken cancellationToken = default);
 
     /// <summary>Lists a page of accounts (paged, filterable by email substring).</summary>
@@ -36,6 +36,6 @@ public interface IUserAccountStore
     /// <summary>Persists a new or changed account.</summary>
     /// <param name="user"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task SaveAsync(User user, CancellationToken cancellationToken = default);
 }

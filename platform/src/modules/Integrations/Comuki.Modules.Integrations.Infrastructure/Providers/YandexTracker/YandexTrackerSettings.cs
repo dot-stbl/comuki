@@ -29,8 +29,7 @@ public sealed record YandexTrackerSettings(
     public const string DefaultWebhookSecretHeader = "X-Tracker-Token";
 
     /// <summary>Tolerant parse of the settings jsonb.</summary>
-    /// <param name="settingsJson"></param>
-    /// <returns></returns>
+    /// 
     public static YandexTrackerSettings Parse(string? settingsJson)
     {
         using var document = TrackerSettingsJson.Parse(settingsJson);

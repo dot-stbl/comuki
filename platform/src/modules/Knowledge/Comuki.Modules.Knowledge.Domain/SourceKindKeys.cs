@@ -20,7 +20,6 @@ public static class SourceKindKeys
     public const string Wiki = "wiki";
 
     /// <summary>Maps a kind to its wire key.</summary>
-    /// <param name="kind"></param>
     public static string Key(SourceKind kind)
     {
         return kind switch
@@ -34,7 +33,6 @@ public static class SourceKindKeys
     }
 
     /// <summary>Parses a wire key; null when unknown.</summary>
-    /// <param name="key"></param>
     public static SourceKind? Parse(string key)
     {
         return key switch
@@ -48,7 +46,6 @@ public static class SourceKindKeys
     }
 
     /// <summary>Parses a wire key or throws — the EF converter path (expression trees cannot inline throws).</summary>
-    /// <param name="key"></param>
     /// <exception cref="InvalidOperationException">The key is unknown.</exception>
     public static SourceKind ParseRequired(string key)
     {

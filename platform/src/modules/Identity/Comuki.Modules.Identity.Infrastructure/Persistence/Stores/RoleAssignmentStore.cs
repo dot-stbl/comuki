@@ -12,7 +12,6 @@ namespace Comuki.Modules.Identity.Infrastructure.Persistence.Stores;
 /// EF implementation of <see cref="IRoleAssignmentStore"/>. Active-only
 /// reads: a revoked assignment never contributes permissions again.
 /// </summary>
-/// <param name="db"></param>
 public sealed class RoleAssignmentStore(IdentityDbContext db) : IRoleAssignmentStore
 {
     /// <inheritdoc />

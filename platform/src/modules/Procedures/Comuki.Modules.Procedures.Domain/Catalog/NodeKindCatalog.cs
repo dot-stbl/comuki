@@ -25,7 +25,6 @@ public sealed record NodeKindCatalog(
     public const string FolderName = "procedure-node-kinds";
 
     /// <summary>Look up an entry by key; null when absent.</summary>
-    /// <param name="key"></param>
     public NodeKindCatalogEntry? Find(string key)
     {
         return Entries.FirstOrDefault(

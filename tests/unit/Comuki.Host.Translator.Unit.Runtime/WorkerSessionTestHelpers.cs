@@ -115,9 +115,6 @@ internal static class WorkerSessionTestHelpers
     }
 
     /// <summary>Builds a <see cref="WorkerRun"/> around a real <see cref="WorkerSession"/> opened via the mock service.</summary>
-    /// <param name="service"></param>
-    /// <param name="workItemId"></param>
-    /// <param name="runCancellation"></param>
     /// <param name="harnessSession">
     /// Optional harness session the command handler reads when a
     /// <see cref="TurnInput"/> arrives.
@@ -127,8 +124,11 @@ internal static class WorkerSessionTestHelpers
     /// the run). Pass a <c>TestFakeHarness</c> session to exercise
     /// the actual session-mode write path.
     /// </param>
-    /// <param name="runStartedAt"></param>
-    /// <param name="processStartedAt"></param>
+    /// <param name="service">Worker service handle used to construct the run.</param>
+    /// <param name="workItemId">Id of the work item the run belongs to.</param>
+    /// <param name="runCancellation">Source cancelled when the run should stop.</param>
+    /// <param name="runStartedAt">Optional wall-clock instant the run started; falls back to <c>now</c>.</param>
+    /// <param name="processStartedAt">Optional wall-clock instant the process spawned; falls back to <c>now</c>.</param>
     public static WorkerRun NewRun(
         IWorkerService service,
         Guid workItemId,

@@ -38,6 +38,5 @@ public interface IOidcStateStore
     /// without being fatal — the loop continues and retries on each
     /// interval until the migrator lands.
     /// </summary>
-    /// <param name="cancellationToken"></param>
     public Task<bool> TableExistsAsync(CancellationToken cancellationToken = default);
 }

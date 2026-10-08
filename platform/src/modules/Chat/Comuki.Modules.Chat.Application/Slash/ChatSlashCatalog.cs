@@ -12,7 +12,6 @@ namespace Comuki.Modules.Chat.Application.Slash;
 public sealed class ChatSlashCatalog(IChatCommandCatalog controlPlaneCatalog)
 {
     /// <summary>Lists built-ins plus control-plane commands, ordered by key.</summary>
-    /// <param name="cancellationToken"></param>
     public async Task<IReadOnlyList<ChatSlashCommand>> ListAsync(CancellationToken cancellationToken = default)
     {
         var merged = new Dictionary<string, ChatSlashCommand>(StringComparer.Ordinal);

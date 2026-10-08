@@ -3,6 +3,7 @@ using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Time.Testing;
 using Shouldly;
 using Xunit;
 
@@ -107,18 +108,3 @@ public sealed class OidcStateStoreShould
     }
 }
 
-/// <summary>
-/// Deterministic clock for expiry tests — the store reads time exclusively
-/// through the injected <see cref="TimeProvider" />.
-/// </summary>
-/// <param name="initial">The fixed reading returned by <see cref="GetUtcNow" />.</param>
-internal sealed class FakeTimeProvider(DateTimeOffset initial) : TimeProvider
-{
-    private readonly DateTimeOffset utcNow = initial;
-
-    /// <inheritdoc />
-    public override DateTimeOffset GetUtcNow()
-    {
-        return utcNow;
-    }
-}

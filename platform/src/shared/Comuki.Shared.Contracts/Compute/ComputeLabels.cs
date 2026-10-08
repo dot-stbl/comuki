@@ -42,7 +42,6 @@ public static partial class ComputeLabels
     /// <summary>Replaces every character a Kubernetes label value cannot
     /// carry with <c>_</c> and trims leading/trailing ones (a label value
     /// must start and end with an alphanumeric).</summary>
-    /// <param name="value"></param>
     public static string Sanitize(string value)
     {
         return InvalidLabelChars().Replace(value, "_").Trim('_');

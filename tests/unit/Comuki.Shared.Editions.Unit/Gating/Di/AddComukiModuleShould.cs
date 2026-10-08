@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -155,7 +156,7 @@ public sealed class AddComukiModuleShould
 
     private static (IServiceCollection Services, IEdition Edition) NewServicesBackedByTestLicense(string token)
     {
-        var clock = new MutableFakeTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
         var resolver = Substitute.For<ISecretResolver>();
         resolver.ResolveAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<string?>(token));
@@ -202,22 +203,6 @@ public sealed class AddComukiModuleShould
     private interface IGatedService;
 
     private sealed class GatedService : IGatedService;
-
-    /// <summary>Mutable fake clock — distinct from the one in <c>LicenseEditionShould</c> so the test file is self-contained.</summary>
-    private sealed class MutableFakeTimeProvider(DateTimeOffset now) : TimeProvider
-    {
-        private DateTimeOffset now = now;
-
-        public override DateTimeOffset GetUtcNow()
-        {
-            return now;
-        }
-
-        public void SetUtcNow(DateTimeOffset value)
-        {
-            now = value;
-        }
-    }
 
     /// <summary>
     /// Minimal <see cref="IOptionsMonitor{T}"/> adapter for tests —

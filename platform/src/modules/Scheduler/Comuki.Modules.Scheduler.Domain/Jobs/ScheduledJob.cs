@@ -139,7 +139,6 @@ public sealed class ScheduledJob
     /// from the same anchor (so a one-shot <see cref="RunOnOnceAt"/> job
     /// advances to the next cron tick immediately after firing).
     /// </summary>
-    /// <param name="lastFiredAt"></param>
     /// <exception cref="FormatException">The stored cron expression is malformed (data drift).</exception>
     public void MarkFired(DateTimeOffset lastFiredAt)
     {

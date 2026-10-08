@@ -8,7 +8,6 @@ namespace Comuki.Modules.Costs.Infrastructure.Persistence.Stores;
 /// sums over the <c>usage_events</c> table. Same singleton-over-factory
 /// shape as <see cref="EfUsageEventStore"/>.
 /// </summary>
-/// <param name="factory"></param>
 public sealed class EfPlatformCostAggregator(IDbContextFactory<CostsDbContext> factory) : IPlatformCostAggregator
 {
     /// <inheritdoc />

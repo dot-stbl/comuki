@@ -22,7 +22,6 @@ public static class MemoryScopeKeys
     public const string GlobalSubject = "global";
 
     /// <summary>Maps a scope to its wire key.</summary>
-    /// <param name="scope"></param>
     public static string Key(MemoryScope scope)
     {
         return scope switch
@@ -36,7 +35,6 @@ public static class MemoryScopeKeys
     }
 
     /// <summary>Parses a wire key; null when unknown.</summary>
-    /// <param name="key"></param>
     public static MemoryScope? Parse(string key)
     {
         return key switch
@@ -50,7 +48,6 @@ public static class MemoryScopeKeys
     }
 
     /// <summary>Parses a wire key or throws — the EF converter path (expression trees cannot inline throws).</summary>
-    /// <param name="key"></param>
     /// <exception cref="InvalidOperationException">The key is unknown.</exception>
     public static MemoryScope ParseRequired(string key)
     {

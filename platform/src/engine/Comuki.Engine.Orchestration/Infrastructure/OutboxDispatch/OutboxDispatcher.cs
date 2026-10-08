@@ -33,7 +33,6 @@ public sealed class OutboxDispatcher(
     /// Runs one dispatch sweep: claims up to <see cref="OutboxOptions.BatchSize"/>
     /// undispatched rows, publishes each, returns counts.
     /// </summary>
-    /// <param name="cancellationToken"></param>
     public async Task<OutboxDispatchSummary> DispatchAsync(CancellationToken cancellationToken = default)
     {
         var now = clock.GetUtcNow();

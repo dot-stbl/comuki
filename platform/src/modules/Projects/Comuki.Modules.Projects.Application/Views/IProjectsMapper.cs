@@ -12,17 +12,14 @@ namespace Comuki.Modules.Projects.Application.Views;
 public interface IProjectsMapper
 {
     /// <summary>Maps a project entity to its read model.</summary>
-    /// <param name="source"></param>
-    /// <returns></returns>
+    /// 
     public ProjectView ToView(Project source);
 
     /// <summary>Maps a settings entity to its read model.</summary>
-    /// <param name="source"></param>
-    /// <returns></returns>
+    /// 
     public ProjectSettingsView ToView(ProjectSettings source);
 
     /// <summary>Maps a project repository attachment entity to its read model.</summary>
-    /// <param name="source"></param>
-    /// <returns></returns>
+    /// 
     public ProjectRepositoryAttachmentView ToView(ProjectRepositoryAttachment source);
 }

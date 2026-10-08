@@ -58,7 +58,6 @@ public sealed class ChatSessionsController(
     }
 
     /// <summary>Lists the acting subject's recent active sessions.</summary>
-    /// <param name="cancellationToken"></param>
     [HttpGet("")]
     [ProducesResponseType<IReadOnlyList<ChatSessionView>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ChatSessionView>>> ListAsync(CancellationToken cancellationToken = default)

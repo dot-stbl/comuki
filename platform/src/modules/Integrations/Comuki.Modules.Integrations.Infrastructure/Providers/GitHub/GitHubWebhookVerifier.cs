@@ -18,7 +18,7 @@ public static class GitHubWebhookVerifier
     /// <param name="secret">The webhook secret; null/empty fails closed.</param>
     /// <param name="signatureHeader">The raw header value.</param>
     /// <param name="body">The exact bytes the signature was computed over.</param>
-    /// <returns></returns>
+    /// 
     public static bool Verify(string? secret, string? signatureHeader, ReadOnlySpan<byte> body)
     {
         if (string.IsNullOrEmpty(secret)

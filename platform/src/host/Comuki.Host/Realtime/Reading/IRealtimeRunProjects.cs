@@ -16,7 +16,7 @@ public interface IRealtimeRunProjects
     /// </summary>
     /// <param name="runIds"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<IReadOnlyDictionary<RunId, ProjectId>> ReadAsync(
         IReadOnlyCollection<RunId> runIds,
         CancellationToken cancellationToken = default);

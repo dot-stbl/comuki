@@ -17,7 +17,6 @@ public static class SchedulerApplicationExtensions
     /// host (it knows the engine); the dispatcher worker lives in
     /// Infrastructure (it owns the BackgroundService dependency).
     /// </summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddSchedulerApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);

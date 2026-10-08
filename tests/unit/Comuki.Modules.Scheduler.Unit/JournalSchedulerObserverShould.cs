@@ -106,7 +106,7 @@ file static class JournalScopeFactory
 {
     /// <summary>Builds the scope-factory stub for the supplied journal mock.</summary>
     /// <param name="journal">Mock the scope will resolve.</param>
-    /// <returns></returns>
+    /// 
     public static IServiceScopeFactory Build(IRunJournal journal)
     {
         var scope = Substitute.For<IServiceScope>();

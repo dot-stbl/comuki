@@ -23,6 +23,6 @@ public interface IIntegrationProfileRouter
     /// </summary>
     /// <param name="connection"></param>
     /// <param name="ticket"></param>
-    /// <returns></returns>
+    /// 
     public string ResolveProfileKey(SourceConnection? connection, InboundItem ticket);
 }

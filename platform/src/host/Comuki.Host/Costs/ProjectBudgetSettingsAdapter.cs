@@ -8,7 +8,6 @@ namespace Comuki.Host.Costs;
 /// Reads soft/hard budget caps from the live Projects settings store
 /// (cache-backed). Singleton — the store is singleton.
 /// </summary>
-/// <param name="settings"></param>
 public sealed class ProjectBudgetSettingsAdapter(IProjectSettingsStore settings) : IProjectBudgetSettings
 {
     /// <inheritdoc />

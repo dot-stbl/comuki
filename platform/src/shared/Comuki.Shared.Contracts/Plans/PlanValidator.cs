@@ -9,7 +9,6 @@ namespace Comuki.Shared.Contracts.Plans;
 public static class PlanValidator
 {
     /// <summary>Validates a plan; every rule broken contributes one error.</summary>
-    /// <param name="plan"></param>
     public static PlanValidationResult Validate(Plan? plan)
     {
         if (plan is null)
@@ -91,7 +90,6 @@ public static class PlanValidator
     }
 
     /// <summary>Returns one node on a cycle, or null when the graph is a DAG. Tolerates duplicate ids (Validate reports those separately).</summary>
-    /// <param name="plan"></param>
     public static string? FindCycleNode(Plan plan)
     {
         // first-wins on duplicate ids: Validate() already reports them as

@@ -15,13 +15,13 @@ public interface IRoleAssignmentStore
     /// <summary>Lists every active assignment of a subject.</summary>
     /// <param name="subject"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<IReadOnlyList<RoleAssignment>> ListActiveAsync(RoleSubject subject, CancellationToken cancellationToken = default);
 
     /// <summary>Finds one active assignment by id.</summary>
     /// <param name="assignmentId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<RoleAssignment?> FindActiveAsync(RoleAssignmentId assignmentId, CancellationToken cancellationToken = default);
 
     /// <summary>Finds an active assignment of a subject for a role at a scope — the duplicate guard.</summary>
@@ -29,7 +29,7 @@ public interface IRoleAssignmentStore
     /// <param name="role"></param>
     /// <param name="scope"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<RoleAssignment?> FindActiveAsync(
         RoleSubject subject,
         Role role,
@@ -39,7 +39,7 @@ public interface IRoleAssignmentStore
     /// <summary>Persists a new or changed assignment.</summary>
     /// <param name="assignment"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task SaveAsync(RoleAssignment assignment, CancellationToken cancellationToken = default);
 
     /// <summary>

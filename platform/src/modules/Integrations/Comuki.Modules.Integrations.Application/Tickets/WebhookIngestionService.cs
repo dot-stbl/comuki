@@ -33,7 +33,7 @@ public sealed class WebhookIngestionService(
     /// <param name="webhookKey">Per-connection routing key from the route.</param>
     /// <param name="delivery"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<WebhookReceipt> HandleAsync(
         string sourceKey,
         string webhookKey,

@@ -11,7 +11,6 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Journal;
 /// <see cref="OrchestrationDbContext"/> run_events table. Reads are no-tracking
 /// and ordered by the timeline index (occurred_at, id).
 /// </summary>
-/// <param name="db"></param>
 public sealed class RunJournalEf(OrchestrationDbContext db) : IRunJournal
 {
     /// <inheritdoc />

@@ -15,7 +15,6 @@ namespace Comuki.Modules.Memory.Application.Digest;
 /// stand-in for the cosine path that activates once callers pass query
 /// embeddings into the store; ties break standing-first, freshest.
 /// </summary>
-/// <param name="store"></param>
 public sealed class MemoryDigest(IMemoryStore store)
 {
     private static readonly char[] tokenSeparators =

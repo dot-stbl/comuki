@@ -18,7 +18,6 @@ public static class IntegrationsApplicationExtensions
     /// run launcher, run status reader and the provider implementations
     /// are ports — the host composition (or a test) supplies them.
     /// </summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddIntegrationsApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);

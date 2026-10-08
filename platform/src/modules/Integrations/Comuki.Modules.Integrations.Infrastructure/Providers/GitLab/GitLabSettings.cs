@@ -25,8 +25,7 @@ public sealed record GitLabSettings(
     public const string DefaultApiBase = "https://gitlab.com/api/v4";
 
     /// <summary>Tolerant parse of the settings jsonb.</summary>
-    /// <param name="settingsJson"></param>
-    /// <returns></returns>
+    /// 
     public static GitLabSettings Parse(string? settingsJson)
     {
         using var document = TrackerSettingsJson.Parse(settingsJson);

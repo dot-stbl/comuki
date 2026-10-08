@@ -45,7 +45,7 @@ public sealed class RepositoryPolicy
     /// <param name="requiredChecks">Check names the host API reports as required.</param>
     /// <param name="approvers">User/team handles the host API reports as approvers.</param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static RepositoryPolicy Create(
         RepositoryId repositoryId,
         IEnumerable<string> protectedBranches,
@@ -103,8 +103,7 @@ file static class PolicyKeys
     /// maps it straight onto a <c>text[]</c> column without an
     /// intermediate <see cref="List{T}"/> round-trip.
     /// </summary>
-    /// <param name="keys"></param>
-    /// <returns></returns>
+    /// 
     public static string[] NormalizeList(IEnumerable<string> keys)
     {
         return

@@ -60,7 +60,6 @@ public sealed class MemoryFact
     public DateTimeOffset? LastReadAt { get; private set; }
 
     /// <summary>Canonicalizes a subject id or topic key: trimmed, lower-cased — one shape for entity and query.</summary>
-    /// <param name="value"></param>
     public static string CanonicalKey(string value)
     {
         return value.Trim().ToLowerInvariant();
@@ -108,7 +107,6 @@ public sealed class MemoryFact
     }
 
     /// <summary>Marks the fact superseded by a newer write on the same topic.</summary>
-    /// <param name="now"></param>
     public void Supersede(DateTimeOffset now)
     {
         SupersededAt = now;
@@ -119,7 +117,6 @@ public sealed class MemoryFact
     /// consolidation worker's promote (read count) and decay (last read)
     /// decisions; called by the store on every search hit.
     /// </summary>
-    /// <param name="now"></param>
     public void RegisterRead(DateTimeOffset now)
     {
         ReadCount++;

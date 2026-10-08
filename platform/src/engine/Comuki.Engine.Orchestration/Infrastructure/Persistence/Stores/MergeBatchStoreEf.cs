@@ -11,7 +11,6 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Persistence.Stores;
 /// uses (operators drive claim via <see cref="MergeBatch.Claim"/> + a
 /// regular save), so there is no raw-SQL branch here.
 /// </summary>
-/// <param name="db"></param>
 public sealed class MergeBatchStoreEf(OrchestrationDbContext db) : IMergeBatchStore
 {
     /// <inheritdoc />

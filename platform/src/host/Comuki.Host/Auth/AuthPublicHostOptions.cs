@@ -43,8 +43,7 @@ public sealed class AuthPublicHostOptions
     /// supplies one (the OIDC start endpoint fails with 404 on missing
     /// config + 500 on empty URL).
     /// </summary>
-    /// <param name="configuration"></param>
-    /// <returns></returns>
+    /// 
     public static AuthPublicHostOptions Resolve(IConfiguration configuration)
     {
         var bound = configuration.GetSection(SectionName).Get<AuthPublicHostOptions>() ?? new AuthPublicHostOptions();

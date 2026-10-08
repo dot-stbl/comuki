@@ -32,8 +32,7 @@ public sealed record LearningCandidateView(
     DateTimeOffset? DecidedAt)
 {
     /// <summary>Maps the domain entity.</summary>
-    /// <param name="candidate"></param>
-    /// <returns></returns>
+    /// 
     public static LearningCandidateView Of(LearningCandidate candidate)
     {
         return new LearningCandidateView(

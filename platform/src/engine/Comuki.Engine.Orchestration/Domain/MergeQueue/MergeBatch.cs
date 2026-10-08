@@ -104,7 +104,6 @@ public sealed class MergeBatch
     }
 
     /// <summary>Applies a status transition; illegal transitions throw — see <see cref="MergeBatchTransitions"/>.</summary>
-    /// <param name="to"></param>
     /// <exception cref="OrchestrationDomainException">the transition is not in <see cref="MergeBatchTransitions"/>.</exception>
     public void TransitionTo(MergeBatchStatus to)
     {
@@ -139,7 +138,6 @@ public sealed class MergeBatch
     /// <see cref="MergeBatchStatus.InProgress"/>; sets the merge
     /// timestamp.
     /// </summary>
-    /// <param name="now"></param>
     /// <exception cref="InvalidOperationException"></exception>
     public void MarkMerged(DateTimeOffset now)
     {

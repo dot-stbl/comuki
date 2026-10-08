@@ -171,7 +171,6 @@ file static class VisualArtifactsControllerQueriesHelpers
     }
 
     /// <summary>Maps persistence rows onto the wire view-model.</summary>
-    /// <param name="artifacts"></param>
     public static IReadOnlyList<VisualArtifactListItem> Project(IReadOnlyList<VisualArtifact> artifacts)
     {
         return [.. artifacts

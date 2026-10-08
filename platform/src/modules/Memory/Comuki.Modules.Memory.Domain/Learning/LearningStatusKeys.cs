@@ -13,7 +13,6 @@ public static class LearningStatusKeys
     public const string Rejected = "rejected";
 
     /// <summary>Maps a status to its wire key.</summary>
-    /// <param name="status"></param>
     public static string Key(LearningStatus status)
     {
         return status switch
@@ -26,7 +25,6 @@ public static class LearningStatusKeys
     }
 
     /// <summary>Parses a wire key; null when unknown.</summary>
-    /// <param name="key"></param>
     public static LearningStatus? Parse(string key)
     {
         return key switch
@@ -39,7 +37,6 @@ public static class LearningStatusKeys
     }
 
     /// <summary>Parses a wire key or throws — the EF converter path (expression trees cannot inline throws).</summary>
-    /// <param name="key"></param>
     /// <exception cref="InvalidOperationException">The key is unknown.</exception>
     public static LearningStatus ParseRequired(string key)
     {

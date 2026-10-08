@@ -46,7 +46,6 @@ public readonly record struct MergeQueueStatus
     }
 
     /// <summary>Parse a stored wire-form string back into the smart-type; throws on unknown values.</summary>
-    /// <param name="wire"></param>
     public static MergeQueueStatus FromWire(string wire)
     {
         return wire switch

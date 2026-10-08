@@ -1,23 +1,15 @@
 namespace Comuki.Host.Translator.Unit.Runtime;
 
 /// <summary>
-/// Deterministic clock for watchdog / deadline-policy unit tests —
-/// the production code reads time exclusively through the injected
-/// <see cref="TimeProvider"/>, so a test advances it instead of
-/// sleeping for real. Mirrors the shape of the shared testing-infra
-/// <c>FakeTimeProvider</c> in <c>Comuki.Host.Testing.Clocks</c>
-/// (mirrored here because this is a unit-test project, not
-/// integration, and unit tests must run without a Testcontainers
-/// runtime).
-/// <para>
-/// Implements <see cref="TimeProvider.CreateTimer"/> so the
-/// <c>WorkerProgressWatchdog</c> and <c>DeadlinePolicy</c> can
-/// drive their ticks through <see cref="ITimer"/> (the .NET 8+
-/// virtual timer). Tests advance time via <see cref="Advance"/>;
-/// the provider fires every timer whose <c>dueTime</c> has
-/// elapsed, in registration order. No <c>Task.Delay</c> in tests
-/// — the timer fires synchronously on advance.
-/// </para>
+/// Local <c>FakeTimeProvider</c> retained for Translator.Runtime unit tests.
+/// Microsoft.Extensions.Time.Testing.FakeTimeProvider advances the clock but
+/// snapshots the underlying <c>DateTimeOffset</c> at <c>Advance()</c>
+/// completion, so callbacks that read the clock from a per-tick
+/// <see cref="ITimer"/> observe the final value rather than the wall-clock
+/// reading of the tick that fired them. The watchdog and deadline-policy
+/// here are written against the per-tick reading; replacing this with the
+/// package provider would shift clock values in those callbacks and break
+/// the assertions on <c>BreachOccurredAt</c> and <c>LastTick</c>.
 /// </summary>
 /// <remarks>Constructs a clock pinned to the explicit starting instant.</remarks>
 /// <param name="initial">The reading <see cref="GetUtcNow"/> returns until the next <see cref="Advance"/>.</param>

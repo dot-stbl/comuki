@@ -15,7 +15,7 @@ public static class YandexTrackerWebhookVerifier
     /// <summary>Compares the secret header against the expected secret.</summary>
     /// <param name="secret">The webhook secret; null/empty fails closed.</param>
     /// <param name="secretHeader">The raw header value.</param>
-    /// <returns></returns>
+    /// 
     public static bool Verify(string? secret, string? secretHeader)
     {
         return !string.IsNullOrEmpty(secret) && secretHeader is not null && CryptographicOperations.FixedTimeEquals(

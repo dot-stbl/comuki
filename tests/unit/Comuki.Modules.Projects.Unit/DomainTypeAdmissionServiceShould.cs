@@ -174,10 +174,7 @@ file static class AdmissionFixtures
     private static readonly DateTimeOffset created = new(2026, 9, 7, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>Settings row carrying a routing mode and an optional JSON map.</summary>
-    /// <param name="projectId"></param>
-    /// <param name="mode"></param>
-    /// <param name="customDomainTypesJson"></param>
-    /// <returns></returns>
+    /// 
     public static ProjectSettings Settings(
         ProjectId projectId,
         ProjectDomainType mode,
@@ -203,10 +200,7 @@ file static class AdmissionFixtures
     }
 
     /// <summary>Service over substituted stores; the resolver is the real one.</summary>
-    /// <param name="projectId"></param>
-    /// <param name="settings"></param>
-    /// <param name="policy"></param>
-    /// <returns></returns>
+    /// 
     public static DomainTypeAdmissionService Service(
         ProjectId projectId,
         ProjectSettings? settings,

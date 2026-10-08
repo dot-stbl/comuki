@@ -13,7 +13,6 @@ namespace Comuki.Modules.Projects.Infrastructure.Persistence.Stores;
 /// mutate → save in one scope, the Identity store pattern); the list read
 /// is no-tracking.
 /// </summary>
-/// <param name="db"></param>
 public sealed class ProjectStore(ProjectsDbContext db) : IProjectStore
 {
     /// <inheritdoc />

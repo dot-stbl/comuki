@@ -34,7 +34,6 @@ public static class ControlPlaneDocumentParser
     /// block, no closing fence, or lacks a non-empty name and description.
     /// Listing many documents must not throw on one malformed entry.
     /// </summary>
-    /// <param name="text"></param>
     public static ControlPlaneDocument? Parse(string text)
     {
         var extracted = YamlishFrontmatter.Extract(text);

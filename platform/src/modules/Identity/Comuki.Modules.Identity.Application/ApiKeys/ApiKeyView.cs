@@ -31,8 +31,7 @@ public sealed record ApiKeyView(
     bool IsActive)
 {
     /// <summary>Maps the domain entity.</summary>
-    /// <param name="apiKey"></param>
-    /// <returns></returns>
+    /// 
     public static ApiKeyView Of(ApiKey apiKey)
     {
         return new ApiKeyView(

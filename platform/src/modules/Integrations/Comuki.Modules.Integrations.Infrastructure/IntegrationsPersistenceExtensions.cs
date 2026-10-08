@@ -22,7 +22,7 @@ public static class IntegrationsPersistenceExtensions
     /// </summary>
     /// <param name="services"></param>
     /// <param name="connectionString"></param>
-    /// <returns></returns>
+    /// 
     public static IServiceCollection AddIntegrationsPersistence(
         this IServiceCollection services,
         string connectionString)

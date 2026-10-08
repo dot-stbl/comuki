@@ -19,7 +19,6 @@ public static class StreamJsonParser
     /// Parses every non-empty line of <paramref name="reader"/> into a <see cref="PiEvent"/>.
     /// The reader is consumed line-by-line; the caller owns its lifetime and disposal.
     /// </summary>
-    /// <param name="reader"></param>
     public static IEnumerable<PiEvent> Parse(TextReader reader)
     {
         while (reader.ReadLine() is { } line)
@@ -35,7 +34,6 @@ public static class StreamJsonParser
     /// Parses a single line. Exposed separately so tests can target the per-line
     /// contract directly without wrapping strings in a <see cref="StringReader"/>.
     /// </summary>
-    /// <param name="line"></param>
     public static IEnumerable<PiEvent> ParseLine(string line)
     {
         if (string.IsNullOrWhiteSpace(line))

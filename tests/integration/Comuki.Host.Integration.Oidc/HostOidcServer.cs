@@ -80,10 +80,6 @@ public sealed class HostOidcServer : IAsyncLifetime
     }
 
     /// <summary>Runs the account linker against the host's own stores.</summary>
-    /// <param name="subject"></param>
-    /// <param name="email"></param>
-    /// <param name="displayName"></param>
-    /// <param name="cancellationToken"></param>
     public async Task<Modules.Identity.Application.Oidc.OidcLinkResult> LinkAsync(
         string subject,
         string email,

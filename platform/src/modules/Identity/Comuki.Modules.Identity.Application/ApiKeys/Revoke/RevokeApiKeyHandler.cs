@@ -15,7 +15,7 @@ public sealed class RevokeApiKeyHandler(IApiKeyStore apiKeyStore, TimeProvider c
     /// <summary>Revokes the key.</summary>
     /// <param name="apiKeyId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">Unknown api key id.</exception>
     public async Task<ApiKeyView> HandleAsync(Guid apiKeyId, CancellationToken cancellationToken = default)
     {

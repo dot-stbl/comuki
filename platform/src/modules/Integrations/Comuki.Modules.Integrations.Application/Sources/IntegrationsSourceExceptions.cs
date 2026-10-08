@@ -4,7 +4,6 @@ using Comuki.Shared.Kernel.Exceptions;
 namespace Comuki.Modules.Integrations.Application.Sources;
 
 /// <summary>Thrown when a source connection id is unknown (404).</summary>
-/// <param name="ConnectionId"></param>
 public sealed class SourceConnectionNotFoundException(SourceConnectionId ConnectionId)
     : DomainException(ErrorCode, $"source connection '{ConnectionId}' not found")
 {
@@ -12,7 +11,6 @@ public sealed class SourceConnectionNotFoundException(SourceConnectionId Connect
 }
 
 /// <summary>Thrown when an admission rule id is unknown (404).</summary>
-/// <param name="RuleId"></param>
 public sealed class AdmissionRuleNotFoundException(AdmissionRuleId RuleId)
     : DomainException(ErrorCode, $"admission rule '{RuleId}' not found")
 {

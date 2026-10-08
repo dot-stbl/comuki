@@ -15,19 +15,19 @@ public interface IProjectStore
     /// <summary>Finds a project by id.</summary>
     /// <param name="projectId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<Project?> FindByIdAsync(ProjectId projectId, CancellationToken cancellationToken = default);
 
     /// <summary>Finds a project by its (normalized, lower-cased) slug.</summary>
     /// <param name="slug"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<Project?> FindBySlugAsync(string slug, CancellationToken cancellationToken = default);
 
     /// <summary>Lists projects ordered by creation time; archived ones unless <paramref name="includeArchived"/>.</summary>
     /// <param name="includeArchived"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<IReadOnlyList<Project>> ListAsync(bool includeArchived, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -48,7 +48,7 @@ public interface IProjectStore
     /// <param name="project"></param>
     /// <param name="settings"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task AddAsync(Project project, ProjectSettings settings, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -76,6 +76,6 @@ public interface IProjectStore
     /// <summary>Persists a new or changed project.</summary>
     /// <param name="project"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task SaveAsync(Project project, CancellationToken cancellationToken = default);
 }

@@ -22,7 +22,6 @@ namespace Comuki.Modules.Repositories.Infrastructure.Persistence.Stores;
 /// of the lookup resolves to the winner's row.
 /// </para>
 /// </summary>
-/// <param name="db"></param>
 public sealed class RepositoryStore(RepositoriesDbContext db) : IRepositoryStore
 {
     /// <inheritdoc />

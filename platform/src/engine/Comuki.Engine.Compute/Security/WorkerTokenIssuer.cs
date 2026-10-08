@@ -38,7 +38,6 @@ public sealed class WorkerTokenIssuer(
     /// Validates a presented token. Returns the worker it belongs to, or null
     /// when the token is unknown, expired, or revoked.
     /// </summary>
-    /// <param name="token"></param>
     public WorkerId? Validate(string token)
     {
         var hash = WorkerTokenHasher.Hash(token, tokenOptions.Value.Pepper);
@@ -57,7 +56,6 @@ public sealed class WorkerTokenIssuer(
     }
 
     /// <summary>Revokes the token of a worker (stop / lease-expire path).</summary>
-    /// <param name="workerId"></param>
     public void Revoke(WorkerId workerId)
     {
         store.Revoke(workerId);

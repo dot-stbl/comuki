@@ -14,16 +14,14 @@ public sealed record WebhookDelivery(
     IReadOnlyDictionary<string, string> Query)
 {
     /// <summary>Case-insensitive header lookup; null when absent.</summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
+    /// 
     public string? Header(string name)
     {
         return Headers.TryGetValue(name, out var value) ? value : null;
     }
 
     /// <summary>Case-insensitive query lookup; null when absent.</summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
+    /// 
     public string? QueryParam(string name)
     {
         return Query.TryGetValue(name, out var value) ? value : null;

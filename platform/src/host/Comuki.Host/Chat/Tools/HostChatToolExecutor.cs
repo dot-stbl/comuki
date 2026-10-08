@@ -106,9 +106,7 @@ file static class HostChatTools
 }
 
 /// <summary>runs tool payload (camelCase).</summary>
-/// <param name="Runs"></param>
 internal sealed record RunsPayload(IReadOnlyList<RunSummary> Runs);
 
 /// <summary>create_ticket success payload (camelCase).</summary>
-/// <param name="RunId"></param>
 internal sealed record RunIdPayload(string RunId);

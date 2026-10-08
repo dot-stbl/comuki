@@ -10,8 +10,7 @@ public static class ScopeLevelKeys
     public const string Project = "project";
 
     /// <summary>Returns the key of a scope level; total over the enum.</summary>
-    /// <param name="level"></param>
-    /// <returns></returns>
+    /// 
     public static string Key(ScopeLevel level)
     {
         return level switch
@@ -23,8 +22,7 @@ public static class ScopeLevelKeys
     }
 
     /// <summary>Parses a stored key back into a scope level; null when unknown.</summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// 
     public static ScopeLevel? Parse(string key)
     {
         return key switch

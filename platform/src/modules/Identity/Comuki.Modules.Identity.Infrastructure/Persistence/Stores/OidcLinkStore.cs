@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Comuki.Modules.Identity.Infrastructure.Persistence.Stores;
 
 /// <summary>EF implementation of <see cref="IOidcLinkStore"/>.</summary>
-/// <param name="db"></param>
 public sealed class OidcLinkStore(IdentityDbContext db) : IOidcLinkStore
 {
     /// <inheritdoc />

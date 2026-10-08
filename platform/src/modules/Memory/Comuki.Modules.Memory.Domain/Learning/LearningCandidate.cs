@@ -123,7 +123,6 @@ public sealed class LearningCandidate
     }
 
     /// <summary>Marks the candidate approved; deciding twice is refused.</summary>
-    /// <param name="now"></param>
     /// <exception cref="InvalidOperationException">The candidate is already decided.</exception>
     public void Approve(DateTimeOffset now)
     {

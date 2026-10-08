@@ -14,7 +14,6 @@ public interface IPermissionCatalog
     public IReadOnlySet<PermissionKey> AllKeys { get; }
 
     /// <summary>Whether the catalog declares the key.</summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// 
     public bool Contains(PermissionKey key);
 }

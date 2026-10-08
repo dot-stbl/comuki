@@ -12,7 +12,6 @@ namespace Comuki.Engine.Compute.Settings;
 /// process memory. The DB-backed store lands with the settings API slice
 /// (T2.6) behind the same port; until then overrides vanish on restart.
 /// </summary>
-/// <param name="scaleOptions"></param>
 public sealed class InMemoryProjectScaleSettings(IOptions<ScaleSupervisorOptions> scaleOptions) : IProjectScaleSettings
 {
     private readonly ConcurrentDictionary<ProjectId, ProjectScaleSettings> overrides = new();

@@ -45,7 +45,6 @@ public sealed class WorkerCommandHandler(
     ILogger<WorkerCommandHandler> logger)
 {
     /// <summary>Consumes commands until the session stream ends or the stop token fires.</summary>
-    /// <param name="stoppingToken"></param>
     public async Task ConsumeAsync(CancellationToken stoppingToken)
     {
         while (await run.Session.TryReceiveAsync(stoppingToken) is { } command)

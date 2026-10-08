@@ -18,7 +18,7 @@ public interface IIntegrationSyncPort
     /// <param name="connection"></param>
     /// <param name="transition"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task TransitionAsync(
         SourceConnection connection,
         InboundItemTransition transition,

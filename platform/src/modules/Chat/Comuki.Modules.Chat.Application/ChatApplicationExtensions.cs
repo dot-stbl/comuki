@@ -25,7 +25,6 @@ public static class ChatApplicationExtensions
     /// <see cref="Shared.Contracts.Memory.IMemoryDigest"/>-ports and the
     /// compiled graph itself.
     /// </summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddChatApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);

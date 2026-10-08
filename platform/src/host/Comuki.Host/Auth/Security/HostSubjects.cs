@@ -13,8 +13,7 @@ namespace Comuki.Host.Auth.Security;
 public static class HostSubjects
 {
     /// <summary>Resolves the caller's subject from the claims principal.</summary>
-    /// <param name="principal"></param>
-    /// <returns></returns>
+    /// 
     public static RoleSubject? Resolve(ClaimsPrincipal principal)
     {
         return OfClaim(IdentityClaimNames.ApiKeyId, SubjectType.ApiKey, principal)
@@ -22,8 +21,7 @@ public static class HostSubjects
     }
 
     /// <summary>The owning user id of the caller — null when the caller is an api key without an owner stamp (rare).</summary>
-    /// <param name="principal"></param>
-    /// <returns></returns>
+    /// 
     public static Guid? OwnerUserIdOf(ClaimsPrincipal principal)
     {
         return principal.FindFirst(ClaimTypes.NameIdentifier)?.Value is { Length: > 0 } value

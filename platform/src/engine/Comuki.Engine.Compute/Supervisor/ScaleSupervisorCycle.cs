@@ -40,7 +40,6 @@ public sealed class ScaleSupervisorCycle(
     ILogger<ScaleSupervisorCycle> logger)
 {
     /// <summary>Runs one pass over every configured project and profile.</summary>
-    /// <param name="cancellationToken"></param>
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         var options = scaleOptions.Value;

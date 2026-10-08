@@ -27,8 +27,7 @@ public sealed record SourceConnectionView(
     bool Enabled)
 {
     /// <summary>Maps the domain entity.</summary>
-    /// <param name="connection"></param>
-    /// <returns></returns>
+    /// 
     public static SourceConnectionView Of(SourceConnection connection)
     {
         return new SourceConnectionView(

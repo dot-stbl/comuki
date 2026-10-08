@@ -17,7 +17,7 @@ public interface IGitHubApi
     /// <param name="perPage">Page size.</param>
     /// <param name="page">1-based page number.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Get("/repos/{owner}/{repo}/issues")]
     public Task<IReadOnlyList<GitHubIssue>> ListIssuesAsync(
         string owner,
@@ -33,7 +33,7 @@ public interface IGitHubApi
     /// <param name="issueNumber"></param>
     /// <param name="body"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Post("/repos/{owner}/{repo}/issues/{issueNumber}/comments")]
     public Task PostCommentAsync(string owner, string repo, int issueNumber, [Body] GitHubCommentBody body, CancellationToken cancellationToken);
 
@@ -43,7 +43,7 @@ public interface IGitHubApi
     /// <param name="issueNumber"></param>
     /// <param name="body"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     [Patch("/repos/{owner}/{repo}/issues/{issueNumber}")]
     public Task PatchIssueAsync(string owner, string repo, int issueNumber, [Body] GitHubIssueUpdate body, CancellationToken cancellationToken);
 }

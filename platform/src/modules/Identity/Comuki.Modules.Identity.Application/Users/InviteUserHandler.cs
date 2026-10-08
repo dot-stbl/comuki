@@ -30,7 +30,7 @@ public sealed class InviteUserHandler(
     /// <summary>Creates the invited account.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">The email is already taken.</exception>
     /// <exception cref="OidcLinkConflictException">The email is bound to an existing OIDC-linked user.</exception>
     public async Task<UserAccountView> HandleAsync(InviteUserCommand command, CancellationToken cancellationToken = default)

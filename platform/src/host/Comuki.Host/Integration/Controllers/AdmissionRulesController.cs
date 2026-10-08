@@ -13,7 +13,6 @@ namespace Comuki.Host.Integration.Controllers;
 /// webhook pipeline consults. Reads demand <c>integration:read</c>; writes
 /// demand <c>source:write</c>.
 /// </summary>
-/// <param name="rules"></param>
 [ApiController]
 [Route(ApiRoutes.AdmissionRules)]
 public sealed class AdmissionRulesController(AdmissionRuleService rules) : ControllerBase

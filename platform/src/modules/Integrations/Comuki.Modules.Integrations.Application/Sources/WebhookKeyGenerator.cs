@@ -15,7 +15,7 @@ public static class WebhookKeyGenerator
     private const string Alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
 
     /// <summary>Generates a new webhook key.</summary>
-    /// <returns></returns>
+    /// 
     public static string Generate()
     {
         var bytes = RandomNumberGenerator.GetBytes(Length);

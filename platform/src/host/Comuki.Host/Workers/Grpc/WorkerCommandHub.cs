@@ -24,7 +24,6 @@ public interface IWorkerCommandPipe
     public bool TrySendInjectContext(WorkerId workerId, string context);
 
     /// <summary>Tells a worker its lease expired and ownership is gone. False when no live stream.</summary>
-    /// <param name="workerId"></param>
     public bool TrySendLeaseExpired(WorkerId workerId);
 
     /// <summary>
@@ -58,7 +57,6 @@ public sealed class WorkerCommandHub() : IWorkerCommandPipe
     private readonly ConcurrentDictionary<WorkerId, Channel<OrchestratorCommand>> channelsByWorker = new();
 
     /// <summary>Registers a fresh command channel for the worker, replacing any previous one.</summary>
-    /// <param name="workerId"></param>
     public Channel<OrchestratorCommand> Register(WorkerId workerId)
     {
         var channel = Channel.CreateBounded<OrchestratorCommand>(

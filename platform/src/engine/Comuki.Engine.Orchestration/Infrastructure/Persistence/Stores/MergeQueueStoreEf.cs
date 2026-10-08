@@ -13,7 +13,6 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Persistence.Stores;
 /// <c>IWorkItemQueue</c> pattern, but the merge-queue is
 /// operator-driven, not worker-driven, so the SQL is much shorter).
 /// </summary>
-/// <param name="db"></param>
 public sealed class MergeQueueStoreEf(OrchestrationDbContext db) : IMergeQueueStore
 {
     /// <inheritdoc />

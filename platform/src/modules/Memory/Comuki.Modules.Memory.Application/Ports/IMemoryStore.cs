@@ -84,6 +84,5 @@ public interface IMemoryStore
     public Task<int> DecayUnreadFactsAsync(DateTimeOffset now, TimeSpan unreadWindow, CancellationToken cancellationToken = default);
 
     /// <summary>Counts active (not superseded) facts of every scope — the consolidation worker's totals.</summary>
-    /// <param name="cancellationToken"></param>
     public Task<int> CountActiveFactsAsync(CancellationToken cancellationToken = default);
 }

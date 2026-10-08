@@ -16,8 +16,7 @@ public sealed record AdmissionRuleView(
     bool Enabled)
 {
     /// <summary>Maps the domain entity.</summary>
-    /// <param name="rule"></param>
-    /// <returns></returns>
+    /// 
     public static AdmissionRuleView Of(AdmissionRule rule)
     {
         return new AdmissionRuleView(

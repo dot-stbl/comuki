@@ -9,7 +9,6 @@ namespace Comuki.Modules.Identity.Infrastructure.Persistence.Stores;
 /// EF implementation of <see cref="IUserAccountStore"/> over
 /// <see cref="IdentityDbContext"/>. Scoped — one context per unit of work.
 /// </summary>
-/// <param name="db"></param>
 public sealed class UserAccountStore(IdentityDbContext db) : IUserAccountStore
 {
     /// <inheritdoc />

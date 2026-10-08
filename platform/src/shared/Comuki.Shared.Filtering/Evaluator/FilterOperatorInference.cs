@@ -26,7 +26,6 @@ public static class FilterOperatorInference
     ///     <see cref="FilterOperator.None" /> when the type is not filterable at all
     ///     (in which case the field is excluded from the registry).
     /// </summary>
-    /// <param name="type"></param>
     public static FilterOperator Infer(Type type)
     {
         return FilterOperatorRegistry.OperatorsFor(type);

@@ -20,7 +20,7 @@ public sealed class UpdateSettingsHandler(IProjectSettingsStore settings, TimePr
     /// <summary>Updates the settings.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="ProjectNotFoundException">No settings row for the project.</exception>
     /// <exception cref="ProjectSettingsConflictException">The presented version is stale.</exception>
     public async Task<ProjectSettingsView> HandleAsync(

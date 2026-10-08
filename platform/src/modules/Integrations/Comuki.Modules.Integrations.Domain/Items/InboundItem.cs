@@ -130,7 +130,6 @@ public sealed class InboundItem
     /// sync-back routing target). Set once by the webhook pipeline
     /// before the inbound item is stored; native items stay unbound.
     /// </summary>
-    /// <param name="connectionId"></param>
     public void BindConnection(SourceConnectionId connectionId)
     {
         ConnectionId = connectionId;
@@ -156,7 +155,6 @@ public sealed class InboundItem
     /// Releases the lock after the run reached a terminal status; legal
     /// only from <see cref="InboundItemStatus.Claimed"/>.
     /// </summary>
-    /// <param name="now"></param>
     /// <exception cref="InvalidOperationException">The inbound item has no live claim.</exception>
     public void MarkDone(DateTimeOffset now)
     {
@@ -170,7 +168,6 @@ public sealed class InboundItem
     }
 
     /// <summary>Marks a pending inbound item filtered-out; never conflicts with the active lock.</summary>
-    /// <param name="now"></param>
     public void MarkDismissed(DateTimeOffset now)
     {
         Status = InboundItemStatus.Dismissed;

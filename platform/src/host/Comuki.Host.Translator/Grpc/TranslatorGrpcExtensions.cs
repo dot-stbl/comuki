@@ -13,7 +13,6 @@ namespace Comuki.Host.Translator.Grpc;
 public static class TranslatorGrpcExtensions
 {
     /// <summary>Adds the worker gRPC channel and <see cref="IWorkerService"/> client.</summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddWorkerGrpcClient(this IServiceCollection services)
     {
         services.AddSingleton(static serviceProvider =>

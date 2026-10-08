@@ -78,7 +78,6 @@ public sealed class ScheduledJobDispatcherComukiWorker(
     /// tests that need to drive the dispatcher deterministically rather
     /// than wait for the 30-second interval.
     /// </summary>
-    /// <param name="cancellationToken"></param>
     /// <returns>Number of jobs fired in this cycle.</returns>
     public async Task<int> PollOnceAsync(CancellationToken cancellationToken)
     {

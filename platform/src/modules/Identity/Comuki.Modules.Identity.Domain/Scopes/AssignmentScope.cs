@@ -18,8 +18,7 @@ public readonly record struct AssignmentScope(ScopeLevel Level, ProjectId? Proje
     }
 
     /// <summary>Creates a project scope; the project id must be set.</summary>
-    /// <param name="projectId"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="ArgumentException">The project id is empty.</exception>
     public static AssignmentScope ForProject(ProjectId projectId)
     {

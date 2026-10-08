@@ -11,7 +11,7 @@ public sealed class ListProjectsHandler(IProjectStore projects, IProjectsMapper 
     /// <summary>Returns the project list ordered by creation time.</summary>
     /// <param name="includeArchived"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<IReadOnlyList<ProjectView>> HandleAsync(
         bool includeArchived,
         CancellationToken cancellationToken = default)

@@ -18,7 +18,6 @@ public static class RunJournalPayloads
         long SizeBytes);
 
     /// <summary>Serialises an <see cref="ArtifactPublishedPayload"/> to compact JSON for the journal.</summary>
-    /// <param name="payload"></param>
     public static string SerialiseArtifactPublished(ArtifactPublishedPayload payload)
     {
         return JsonSerializer.Serialize(payload, JsonSerializerOptions.Web);

@@ -73,7 +73,6 @@ public sealed class WorkerSession : IAsyncDisposable
     /// Waits for the next orchestrator command; null when the stream ended
     /// (server closed or the session was disposed).
     /// </summary>
-    /// <param name="cancellationToken"></param>
     public async ValueTask<OrchestratorCommand?> TryReceiveAsync(CancellationToken cancellationToken = default)
     {
         try

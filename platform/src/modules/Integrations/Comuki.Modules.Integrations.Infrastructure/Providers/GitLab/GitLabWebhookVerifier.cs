@@ -13,7 +13,7 @@ public static class GitLabWebhookVerifier
     /// <summary>Compares the token header against the expected secret.</summary>
     /// <param name="secret">The webhook token; null/empty fails closed.</param>
     /// <param name="tokenHeader">The raw header value.</param>
-    /// <returns></returns>
+    /// 
     public static bool Verify(string? secret, string? tokenHeader)
     {
         return !string.IsNullOrEmpty(secret) && tokenHeader is not null && CryptographicOperations.FixedTimeEquals(

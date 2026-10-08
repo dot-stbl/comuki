@@ -20,8 +20,7 @@ public sealed record AdmissionFilter(IReadOnlySet<string> LabelsAny, IReadOnlySe
         new HashSet<string>(StringComparer.OrdinalIgnoreCase));
 
     /// <summary>Tolerant parse of the rule's filter jsonb.</summary>
-    /// <param name="filterJson"></param>
-    /// <returns></returns>
+    /// 
     public static AdmissionFilter Parse(string? filterJson)
     {
         if (string.IsNullOrWhiteSpace(filterJson))

@@ -39,8 +39,7 @@ public readonly record struct ApiKeyToken(string Prefix, string Secret)
     }
 
     /// <summary>Parses a presented bearer token; null when malformed.</summary>
-    /// <param name="token"></param>
-    /// <returns></returns>
+    /// 
     public static ApiKeyToken? Parse(string token)
     {
         if (!token.StartsWith(TokenPrefix, StringComparison.Ordinal))

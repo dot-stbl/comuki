@@ -22,7 +22,6 @@ public sealed class ChatTurnResultView
     public JsonDocument? PendingPlan { get; init; }
 
     /// <summary>Maps the application turn result.</summary>
-    /// <param name="result"></param>
     public static ChatTurnResultView Of(ChatTurnResult result)
     {
         return new ChatTurnResultView

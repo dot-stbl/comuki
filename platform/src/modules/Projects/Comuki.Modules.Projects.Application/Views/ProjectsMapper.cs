@@ -22,18 +22,15 @@ namespace Comuki.Modules.Projects.Application.Views;
 public sealed partial class ProjectsMapper : IProjectsMapper
 {
     /// <summary>Maps a project entity to its read model.</summary>
-    /// <param name="source"></param>
-    /// <returns></returns>
+    /// 
     public partial ProjectView ToView(Project source);
 
     /// <summary>Maps a settings entity to its read model.</summary>
-    /// <param name="source"></param>
-    /// <returns></returns>
+    /// 
     public partial ProjectSettingsView ToView(ProjectSettings source);
 
     /// <summary>Maps a project repository attachment entity to its read model.</summary>
-    /// <param name="source"></param>
-    /// <returns></returns>
+    /// 
     [MapProperty(nameof(ProjectRepositoryAttachment.Role), nameof(ProjectRepositoryAttachmentView.Role), Use = nameof(RoleWire))]
     public partial ProjectRepositoryAttachmentView ToView(ProjectRepositoryAttachment source);
 

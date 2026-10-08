@@ -6,7 +6,6 @@ namespace Comuki.Modules.Knowledge.Domain;
 /// Carried on <see cref="SourceDocument"/> when <see cref="SourceKind.Wiki"/>
 /// is the document's origin kind; null for every other kind.
 /// </summary>
-/// <param name="Value"></param>
 public readonly record struct WikiPageId(Guid Value)
 {
     /// <summary>Creates a fresh UUIDv7 id.</summary>

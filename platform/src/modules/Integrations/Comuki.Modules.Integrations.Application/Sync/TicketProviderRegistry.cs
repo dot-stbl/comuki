@@ -20,16 +20,14 @@ public sealed class TicketProviderRegistry(
     private readonly IReadOnlyList<IIntegrationSyncPort> syncPorts = [.. registeredSyncPorts];
 
     /// <summary>The source provider serving the key; null when unregistered.</summary>
-    /// <param name="sourceKey"></param>
-    /// <returns></returns>
+    /// 
     public ITicketSourceProvider? FindSource(string sourceKey)
     {
         return sources.FirstOrDefault(provider => string.Equals(provider.SourceKey, sourceKey, StringComparison.Ordinal));
     }
 
     /// <summary>The sync port serving the key; null when unregistered (e.g. the native source).</summary>
-    /// <param name="sourceKey"></param>
-    /// <returns></returns>
+    /// 
     public IIntegrationSyncPort? FindSync(string sourceKey)
     {
         return syncPorts.FirstOrDefault(port => string.Equals(port.SourceKey, sourceKey, StringComparison.Ordinal));

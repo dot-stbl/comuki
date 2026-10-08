@@ -15,7 +15,6 @@ namespace Comuki.Modules.Integrations.Infrastructure.Providers;
 /// shape. The serializer uses the frozen Web defaults (the documented
 /// Refit exception to the shared-options rule).
 /// </summary>
-/// <param name="httpClientFactory"></param>
 public sealed class TrackerClientFactory(IHttpClientFactory httpClientFactory)
 {
     private static readonly RefitSettings refitSettings = new()
@@ -26,7 +25,7 @@ public sealed class TrackerClientFactory(IHttpClientFactory httpClientFactory)
     /// <summary>A GitHub API client bound to the connection's settings.</summary>
     /// <param name="apiBase">API base URL (public or enterprise).</param>
     /// <param name="token">Bearer token (PAT); null for anonymous.</param>
-    /// <returns></returns>
+    /// 
     public GitHub.IGitHubApi GitHub(string apiBase, string? token)
     {
         var http = httpClientFactory.CreateClient(TrackerHttp.GitHubClient);
@@ -39,7 +38,7 @@ public sealed class TrackerClientFactory(IHttpClientFactory httpClientFactory)
     /// <summary>A GitLab API client bound to the connection's settings.</summary>
     /// <param name="apiBase">API base URL (gitlab.com or self-hosted, with /api/v4).</param>
     /// <param name="token">Private token.</param>
-    /// <returns></returns>
+    /// 
     public GitLab.IGitLabApi GitLab(string apiBase, string? token)
     {
         var http = httpClientFactory.CreateClient(TrackerHttp.GitLabClient);
@@ -56,7 +55,7 @@ public sealed class TrackerClientFactory(IHttpClientFactory httpClientFactory)
     /// <param name="apiBase">API base URL (default https://api.tracker.yandex.net).</param>
     /// <param name="token">OAuth token.</param>
     /// <param name="orgId">Organization id (X-Org-Id header).</param>
-    /// <returns></returns>
+    /// 
     public YandexTracker.IYandexTrackerApi YandexTracker(string apiBase, string? token, string? orgId)
     {
         var http = httpClientFactory.CreateClient(TrackerHttp.YandexTrackerClient);
@@ -77,7 +76,7 @@ public sealed class TrackerClientFactory(IHttpClientFactory httpClientFactory)
     /// <summary>A Jira API client bound to the connection's settings.</summary>
     /// <param name="site">Site base URL (https://{site}.atlassian.net).</param>
     /// <param name="basicCredential">"email:api-token" pair for basic auth.</param>
-    /// <returns></returns>
+    /// 
     public Jira.IJiraApi Jira(string site, string? basicCredential)
     {
         var http = httpClientFactory.CreateClient(TrackerHttp.JiraClient);

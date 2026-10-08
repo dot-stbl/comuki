@@ -20,7 +20,7 @@ public sealed record DomainTypeAdmissionDecision(
     /// <summary>Admitted, routed to <paramref name="profileKey"/>.</summary>
     /// <param name="domainType"></param>
     /// <param name="profileKey"></param>
-    /// <returns></returns>
+    /// 
     public static DomainTypeAdmissionDecision Admit(string domainType, string profileKey)
     {
         return new DomainTypeAdmissionDecision(Admitted: true, domainType, profileKey, []);
@@ -29,7 +29,7 @@ public sealed record DomainTypeAdmissionDecision(
     /// <summary>Denied for <paramref name="reasons"/> (never empty by construction of the callers).</summary>
     /// <param name="domainType"></param>
     /// <param name="reasons"></param>
-    /// <returns></returns>
+    /// 
     public static DomainTypeAdmissionDecision Deny(string domainType, IReadOnlyList<string> reasons)
     {
         return new DomainTypeAdmissionDecision(Admitted: false, domainType, ProfileKey: null, reasons);

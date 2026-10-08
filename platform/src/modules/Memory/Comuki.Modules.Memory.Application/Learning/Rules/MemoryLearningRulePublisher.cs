@@ -14,7 +14,6 @@ namespace Comuki.Modules.Memory.Application.Learning.Rules;
 /// project constraint. The observation rides along in the text: a rule
 /// without its evidence cannot be judged by the next reader.
 /// </summary>
-/// <param name="memoryStore"></param>
 public sealed class MemoryLearningRulePublisher(IMemoryStore memoryStore) : ILearningRulePublisher
 {
     /// <summary>The topic-key prefix that marks a fact as an approved learning rule.</summary>

@@ -28,8 +28,7 @@ public sealed record JiraSettings(
     public const string DefaultWebhookSecretParam = "secret";
 
     /// <summary>Tolerant parse of the settings jsonb.</summary>
-    /// <param name="settingsJson"></param>
-    /// <returns></returns>
+    /// 
     public static JiraSettings Parse(string? settingsJson)
     {
         using var document = TrackerSettingsJson.Parse(settingsJson);

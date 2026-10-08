@@ -15,8 +15,7 @@ public static class AuthSchemes
     public const string ApiKey = "Comuki.ApiKey";
 
     /// <summary>Scheme name of one configured OIDC provider.</summary>
-    /// <param name="provider"></param>
-    /// <returns></returns>
+    /// 
     public static string Oidc(string provider)
     {
         return $"Comuki.Oidc.{provider}";

@@ -19,7 +19,6 @@ public static class MemorySourceKeys
     public const string Seeder = "seeder";
 
     /// <summary>Maps a source to its wire key.</summary>
-    /// <param name="source"></param>
     public static string Key(MemorySource source)
     {
         return source switch
@@ -34,7 +33,6 @@ public static class MemorySourceKeys
     }
 
     /// <summary>Parses a wire key; null when unknown.</summary>
-    /// <param name="key"></param>
     public static MemorySource? Parse(string key)
     {
         return key switch
@@ -49,7 +47,6 @@ public static class MemorySourceKeys
     }
 
     /// <summary>Parses a wire key or throws — the EF converter path (expression trees cannot inline throws).</summary>
-    /// <param name="key"></param>
     /// <exception cref="InvalidOperationException">The key is unknown.</exception>
     public static MemorySource ParseRequired(string key)
     {

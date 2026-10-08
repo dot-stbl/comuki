@@ -85,8 +85,7 @@ public sealed class ProjectSettingsCacheRefresherComukiWorker(
     }
 
     /// <summary>Reads every settings row and warms the cache with it.</summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task RefreshAllAsync(CancellationToken cancellationToken = default)
     {
         using var systemScope = scopeAccessor.AsSystem("project-settings-refresher");

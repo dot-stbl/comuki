@@ -12,7 +12,6 @@ namespace Comuki.Engine.Compute.Ports;
 public interface IProjectScaleSettings
 {
     /// <summary>Effective settings of the project — the per-project override, or the options defaults.</summary>
-    /// <param name="projectId"></param>
     public ProjectScaleSettings Get(ProjectId projectId);
 
     /// <summary>Sets a per-project override (the settings API writes here once T2.6 lands).</summary>

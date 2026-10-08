@@ -13,7 +13,6 @@ namespace Comuki.Host.Integration.Controllers;
 /// external tracker). Subject to the same one-live-run lock as tracker
 /// inbound items.
 /// </summary>
-/// <param name="nativeInboundItems"></param>
 [ApiController]
 [Route(ApiRoutes.Items)]
 [RequiresPermission("run:create")]

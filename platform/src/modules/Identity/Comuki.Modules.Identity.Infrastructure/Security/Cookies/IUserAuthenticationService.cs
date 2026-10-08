@@ -15,7 +15,7 @@ public interface IUserAuthenticationService
     /// <summary>Verifies credentials and signs in the cookie on success.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<LoginResult> LoginAsync(LoginCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -23,8 +23,7 @@ public interface IUserAuthenticationService
     /// account's tokens_version is bumped, so an outstanding cookie (the
     /// browser's copy or a stolen one) fails the next security-stamp recheck.
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task LogoutAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -33,6 +32,6 @@ public interface IUserAuthenticationService
     /// </summary>
     /// <param name="principal"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<bool> ValidateCookieAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default);
 }

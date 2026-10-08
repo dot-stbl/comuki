@@ -15,7 +15,6 @@ namespace Comuki.Host.Mcp;
 public static class McpModuleEndpoints
 {
     /// <summary>Maps the MCP JSON-RPC 2.0 endpoint.</summary>
-    /// <param name="app"></param>
     public static IEndpointRouteBuilder MapMcpEndpoints(this IEndpointRouteBuilder app)
     {
         // Anonymous — the resolved caller drives the gates. The host's

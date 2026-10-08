@@ -17,7 +17,6 @@ public interface IVirtualKeyStore
     public Task<VirtualKey?> FindAsync(string token, CancellationToken cancellationToken = default);
 
     /// <summary>Returns every key — used by the model catalogue and health checks.</summary>
-    /// <param name="cancellationToken"></param>
     public Task<IReadOnlyList<VirtualKey>> ListAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Removes the key from the active set. Implementations that support

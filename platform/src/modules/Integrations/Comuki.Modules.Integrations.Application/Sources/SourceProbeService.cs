@@ -15,7 +15,6 @@ namespace Comuki.Modules.Integrations.Application.Sources;
 /// still a 200 — the dashboard renders the provider's sentence rather
 /// than a generic error.
 /// </summary>
-/// <param name="providers"></param>
 public sealed class SourceProbeService(TicketProviderRegistry providers)
 {
     /// <summary>The default timeout for the probe HTTP request.</summary>
@@ -26,7 +25,7 @@ public sealed class SourceProbeService(TicketProviderRegistry providers)
     /// <param name="settingsJson">Provider-specific, non-secret settings.</param>
     /// <param name="secretEnvRef">Env-var name holding the webhook / outbound token.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<SourceProbeResult> ProbeDraftAsync(
         string provider,
         string settingsJson,

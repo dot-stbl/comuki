@@ -13,7 +13,7 @@ public sealed class ListProjectAttachmentsHandler(
     /// <summary>Returns the attachment list as views.</summary>
     /// <param name="projectId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<IReadOnlyList<ProjectRepositoryAttachmentView>> HandleAsync(
         ProjectId projectId,
         CancellationToken cancellationToken = default)

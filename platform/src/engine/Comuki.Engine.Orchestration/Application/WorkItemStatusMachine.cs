@@ -36,7 +36,6 @@ public sealed class WorkItemStatusMachine
     }
 
     /// <summary>All statuses reachable from <paramref name="from"/> in one hop.</summary>
-    /// <param name="from"></param>
     public IReadOnlyCollection<WorkItemStatus> AllowedTargets(WorkItemStatus from)
     {
         return allowed.TryGetValue(from, out var targets) ? targets : [];

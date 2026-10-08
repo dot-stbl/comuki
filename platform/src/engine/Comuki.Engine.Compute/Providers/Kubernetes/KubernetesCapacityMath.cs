@@ -101,7 +101,6 @@ internal static class KubernetesCapacityMath
     }
 
     /// <summary>Parses a cpu quantity into millicores: <c>500m</c> → 500, <c>2</c> / <c>1.5</c> → 2000 / 1500. Unparsable input yields 0 — capacity is a hint.</summary>
-    /// <param name="quantity"></param>
     public static long ParseCpuMillis(string? quantity)
     {
         var value = quantity?.Trim();
@@ -123,7 +122,6 @@ internal static class KubernetesCapacityMath
     }
 
     /// <summary>Parses a memory quantity into bytes (<c>1Ki</c> → 1024, <c>512Mi</c>, <c>2Gi</c>, decimal <c>1k</c> → 1000). Unparsable input yields 0.</summary>
-    /// <param name="quantity"></param>
     public static long ParseMemoryBytes(string? quantity)
     {
         var value = quantity?.Trim();

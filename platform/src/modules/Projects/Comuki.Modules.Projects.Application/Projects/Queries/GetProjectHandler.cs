@@ -12,7 +12,7 @@ public sealed class GetProjectHandler(IProjectStore projects, IProjectsMapper ma
     /// <summary>Returns the project view.</summary>
     /// <param name="projectId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="ProjectNotFoundException">No project with the given id.</exception>
     public async Task<ProjectView> HandleAsync(ProjectId projectId, CancellationToken cancellationToken = default)
     {

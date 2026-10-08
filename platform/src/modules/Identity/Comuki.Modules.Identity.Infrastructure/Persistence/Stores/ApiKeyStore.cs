@@ -10,7 +10,6 @@ namespace Comuki.Modules.Identity.Infrastructure.Persistence.Stores;
 /// is the auth handler's single indexed lookup; revoked rows are still
 /// returned — revocation is a status, and the handler answers for it.
 /// </summary>
-/// <param name="db"></param>
 public sealed class ApiKeyStore(IdentityDbContext db) : IApiKeyStore
 {
     /// <inheritdoc />

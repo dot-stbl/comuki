@@ -128,7 +128,6 @@ public sealed class MinioVisualArtifactStorage(
     }
 
     /// <summary>True when the SDK raised a not-found (object missing or bucket missing).</summary>
-    /// <param name="exception"></param>
     internal static bool IsMinioNotFound(MinioException exception)
     {
         return exception.Message.Contains("Not Found", StringComparison.OrdinalIgnoreCase)

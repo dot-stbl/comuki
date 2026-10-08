@@ -42,7 +42,6 @@ public readonly record struct NodeKindIdempotency
     /// lowercase by convention, PascalCase is the canonical wire form).
     /// Throws on unknown values.
     /// </summary>
-    /// <param name="wire"></param>
     // TODO(SMART-TYPES): убрать после [SmartType]-генератора — см. source-generators.md §1
     public static NodeKindIdempotency FromWire(string wire)
     {

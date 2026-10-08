@@ -13,7 +13,6 @@ namespace Comuki.Host.Translator.Api.Registration;
 public static class TranslatorApiExtensions
 {
     /// <summary>Adds the orchestrator Refit client with auth + resilience.</summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddOrchestratorApi(this IServiceCollection services)
     {
         services.AddTransient<WorkerTokenHandler>();

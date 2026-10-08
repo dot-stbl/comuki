@@ -66,7 +66,6 @@ public sealed class RunArtifactPackagerComukiWorker(
     /// that need to drive the packager deterministically rather than wait
     /// for the 10-second interval.
     /// </summary>
-    /// <param name="cancellationToken"></param>
     public async Task PollOnceAsync(CancellationToken cancellationToken)
     {
         await using var cycleScope = scopeFactory.CreateAsyncScope();

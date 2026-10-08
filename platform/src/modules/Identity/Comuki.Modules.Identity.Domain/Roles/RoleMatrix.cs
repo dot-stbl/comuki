@@ -138,16 +138,14 @@ public static class RoleMatrix
     public static IReadOnlySet<PermissionKey> AllPermissionKeys => allKeys;
 
     /// <summary>The permission set a role carries — read-only, code-declared.</summary>
-    /// <param name="role"></param>
-    /// <returns></returns>
+    /// 
     public static IReadOnlySet<PermissionKey> PermissionsOf(Role role)
     {
         return permissionsByRole.TryGetValue(role, out var permissions) ? permissions : [];
     }
 
     /// <summary>The role's seniority (higher = more senior). Total over the enum.</summary>
-    /// <param name="role"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="ArgumentOutOfRangeException">Unknown role.</exception>
     public static int SeniorityOf(Role role)
     {

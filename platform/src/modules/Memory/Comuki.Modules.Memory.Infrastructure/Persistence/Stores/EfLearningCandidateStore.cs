@@ -15,7 +15,6 @@ namespace Comuki.Modules.Memory.Infrastructure.Persistence.Stores;
 /// the approvals surface's gate is the learning:read / learning:write
 /// permission, not a subject-scope row filter.
 /// </summary>
-/// <param name="dbFactory"></param>
 public sealed class EfLearningCandidateStore(IDbContextFactory<MemoryDbContext> dbFactory) : ILearningCandidateStore
 {
     /// <inheritdoc />

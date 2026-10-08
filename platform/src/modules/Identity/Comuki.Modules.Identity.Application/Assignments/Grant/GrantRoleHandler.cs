@@ -23,7 +23,7 @@ public sealed class GrantRoleHandler(
     /// <summary>Grants the assignment.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">Escalation, or an active assignment already exists.</exception>
     public async Task<RoleAssignmentView> HandleAsync(GrantRoleCommand command, CancellationToken cancellationToken = default)
     {

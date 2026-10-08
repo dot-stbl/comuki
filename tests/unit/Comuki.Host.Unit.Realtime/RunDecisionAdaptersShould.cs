@@ -271,7 +271,6 @@ public sealed class RunDecisionAdaptersShould
     /// Plain if-chain because smart-type members are static properties
     /// and switch-expression arm patterns require constants.
     /// </summary>
-    /// <param name="status"></param>
     private static IReadOnlyList<RunStatus> ResolveRunStatusChain(RunStatus status)
     {
         if (status == RunStatus.Queued)

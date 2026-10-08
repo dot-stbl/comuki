@@ -34,7 +34,7 @@ public sealed class SourceConnectionService(
     /// <summary>Creates a connection and returns its view with the hook path.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="SecretRefUnsetException">The named env var is not set on the host.</exception>
     public async Task<SourceConnectionView> CreateAsync(CreateSourceConnectionCommand command, CancellationToken cancellationToken = default)
     {
@@ -61,7 +61,7 @@ public sealed class SourceConnectionService(
     /// <summary>Lists connections, optionally per project.</summary>
     /// <param name="projectId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public async Task<IReadOnlyList<SourceConnectionView>> ListAsync(ProjectId? projectId, CancellationToken cancellationToken = default)
     {
         var connections = await store.ListConnectionsAsync(projectId, cancellationToken);
@@ -71,7 +71,7 @@ public sealed class SourceConnectionService(
     /// <summary>Reads one connection.</summary>
     /// <param name="connectionId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="SourceConnectionNotFoundException">Unknown id.</exception>
     public async Task<SourceConnectionView> GetAsync(SourceConnectionId connectionId, CancellationToken cancellationToken = default)
     {
@@ -88,7 +88,7 @@ public sealed class SourceConnectionService(
     /// <param name="secretEnvRef"></param>
     /// <param name="enabled"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="SourceConnectionNotFoundException">Unknown id.</exception>
     /// <exception cref="SecretRefUnsetException">A new <paramref name="secretEnvRef"/> names an unset env var.</exception>
     public async Task<SourceConnectionView> UpdateAsync(
@@ -117,7 +117,7 @@ public sealed class SourceConnectionService(
     /// <summary>Deletes a connection (idempotent).</summary>
     /// <param name="connectionId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task DeleteAsync(SourceConnectionId connectionId, CancellationToken cancellationToken = default)
     {
         return store.DeleteConnectionAsync(connectionId, cancellationToken);
@@ -132,7 +132,7 @@ public sealed class SourceConnectionService(
     /// </summary>
     /// <param name="connectionId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="SourceConnectionNotFoundException">Unknown id.</exception>
     public async Task<SecretRotationResponse> RotateSecretAsync(SourceConnectionId connectionId, CancellationToken cancellationToken = default)
     {

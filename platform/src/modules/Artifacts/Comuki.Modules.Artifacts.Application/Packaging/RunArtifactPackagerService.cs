@@ -64,7 +64,6 @@ public sealed class RunArtifactPackagerService(
     /// drive the packager deterministically. Returns the per-run outcomes;
     /// null entries (skip / already-bundled) are dropped.
     /// </summary>
-    /// <param name="cancellationToken"></param>
     public async Task<IReadOnlyList<RunArtifactPackager.BundleOutcome>> PollOnceAsync(CancellationToken cancellationToken)
     {
         // Phase 1 — discovery: open a short-lived scope, drain the run

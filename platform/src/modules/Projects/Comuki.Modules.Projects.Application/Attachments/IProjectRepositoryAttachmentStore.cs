@@ -17,7 +17,7 @@ public interface IProjectRepositoryAttachmentStore
     /// <param name="projectId"></param>
     /// <param name="repositoryId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<ProjectRepositoryAttachment?> FindAsync(
         ProjectId projectId,
         RepositoryId repositoryId,
@@ -26,7 +26,7 @@ public interface IProjectRepositoryAttachmentStore
     /// <summary>No-tracking list of every attachment of one Project, oldest first.</summary>
     /// <param name="projectId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<IReadOnlyList<ProjectRepositoryAttachment>> ListByProjectAsync(
         ProjectId projectId,
         CancellationToken cancellationToken = default);
@@ -34,7 +34,7 @@ public interface IProjectRepositoryAttachmentStore
     /// <summary>No-tracking list of every attachment pointing at one Repository, oldest first.</summary>
     /// <param name="repositoryId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<IReadOnlyList<ProjectRepositoryAttachment>> ListByRepositoryAsync(
         RepositoryId repositoryId,
         CancellationToken cancellationToken = default);
@@ -42,20 +42,20 @@ public interface IProjectRepositoryAttachmentStore
     /// <summary>Persists a new attachment. The unique (project, repository) index is the concurrency arbiter.</summary>
     /// <param name="attachment"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task AddAsync(ProjectRepositoryAttachment attachment, CancellationToken cancellationToken = default);
 
     /// <summary>Persists a mutated attachment loaded through this port.</summary>
     /// <param name="attachment"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task SaveAsync(ProjectRepositoryAttachment attachment, CancellationToken cancellationToken = default);
 
     /// <summary>Deletes the (project, repository) attachment; false when no row exists.</summary>
     /// <param name="projectId"></param>
     /// <param name="repositoryId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<bool> DeleteAsync(
         ProjectId projectId,
         RepositoryId repositoryId,

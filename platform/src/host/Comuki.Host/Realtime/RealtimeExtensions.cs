@@ -56,7 +56,6 @@ public static class RealtimeExtensions
     /// dedicated <see cref="DetailedErrorsEnvVar"/> support knob is set.
     /// Production never reaches either branch.
     /// </summary>
-    /// <param name="environment"></param>
     public static bool ShouldEnableDetailedErrors(IHostEnvironment environment)
     {
         return environment.IsDevelopment()
@@ -67,7 +66,6 @@ public static class RealtimeExtensions
     }
 
     /// <summary>Maps the runs hub onto the app.</summary>
-    /// <param name="app"></param>
     public static void MapComukiRealtime(this WebApplication app)
     {
         app.MapHub<RunsHub>(ApiRoutes.HubsRuns);

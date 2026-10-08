@@ -22,7 +22,7 @@ public sealed class CreateUserHandler(
     /// <summary>Creates the account.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">The email is already taken.</exception>
     public async Task<UserAccountView> HandleAsync(CreateUserCommand command, CancellationToken cancellationToken = default)
     {

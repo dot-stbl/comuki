@@ -28,7 +28,7 @@ public sealed class CreateNativeInboundItemHandler(
     /// <summary>Creates the ticket and launches its run.</summary>
     /// <param name="command"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InboundItemConflictException">An active ticket for the external id already exists.</exception>
     public async Task<InboundItemView> HandleAsync(CreateNativeInboundItemCommand command, CancellationToken cancellationToken = default)
     {

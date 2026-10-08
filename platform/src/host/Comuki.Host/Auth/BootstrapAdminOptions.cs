@@ -28,8 +28,7 @@ public sealed class BootstrapAdminOptions
     /// Resolves the effective options: config values first, env vars
     /// filling the gaps. Throws when only one credential half is set.
     /// </summary>
-    /// <param name="configuration"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="InvalidOperationException">Exactly one of email/password is set.</exception>
     public static BootstrapAdminOptions Resolve(IConfiguration configuration)
     {

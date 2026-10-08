@@ -18,7 +18,6 @@ namespace Comuki.Modules.Repositories.Infrastructure.Persistence;
 /// each module keeps its own per-schema history so all module contexts
 /// migrate one database without colliding.
 /// </summary>
-/// <param name="options"></param>
 public sealed class RepositoriesDbContext(DbContextOptions<RepositoriesDbContext> options)
     : DbContext(options)
 {

@@ -26,8 +26,7 @@ public static class RoleKeys
     public const string Viewer = "viewer";
 
     /// <summary>Returns the key of a role; total over the enum.</summary>
-    /// <param name="role"></param>
-    /// <returns></returns>
+    /// 
     public static string Key(Role role)
     {
         return role switch
@@ -43,8 +42,7 @@ public static class RoleKeys
     }
 
     /// <summary>Parses a stored key back into a role; null when unknown.</summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// 
     public static Role? Parse(string key)
     {
         return key switch

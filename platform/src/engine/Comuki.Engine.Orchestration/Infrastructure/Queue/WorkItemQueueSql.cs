@@ -366,7 +366,6 @@ internal static class WorkItemQueueSql
     }
 
     /// <summary>Materialises the single <c>RETURNING</c> row of a claim into the contract DTO.</summary>
-    /// <param name="reader"></param>
     public static ClaimedWorkItem ReadClaimed(DbDataReader reader)
     {
         return new ClaimedWorkItem(

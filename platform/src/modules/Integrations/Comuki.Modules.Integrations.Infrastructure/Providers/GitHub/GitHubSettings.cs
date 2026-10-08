@@ -25,8 +25,7 @@ public sealed record GitHubSettings(
     public const string DefaultApiBase = "https://api.github.com";
 
     /// <summary>Tolerant parse of the settings jsonb.</summary>
-    /// <param name="settingsJson"></param>
-    /// <returns></returns>
+    /// 
     public static GitHubSettings Parse(string? settingsJson)
     {
         using var document = TrackerSettingsJson.Parse(settingsJson);

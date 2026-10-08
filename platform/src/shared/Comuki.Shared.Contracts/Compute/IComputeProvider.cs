@@ -36,6 +36,5 @@ public interface IComputeProvider
     public Task<IReadOnlyList<WorkerInfo>> ListAsync(ProjectId projectId, CancellationToken cancellationToken = default);
 
     /// <summary>Capacity hint (allocatable) for quota-aware scale decisions.</summary>
-    /// <param name="cancellationToken"></param>
     public Task<ComputeCapacity> GetCapacityAsync(CancellationToken cancellationToken = default);
 }

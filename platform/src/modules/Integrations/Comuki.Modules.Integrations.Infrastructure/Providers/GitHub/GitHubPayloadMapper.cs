@@ -33,7 +33,7 @@ public static class GitHubPayloadMapper
     /// <param name="body">Raw payload bytes.</param>
     /// <param name="projectId">Project scope of the connection.</param>
     /// <param name="now">Ticket timestamp.</param>
-    /// <returns></returns>
+    /// 
     public static InboundItem? ToTicket(ReadOnlyMemory<byte> body, ProjectId projectId, DateTimeOffset now)
     {
         try
@@ -51,7 +51,7 @@ public static class GitHubPayloadMapper
     /// <param name="root"></param>
     /// <param name="projectId"></param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static InboundItem? ToTicket(JsonElement root, ProjectId projectId, DateTimeOffset now)
     {
         if (root.ValueKind is not JsonValueKind.Object
@@ -83,7 +83,7 @@ public static class GitHubPayloadMapper
     /// <param name="repo"></param>
     /// <param name="projectId"></param>
     /// <param name="now"></param>
-    /// <returns></returns>
+    /// 
     public static InboundItem ToTicket(GitHubIssue issue, string owner, string repo, ProjectId projectId, DateTimeOffset now)
     {
         var projectKey = $"{owner}/{repo}";
@@ -102,8 +102,7 @@ public static class GitHubPayloadMapper
     }
 
     /// <summary>Parses "owner/repo#123" back into its parts; null when malformed.</summary>
-    /// <param name="externalId"></param>
-    /// <returns></returns>
+    /// 
     public static (string Owner, string Repo, int Number)? ParseExternalId(string externalId)
     {
         var hashIndex = externalId.IndexOf('#');

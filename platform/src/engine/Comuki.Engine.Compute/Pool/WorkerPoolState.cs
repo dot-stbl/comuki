@@ -72,7 +72,6 @@ public sealed class WorkerPoolState(
     }
 
     /// <summary>Drops a worker from the registry — after a stop, or when the provider no longer lists it.</summary>
-    /// <param name="workerId"></param>
     public void Remove(WorkerId workerId)
     {
         workers.TryRemove(workerId, out _);

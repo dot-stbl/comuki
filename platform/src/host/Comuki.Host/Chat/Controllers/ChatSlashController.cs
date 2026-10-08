@@ -17,7 +17,6 @@ namespace Comuki.Host.Chat.Controllers;
 public sealed class ChatSlashController(ChatSlashCatalog slashCatalog) : ControllerBase
 {
     /// <summary>Lists every available slash command, ordered by key.</summary>
-    /// <param name="cancellationToken"></param>
     [HttpGet("")]
     [ProducesResponseType<IReadOnlyList<ChatSlashCommand>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ChatSlashCommand>>> ListAsync(CancellationToken cancellationToken = default)

@@ -8,11 +8,9 @@ namespace Comuki.Host.Workers;
 /// issued for. Shared by the worker REST endpoints and the gRPC service;
 /// misses are values (null), callers decide how to reject.
 /// </summary>
-/// <param name="issuer"></param>
 public sealed class WorkerTokenAuthenticator(WorkerTokenIssuer issuer)
 {
     /// <summary>Validates the presented token (with or without a Bearer prefix).</summary>
-    /// <param name="presentedToken"></param>
     public WorkerId? Authenticate(string? presentedToken)
     {
         return presentedToken is null

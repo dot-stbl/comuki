@@ -12,14 +12,12 @@ namespace Comuki.Host.ControlPlane.Controllers;
 /// reads <see cref="ISkillCatalog.ListAsync"/> end-to-end and never filters
 /// by <c>trigger_when</c>; the brain does that on its own.
 /// </summary>
-/// <param name="catalog"></param>
 [ApiController]
 [Route(ApiRoutes.Skills)]
 [RequiresPermission("plan:read")]
 public sealed class SkillsController(ISkillCatalog catalog) : ControllerBase
 {
     /// <summary>Lists every control-plane skill with its managed-asset metadata.</summary>
-    /// <param name="cancellationToken"></param>
     [HttpGet("")]
     [ProducesResponseType<IReadOnlyList<SkillDefinition>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<SkillDefinition>>> ListAsync(CancellationToken cancellationToken = default)

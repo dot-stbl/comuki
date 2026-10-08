@@ -17,7 +17,7 @@ public interface IDomainTypeAdmissionStore
     /// <param name="projectId"></param>
     /// <param name="domainType"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<DomainTypeAdmission?> FindAsync(
         ProjectId projectId,
         string domainType,
@@ -26,7 +26,7 @@ public interface IDomainTypeAdmissionStore
     /// <summary>Lists every policy of a project, oldest first.</summary>
     /// <param name="projectId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<IReadOnlyList<DomainTypeAdmission>> ListAsync(
         ProjectId projectId,
         CancellationToken cancellationToken = default);
@@ -38,19 +38,19 @@ public interface IDomainTypeAdmissionStore
     /// </summary>
     /// <param name="admission"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task AddAsync(DomainTypeAdmission admission, CancellationToken cancellationToken = default);
 
     /// <summary>Persists a mutated policy loaded through this port.</summary>
     /// <param name="admission"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task UpdateAsync(DomainTypeAdmission admission, CancellationToken cancellationToken = default);
 
     /// <summary>Deletes a policy; false when the row was already gone.</summary>
     /// <param name="admissionId"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// 
     public Task<bool> DeleteAsync(
         DomainTypeAdmissionId admissionId,
         CancellationToken cancellationToken = default);

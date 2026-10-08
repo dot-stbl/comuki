@@ -32,8 +32,7 @@ public static class TrackerHttp
 public static class ProviderDeliveryIds
 {
     /// <summary>The stable delivery id of a raw webhook body.</summary>
-    /// <param name="body"></param>
-    /// <returns></returns>
+    /// 
     public static string BodyHash(ReadOnlyMemory<byte> body)
     {
         var hash = SHA256.HashData(body.Span);

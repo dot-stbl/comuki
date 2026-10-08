@@ -33,7 +33,6 @@ public sealed class EscalationTimeoutSweeper(
     IOptions<EscalationTimeoutOptions> options)
 {
     /// <summary>Runs one sweep; safe to call repeatedly and concurrently within a single replica.</summary>
-    /// <param name="cancellationToken"></param>
     public async Task<EscalationTimeoutSwept> SweepAsync(CancellationToken cancellationToken = default)
     {
         var now = clock.GetUtcNow();

@@ -23,7 +23,6 @@ public static class WikiPageKindKeys
     public const string Reference = "reference";
 
     /// <summary>Maps a kind to its wire key.</summary>
-    /// <param name="kind"></param>
     public static string Key(WikiPageKind kind)
     {
         return kind switch
@@ -38,7 +37,6 @@ public static class WikiPageKindKeys
     }
 
     /// <summary>Parses a wire key; null when unknown.</summary>
-    /// <param name="key"></param>
     public static WikiPageKind? Parse(string key)
     {
         return key switch
@@ -53,7 +51,6 @@ public static class WikiPageKindKeys
     }
 
     /// <summary>Parses a wire key or throws — used by the EF converter path (expression trees cannot inline throws).</summary>
-    /// <param name="key"></param>
     /// <exception cref="InvalidOperationException">The key is unknown.</exception>
     public static WikiPageKind ParseRequired(string key)
     {

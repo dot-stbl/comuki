@@ -13,7 +13,6 @@ public sealed class InboundItemConflictException(InboundItemId TicketId, string 
 }
 
 /// <summary>Thrown when an inbound item id is unknown (404).</summary>
-/// <param name="TicketId"></param>
 public sealed class InboundItemNotFoundException(InboundItemId TicketId)
     : DomainException(ErrorCode, $"inbound item '{TicketId}' not found")
 {

@@ -29,7 +29,6 @@ public static class ArtifactsApplicationExtensions
     /// stubs satisfy the contract for tests that compose the module in
     /// isolation).
     /// </summary>
-    /// <param name="services"></param>
     public static IServiceCollection AddArtifactsApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);

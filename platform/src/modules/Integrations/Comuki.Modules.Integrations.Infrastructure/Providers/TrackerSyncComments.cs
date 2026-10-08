@@ -10,8 +10,7 @@ namespace Comuki.Modules.Integrations.Infrastructure.Providers;
 public static class TrackerSyncComments
 {
     /// <summary>The comment body for one transition.</summary>
-    /// <param name="transition"></param>
-    /// <returns></returns>
+    /// 
     public static string Of(InboundItemTransition transition)
     {
         var builder = new StringBuilder("Comuki run ")

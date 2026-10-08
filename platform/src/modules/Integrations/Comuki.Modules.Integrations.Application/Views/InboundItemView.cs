@@ -26,8 +26,7 @@ public sealed record InboundItemView(
     DateTimeOffset CreatedAt)
 {
     /// <summary>Maps the domain entity.</summary>
-    /// <param name="ticket"></param>
-    /// <returns></returns>
+    /// 
     public static InboundItemView Of(InboundItem ticket)
     {
         return new InboundItemView(

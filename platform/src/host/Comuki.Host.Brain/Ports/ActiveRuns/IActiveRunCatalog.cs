@@ -9,6 +9,5 @@ namespace Comuki.Host.Brain.Ports.ActiveRuns;
 public interface IActiveRunCatalog
 {
     /// <summary>Every active run, newest first.</summary>
-    /// <param name="cancellationToken"></param>
     public Task<IReadOnlyList<ActiveRunView>> ListAsync(CancellationToken cancellationToken = default);
 }

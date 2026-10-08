@@ -28,7 +28,6 @@ public sealed class NoopEmbeddingClient : IEmbeddingClient
     private readonly int dimensions;
 
     /// <summary>Constructs a noop embedder at the requested dimensionality.</summary>
-    /// <param name="dimensions"></param>
     public NoopEmbeddingClient(int dimensions)
     {
         if (dimensions is < 1 or > 4096)

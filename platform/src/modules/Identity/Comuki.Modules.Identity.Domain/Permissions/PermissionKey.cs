@@ -18,7 +18,6 @@ public readonly record struct PermissionKey(string Value)
     /// colon, both segments 1–32 chars of lowercase letters, digits and
     /// dashes, starting with a letter.
     /// </summary>
-    /// <param name="value"></param>
     public static bool IsWellFormed(string value)
     {
         var body = value.AsSpan();
@@ -34,8 +33,7 @@ public readonly record struct PermissionKey(string Value)
     /// Parses a well-formed key; anything else throws. For untrusted input
     /// check <see cref="IsWellFormed"/> first.
     /// </summary>
-    /// <param name="value"></param>
-    /// <returns></returns>
+    /// 
     /// <exception cref="FormatException">The value is not a well-formed key.</exception>
     public static PermissionKey Parse(string value)
     {

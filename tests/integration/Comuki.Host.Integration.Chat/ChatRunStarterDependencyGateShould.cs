@@ -117,7 +117,7 @@ public sealed class ChatRunStarterDependencyGateShould(HostChatServer server) : 
     /// <summary>Applies the plan through the real <see cref="ChatRunStarter"/> resolved out of the host DI.</summary>
     /// <param name="host">The host fixture — owns the composed DI container.</param>
     /// <param name="plan">The plan to apply.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cooperative cancellation token propagated from the caller.</param>
     private static async Task<RunId> ApplyPlanAsync(HostChatServer host, Plan plan, CancellationToken cancellationToken)
     {
         await using var scope = host.Services.CreateAsyncScope();
@@ -128,7 +128,7 @@ public sealed class ChatRunStarterDependencyGateShould(HostChatServer server) : 
     /// <summary>Re-reads the two items by Brief substring (the only string that survives the JSON round-trip as a substring anchor).</summary>
     /// <param name="host">The host fixture.</param>
     /// <param name="runId">Run to read back.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cooperative cancellation token propagated from the caller.</param>
     private static async Task<(WorkItem Prerequisite, WorkItem Dependent)> LoadPrereqAndDependentAsync(
         HostChatServer host,
         RunId runId,
@@ -150,7 +150,7 @@ public sealed class ChatRunStarterDependencyGateShould(HostChatServer server) : 
     /// <summary>Re-reads one work item from the host's DbContext (system consumer, no scope filter).</summary>
     /// <param name="host">The host fixture.</param>
     /// <param name="workItemId">Item to load.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cooperative cancellation token propagated from the caller.</param>
     private static async Task<WorkItem> LoadDependentAsync(HostChatServer host, Guid workItemId, CancellationToken cancellationToken)
     {
         await using var db = NewSystemDbContext(host);

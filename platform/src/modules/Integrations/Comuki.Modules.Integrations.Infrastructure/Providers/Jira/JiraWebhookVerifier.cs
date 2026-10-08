@@ -14,7 +14,7 @@ public static class JiraWebhookVerifier
     /// <summary>Compares the secret query parameter against the expected secret.</summary>
     /// <param name="secret">The webhook secret; null/empty fails closed.</param>
     /// <param name="secretParam">The raw query parameter value.</param>
-    /// <returns></returns>
+    /// 
     public static bool Verify(string? secret, string? secretParam)
     {
         return !string.IsNullOrEmpty(secret) && secretParam is not null && CryptographicOperations.FixedTimeEquals(

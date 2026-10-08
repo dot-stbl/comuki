@@ -7,7 +7,6 @@ namespace Comuki.Modules.Costs.Application.Aggregation;
 /// Sums usage for a run or project. Pure over the store — no budget side
 /// effects (those live in <c>UsageRecorder</c>).
 /// </summary>
-/// <param name="store"></param>
 public sealed class RunCostAggregator(IUsageEventStore store)
 {
     /// <summary>Total spend of a run in USD micros.</summary>

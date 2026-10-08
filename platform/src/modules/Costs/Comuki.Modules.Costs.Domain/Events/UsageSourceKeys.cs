@@ -16,7 +16,6 @@ public static class UsageSourceKeys
     public const string System = "system";
 
     /// <summary>Maps enum → key.</summary>
-    /// <param name="source"></param>
     public static string Of(UsageSource source)
     {
         return source switch
@@ -30,7 +29,6 @@ public static class UsageSourceKeys
     }
 
     /// <summary>Maps key → enum; unknown keys throw.</summary>
-    /// <param name="key"></param>
     public static UsageSource Parse(string key)
     {
         return key switch

@@ -19,7 +19,6 @@ public static class UploadArtifactEndpoint
     public const string RouteTemplate = ApiRoutes.WorkerUploadArtifact;
 
     /// <summary>Maps the endpoint onto <paramref name="app"/>.</summary>
-    /// <param name="app"></param>
     public static void MapUploadArtifactEndpoint(WebApplication app)
     {
         app.MapPost(RouteTemplate, UploadArtifactAsync);
@@ -70,7 +69,6 @@ public static class UploadArtifactEndpoint
 internal static class UploadArtifactResultMapper
 {
     /// <summary>Translates each outcome variant onto its HTTP status.</summary>
-    /// <param name="outcome"></param>
     public static IResult FromOutcome(VisualArtifactPublishOutcome outcome)
     {
         return outcome switch
@@ -197,7 +195,6 @@ file sealed record ParsedMultipartFile(
 file static class MediaTypeHeaderValueHelpers
 {
     /// <summary>True when <paramref name="contentType"/> starts with <c>multipart/</c>.</summary>
-    /// <param name="contentType"></param>
     public static bool IsMultipart(string? contentType)
     {
         return !string.IsNullOrWhiteSpace(contentType)

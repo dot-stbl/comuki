@@ -87,7 +87,6 @@ public sealed class ControlPlaneCatalog(
     /// binaries sit several levels below the repo root. Bounded by a depth
     /// limit; returns null when not found.
     /// </summary>
-    /// <param name="startDirectory"></param>
     public static string? ProbeControlPlaneRoot(string startDirectory)
     {
         var directory = new DirectoryInfo(startDirectory);
@@ -128,7 +127,6 @@ internal static class ControlPlaneDocumentLoader
     public delegate IEnumerable<CatalogSource> EnumerateItems(string folder);
 
     /// <summary>Flat enumeration: every <c>*.md</c> in the folder (profiles, chat-commands).</summary>
-    /// <param name="folder"></param>
     public static IEnumerable<CatalogSource> EnumerateMarkdownFiles(string folder)
     {
         foreach (var filePath in Directory.EnumerateFiles(folder, "*.md", SearchOption.TopDirectoryOnly))

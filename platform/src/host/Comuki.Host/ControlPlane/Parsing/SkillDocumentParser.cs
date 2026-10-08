@@ -47,7 +47,6 @@ public static class SkillDocumentParser
     /// block, no closing fence, or lacks a non-empty name and description.
     /// Listing many documents must not throw on one malformed entry.
     /// </summary>
-    /// <param name="text"></param>
     public static SkillDocument? Parse(string text)
     {
         var extracted = YamlishFrontmatter.Extract(text);
@@ -234,7 +233,6 @@ file static class SkillFields
     /// single-item list before the split; a single flow-mapped object
     /// (the field is itself a <c>{ k: v }</c> value) becomes a single Ref.
     /// </summary>
-    /// <param name="fields"></param>
     public static ValidateAgainstSplit SplitValidateAgainst(Dictionary<string, FrontmatterField> fields)
     {
         if (!fields.TryGetValue(SkillDocumentParser.ValidateAgainstKey, out var field))
@@ -366,7 +364,6 @@ file static class SkillFields
     /// Quoted values are unquoted. Missing colons, empty values, or empty objects
     /// yield null; the caller falls back to treating the body as a scalar.
     /// </summary>
-    /// <param name="body"></param>
     public static IReadOnlyDictionary<string, string>? ParseFlowObject(string body)
     {
         var entries = YamlishFrontmatter.SplitTopLevelCommas(body);

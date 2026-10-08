@@ -24,7 +24,6 @@ public sealed class ChatSessionView
     public required DateTimeOffset UpdatedAt { get; init; }
 
     /// <summary>Maps the domain aggregate.</summary>
-    /// <param name="session"></param>
     public static ChatSessionView Of(ChatSession session)
     {
         return new ChatSessionView

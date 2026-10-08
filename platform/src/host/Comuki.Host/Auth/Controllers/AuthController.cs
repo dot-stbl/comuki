@@ -116,7 +116,6 @@ public sealed class AuthController(
     /// permissions. An API-key request reports the key's subject and
     /// the key's assignments, not its owner's.
     /// </summary>
-    /// <param name="cancellationToken"></param>
     [HttpGet("me")]
     [ProducesResponseType<MeResponse>(StatusCodes.Status200OK)]
     public async Task<ActionResult<MeResponse>> MeAsync(CancellationToken cancellationToken = default)

@@ -5,7 +5,6 @@ namespace Comuki.Modules.Costs.Domain.Ids;
 /// (<see cref="Guid.CreateVersion7()"/>): time-ordered, stored as Postgres
 /// <c>uuid</c>, exposed as strings.
 /// </summary>
-/// <param name="Value"></param>
 public readonly record struct UsageEventId(Guid Value)
 {
     /// <summary>Creates a fresh UUIDv7 id.</summary>

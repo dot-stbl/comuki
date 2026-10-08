@@ -18,7 +18,7 @@ public sealed record WebhookReceipt(
     /// <summary>A processed (or deliberately ignored) delivery — 200 OK.</summary>
     /// <param name="outcome"></param>
     /// <param name="detail"></param>
-    /// <returns></returns>
+    /// 
     public static WebhookReceipt Ok(string outcome, string? detail = null)
     {
         return new WebhookReceipt(200, outcome, null, detail);
@@ -27,15 +27,14 @@ public sealed record WebhookReceipt(
     /// <summary>Unknown provider or connection — 404.</summary>
     /// <param name="code"></param>
     /// <param name="detail"></param>
-    /// <returns></returns>
+    /// 
     public static WebhookReceipt NotFound(string code, string detail)
     {
         return new WebhookReceipt(404, "not_found", code, detail);
     }
 
     /// <summary>Signature verification failed — 401 (the signature IS the auth).</summary>
-    /// <param name="detail"></param>
-    /// <returns></returns>
+    /// 
     public static WebhookReceipt SignatureInvalid(string detail)
     {
         return new WebhookReceipt(401, "rejected", "integration.signature_invalid", detail);

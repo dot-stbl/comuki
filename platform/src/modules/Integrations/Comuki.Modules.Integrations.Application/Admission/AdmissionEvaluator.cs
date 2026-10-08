@@ -33,7 +33,7 @@ public static class AdmissionEvaluator
     /// <summary>Does the ticket pass one filter?</summary>
     /// <param name="filter"></param>
     /// <param name="ticket"></param>
-    /// <returns></returns>
+    /// 
     public static bool Matches(AdmissionFilter filter, InboundItem ticket)
     {
         var labelsMatch = filter.LabelsAny.Count == 0

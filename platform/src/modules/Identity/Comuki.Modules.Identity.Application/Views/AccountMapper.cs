@@ -14,8 +14,7 @@ namespace Comuki.Modules.Identity.Application.Views;
 public static class AccountMapper
 {
     /// <summary>Maps a user entity to its read model.</summary>
-    /// <param name="user"></param>
-    /// <returns></returns>
+    /// 
     public static UserAccountView ToView(User user)
     {
         return new UserAccountView(
@@ -28,8 +27,7 @@ public static class AccountMapper
     }
 
     /// <summary>Maps an assignment entity to its read model.</summary>
-    /// <param name="assignment"></param>
-    /// <returns></returns>
+    /// 
     public static RoleAssignmentView ToView(RoleAssignment assignment)
     {
         return new RoleAssignmentView(

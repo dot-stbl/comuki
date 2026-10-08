@@ -12,18 +12,14 @@ namespace Comuki.Engine.Compute.Ports;
 public interface IWorkerPoolState
 {
     /// <summary>All pool-tracked workers of the project, idle and busy.</summary>
-    /// <param name="projectId"></param>
     public IReadOnlyList<PoolWorker> List(ProjectId projectId);
 
     /// <summary>Marks the worker as holding a claimed work item; refreshes its activity time.</summary>
-    /// <param name="workerId"></param>
     public void MarkBusy(WorkerId workerId);
 
     /// <summary>Marks the worker as finished (idle); refreshes its activity time.</summary>
-    /// <param name="workerId"></param>
     public void MarkIdle(WorkerId workerId);
 
     /// <summary>Heartbeat: refreshes the activity time without changing the busy/idle flag.</summary>
-    /// <param name="workerId"></param>
     public void Touch(WorkerId workerId);
 }

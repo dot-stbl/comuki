@@ -64,8 +64,7 @@ public readonly record struct AttachmentRole
     /// layer and the store look up rows with the very same key the entity
     /// persisted.
     /// </summary>
-    /// <param name="role"></param>
-    /// <returns></returns>
+    /// 
     public static string Normalize(string role)
     {
         return role.Trim().ToLowerInvariant();
@@ -78,7 +77,6 @@ public readonly record struct AttachmentRole
     /// <see cref="ArgumentException"/> because a row without a role has
     /// no meaning.
     /// </summary>
-    /// <param name="wire"></param>
     public static AttachmentRole FromWire(string wire)
     {
         var normalized = Normalize(wire);

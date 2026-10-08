@@ -38,7 +38,6 @@ public static class OidcPkce
     }
 
     /// <summary>Returns the S256 challenge of <paramref name="verifier"/>.</summary>
-    /// <param name="verifier"></param>
     public static string ComputeS256Challenge(string verifier)
     {
         var hash = SHA256.HashData(Encoding.ASCII.GetBytes(verifier));

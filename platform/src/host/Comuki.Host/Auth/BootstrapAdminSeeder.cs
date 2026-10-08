@@ -31,7 +31,6 @@ public sealed class BootstrapAdminSeeder(
     ILogger<BootstrapAdminSeeder> logger)
 {
     /// <summary>Runs one idempotent bootstrap pass.</summary>
-    /// <param name="cancellationToken"></param>
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         using var _ = scopeAccessor.AsSystem("bootstrap-admin-seeder");

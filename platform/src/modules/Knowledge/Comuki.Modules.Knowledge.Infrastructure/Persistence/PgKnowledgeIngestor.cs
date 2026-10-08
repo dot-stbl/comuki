@@ -26,7 +26,7 @@ namespace Comuki.Modules.Knowledge.Infrastructure.Persistence;
 /// partial failure surfaces to the caller as an exception with no
 /// half-written rows. The write side has no EF query filter to lean on
 /// either (inserts are never filtered by <c>HasQueryFilter</c>, even for
-/// the entities it does model) — <see cref="IsProjectWritable"/> is the
+/// the entities it does model) — <see cref="PgKnowledgeIngestorHelpers.IsProjectWritable"/> is the
 /// only thing standing between a caller and another project's corpus.
 ///
 /// Wiki ingest (<see cref="SourceKind.Wiki"/>) reuses the same
@@ -71,7 +71,7 @@ public sealed class PgKnowledgeIngestor(
 
         var sourceKind = SourceKindKeys.ParseRequired(source);
 
-        if (!IsProjectWritable(scopeAccessor.Current, projectId))
+        if (!PgKnowledgeIngestorHelpers.IsProjectWritable(scopeAccessor.Current, projectId))
         {
             // Unlike a read, a write-side refusal is safe to make loud:
             // there is no "does the project exist" question to avoid
@@ -94,7 +94,7 @@ public sealed class PgKnowledgeIngestor(
 
         if (sourceKind == SourceKind.Wiki)
         {
-            AttachWikiMetadataFromBody(document, text);
+            PgKnowledgeIngestorHelpers.AttachWikiMetadataFromBody(document, text);
         }
 
         context.SourceDocuments.Add(document);
@@ -147,7 +147,7 @@ public sealed class PgKnowledgeIngestor(
         // embedding column) skips the vector write cleanly instead of
         // throwing "type vector does not exist" mid-transaction.
         var connection = (NpgsqlConnection)context.Database.GetDbConnection();
-        var pgvectorAvailable = await ProbePgvectorAsync(connection, cancellationToken);
+        var pgvectorAvailable = await PgKnowledgeIngestorHelpers.ProbePgvectorAsync(connection, cancellationToken);
 
         if (pgvectorAvailable)
         {
@@ -182,7 +182,15 @@ public sealed class PgKnowledgeIngestor(
 
         return new KnowledgeIngestResult(document.Id, ChunksWritten: rows.Count);
     }
+}
 
+/// <summary>
+/// Pure-function helpers for <see cref="PgKnowledgeIngestor"/>: Wiki
+/// frontmatter stitching, pgvector availability probe, project write
+/// guard. Extracted per the no-private-methods rule.
+/// </summary>
+file static class PgKnowledgeIngestorHelpers
+{
     /// <summary>
     /// Pulls the Wiki frontmatter from <paramref name="body"/>, generates a
     /// fresh <see cref="WikiPageId"/>, and attaches the parsed kind and
@@ -194,7 +202,7 @@ public sealed class PgKnowledgeIngestor(
     /// </summary>
     /// <param name="document">A newly-created <see cref="SourceDocument"/> with <see cref="SourceKind.Wiki"/>.</param>
     /// <param name="body">Markdown body the caller handed to the ingestor.</param>
-    private static void AttachWikiMetadataFromBody(SourceDocument document, string body)
+    public static void AttachWikiMetadataFromBody(SourceDocument document, string body)
     {
         var metadata = WikiFrontmatter.ExtractMetadata(body) ?? new WikiIngestMetadata(null, []);
         var wikiPageId = WikiPageId.New();
@@ -212,7 +220,7 @@ public sealed class PgKnowledgeIngestor(
     /// so a plain Postgres deployment surfaces this as <c>false</c> and
     /// the caller skips the vector UPDATE.
     /// </summary>
-    private static async Task<bool> ProbePgvectorAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
+    public static async Task<bool> ProbePgvectorAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
     {
         await using var probe = connection.CreateCommand();
         probe.CommandText = EmbeddingSql.EmbeddingColumnExistsSql;
@@ -232,7 +240,7 @@ public sealed class PgKnowledgeIngestor(
     /// </summary>
     /// <param name="scope"></param>
     /// <param name="projectId"></param>
-    private static bool IsProjectWritable(SubjectScope scope, Guid? projectId)
+    public static bool IsProjectWritable(SubjectScope scope, Guid? projectId)
     {
         return scope.Unrestricted
             || (projectId is { } target && scope.ProjectIds.Contains(new ProjectId(target)));

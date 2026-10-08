@@ -99,7 +99,7 @@ public static class MemorySeeder
         return new MemorySeedResult(written, superseded, unchanged);
     }
 
-    private static async Task<ActiveFact?> FindActiveAsync(
+    public static async Task<ActiveFact?> FindActiveAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         string topicKey,
@@ -116,7 +116,7 @@ public static class MemorySeeder
         return !await reader.ReadAsync(cancellationToken) ? null : new ActiveFact(reader.GetGuid(0), reader.GetString(1));
     }
 
-    private static async Task InsertAsync(
+    public static async Task InsertAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         string topicKey,
@@ -140,7 +140,7 @@ public static class MemorySeeder
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    private static async Task SupersedeAsync(
+    public static async Task SupersedeAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         Guid supersededId,

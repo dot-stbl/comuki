@@ -89,9 +89,9 @@ internal static class PermissionGate
         string permissionKey,
         CancellationToken cancellationToken)
     {
-        if (ResolveSubject(principal) is not { } subject)
+        if (RequiresPermissionSubjectResolver.Resolve(principal) is not { } subject)
         {
-            return Denial(
+            return RequiresPermissionDenialFactory.Denial(
                 StatusCodes.Status401Unauthorized,
                 RequiresPermissionFilter.AuthenticationRequiredCode,
                 $"permission '{permissionKey}' requires an authenticated subject");
@@ -100,37 +100,39 @@ internal static class PermissionGate
         var authorization = await evaluator.EvaluateAsync(subject, cancellationToken);
         return authorization.IsPermitted(new PermissionKey(permissionKey))
             ? null
-            : Denial(
+            : RequiresPermissionDenialFactory.Denial(
                 StatusCodes.Status403Forbidden,
                 RequiresPermissionFilter.PermissionDeniedCode,
                 $"permission '{permissionKey}' is required");
     }
 
+    // Subject resolution moved to <see cref="RequiresPermissionSubjectResolver"/>.
+}
+
+/// <summary>One deny decision: the status plus the ready ProblemDetails body.</summary>
+/// <param name="StatusCode">401 (anonymous) or 403 (missing permission).</param>
+/// <param name="Problem">ProblemDetails body to serialize.</param>
+internal sealed record PermissionDenial(int StatusCode, ProblemDetails Problem);
+
+/// <summary>
+/// Permission-denial problem builder used by
+/// <see cref="RequiresPermissionFilter"/>. Extracted per the
+/// no-private-methods rule: the title defaults and
+/// <c>"code"</c> extension shape must be the same for every denial.
+/// </summary>
+file static class RequiresPermissionDenialFactory
+{
     /// <summary>
-    /// Principal → <see cref="RoleSubject"/>: an API-key principal carries
-    /// the api-key claim and resolves to its own subject; otherwise the
-    /// nameidentifier claim resolves to the user subject. Unresolvable
-    /// principals (anonymous, foreign) return null — a demand plus no
-    /// subject is a 401, never a pass.
+    /// Builds the deny envelope: status 401 for an anonymous caller, 403
+    /// when authenticated but missing the required permission. Title
+    /// picks by status so the openapi / problem-details transformer can
+    /// stay in charge of the canonical shape (issue #20).
     /// </summary>
-    private static RoleSubject? ResolveSubject(ClaimsPrincipal principal)
+    /// <param name="statusCode">401 or 403.</param>
+    /// <param name="code">Stable machine code: <c>"auth.unauthenticated"</c> or <c>"permission.denied"</c>.</param>
+    /// <param name="detail">Human-readable detail; safe — no PII, no stack.</param>
+    public static PermissionDenial Denial(int statusCode, string code, string detail)
     {
-        return OfClaim(IdentityClaimNames.ApiKeyId, SubjectType.ApiKey, principal)
-            ?? OfClaim(ClaimTypes.NameIdentifier, SubjectType.User, principal);
-    }
-
-    private static RoleSubject? OfClaim(string claimName, SubjectType type, ClaimsPrincipal principal)
-    {
-        return principal.FindFirst(claimName)?.Value is { Length: > 0 } value
-            && Guid.TryParse(value, out var id)
-            ? new RoleSubject(type, id)
-            : null;
-    }
-
-    private static PermissionDenial Denial(int statusCode, string code, string detail)
-    {
-        // Build with TypedResults.Problem so the title/type defaults and
-        // extension shape stay canonical (issue #20).
         var typed = TypedResults.Problem(
             title: statusCode == StatusCodes.Status403Forbidden ? "Permission denied" : "Authentication required",
             detail: detail,
@@ -141,7 +143,38 @@ internal static class PermissionGate
     }
 }
 
-/// <summary>One deny decision: the status plus the ready ProblemDetails body.</summary>
-/// <param name="StatusCode">401 (anonymous) or 403 (missing permission).</param>
-/// <param name="Problem">ProblemDetails body to serialize.</param>
-internal sealed record PermissionDenial(int StatusCode, ProblemDetails Problem);
+/// <summary>
+/// Subject resolution for <see cref="RequiresPermissionFilter"/>:
+/// principal → <see cref="RoleSubject"/>. An API-key principal carries
+/// the api-key claim and resolves to its own subject; otherwise the
+/// <see cref="ClaimTypes.NameIdentifier"/> claim resolves to the user
+/// subject. Unresolvable principals (anonymous, foreign) return null —
+/// a demand plus no subject is a 401, never a pass.
+/// </summary>
+file static class RequiresPermissionSubjectResolver
+{
+    /// <summary>
+    /// Resolves the bearer subject: API-key claim wins, otherwise the
+    /// nameidentifier claim; null means the principal is anonymous (or
+    /// carries a claim shape this build doesn't understand — the
+    /// demand is denied as 401).
+    /// </summary>
+    /// <param name="principal">The bearer principal carried in the request.</param>
+    public static RoleSubject? Resolve(ClaimsPrincipal principal)
+    {
+        return OfClaim(IdentityClaimNames.ApiKeyId, SubjectType.ApiKey, principal)
+            ?? OfClaim(ClaimTypes.NameIdentifier, SubjectType.User, principal);
+    }
+
+    /// <summary>
+    /// Read one named claim as a Guid and wrap it in a
+    /// <see cref="RoleSubject"/>; null on missing / empty / non-guid.
+    /// </summary>
+    public static RoleSubject? OfClaim(string claimName, SubjectType type, ClaimsPrincipal principal)
+    {
+        return principal.FindFirst(claimName)?.Value is { Length: > 0 } value
+            && Guid.TryParse(value, out var id)
+            ? new RoleSubject(type, id)
+            : null;
+    }
+}

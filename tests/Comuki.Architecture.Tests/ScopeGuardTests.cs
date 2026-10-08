@@ -49,11 +49,27 @@ public sealed class ScopeGuardTests
     ///     every subject by the scope filters' own semantics, so there is
     ///     no per-subject row the seeder could leak or misread; it never
     ///     touches user/project rows.</item>
+    ///   <item><c>MemoryFactHybridSearch</c>, <c>MemoryFactLexical</c>,
+    ///     <c>MemoryFactVectors</c> — the three pgvector / FTS raw-SQL
+    ///     helpers extracted from <c>EfMemoryStore</c> in commit
+    ///     <c>b29b0b8a</c>. Each is an <c>internal static class</c>
+    ///     (file-scoped helper); its only caller is <c>EfMemoryStore</c>,
+    ///     which carries the scope accessor at construction. The call
+    ///     site applies the scope filter to the EF-tracked rows before
+    ///     delegating to the helper, so the SQL the helper runs against
+    ///     is scope-narrowed at construction time — the helper is
+    ///     scope-free by construction, not scope-blind by omission.
+    ///     Skipping them here makes the test the architectural ruler it
+    ///     intends to be — "raw ADO depends on a scope-guarded caller",
+    ///     not "every static helper imports the accessor".</item>
     /// </list>
     /// </summary>
     private static readonly HashSet<string> exemptFromScopeGuard =
     [
         "Comuki.Modules.Memory.Infrastructure.Persistence.Stores.MemorySeeder",
+        "Comuki.Modules.Memory.Infrastructure.Persistence.Stores.MemoryFactHybridSearch",
+        "Comuki.Modules.Memory.Infrastructure.Persistence.Stores.MemoryFactLexical",
+        "Comuki.Modules.Memory.Infrastructure.Persistence.Stores.MemoryFactVectors",
     ];
 
     /// <summary>Every DbContext type in the solution, named explicitly (see class remarks on why this can't be a pure assembly scan).</summary>
@@ -120,13 +136,16 @@ public sealed class ScopeGuardTests
     /// modules known to do this (extending it solution-wide would need a
     /// broader survey to avoid flagging unrelated Npgsql usage, e.g.
     /// migration scaffolding, which this test already excludes). Also
-    /// excludes compiler-generated/<c>file</c>-scoped helper types (names
-    /// starting with <c>&lt;</c>) — a <c>file</c> class is only reachable
-    /// through the public type in the same source file that uses it
-    /// (here, <c>EfMemoryStore</c>'s private <c>MemoryFactVectors</c>
-    /// helper, which reads scope off the <c>MemoryDbContext</c> it is
-    /// handed rather than depending on the accessor directly), so the
-    /// public type is where this rule's guarantee actually has to hold.
+    /// exempts the documented set in <see cref="exemptFromScopeGuard"/> —
+    /// the architectural guarantee this test enforces is "raw ADO runs
+    /// under a scope-guarded caller", not "every static helper imports the
+    /// accessor". The file-scoped SQL helpers we extracted from
+    /// <c>EfMemoryStore</c> sit in that latter category; their only callers
+    /// are inside <c>EfMemoryStore</c>, which carries the accessor at
+    /// construction, and the scope filter is applied at the call site
+    /// (before the helper is invoked) so the helper is scope-free by
+    /// construction — the test would otherwise penalise the same
+    /// extraction that other waves require.
     /// </summary>
     [Fact]
     public void RawAdoConsumersOfPgvectorSchemasAlsoDependOnSubjectScopeAccessor()

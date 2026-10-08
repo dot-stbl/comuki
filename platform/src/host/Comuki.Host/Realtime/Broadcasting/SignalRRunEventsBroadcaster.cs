@@ -98,8 +98,8 @@ file static class SignalRRunEventsAttention
     }
 
     // ReadProjectsAsync lives in SignalRRunEventsBroadcastHelpers below —
-// this broadcaster orchestrator stays free of private static methods
-// per the no-private-methods rule.
+    // this broadcaster orchestrator stays free of private static methods
+    // per the no-private-methods rule.
 }
 
 /// <summary>

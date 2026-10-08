@@ -578,7 +578,13 @@ internal static class HostComposer
         // artifacts/openapi.json (Comuki.Host.csproj OpenApiDocumentsDirectory).
         // The mirror is what dashboard/kubb.config.ts reads — both stay
         // consistent because both are derived from the same AddOpenApi call.
-        builder.Services.AddOpenApi();
+        // The operation transformer below fills in the standard 4xx/5xx
+        // ProblemDetails body on every MVC action so individual controllers
+        // no longer repeat `[ProducesResponseType(typeof(ProblemDetails), 404)]`
+        // for the same status; per-endpoint entries are still respected
+        // (a controller's explicit attribute wins; the transformer only
+        // fills empty slots).
+        builder.Services.AddOpenApi(options => options.AddOperationTransformer<ProblemDetailsOperationTransformer>());
 
         // Realtime surface (issue #7): SignalR hub + the journal broadcast
         // interceptor. Registered after orchestration persistence — the

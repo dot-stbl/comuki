@@ -256,13 +256,7 @@ public sealed class WorkerProgressWatchdog : IDisposable
 
     private int ComputeTargetTier(TimeSpan elapsed)
     {
-        return elapsed switch
-        {
-            { } t when t < options.WorkerProgressTimeout => 0,
-            { } t when t < options.WorkerProgressTimeout * 2 => 1,
-            { } t when t < options.WorkerProgressTimeout * 3 => 2,
-            _ => 3,
-        };
+        return WorkerProgressWatchdogHelpers.ComputeTargetTier(options, elapsed);
     }
 
     private void FireWarn(TimeSpan elapsed)
@@ -407,5 +401,32 @@ public sealed class WorkerProgressWatchdog : IDisposable
     {
         Dispose();
         return ValueTask.CompletedTask;
+    }
+}
+
+/// <summary>
+/// Pure-function helpers for <see cref="WorkerProgressWatchdog"/>: the
+/// tier-bucket math is the one piece of work that does not need the
+/// watchdog's runtime state — it only needs the options window and the
+/// elapsed time. Extracted per the no-private-methods rule.
+/// </summary>
+file static class WorkerProgressWatchdogHelpers
+{
+    /// <summary>
+    /// Maps an elapsed-since-last-event window to one of the four
+    /// escalation tiers (0 = within budget, 3 = three times the
+    /// window — <c>worker.stall_detected</c>).
+    /// </summary>
+    /// <param name="options">Translator options; carries <c>WorkerProgressTimeout</c>.</param>
+    /// <param name="elapsed">Window from the last parsed event to now.</param>
+    public static int ComputeTargetTier(TranslatorOptions options, TimeSpan elapsed)
+    {
+        return elapsed switch
+        {
+            { } t when t < options.WorkerProgressTimeout => 0,
+            { } t when t < options.WorkerProgressTimeout * 2 => 1,
+            { } t when t < options.WorkerProgressTimeout * 3 => 2,
+            _ => 3,
+        };
     }
 }

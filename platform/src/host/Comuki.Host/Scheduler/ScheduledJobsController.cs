@@ -50,7 +50,6 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
     [HttpGet("{jobId:guid}")]
     [RequiresPermission("scheduler:read")]
     [ProducesResponseType<ScheduledJobView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetAsync(
         [FromRoute] Guid projectId,
         [FromRoute] Guid jobId,
@@ -66,7 +65,6 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
     [HttpPost]
     [RequiresPermission("scheduler:write")]
     [ProducesResponseType<ScheduledJobView>(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreateAsync(
         [FromRoute] Guid projectId,
         [FromBody] CreateScheduledJobRequest request,
@@ -97,8 +95,6 @@ public sealed class ScheduledJobsController(ScheduledJobService jobs) : Controll
     [HttpPatch("{jobId:guid}")]
     [RequiresPermission("scheduler:write")]
     [ProducesResponseType<ScheduledJobView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UpdateAsync(
         [FromRoute] Guid projectId,
         [FromRoute] Guid jobId,

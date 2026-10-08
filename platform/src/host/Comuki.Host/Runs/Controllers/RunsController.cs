@@ -47,7 +47,6 @@ public sealed class RunsController(
     /// <param name="cancellationToken"></param>
     [HttpGet]
     [ProducesResponseType<RunsPage>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> ListAsync([FromQuery] FilterQuery query, CancellationToken cancellationToken = default)
     {
         return new OkObjectResult(await runs.ListAsync(query, cancellationToken));
@@ -63,7 +62,6 @@ public sealed class RunsController(
     /// <param name="cancellationToken"></param>
     [HttpGet("{runId:guid}", Name = "runs-get-by-id")]
     [ProducesResponseType<RunDetail>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetAsync(Guid runId, CancellationToken cancellationToken = default)
     {
         return await details.GetAsync(new RunId(runId), cancellationToken) is { } found
@@ -90,8 +88,6 @@ public sealed class RunsController(
     [HttpGet("{runId:guid}/verification", Name = "runs-get-verification")]
     [RequiresFeature("verification")]
     [ProducesResponseType<RunVerificationView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult> GetVerificationAsync(Guid runId, CancellationToken cancellationToken = default)
     {
         return await verification.GetAsync(new RunId(runId), cancellationToken) is { } view
@@ -111,8 +107,6 @@ public sealed class RunsController(
     [HttpPost("{runId:guid}/approve")]
     [EnableRateLimiting(RateLimitPolicies.RunDecision)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> ApproveAsync(Guid runId, CancellationToken cancellationToken = default)
     {
         await approve.ApproveAsync(new RunId(runId), cancellationToken);
@@ -132,8 +126,6 @@ public sealed class RunsController(
     [HttpPost("{runId:guid}/cancel")]
     [EnableRateLimiting(RateLimitPolicies.RunDecision)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> CancelAsync(
         Guid runId,
         [FromBody] CancelRunRequest request,
@@ -165,10 +157,6 @@ public sealed class RunsController(
     [RequiresFeature("steering")]
     [EnableRateLimiting(RateLimitPolicies.RunDecision)]
     [ProducesResponseType<SteerRunResponse>(StatusCodes.Status202Accepted)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> SteerAsync(
         Guid runId,
         [FromBody] SteerRunRequest request,

@@ -32,8 +32,6 @@ public sealed class UsersController(
     [HttpPost]
     [RequiresPermission("identity:write")]
     [ProducesResponseType<Modules.Identity.Application.Views.UserAccountView>(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<Modules.Identity.Application.Views.UserAccountView>> InviteUserAsync(
         [FromBody] InviteUserRequest request,
         [FromServices] IValidator<InviteUserRequest> inviteValidator,
@@ -61,8 +59,6 @@ public sealed class UsersController(
     [HttpPatch("{userId:guid}")]
     [RequiresPermission("identity:write")]
     [ProducesResponseType<Modules.Identity.Application.Views.UserAccountView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Modules.Identity.Application.Views.UserAccountView>> SetDisabledAsync(
         Guid userId,
         [FromBody] SetUserDisabledRequest request,
@@ -91,9 +87,6 @@ public sealed class UsersController(
     [HttpPost("{userId:guid}/oidc-link")]
     [RequiresPermission("identity:write")]
     [ProducesResponseType<Modules.Identity.Application.Views.OidcLinkView>(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<Modules.Identity.Application.Views.OidcLinkView>> LinkOidcAsync(
         Guid userId,
         [FromBody] LinkOidcRequest request,
@@ -123,7 +116,6 @@ public sealed class UsersController(
     [HttpGet]
     [RequiresPermission("identity:read")]
     [ProducesResponseType<IdentityAdminPage>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IdentityAdminPage>> ListAsync(
         [FromQuery] ListUsersQueryRequest query,
         [FromServices] IValidator<ListUsersQueryRequest> listUsersValidator,

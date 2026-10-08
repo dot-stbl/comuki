@@ -32,7 +32,6 @@ public sealed class RunArtifactsController(IRunArtifactStore store) : Controller
     [HttpGet]
     [EndpointName("runs-artifacts")]
     [ProducesResponseType<RunArtifactsPage>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RunArtifactsPage>> ListAsync(
         Guid projectId,
         Guid runId,

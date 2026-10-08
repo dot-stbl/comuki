@@ -46,7 +46,6 @@ public sealed class SourcesController(
     [HttpPost(ApiRoutes.Sources)]
     [RequiresPermission("source:write")]
     [ProducesResponseType<SourceConnectionView>(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreateAsync(CreateSourceConnectionRequest request, CancellationToken cancellationToken = default)
     {
         var view = await connections.CreateAsync(
@@ -67,7 +66,6 @@ public sealed class SourcesController(
     [HttpGet(ApiRoutes.Source)]
     [RequiresPermission("integration:read")]
     [ProducesResponseType<SourceConnectionView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
         return Ok(await connections.GetAsync(new SourceConnectionId(sourceId), cancellationToken));
@@ -80,7 +78,6 @@ public sealed class SourcesController(
     [HttpPut(ApiRoutes.Source)]
     [RequiresPermission("source:write")]
     [ProducesResponseType<SourceConnectionView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UpdateAsync(Guid sourceId, UpdateSourceConnectionRequest request, CancellationToken cancellationToken = default)
     {
         return Ok(await connections.UpdateAsync(
@@ -129,7 +126,6 @@ public sealed class SourcesController(
     [HttpPost(ApiRoutes.SourceProbe)]
     [RequiresPermission("source:write")]
     [ProducesResponseType<SourceProbeResult>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SourceProbeResult>> ProbeConnectionAsync(
         Guid sourceId,
         CancellationToken cancellationToken = default)
@@ -161,7 +157,6 @@ public sealed class SourcesController(
     [HttpPost(ApiRoutes.SourceRotateSecret)]
     [RequiresPermission("source:write")]
     [ProducesResponseType<SecretRotationResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> RotateSecretAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
         return Ok(await connections.RotateSecretAsync(new SourceConnectionId(sourceId), cancellationToken));
@@ -181,7 +176,6 @@ public sealed class SourcesController(
     [HttpPut(ApiRoutes.SourceAdmissionRule)]
     [RequiresPermission("source:write")]
     [ProducesResponseType<AdmissionRuleView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UpdateRuleUnderSourceAsync(
         Guid sourceId,
         Guid ruleId,

@@ -34,8 +34,6 @@ public sealed class KeysController(
     [HttpPost]
     [RequiresPermission("identity:write")]
     [ProducesResponseType<IssuedApiKeyResponse>(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IssuedApiKeyResponse>> IssueApiKeyAsync(
         [FromBody] CreateApiKeyRequest request,
         [FromServices] IValidator<CreateApiKeyRequest> createApiKeyValidator,
@@ -69,7 +67,6 @@ public sealed class KeysController(
     [HttpPost("{keyId:guid}/revoke")]
     [RequiresPermission("identity:write")]
     [ProducesResponseType<ApiKeyView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiKeyView>> RevokeApiKeyAsync(
         Guid keyId,
         CancellationToken cancellationToken = default)
@@ -92,7 +89,6 @@ public sealed class KeysController(
     [HttpGet]
     [RequiresPermission("identity:read")]
     [ProducesResponseType<IdentityAdminKeysPage>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IdentityAdminKeysPage>> ListAsync(
         [FromQuery] ListApiKeysQueryRequest query,
         [FromServices] IValidator<ListApiKeysQueryRequest> listApiKeysValidator,

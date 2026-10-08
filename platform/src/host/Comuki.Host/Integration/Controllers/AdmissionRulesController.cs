@@ -39,7 +39,6 @@ public sealed class AdmissionRulesController(AdmissionRuleService rules) : Contr
     [HttpPost]
     [RequiresPermission("source:write")]
     [ProducesResponseType<AdmissionRuleView>(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreateAsync(CreateAdmissionRuleRequest request, CancellationToken cancellationToken = default)
     {
         var view = await rules.CreateAsync(
@@ -58,7 +57,6 @@ public sealed class AdmissionRulesController(AdmissionRuleService rules) : Contr
     [HttpGet("{ruleId:guid}")]
     [RequiresPermission("integration:read")]
     [ProducesResponseType<AdmissionRuleView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetAsync(Guid ruleId, CancellationToken cancellationToken = default)
     {
         return Ok(await rules.GetAsync(new AdmissionRuleId(ruleId), cancellationToken));
@@ -71,7 +69,6 @@ public sealed class AdmissionRulesController(AdmissionRuleService rules) : Contr
     [HttpPut("{ruleId:guid}")]
     [RequiresPermission("source:write")]
     [ProducesResponseType<AdmissionRuleView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> UpdateAsync(Guid ruleId, UpdateAdmissionRuleRequest request, CancellationToken cancellationToken = default)
     {
         return Ok(await rules.UpdateAsync(

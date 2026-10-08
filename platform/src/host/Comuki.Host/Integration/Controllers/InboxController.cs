@@ -44,7 +44,6 @@ public sealed class InboxController(
     [HttpGet("catalog")]
     [RequiresPermission("integration:read")]
     [ProducesResponseType<IReadOnlyList<InboundItemView>>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> FetchCatalogAsync(
         [FromQuery] Guid connectionId,
         [FromQuery] int page = 1,
@@ -59,9 +58,6 @@ public sealed class InboxController(
     [HttpPost("claim")]
     [RequiresPermission("integration:claim")]
     [ProducesResponseType<InboundItemView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> ClaimAsync(ClaimInboundItemRequest request, CancellationToken cancellationToken = default)
     {
         return Ok(await claims.HandleAsync(new ClaimInboundItemCommand(new InboundItemId(request.TicketId)), cancellationToken));

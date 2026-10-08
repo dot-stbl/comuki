@@ -32,7 +32,6 @@ public sealed class VisualArtifactsController(IVisualArtifactStore store) : Cont
     [HttpGet]
     [EndpointName("artifacts-visual-list")]
     [ProducesResponseType<VisualArtifactPage>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<VisualArtifactPage>> ListAsync(
         Guid projectId,
         [FromQuery] Guid? runId,
@@ -58,7 +57,6 @@ public sealed class VisualArtifactsController(IVisualArtifactStore store) : Cont
     [HttpGet("{artifactId:guid}/content")]
     [EndpointName("artifacts-visual-content")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetContentAsync(
         Guid projectId,
         Guid artifactId,

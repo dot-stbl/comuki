@@ -36,7 +36,6 @@ public sealed class ProceduresController(
     [HttpGet("{projectId:guid}/{procedureKey}")]
     [RequiresPermission("procedure:read")]
     [ProducesResponseType<ProcedureVersionResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProcedureVersionResponse>> GetLatestAsync(
         [FromRoute] Guid projectId,
         [FromRoute] string procedureKey,
@@ -60,7 +59,6 @@ public sealed class ProceduresController(
     [HttpGet("versions/{versionId}")]
     [RequiresPermission("procedure:read")]
     [ProducesResponseType<ProcedureVersionResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProcedureVersionResponse>> GetVersionAsync(
         [FromRoute] string versionId,
         CancellationToken cancellationToken = default)
@@ -85,7 +83,6 @@ public sealed class ProceduresController(
     [HttpPost("{projectId:guid}/{procedureKey}/propose-patch")]
     [RequiresPermission("procedure:write")]
     [ProducesResponseType<ProposedPatchResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ProposedPatchResponse>> ProposePatchAsync(
         [FromRoute] Guid projectId,
         [FromRoute] string procedureKey,

@@ -39,7 +39,6 @@ public sealed class ChatSessionsController(
     /// <param name="cancellationToken"></param>
     [HttpPost("")]
     [ProducesResponseType<ChatSessionView>(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> CreateAsync(
         [FromBody] CreateChatSessionRequest request,
         [FromServices] IValidator<CreateChatSessionCommand> validator,
@@ -73,7 +72,6 @@ public sealed class ChatSessionsController(
     /// <param name="cancellationToken"></param>
     [HttpGet("{sessionId:guid}")]
     [ProducesResponseType<ChatSessionView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAsync(Guid sessionId, CancellationToken cancellationToken = default)
     {
         var session = await resolver.ResolveAsync(sessionId, User, cancellationToken);
@@ -87,10 +85,6 @@ public sealed class ChatSessionsController(
     /// <param name="cancellationToken"></param>
     [HttpPost("{sessionId:guid}/messages")]
     [ProducesResponseType<ChatTurnResultView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult> PostMessageAsync(
         Guid sessionId,
         [FromBody] PostChatMessageRequest request,
@@ -116,7 +110,6 @@ public sealed class ChatSessionsController(
     /// <param name="cancellationToken"></param>
     [HttpGet("{sessionId:guid}/messages")]
     [ProducesResponseType<ChatMessagesPageView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ListMessagesAsync(
         Guid sessionId,
         int page = 1,
@@ -140,9 +133,6 @@ public sealed class ChatSessionsController(
     /// <param name="cancellationToken"></param>
     [HttpPost("{sessionId:guid}/approve")]
     [ProducesResponseType<ChatTurnResultView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult> ApproveAsync(
         Guid sessionId,
         [FromBody] ChatApproveRequest request,

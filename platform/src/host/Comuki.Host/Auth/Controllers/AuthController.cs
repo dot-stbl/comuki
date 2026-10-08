@@ -63,7 +63,6 @@ public sealed class AuthController(
     [HttpPost("login")]
     [EnableRateLimiting(RateLimitPolicies.Login)]
     [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> LoginAsync(
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken = default)
@@ -120,7 +119,6 @@ public sealed class AuthController(
     /// <param name="cancellationToken"></param>
     [HttpGet("me")]
     [ProducesResponseType<MeResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<MeResponse>> MeAsync(CancellationToken cancellationToken = default)
     {
         if (HostSubjects.Resolve(User) is not { } subject)
@@ -160,7 +158,6 @@ public sealed class AuthController(
     [HttpGet("oidc/{provider}/start")]
     [EnableRateLimiting(RateLimitPolicies.OidcStart)]
     [ProducesResponseType(StatusCodes.Status302Found)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> StartOidcAsync(
         string provider,
         [FromQuery] string? returnTo,

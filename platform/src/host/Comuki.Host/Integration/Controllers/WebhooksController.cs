@@ -26,8 +26,6 @@ public sealed class WebhooksController(
     /// <param name="cancellationToken"></param>
     [HttpPost("{provider}/{key}")]
     [ProducesResponseType(typeof(WebhookAcceptedResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReceiveAsync(string provider, string key, CancellationToken cancellationToken = default)
     {
         var delivery = await WebhookDeliveryReader.ReadAsync(Request, cancellationToken);

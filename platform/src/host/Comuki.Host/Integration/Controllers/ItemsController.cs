@@ -24,8 +24,6 @@ public sealed class ItemsController(CreateNativeInboundItemHandler nativeInbound
     /// <param name="cancellationToken"></param>
     [HttpPost]
     [ProducesResponseType<InboundItemView>(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> CreateAsync(CreateNativeInboundItemRequest request, CancellationToken cancellationToken = default)
     {
         var view = await nativeInboundItems.HandleAsync(

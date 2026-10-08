@@ -33,7 +33,6 @@ public sealed class LearningCandidatesController(
     /// <param name="cancellationToken"></param>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<LearningCandidateView>>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> ListAsync([FromQuery] string? status, CancellationToken cancellationToken = default)
     {
         var parsed = string.IsNullOrWhiteSpace(status) ? null : LearningStatusKeys.Parse(status);
@@ -49,7 +48,6 @@ public sealed class LearningCandidatesController(
     /// <param name="cancellationToken"></param>
     [HttpGet("{candidateId:guid}", Name = "learning-candidates-get-by-id")]
     [ProducesResponseType<LearningCandidateView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetAsync(Guid candidateId, CancellationToken cancellationToken = default)
     {
         return await candidates.GetAsync(new LearningCandidateId(candidateId), cancellationToken) is { } candidate
@@ -68,8 +66,6 @@ public sealed class LearningCandidatesController(
     [HttpPost("{candidateId:guid}/approve")]
     [RequiresPermission("learning:write")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> ApproveAsync(Guid candidateId, CancellationToken cancellationToken = default)
     {
         return await decisions.ApproveAsync(new LearningCandidateId(candidateId), cancellationToken) is null
@@ -88,8 +84,6 @@ public sealed class LearningCandidatesController(
     [HttpPost("{candidateId:guid}/reject")]
     [RequiresPermission("learning:write")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult> RejectAsync(
         Guid candidateId,
         [FromBody] RejectLearningCandidateRequest request,

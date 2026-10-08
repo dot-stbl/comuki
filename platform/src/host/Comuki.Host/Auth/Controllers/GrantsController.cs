@@ -38,8 +38,6 @@ public sealed class GrantsController(
     [HttpPost]
     [RequiresPermission("identity:write")]
     [ProducesResponseType<Modules.Identity.Application.Views.RoleAssignmentView>(StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<Modules.Identity.Application.Views.RoleAssignmentView>> GrantRoleAsync(
         [FromBody] GrantRoleRequest request,
         [FromServices] IValidator<GrantRoleRequest> grantRoleValidator,
@@ -76,7 +74,6 @@ public sealed class GrantsController(
     [HttpPost("{grantId:guid}/revoke")]
     [RequiresPermission("identity:write")]
     [ProducesResponseType<Modules.Identity.Application.Views.RoleAssignmentView>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Modules.Identity.Application.Views.RoleAssignmentView>> RevokeGrantAsync(
         Guid grantId,
         CancellationToken cancellationToken = default)
@@ -99,7 +96,6 @@ public sealed class GrantsController(
     [HttpGet]
     [RequiresPermission("identity:read")]
     [ProducesResponseType<IdentityAdminGrantsPage>(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IdentityAdminGrantsPage>> ListAsync(
         [FromQuery] ListGrantsQueryRequest query,
         [FromServices] IValidator<ListGrantsQueryRequest> listGrantsValidator,

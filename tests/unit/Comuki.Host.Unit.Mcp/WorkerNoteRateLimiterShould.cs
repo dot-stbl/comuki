@@ -6,17 +6,20 @@ using Xunit;
 namespace Comuki.Host.Unit.Mcp;
 
 /// <summary>
-/// The memory.note limiter in isolation: the per-worker window admits
-/// <see cref="WorkerNoteRateLimiter.Limit"/> writes, rejects the next
-/// one, and re-admits after the window slides past the oldest write.
+/// The memory.note limiter in isolation: the per-worker sliding window
+/// (delegated to <c>System.Threading.RateLimiting</c>) admits
+/// <see cref="WorkerNoteRateLimiter.Limit"/> writes, rejects the next one,
+/// and isolates partitions per worker. The wall-clock bookkeeping belongs
+/// to the framework's <c>SlidingWindowRateLimiter</c> — we exercise only
+/// the per-call contract here; the framework's own unit tests cover the
+/// time-slide behaviour.
 /// </summary>
 public sealed class WorkerNoteRateLimiterShould
 {
     [Fact(DisplayName = "Given a fresh worker, when the limit is acquired Limit times, then the next acquire is rejected")]
     public void RejectsWritesBeyondTheLimit()
     {
-        var clock = new SettableClock();
-        var limiter = new WorkerNoteRateLimiter(clock);
+        using var limiter = new WorkerNoteRateLimiter();
         var workerId = WorkerId.New();
 
         var admitted = Enumerable.Range(0, WorkerNoteRateLimiter.Limit)
@@ -26,26 +29,10 @@ public sealed class WorkerNoteRateLimiterShould
         limiter.TryAcquire(workerId).ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "Given a worker at the limit, when the window slides past the oldest write, then a new write is admitted again")]
-    public void AdmitsAgainAfterTheWindowSlides()
-    {
-        var clock = new SettableClock();
-        var limiter = new WorkerNoteRateLimiter(clock);
-        var workerId = WorkerId.New();
-        for (var acquired = 0; acquired < WorkerNoteRateLimiter.Limit; acquired++)
-        {
-            limiter.TryAcquire(workerId).ShouldBeTrue();
-        }
-
-        clock.Advance(WorkerNoteRateLimiter.Window + TimeSpan.FromSeconds(1));
-
-        limiter.TryAcquire(workerId).ShouldBeTrue();
-    }
-
     [Fact(DisplayName = "Given two workers, when one hits the limit, then the other is unaffected")]
     public void WindowsArePerWorker()
     {
-        var limiter = new WorkerNoteRateLimiter(new SettableClock());
+        using var limiter = new WorkerNoteRateLimiter();
         var spammy = WorkerId.New();
         var quiet = WorkerId.New();
         for (var acquired = 0; acquired < WorkerNoteRateLimiter.Limit; acquired++)
@@ -56,20 +43,24 @@ public sealed class WorkerNoteRateLimiterShould
         limiter.TryAcquire(spammy).ShouldBeFalse();
         limiter.TryAcquire(quiet).ShouldBeTrue();
     }
-}
 
-/// <summary>A time provider whose now the tests advance by hand.</summary>
-internal sealed class SettableClock() : TimeProvider
-{
-    private DateTimeOffset now = DateTimeOffset.UtcNow;
-
-    public void Advance(TimeSpan span)
+    [Fact(DisplayName = "Given the limiter, when two workers acquire in alternation, then neither crosses the other's window")]
+    public void AlternatingWorkersAreIndependent()
     {
-        now = now.Add(span);
-    }
+        using var limiter = new WorkerNoteRateLimiter();
+        var first = WorkerId.New();
+        var second = WorkerId.New();
 
-    public override DateTimeOffset GetUtcNow()
-    {
-        return now;
+        // Each worker gets its full budget without the other one affecting
+        // it - exercises the PartitionedRateLimiter keyed on WorkerId.
+        for (var round = 0; round < WorkerNoteRateLimiter.Limit; round++)
+        {
+            limiter.TryAcquire(first).ShouldBeTrue();
+            limiter.TryAcquire(second).ShouldBeTrue();
+        }
+
+        // Both are now at their respective limits.
+        limiter.TryAcquire(first).ShouldBeFalse();
+        limiter.TryAcquire(second).ShouldBeFalse();
     }
 }

@@ -344,9 +344,9 @@ public sealed class McpWorkerToolsShould
                 knowledgeSearcher: knowledgeSearcher ?? Substitute.For<IKnowledgeSearcher>(),
                 knowledgeIngestor: Substitute.For<IKnowledgeIngestor>(),
                 memoryStore: memoryStore ?? Substitute.For<IMemoryStore>(),
-                noteRateLimiter: new WorkerNoteRateLimiter(TimeProvider.System),
+                noteRateLimiter: new WorkerNoteRateLimiter(),
                 learningCandidates: learningCandidates ?? Substitute.For<ILearningCandidateStore>(),
-                suggestRateLimiter: new WorkerSuggestRateLimiter(TimeProvider.System),
+                suggestRateLimiter: new WorkerSuggestRateLimiter(),
                 runsList: NewRunsListHandler(),
                 logsQueryClient: Substitute.For<IVictoriaLogsQueryClient>(),
                 metricsQueryClient: Substitute.For<IVictoriaMetricsQueryClient>(),
@@ -449,3 +449,5 @@ public sealed class McpWorkerToolsShould
             null);
     }
 }
+
+

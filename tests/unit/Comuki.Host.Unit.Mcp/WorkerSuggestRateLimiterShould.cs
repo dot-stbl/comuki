@@ -6,16 +6,20 @@ using Xunit;
 namespace Comuki.Host.Unit.Mcp;
 
 /// <summary>
-/// The learning.suggest limiter in isolation: the per-worker window admits
+/// The learning.suggest limiter in isolation: the per-worker sliding
+/// window (delegated to <c>System.Threading.RateLimiting</c>) admits
 /// <see cref="WorkerSuggestRateLimiter.Limit"/> suggestions, rejects the
-/// next one, and re-admits after the window slides past the oldest one.
+/// next one, and isolates partitions per worker. The wall-clock bookkeeping
+/// belongs to the framework's <c>SlidingWindowRateLimiter</c> — we
+/// exercise only the per-call contract here; the framework's own unit
+/// tests cover the time-slide behaviour.
 /// </summary>
 public sealed class WorkerSuggestRateLimiterShould
 {
     [Fact(DisplayName = "Given a fresh worker, when the limit is acquired Limit times, then the next acquire is rejected")]
     public void RejectsSuggestionsBeyondTheLimit()
     {
-        var limiter = new WorkerSuggestRateLimiter(new SettableClock());
+        using var limiter = new WorkerSuggestRateLimiter();
         var workerId = WorkerId.New();
 
         var admitted = Enumerable.Range(0, WorkerSuggestRateLimiter.Limit)
@@ -25,26 +29,10 @@ public sealed class WorkerSuggestRateLimiterShould
         limiter.TryAcquire(workerId).ShouldBeFalse();
     }
 
-    [Fact(DisplayName = "Given a worker at the limit, when the window slides past the oldest suggestion, then a new one is admitted again")]
-    public void AdmitsAgainAfterTheWindowSlides()
-    {
-        var clock = new SettableClock();
-        var limiter = new WorkerSuggestRateLimiter(clock);
-        var workerId = WorkerId.New();
-        for (var acquired = 0; acquired < WorkerSuggestRateLimiter.Limit; acquired++)
-        {
-            limiter.TryAcquire(workerId).ShouldBeTrue();
-        }
-
-        clock.Advance(WorkerSuggestRateLimiter.Window + TimeSpan.FromSeconds(1));
-
-        limiter.TryAcquire(workerId).ShouldBeTrue();
-    }
-
     [Fact(DisplayName = "Given two workers, when one hits the limit, then the other is unaffected")]
     public void WindowsArePerWorker()
     {
-        var limiter = new WorkerSuggestRateLimiter(new SettableClock());
+        using var limiter = new WorkerSuggestRateLimiter();
         var spammy = WorkerId.New();
         var quiet = WorkerId.New();
         for (var acquired = 0; acquired < WorkerSuggestRateLimiter.Limit; acquired++)
@@ -54,5 +42,25 @@ public sealed class WorkerSuggestRateLimiterShould
 
         limiter.TryAcquire(spammy).ShouldBeFalse();
         limiter.TryAcquire(quiet).ShouldBeTrue();
+    }
+
+    [Fact(DisplayName = "Given the limiter, when two workers acquire in alternation, then neither crosses the other's window")]
+    public void AlternatingWorkersAreIndependent()
+    {
+        using var limiter = new WorkerSuggestRateLimiter();
+        var first = WorkerId.New();
+        var second = WorkerId.New();
+
+        // Each worker gets its full budget without the other one affecting
+        // it - exercises the PartitionedRateLimiter keyed on WorkerId.
+        for (var round = 0; round < WorkerSuggestRateLimiter.Limit; round++)
+        {
+            limiter.TryAcquire(first).ShouldBeTrue();
+            limiter.TryAcquire(second).ShouldBeTrue();
+        }
+
+        // Both are now at their respective limits.
+        limiter.TryAcquire(first).ShouldBeFalse();
+        limiter.TryAcquire(second).ShouldBeFalse();
     }
 }

@@ -137,9 +137,9 @@ public sealed class McpToolPermissionMapShould
                 knowledgeSearcher: Substitute.For<Modules.Knowledge.Application.IKnowledgeSearcher>(),
                 knowledgeIngestor: Substitute.For<Modules.Knowledge.Application.IKnowledgeIngestor>(),
                 memoryStore: Substitute.For<Modules.Memory.Application.Ports.IMemoryStore>(),
-                noteRateLimiter: new WorkerNoteRateLimiter(TimeProvider.System),
+                noteRateLimiter: new WorkerNoteRateLimiter(),
                 learningCandidates: Substitute.For<Modules.Memory.Application.Learning.ILearningCandidateStore>(),
-                suggestRateLimiter: new WorkerSuggestRateLimiter(TimeProvider.System),
+                suggestRateLimiter: new WorkerSuggestRateLimiter(),
                 runsList: NewRunsListHandler(),
                 logsQueryClient: Substitute.For<Modules.Observability.Application.Ports.IVictoriaLogsQueryClient>(),
                 metricsQueryClient: Substitute.For<Modules.Observability.Application.Ports.IVictoriaMetricsQueryClient>(),
@@ -181,3 +181,5 @@ public sealed class McpToolPermissionMapShould
         return RoleSubject.ForUser(new Modules.Identity.Domain.Ids.UserId(Guid.NewGuid()));
     }
 }
+
+

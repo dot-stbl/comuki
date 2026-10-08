@@ -250,9 +250,9 @@ public sealed class McpEnvelopeShould
             knowledgeSearcher: Substitute.For<IKnowledgeSearcher>(),
             knowledgeIngestor: Substitute.For<IKnowledgeIngestor>(),
             memoryStore: Substitute.For<IMemoryStore>(),
-            noteRateLimiter: new WorkerNoteRateLimiter(TimeProvider.System),
+            noteRateLimiter: new WorkerNoteRateLimiter(),
             learningCandidates: Substitute.For<ILearningCandidateStore>(),
-            suggestRateLimiter: new WorkerSuggestRateLimiter(TimeProvider.System),
+            suggestRateLimiter: new WorkerSuggestRateLimiter(),
             runsList: NewRunsListHandler(),
             logsQueryClient: Substitute.For<IVictoriaLogsQueryClient>(),
             metricsQueryClient: Substitute.For<IVictoriaMetricsQueryClient>(),
@@ -317,3 +317,5 @@ public sealed class McpEnvelopeShould
         return new JsonRpcErrorBody(code, message, null);
     }
 }
+
+

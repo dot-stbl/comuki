@@ -37,9 +37,10 @@ public sealed class PiHarnessShould
         // Second line: short valid JSON-RPC event (22 chars < cap) → parsed.
         var stream = new MemoryStream(Encoding.UTF8.GetBytes(
             "this-line-is-way-over-the-24-char-cap\n" +
-                                                      /*lang=json,strict*/
-                                                      /*lang=json,strict*/
-                                                      "{\"type\":\"agent_start\"}\n"));
+                                                                           /*lang=json,strict*/
+                                                                           /*lang=json,strict*/
+                                                                           /*lang=json,strict*/
+                                                                           "{\"type\":\"agent_start\"}\n"));
         using var stdout = new StreamReader(stream);
 
         var dropCount = 0;
@@ -67,13 +68,15 @@ public sealed class PiHarnessShould
         const int cap = 24;
         var stream = new MemoryStream(Encoding.UTF8.GetBytes(
             "this-line-is-way-over-the-cap\n" +       // > cap → Dropped
-                                                      /*lang=json,strict*/
-                                                      /*lang=json,strict*/
-                                                      "{\"type\":\"agent_start\"}\n" +          // valid (22 chars < cap=24)
+                                                                           /*lang=json,strict*/
+                                                                           /*lang=json,strict*/
+                                                                           /*lang=json,strict*/
+                                                                           "{\"type\":\"agent_start\"}\n" +          // valid (22 chars < cap=24)
             "another-over-cap-line-here\n" +         // > cap → Dropped
-                                                      /*lang=json,strict*/
-                                                      /*lang=json,strict*/
-                                                      "{\"type\":\"agent_end\"}\n"));           // valid (20 chars < cap=24)
+                                                                           /*lang=json,strict*/
+                                                                           /*lang=json,strict*/
+                                                                           /*lang=json,strict*/
+                                                                           "{\"type\":\"agent_end\"}\n"));           // valid (20 chars < cap=24)
         using var stdout = new StreamReader(stream);
 
         var dropCount = 0;

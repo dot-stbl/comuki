@@ -1,5 +1,4 @@
 using Comuki.Host.Testing.Fixtures;
-using Microsoft.Extensions.Time.Testing;
 using Comuki.Modules.Identity.Domain.ApiKeys;
 using Comuki.Modules.Identity.Domain.Assignments;
 using Comuki.Modules.Identity.Domain.Oidc;
@@ -11,6 +10,7 @@ using Comuki.Modules.Identity.Infrastructure.Persistence;
 using Comuki.Modules.Identity.Infrastructure.Persistence.Stores;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Time.Testing;
 using Shouldly;
 using Xunit;
 

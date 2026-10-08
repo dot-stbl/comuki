@@ -3,10 +3,10 @@ using Comuki.Engine.Orchestration.Infrastructure;
 using Comuki.Engine.Orchestration.Infrastructure.OutboxDispatch;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing.Fixtures;
-using Microsoft.Extensions.Time.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 using Shouldly;
 using Xunit;
 

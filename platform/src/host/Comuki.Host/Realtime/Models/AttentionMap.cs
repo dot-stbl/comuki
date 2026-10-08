@@ -48,7 +48,7 @@ internal static class AttentionMap
     /// requeued item goes back to the queue and its next claim signals
     /// again.
     /// </summary>
-    private static AttentionDraft? FromWorkItemStatus(RunEventEntry entry)
+    public static AttentionDraft? FromWorkItemStatus(RunEventEntry entry)
     {
         var to = ReadTo(entry);
 
@@ -61,7 +61,7 @@ internal static class AttentionMap
     }
 
     /// <summary>Run transitions: running / failed / escalated / waiting-on-approval.</summary>
-    private static AttentionDraft? FromRunStatus(RunEventEntry entry)
+    public static AttentionDraft? FromRunStatus(RunEventEntry entry)
     {
         var to = ReadTo(entry);
 
@@ -76,7 +76,7 @@ internal static class AttentionMap
     }
 
     /// <summary>Reads the <c>to</c> property of a transition payload; null when absent or unparsable.</summary>
-    private static string? ReadTo(RunEventEntry entry)
+    public static string? ReadTo(RunEventEntry entry)
     {
         try
         {

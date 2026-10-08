@@ -47,7 +47,7 @@ public sealed class OidcStateSweeper(
     {
         // Q30 / v1.1: probe every cycle so a missing-table failure is loud
         // and repeats until the migrator lands; we do not refuse to run.
-        if (!await TableExistsAsync(cancellationToken))
+        if (!await OidcStateSweeperHelpers.TableExistsAsync(scopeFactory, logger, cancellationToken))
         {
             logger.LogCritical(
                 "migrator not run, oidc_states table missing; sweeper will retry with backoff. Run the migrator (see .agents/docs/operations/runbook.md) and the next sweep will succeed without a host restart.");
@@ -77,14 +77,25 @@ public sealed class OidcStateSweeper(
 
         return deleted;
     }
+}
 
+/// <summary>
+/// Per-cycle helpers for <see cref="OidcStateSweeper"/>; the
+/// <c>TableExistsAsync</c> probe runs outside the caller's DI scope and
+/// is the only worker-private work in the file. Extracted per the
+/// no-private-methods rule.
+/// </summary>
+file static class OidcStateSweeperHelpers
+{
     /// <summary>
     /// Q30 / v1.1: ask the store whether its table is actually present in
     /// the database the migrator populated. A probe error counts as a
     /// failed cycle (the registry retries); it never throws.
     /// </summary>
-    /// <param name="cancellationToken"></param>
-    private async Task<bool> TableExistsAsync(CancellationToken cancellationToken)
+    public static async Task<bool> TableExistsAsync(
+        IServiceScopeFactory scopeFactory,
+        ILogger logger,
+        CancellationToken cancellationToken)
     {
         try
         {

@@ -99,7 +99,7 @@ public static class MemorySeeder
         return new MemorySeedResult(written, superseded, unchanged);
     }
 
-    public static async Task<ActiveFact?> FindActiveAsync(
+    internal static async Task<ActiveFact?> FindActiveAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         string topicKey,
@@ -116,7 +116,7 @@ public static class MemorySeeder
         return !await reader.ReadAsync(cancellationToken) ? null : new ActiveFact(reader.GetGuid(0), reader.GetString(1));
     }
 
-    public static async Task InsertAsync(
+    internal static async Task InsertAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         string topicKey,
@@ -140,7 +140,7 @@ public static class MemorySeeder
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
-    public static async Task SupersedeAsync(
+    internal static async Task SupersedeAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
         Guid supersededId,
@@ -169,13 +169,13 @@ public static class MemorySeeder
         "UPDATE " + MemoryDatabase.Schema + "." + MemoryDatabase.MemoryFacts
         + " SET superseded_at = @now WHERE id = @id AND superseded_at IS NULL";
 
-    /// <summary>The one active row a topic key resolved to.</summary>
-    /// <param name="Id">Row id — used to target the supersede UPDATE.</param>
-    /// <param name="Text">Stored text — compared against the seed text.</param>
-    private sealed record ActiveFact(Guid Id, string Text);
+/// <summary>The one active row a topic key resolved to.</summary>
+/// <param name="Id">Row id — used to target the supersede UPDATE.</param>
+/// <param name="Text">Stored text — compared against the seed text.</param>
+internal sealed record ActiveFact(Guid Id, string Text);
 
-    /// <summary>One seed fact to upsert.</summary>
-    /// <param name="TopicKey">Reserved <c>platform.*</c> topic key.</param>
-    /// <param name="Text">Standing fact text.</param>
-    private sealed record SeedFact(string TopicKey, string Text);
+/// <summary>One seed fact to upsert.</summary>
+/// <param name="TopicKey">Reserved <c>platform.*</c> topic key.</param>
+/// <param name="Text">Standing fact text.</param>
+internal sealed record SeedFact(string TopicKey, string Text);
 }

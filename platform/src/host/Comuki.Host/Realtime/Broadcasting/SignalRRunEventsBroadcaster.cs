@@ -67,7 +67,7 @@ file static class SignalRRunEventsAttention
             return;
         }
 
-        var projects = await ReadProjectsAsync(
+        var projects = await SignalRRunEventsBroadcastHelpers.ReadProjectsAsync(
             scopeFactory,
             [.. drafts.Select(static draft => draft.Entry.RunId).Distinct()],
             cancellationToken);
@@ -97,8 +97,24 @@ file static class SignalRRunEventsAttention
         }
     }
 
-    /// <summary>One scoped batch read of run → project.</summary>
-    private static async Task<IReadOnlyDictionary<RunId, ProjectId>> ReadProjectsAsync(
+    // ReadProjectsAsync lives in SignalRRunEventsBroadcastHelpers below —
+// this broadcaster orchestrator stays free of private static methods
+// per the no-private-methods rule.
+}
+
+/// <summary>
+/// Per-call scope opener for <see cref="SignalRRunEventsBroadcaster"/>.
+/// The broadcaster runs outside an HTTP context (BackgroundService); the
+/// IRealtimeRunProjects port carries its own DI scope, which the
+/// helper opens once per batch and disposes on return.
+/// </summary>
+file static class SignalRRunEventsBroadcastHelpers
+{
+    /// <summary>Opens one DI scope, reads run → project ids, returns.</summary>
+    /// <param name="scopeFactory">Root <see cref="IServiceScopeFactory"/>.</param>
+    /// <param name="runIds">Distinct run ids from the batch.</param>
+    /// <param name="cancellationToken">Cooperative cancellation.</param>
+    public static async Task<IReadOnlyDictionary<RunId, ProjectId>> ReadProjectsAsync(
         IServiceScopeFactory scopeFactory,
         IReadOnlyCollection<RunId> runIds,
         CancellationToken cancellationToken)

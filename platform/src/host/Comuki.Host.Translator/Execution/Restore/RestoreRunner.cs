@@ -204,7 +204,7 @@ public sealed class RestoreRunner(
     /// shape is fixed by the spec — only the two golden opcodes ship in
     /// the v1 catalog; extending it is a catalog-level decision.
     /// </summary>
-    private static RestoreInvocation BuildInvocation(string opcode, string target, string workingDirectory)
+    internal static RestoreInvocation BuildInvocation(string opcode, string target, string workingDirectory)
     {
         return opcode switch
         {
@@ -222,5 +222,5 @@ public sealed class RestoreRunner(
     }
 
     /// <summary>One translated restore invocation: executable + arguments + cwd.</summary>
-    private sealed record RestoreInvocation(string Executable, IReadOnlyList<string> Arguments, string? WorkingDirectory);
+    internal sealed record RestoreInvocation(string Executable, IReadOnlyList<string> Arguments, string? WorkingDirectory);
 }

@@ -109,7 +109,7 @@ public static class PiCodingAgentDirectory
     /// subsequent <c>models.json</c> edit lands on top of any shipped copy in the same
     /// step without an extra round-trip. Subdirectories are created as needed.
     /// </summary>
-    private static void CopyDirectoryTree(string source, string destination)
+    public static void CopyDirectoryTree(string source, string destination)
     {
         foreach (var sourceFile in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
         {
@@ -131,7 +131,7 @@ public static class PiCodingAgentDirectory
     /// <see cref="ArgumentException"/> so an image that ships an unexpected shape
     /// fails loudly rather than silently being clobbered.
     /// </summary>
-    private static async Task<JsonObject> LoadOrCreateModelsJsonAsync(string modelsJsonPath, CancellationToken cancellationToken)
+    public static async Task<JsonObject> LoadOrCreateModelsJsonAsync(string modelsJsonPath, CancellationToken cancellationToken)
     {
         if (!File.Exists(modelsJsonPath))
         {
@@ -162,7 +162,7 @@ public static class PiCodingAgentDirectory
     /// the minimal <c>providers</c> / <c>providers.anthropic</c> nesting when absent.
     /// Every other field already on <paramref name="rootNode"/> is preserved.
     /// </summary>
-    private static void UpsertAnthropicBaseUrl(JsonObject rootNode, string proxyBaseUrl)
+    public static void UpsertAnthropicBaseUrl(JsonObject rootNode, string proxyBaseUrl)
     {
         EnsureChildObject(EnsureChildObject(rootNode, "providers"), "anthropic")["baseUrl"] = proxyBaseUrl;
     }
@@ -172,7 +172,7 @@ public static class PiCodingAgentDirectory
     /// creates an empty one and inserts it. Throws when a different-shape value is
     /// already in place — non-object children cannot host sub-keys without losing data.
     /// </summary>
-    private static JsonObject EnsureChildObject(JsonObject parent, string childName)
+    public static JsonObject EnsureChildObject(JsonObject parent, string childName)
     {
         if (parent[childName] is JsonObject existing)
         {

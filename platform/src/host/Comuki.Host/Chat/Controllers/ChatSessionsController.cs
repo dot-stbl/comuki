@@ -84,6 +84,11 @@ public sealed class ChatSessionsController(
     /// <param name="cancellationToken"></param>
     [HttpPost("{sessionId:guid}/messages")]
     [ProducesResponseType<ChatTurnResultView>(StatusCodes.Status200OK)]
+    // 503 is the only upstream-specific status this endpoint can emit —
+    // the brain turn driver fails with a typed 503 when the upstream AI is
+    // unavailable, and the per-endpoint override is what api-design.md §3
+    // keeps globally undocumented on the 4xx/5xx transformer.
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult> PostMessageAsync(
         Guid sessionId,
         [FromBody] PostChatMessageRequest request,
@@ -132,6 +137,9 @@ public sealed class ChatSessionsController(
     /// <param name="cancellationToken"></param>
     [HttpPost("{sessionId:guid}/approve")]
     [ProducesResponseType<ChatTurnResultView>(StatusCodes.Status200OK)]
+    // 503 — same upstream-AI-unavailable path as PostMessageAsync; the
+    // brain approve path surfaces the typed 503 when the model is down.
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult> ApproveAsync(
         Guid sessionId,
         [FromBody] ChatApproveRequest request,

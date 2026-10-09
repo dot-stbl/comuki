@@ -27,37 +27,46 @@ namespace Comuki.Host.OpenApi;
 /// </summary>
 public sealed class ProblemDetailsOperationTransformer : IOpenApiOperationTransformer
 {
+    /// <inheritdoc />
+    public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
+    {
+        ProblemDetailsOperationHelpers.EnsureProblemDetailsSchemas(context);
+
+        ProblemDetailsOperationHelpers.EnsureResponse(operation, "400", "Validation failed", validationSchema: true);
+        ProblemDetailsOperationHelpers.EnsureResponse(operation, "404", "Resource not found");
+        ProblemDetailsOperationHelpers.EnsureResponse(operation, "409", "Conflict");
+        ProblemDetailsOperationHelpers.EnsureResponse(operation, "500", "Unhandled error");
+
+        if (ProblemDetailsOperationHelpers.RequiresAuthorization(context))
+        {
+            ProblemDetailsOperationHelpers.EnsureResponse(operation, "401", "Unauthenticated");
+            ProblemDetailsOperationHelpers.EnsureResponse(operation, "403", "Forbidden");
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
+/// <summary>
+/// Document / response / metadata plumbing that
+/// <see cref="ProblemDetailsOperationTransformer"/> delegates to. File-scoped
+/// so the three helpers live next to the only caller; the transformer itself
+/// stays a thin orchestration entry point with no private statics.
+/// </summary>
+file static class ProblemDetailsOperationHelpers
+{
     /// <summary>Validation body schema — same shape <c>ValidationProblemDetails</c> emits.</summary>
     private const string Validation400 = "ValidationProblemDetails";
 
     /// <summary>Standard <c>ProblemDetails</c> schema name (one per document).</summary>
     private const string ProblemDetails = "ProblemDetails";
 
-    /// <inheritdoc />
-    public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
-    {
-        EnsureProblemDetailsSchemas(context);
-
-        EnsureResponse(operation, "400", "Validation failed", validationSchema: true);
-        EnsureResponse(operation, "404", "Resource not found");
-        EnsureResponse(operation, "409", "Conflict");
-        EnsureResponse(operation, "500", "Unhandled error");
-
-        if (RequiresAuthorization(context))
-        {
-            EnsureResponse(operation, "401", "Unauthenticated");
-            EnsureResponse(operation, "403", "Forbidden");
-        }
-
-        return Task.CompletedTask;
-    }
-
     /// <summary>
     /// Registers the two wire schemas the transformer references (idempotent —
     /// <c>OpenApiDocument.Components</c> already-keyed dict).
     /// </summary>
     /// <param name="context">Operation-transformer context; the <see cref="OpenApiDocument"/> carries the document-wide components.</param>
-    private static void EnsureProblemDetailsSchemas(OpenApiOperationTransformerContext context)
+    public static void EnsureProblemDetailsSchemas(OpenApiOperationTransformerContext context)
     {
         if (context.Document?.Components is null)
         {
@@ -94,7 +103,7 @@ public sealed class ProblemDetailsOperationTransformer : IOpenApiOperationTransf
     /// <param name="statusCode">HTTP status string ("400", "404", ...).</param>
     /// <param name="description">Human-readable title — same wording TypedResults.Problem uses at runtime.</param>
     /// <param name="validationSchema">True when the response body is <c>ValidationProblemDetails</c>; defaults to <c>ProblemDetails</c>.</param>
-    private static void EnsureResponse(OpenApiOperation operation, string statusCode, string description, bool validationSchema = false)
+    public static void EnsureResponse(OpenApiOperation operation, string statusCode, string description, bool validationSchema = false)
     {
         operation.Responses ??= [];
 
@@ -130,7 +139,7 @@ public sealed class ProblemDetailsOperationTransformer : IOpenApiOperationTransf
     /// </summary>
     /// <param name="context">Operation-transformer context; the <c>Description</c>
     /// carries the <see cref="Microsoft.AspNetCore.Mvc.ApiExplorer.ApiDescription"/>.</param>
-    private static bool RequiresAuthorization(OpenApiOperationTransformerContext context)
+    public static bool RequiresAuthorization(OpenApiOperationTransformerContext context)
     {
         var metadata = context.Description?.ActionDescriptor?.EndpointMetadata;
         if (metadata is null)

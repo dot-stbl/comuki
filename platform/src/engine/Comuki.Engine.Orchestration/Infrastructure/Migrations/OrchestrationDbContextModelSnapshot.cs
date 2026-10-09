@@ -271,6 +271,12 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("admission_message_id");
 
+                    b.Property<int>("AttemptOrdinal")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
+                        .HasColumnName("attempt_ordinal");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -281,6 +287,10 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                         .HasDefaultValue(1)
                         .HasColumnName("generation");
 
+                    b.Property<Guid?>("PredecessorRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("predecessor_run_id");
+
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uuid")
                         .HasColumnName("project_id");
@@ -290,6 +300,15 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)")
                         .HasColumnName("status");
+
+                    b.Property<Guid?>("TaskId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("task_id");
+
+                    b.Property<string>("TriggeringActorId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("triggering_actor_id");
 
                     b.Property<string>("TrustClass")
                         .IsRequired()
@@ -311,6 +330,10 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                         .HasDatabaseName("ux_runs_admission_message_id")
                         .HasFilter("admission_message_id IS NOT NULL");
 
+                    b.HasIndex("TaskId")
+                        .HasDatabaseName("ix_runs_task_id")
+                        .HasFilter("task_id IS NOT NULL");
+
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("ix_runs_updated_at");
 
@@ -319,6 +342,11 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
 
                     b.HasIndex("Status", "UpdatedAt")
                         .HasDatabaseName("ix_runs_status_updated_at");
+
+                    b.HasIndex("TaskId", "AttemptOrdinal")
+                        .IsUnique()
+                        .HasDatabaseName("ux_runs_task_id_attempt_ordinal")
+                        .HasFilter("task_id IS NOT NULL");
 
                     b.ToTable("runs", "orchestration");
                 });

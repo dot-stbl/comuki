@@ -37,6 +37,7 @@ import { Route as IdentityKeysNewRouteImport } from './routes/identity/keys/new'
 import { Route as IdentityUsersNewRouteImport } from './routes/identity/users/new'
 import { Route as QueueWorkersWorkerIdRouteImport } from './routes/queue/workers/$workerId'
 import { Route as SourcesSourceIdIndexRouteImport } from './routes/sources/$sourceId/index'
+import { Route as WorkWorkTaskIdIndexRouteImport } from './routes/work/$workTaskId/index'
 import { Route as IdentityUsersUserIdIndexRouteImport } from './routes/identity/users/$userId/index'
 import { Route as IdentityUsersUserIdLinkRouteImport } from './routes/identity/users/$userId/link'
 import { Route as SourcesSourceIdTicketNewRouteImport } from './routes/sources/$sourceId/ticket/new'
@@ -181,6 +182,11 @@ const SourcesSourceIdIndexRoute = SourcesSourceIdIndexRouteImport.update({
   path: '/sources/$sourceId/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkWorkTaskIdIndexRoute = WorkWorkTaskIdIndexRouteImport.update({
+  id: '/work/$workTaskId/',
+  path: '/work/$workTaskId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IdentityUsersUserIdIndexRoute =
   IdentityUsersUserIdIndexRouteImport.update({
     id: '/identity/users/$userId/',
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/identity/users/new': typeof IdentityUsersNewRoute
   '/queue/workers/$workerId': typeof QueueWorkersWorkerIdRoute
   '/sources/$sourceId/': typeof SourcesSourceIdIndexRoute
+  '/work/$workTaskId/': typeof WorkWorkTaskIdIndexRoute
   '/identity/users/$userId/link': typeof IdentityUsersUserIdLinkRoute
   '/sources/$sourceId/ticket/new': typeof SourcesSourceIdTicketNewRoute
   '/identity/users/$userId/': typeof IdentityUsersUserIdIndexRoute
@@ -261,6 +268,7 @@ export interface FileRoutesByTo {
   '/identity/users/new': typeof IdentityUsersNewRoute
   '/queue/workers/$workerId': typeof QueueWorkersWorkerIdRoute
   '/sources/$sourceId': typeof SourcesSourceIdIndexRoute
+  '/work/$workTaskId': typeof WorkWorkTaskIdIndexRoute
   '/identity/users/$userId/link': typeof IdentityUsersUserIdLinkRoute
   '/sources/$sourceId/ticket/new': typeof SourcesSourceIdTicketNewRoute
   '/identity/users/$userId': typeof IdentityUsersUserIdIndexRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/identity/users/new': typeof IdentityUsersNewRoute
   '/queue/workers/$workerId': typeof QueueWorkersWorkerIdRoute
   '/sources/$sourceId/': typeof SourcesSourceIdIndexRoute
+  '/work/$workTaskId/': typeof WorkWorkTaskIdIndexRoute
   '/identity/users/$userId/link': typeof IdentityUsersUserIdLinkRoute
   '/sources/$sourceId/ticket/new': typeof SourcesSourceIdTicketNewRoute
   '/identity/users/$userId/': typeof IdentityUsersUserIdIndexRoute
@@ -330,6 +339,7 @@ export interface FileRouteTypes {
     | '/identity/users/new'
     | '/queue/workers/$workerId'
     | '/sources/$sourceId/'
+    | '/work/$workTaskId/'
     | '/identity/users/$userId/link'
     | '/sources/$sourceId/ticket/new'
     | '/identity/users/$userId/'
@@ -363,6 +373,7 @@ export interface FileRouteTypes {
     | '/identity/users/new'
     | '/queue/workers/$workerId'
     | '/sources/$sourceId'
+    | '/work/$workTaskId'
     | '/identity/users/$userId/link'
     | '/sources/$sourceId/ticket/new'
     | '/identity/users/$userId'
@@ -396,6 +407,7 @@ export interface FileRouteTypes {
     | '/identity/users/new'
     | '/queue/workers/$workerId'
     | '/sources/$sourceId/'
+    | '/work/$workTaskId/'
     | '/identity/users/$userId/link'
     | '/sources/$sourceId/ticket/new'
     | '/identity/users/$userId/'
@@ -430,6 +442,7 @@ export interface RootRouteChildren {
   IdentityUsersNewRoute: typeof IdentityUsersNewRoute
   QueueWorkersWorkerIdRoute: typeof QueueWorkersWorkerIdRoute
   SourcesSourceIdIndexRoute: typeof SourcesSourceIdIndexRoute
+  WorkWorkTaskIdIndexRoute: typeof WorkWorkTaskIdIndexRoute
   IdentityUsersUserIdLinkRoute: typeof IdentityUsersUserIdLinkRoute
   SourcesSourceIdTicketNewRoute: typeof SourcesSourceIdTicketNewRoute
   IdentityUsersUserIdIndexRoute: typeof IdentityUsersUserIdIndexRoute
@@ -633,6 +646,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SourcesSourceIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/work/$workTaskId/': {
+      id: '/work/$workTaskId/'
+      path: '/work/$workTaskId'
+      fullPath: '/work/$workTaskId/'
+      preLoaderRoute: typeof WorkWorkTaskIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/identity/users/$userId/': {
       id: '/identity/users/$userId/'
       path: '/identity/users/$userId'
@@ -686,6 +706,7 @@ const rootRouteChildren: RootRouteChildren = {
   IdentityUsersNewRoute: IdentityUsersNewRoute,
   QueueWorkersWorkerIdRoute: QueueWorkersWorkerIdRoute,
   SourcesSourceIdIndexRoute: SourcesSourceIdIndexRoute,
+  WorkWorkTaskIdIndexRoute: WorkWorkTaskIdIndexRoute,
   IdentityUsersUserIdLinkRoute: IdentityUsersUserIdLinkRoute,
   SourcesSourceIdTicketNewRoute: SourcesSourceIdTicketNewRoute,
   IdentityUsersUserIdIndexRoute: IdentityUsersUserIdIndexRoute,

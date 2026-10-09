@@ -1,0 +1,49 @@
+{
+  "detailPage": {
+    "titleFallback": "Arbeitsaufgabe",
+    "errorTitle": "Diese Arbeitsaufgabe konnte nicht geladen werden",
+    "notFoundTitle": "Keine Arbeitsaufgabe mit dieser id",
+    "notFoundBody": "Auf dieser Plattform gibt es nichts mit dieser id. Die Arbeitsaufgabe wurde möglicherweise abgebrochen — hier oder in einem anderen Tab — und der Laufgraph zeigt die noch vorhandenen.",
+    "backToTasks": "Zurück zu den Aufgaben",
+    "factsTitle": "was diese Arbeitsaufgabe ist",
+    "factProject": "Projekt",
+    "factStatus": "Status",
+    "factOutcome": "Ergebnis",
+    "factAttempt": "Versuchsnummer",
+    "factActiveAttempt": "aktiver Versuch",
+    "factActiveAttemptEmpty": "kein aktiver Versuch",
+    "factVisibility": "Sichtbarkeit",
+    "factMission": "Mission",
+    "factMissionEmpty": "auf Projektebene",
+    "factBriefVersion": "Brief-Version",
+    "factCreatedAt": "erstellt",
+    "factUpdatedAt": "aktualisiert",
+    "sourceRefsTitle": "welche Tickets diese Aufgabe vertritt",
+    "sourceRefsEmpty": "keine Quelltickets — diese Aufgabe wurde ohne sie erstellt"
+  },
+  "status": {
+    "Draft": "Entwurf",
+    "Ready": "Bereit",
+    "Active": "Aktiv",
+    "Blocked": "Blockiert",
+    "Resolved": "Abgeschlossen",
+    "Cancelled": "Abgebrochen"
+  },
+  "outcome": {
+    "Succeeded": "Erfolgreich",
+    "Waived": "Übergangen",
+    "Replaced": "Ersetzt",
+    "Failed": "Fehlgeschlagen"
+  },
+  "visibility": {
+    "Project": "Projekt",
+    "Mission": "Mission"
+  },
+  "sourceKind": {
+    "Native": "Nativ",
+    "GitHub": "GitHub",
+    "GitLab": "GitLab",
+    "Jira": "Jira",
+    "YandexTracker": "Yandex Tracker"
+  }
+}

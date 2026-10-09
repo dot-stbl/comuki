@@ -1,0 +1,49 @@
+{
+  "detailPage": {
+    "titleFallback": "Work task",
+    "errorTitle": "Couldn't load this work task",
+    "notFoundTitle": "No work task with that id",
+    "notFoundBody": "Nothing on this platform answers to this id. The work task may have been cancelled — here or in another tab — and the runs graph is where the ones that still exist are.",
+    "backToTasks": "Back to tasks",
+    "factsTitle": "what this work task is",
+    "factProject": "project",
+    "factStatus": "status",
+    "factOutcome": "outcome",
+    "factAttempt": "attempt ordinal",
+    "factActiveAttempt": "active attempt",
+    "factActiveAttemptEmpty": "no active attempt",
+    "factVisibility": "visibility",
+    "factMission": "mission",
+    "factMissionEmpty": "project scope",
+    "factBriefVersion": "brief version",
+    "factCreatedAt": "created",
+    "factUpdatedAt": "updated",
+    "sourceRefsTitle": "which tickets this task stands for",
+    "sourceRefsEmpty": "no source tickets — this task was created without one"
+  },
+  "status": {
+    "Draft": "Draft",
+    "Ready": "Ready",
+    "Active": "Active",
+    "Blocked": "Blocked",
+    "Resolved": "Resolved",
+    "Cancelled": "Cancelled"
+  },
+  "outcome": {
+    "Succeeded": "Succeeded",
+    "Waived": "Waived",
+    "Replaced": "Replaced",
+    "Failed": "Failed"
+  },
+  "visibility": {
+    "Project": "Project",
+    "Mission": "Mission"
+  },
+  "sourceKind": {
+    "Native": "Native",
+    "GitHub": "GitHub",
+    "GitLab": "GitLab",
+    "Jira": "Jira",
+    "YandexTracker": "Yandex Tracker"
+  }
+}

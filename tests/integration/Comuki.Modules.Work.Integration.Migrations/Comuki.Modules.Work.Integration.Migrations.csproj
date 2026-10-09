@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Modules.Work.Integration.Migrations</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Engine: orchestrates the Runs table that carries the Work backlink
+      columns (task_id / attempt_ordinal / predecessor_run_id /
+      triggering_actor_id — see RunWorkBacklink migration 20261007162523).
+      Work: produces the work.* tables, the inbox_receipts dedupe ledger,
+      outbox_watermarks subscriber state, and the inbound_item_bindings map
+      that the Integrations-admission hook reads. The migrator entry
+      point ComukiDatabaseMigrator wires both contexts against one
+      connection so the integration smoke runs a single full-migrate
+      pass and asserts the resulting schema, not the migrations in
+      isolation.
+    -->
+    <ProjectReference Include="..\..\..\platform\src\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Work\Comuki.Modules.Work.Infrastructure\Comuki.Modules.Work.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Migrations\Comuki.Shared.Migrations.csproj" />
+  </ItemGroup>
+
+</Project>

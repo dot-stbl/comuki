@@ -1,0 +1,58 @@
+# WS10 T2 scenario for the add-work-management umbrella:
+# the cutover from Run-shaped to WorkTask-shaped state, end to end,
+# without a live model call. The scenario is a *fixture* — the runner
+# here is `tests/tools/Comuki.AgentTest.Runner` (per
+# `add-agentic-test-contour/specs/agentic-testing/spec.md`), with the
+# `fake` model mode so no real pi is invoked. The Host stand-up uses
+# `CrownScenarioHost` as the composition root.
+#
+# Lifecycle:
+#   webhook -> Integrations inbound -> Work.AdmitTask -> WorkTask
+#   Work.DispatchRun -> work.task.dispatch-requested.v1 ->
+#   WorkDispatchRequestedSubscriber (Host) -> IRunLauncher ->
+#   Run (fake Orchestration returns terminal) -> orchestration.run.terminated.v1
+#   -> WorkIngestRunTerminalSubscriber -> WorkTask terminal ->
+#   Work.TaskTerminal -> work.task.resolved.v1 ->
+#   WorkSyncBridgeComukiWorker (gated on work.management.sync.enabled)
+#   -> IIntegrationsStore.EnqueueSyncJobAsync -> one terminal-once
+#   outbound sync job.
+schemaVersion: 1
+name: work-end-to-end
+description: >
+  End-to-end WorkTask lifecycle through the Work module: inbound ->
+  Work.AdmitTask -> WorkTask -> Work.DispatchRun -> Run-attempt loop
+  -> terminal event -> Work resolution -> sync job. Fake model so no
+  real pi is invoked; the cassette is redaction-clean.
+ticket:
+  source: github
+  title: "Add WorkTask management domain"
+  body: |
+    The WorkTask aggregate is the durable unit of work; admit from
+    the Integrations inbound, dispatch a Run attempt, resolve the
+    task, and emit one terminal sync job.
+  labels: [feature, work]
+  targetRepo:
+    fixture: small-repo
+    ref: main
+worker:
+  image: comuki-agent-test-worker:ws10
+  profileKey: implement
+  profilesRef: test
+model:
+  mode: fake
+expectedTrajectory:
+  - stage: work-item
+      toolsUsed: [Bash]
+      forbiddenTools: [WebFetch]
+assertions:
+  journal:
+    - condition: WorkspacePrepared
+      expected: true
+    - condition: AgentRunning
+      expected: true
+  run:
+    finalStatus: succeeded
+  work:
+    taskCount: 1
+    taskFinalStatus: Resolved
+    syncJobCount: 1

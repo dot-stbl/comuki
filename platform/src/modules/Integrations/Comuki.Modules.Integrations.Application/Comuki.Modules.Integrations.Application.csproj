@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
     <ProjectReference Include="..\Comuki.Modules.Integrations.Domain\Comuki.Modules.Integrations.Domain.csproj" />
   </ItemGroup>
 

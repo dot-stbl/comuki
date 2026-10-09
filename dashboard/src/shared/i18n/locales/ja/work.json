@@ -1,0 +1,49 @@
+{
+  "detailPage": {
+    "titleFallback": "ワークタスク",
+    "errorTitle": "このワークタスクを読み込めませんでした",
+    "notFoundTitle": "この id のワークタスクはありません",
+    "notFoundBody": "このプラットフォームにはこの id に該当するものがありません。ワークタスクは — ここまたは別のタブで — キャンセルされた可能性があり、実行グラフには残存しているタスクが表示されます。",
+    "backToTasks": "タスクに戻る",
+    "factsTitle": "このワークタスクについて",
+    "factProject": "プロジェクト",
+    "factStatus": "ステータス",
+    "factOutcome": "結果",
+    "factAttempt": "試行番号",
+    "factActiveAttempt": "アクティブな試行",
+    "factActiveAttemptEmpty": "アクティブな試行なし",
+    "factVisibility": "公開範囲",
+    "factMission": "ミッション",
+    "factMissionEmpty": "プロジェクト範囲",
+    "factBriefVersion": "ブリーフのバージョン",
+    "factCreatedAt": "作成日時",
+    "factUpdatedAt": "更新日時",
+    "sourceRefsTitle": "このタスクが表すチケット",
+    "sourceRefsEmpty": "ソースチケットなし — ソースなしで作成されたタスクです"
+  },
+  "status": {
+    "Draft": "下書き",
+    "Ready": "準備完了",
+    "Active": "実行中",
+    "Blocked": "ブロック中",
+    "Resolved": "完了",
+    "Cancelled": "キャンセル"
+  },
+  "outcome": {
+    "Succeeded": "成功",
+    "Waived": "免除",
+    "Replaced": "置換",
+    "Failed": "失敗"
+  },
+  "visibility": {
+    "Project": "プロジェクト",
+    "Mission": "ミッション"
+  },
+  "sourceKind": {
+    "Native": "ネイティブ",
+    "GitHub": "GitHub",
+    "GitLab": "GitLab",
+    "Jira": "Jira",
+    "YandexTracker": "ヤンデックス・トラッカー"
+  }
+}

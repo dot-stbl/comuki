@@ -50,6 +50,21 @@ public sealed class RunConfiguration : IEntityTypeConfiguration<Run>
             .HasColumnName("admission_message_id")
             .HasMaxLength(256);
 
+        builder.Property(static run => run.TaskId)
+            .HasColumnName("task_id");
+
+        builder.Property(static run => run.AttemptOrdinal)
+            .HasColumnName("attempt_ordinal")
+            .IsRequired()
+            .HasDefaultValue(1);
+
+        builder.Property(static run => run.PredecessorRunId)
+            .HasColumnName("predecessor_run_id");
+
+        builder.Property(static run => run.TriggeringActorId)
+            .HasColumnName("triggering_actor_id")
+            .HasMaxLength(128);
+
         // Performance audit (2026-09-09) §1.1: every escalation sweep,
         // runs-list page, and project-scope filter was a heap scan.
         // Status+UpdatedAt is the dominant read pattern
@@ -74,5 +89,23 @@ public sealed class RunConfiguration : IEntityTypeConfiguration<Run>
             .HasDatabaseName("ux_runs_admission_message_id")
             .IsUnique()
             .HasFilter("admission_message_id IS NOT NULL");
+
+        // Work-bridge backlink — the (task_id, attempt_ordinal) pair is
+        // unique per WorkTask attempt; the engine-side stamp on the Run
+        // mirrors it. The same filtered shape as the admission index: a
+        // filtered unique index keeps the (rare) cross-task ordinals apart
+        // while leaving chat / scheduler rows (where task_id is null) out
+        // of the index.
+        builder.HasIndex(static run => new { run.TaskId, run.AttemptOrdinal })
+            .HasDatabaseName("ux_runs_task_id_attempt_ordinal")
+            .IsUnique()
+            .HasFilter("task_id IS NOT NULL");
+
+        // The non-unique look-up by task_id (e.g. the Work-bridge
+        // "latest run for this task" query). Same filter as the unique
+        // index so we don't index the null row.
+        builder.HasIndex(static run => run.TaskId)
+            .HasDatabaseName("ix_runs_task_id")
+            .HasFilter("task_id IS NOT NULL");
     }
 }

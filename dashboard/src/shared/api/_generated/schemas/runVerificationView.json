@@ -1,0 +1,67 @@
+{
+  "required": ["runId", "verified", "verificationPending", "gates"],
+  "type": "object",
+  "properties": {
+    "runId": {
+      "type": "string",
+      "description": "Run the verdicts belong to.",
+      "format": "uuid"
+    },
+    "verified": {
+      "type": "boolean",
+      "description": "`true` when every gate in IReadOnlyList&lt;VerificationGateView&gt; RunVerificationView.Gates is\n`passed` AND at least one gate has been evaluated — the run's\nverification axis is fully terminal and positive. A run with no\ngates yet, with mixed `passed`/`pending`, or with any\n`failed` is `false`."
+    },
+    "verificationPending": {
+      "type": "boolean",
+      "description": "`true` when at least one gate is still `pending`\nAND the run is not yet fully verified — the \"verification pending\"\nannotation the spec introduces. Terminal failures do NOT count as\npending: a run with one `pending` and one `failed` gate\nis `pending=true`; a run with only `failed` is\n`pending=false`."
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "required": [
+          "workItemId",
+          "gateName",
+          "verdict",
+          "evidenceRefs",
+          "evaluatedAt",
+          "evaluator"
+        ],
+        "type": "object",
+        "properties": {
+          "workItemId": {
+            "type": "string",
+            "description": "Work item the gate evaluated.",
+            "format": "uuid"
+          },
+          "gateName": {
+            "type": "string",
+            "description": "Provider-registered name (e.g. `verify:generic-command-run`)."
+          },
+          "verdict": {
+            "type": "string",
+            "description": "Lower-case verdict name."
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Evidence URIs the provider stamped; empty when the verdict is `Pending`."
+          },
+          "evaluatedAt": {
+            "type": "string",
+            "description": "UTC stamp the provider returned; matches the record's `evaluated_at`.",
+            "format": "date-time"
+          },
+          "evaluator": {
+            "type": "string",
+            "description": "Provider-defined evaluator string (operator name, model id, or `\"system\"`)."
+          }
+        },
+        "description": "Per-gate wire shape for `GET /api/v1/runs/{runId}/verification`.\nThe verdict string is the lower-case `GateVerdict` smart-type\nname (`pending` / `passed` / `failed`); the evidence URI\nis returned as a plain string so the FE can resolve it through the\nexisting artifact endpoint without the engine re-encoding the URL.",
+        "x-readme-ref-name": "VerificationGateView"
+      },
+      "description": "One entry per evaluated (work item, gate) pair. Newest first within a work item."
+    }
+  },
+  "description": "Run-level wire shape for `GET /api/v1/runs/{runId}/verification`\n(add-orchestra §3 — Coda, `verification/spec.md` Requirement\n\"Verification view is a derived read\"). The two top-level booleans\nsurface the \"verification pending\" annotation the FE renders as a\npill under the run's status strip; the per-gate list renders as the\nevidence drill-down beneath it. The semantics are derived from the\nIReadOnlyList&lt;VerificationGateView&gt; RunVerificationView.Gates list alone — a future per-project\n`VerifyEnabled` read is gated on the registry returning at\nleast one record (the project is provably opted in if a provider\nhas stamped anything).",
+  "x-readme-ref-name": "RunVerificationView"
+}

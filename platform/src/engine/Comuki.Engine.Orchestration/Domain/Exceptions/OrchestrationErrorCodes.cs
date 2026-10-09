@@ -39,6 +39,16 @@ public static class OrchestrationErrorCodes
     /// <summary>Run attempted an illegal status transition (not in <c>RunTransitions.table</c>).</summary>
     public const string RunIllegalTransition = "orchestration.run.illegal_transition";
 
+    /// <summary>
+    /// Run got a second work-backlink stamp with a different
+    /// <c>(task_id, attempt_ordinal)</c> than the first — the work
+    /// bridge promised the engine one Task owns this Run; a
+    /// collision is a programming error on the bridge side, not
+    /// a recoverable condition. The 422 carries the offending
+    /// pair so a human can trace the bridge log.
+    /// </summary>
+    public const string RunWorkBacklinkMismatch = "orchestration.run.work_backlink.mismatch";
+
     /// <summary>Merge-batch attempted an illegal status transition (not in <c>MergeBatchTransitions.table</c>).</summary>
     public const string MergeBatchIllegalTransition = "orchestration.merge_batch.illegal_transition";
 

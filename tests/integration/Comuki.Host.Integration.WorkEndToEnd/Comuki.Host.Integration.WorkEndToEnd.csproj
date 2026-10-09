@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Host.Integration.WorkEndToEnd</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      The T2 (full-stack end-to-end) scenario for the
+      add-work-management umbrella (tasks 9.6 / 10.3 in
+      `openspec/changes/add-work-management/tasks.md`). The actual
+      end-to-end run is via
+      `tests/tools/Comuki.AgentTest.Runner` against the
+      `tests/fixtures/scenarios/work/end-to-end.yaml` scenario in
+      `fake` mode (per the umbrella's task 9.6 — "T2 scenario
+      harness via tests/tools/Comuki.AgentTest.Runner"; runner command
+      is on the operator's side, not part of this fixture). The
+      integration project here is the *composition root* the runner
+      would inherit from — the same shape as
+      `tests/integration/Comuki.EndToEnd.AgentLoop/CrownScenarioHost`
+      and the test class that would consume the fixture once a runner
+      lands. The `Skip = "..."` markers carry the launcher's
+      rationale so a fresh operator can see why the run is offline.
+    -->
+    <ProjectReference Include="..\..\..\platform\src\modules\Work\Comuki.Modules.Work.Application\Comuki.Modules.Work.Application.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Work\Comuki.Modules.Work.Domain\Comuki.Modules.Work.Domain.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Work\Comuki.Modules.Work.Infrastructure\Comuki.Modules.Work.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

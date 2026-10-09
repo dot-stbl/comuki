@@ -1,0 +1,49 @@
+{
+  "detailPage": {
+    "titleFallback": "İş görevi",
+    "errorTitle": "Bu iş görevi yüklenemedi",
+    "notFoundTitle": "Bu id'ye sahip bir iş görevi yok",
+    "notFoundBody": "Bu platformda bu id'ye karşılık gelen bir şey yok. İş görevi — burada veya başka bir sekmede — iptal edilmiş olabilir ve çalıştırma grafiğinde hâlâ var olanlar gösterilir.",
+    "backToTasks": "Görevlere dön",
+    "factsTitle": "bu iş görevi nedir",
+    "factProject": "proje",
+    "factStatus": "durum",
+    "factOutcome": "sonuç",
+    "factAttempt": "deneme numarası",
+    "factActiveAttempt": "aktif deneme",
+    "factActiveAttemptEmpty": "aktif deneme yok",
+    "factVisibility": "görünürlük",
+    "factMission": "görev",
+    "factMissionEmpty": "proje kapsamı",
+    "factBriefVersion": "brif versiyonu",
+    "factCreatedAt": "oluşturuldu",
+    "factUpdatedAt": "güncellendi",
+    "sourceRefsTitle": "bu görevin temsil ettiği biletler",
+    "sourceRefsEmpty": "kaynak bilet yok — bu görev bunlar olmadan oluşturuldu"
+  },
+  "status": {
+    "Draft": "Taslak",
+    "Ready": "Hazır",
+    "Active": "Etkin",
+    "Blocked": "Engellenmiş",
+    "Resolved": "Çözüldü",
+    "Cancelled": "İptal Edildi"
+  },
+  "outcome": {
+    "Succeeded": "Başarılı",
+    "Waived": "Feragat Edildi",
+    "Replaced": "Değiştirildi",
+    "Failed": "Başarısız"
+  },
+  "visibility": {
+    "Project": "Proje",
+    "Mission": "Görev"
+  },
+  "sourceKind": {
+    "Native": "Yerel",
+    "GitHub": "GitHub",
+    "GitLab": "GitLab",
+    "Jira": "Jira",
+    "YandexTracker": "Yandex Tracker"
+  }
+}

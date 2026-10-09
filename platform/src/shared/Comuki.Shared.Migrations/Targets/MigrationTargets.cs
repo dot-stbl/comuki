@@ -11,6 +11,7 @@ using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Repositories.Infrastructure.Persistence;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence;
 using Comuki.Modules.Verify.Infrastructure.Persistence;
+using Comuki.Modules.Work.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Comuki.Shared.Migrations.Targets;
@@ -106,6 +107,12 @@ public static class MigrationTargets
             var builder = new DbContextOptionsBuilder<ProceduresDbContext>();
             ProceduresDbContext.ApplyOptions(builder, connectionString);
             return new ProceduresDbContext(builder.Options);
+        }),
+        new("work", WorkDatabase.Schema, static connectionString =>
+        {
+            var builder = new DbContextOptionsBuilder<WorkDbContext>();
+            WorkDbContext.ApplyOptions(builder, connectionString);
+            return new WorkDbContext(builder.Options);
         }),
     ];
 }

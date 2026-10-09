@@ -1,0 +1,49 @@
+{
+  "detailPage": {
+    "titleFallback": "워크 태스크",
+    "errorTitle": "이 워크 태스크를 불러올 수 없습니다",
+    "notFoundTitle": "해당 id의 워크 태스크가 없습니다",
+    "notFoundBody": "이 플랫폼에는 이 id에 해당하는 것이 없습니다. 워크 태스크는 — 여기 또는 다른 탭에서 — 취소되었을 수 있으며, 실행 그래프에 남아 있는 태스크가 표시됩니다.",
+    "backToTasks": "태스크로 돌아가기",
+    "factsTitle": "이 워크 태스크의 정체",
+    "factProject": "프로젝트",
+    "factStatus": "상태",
+    "factOutcome": "결과",
+    "factAttempt": "시도 번호",
+    "factActiveAttempt": "활성 시도",
+    "factActiveAttemptEmpty": "활성 시도 없음",
+    "factVisibility": "공개 범위",
+    "factMission": "미션",
+    "factMissionEmpty": "프로젝트 범위",
+    "factBriefVersion": "브리프 버전",
+    "factCreatedAt": "생성일",
+    "factUpdatedAt": "업데이트일",
+    "sourceRefsTitle": "이 태스크가 대표하는 티켓",
+    "sourceRefsEmpty": "소스 티켓 없음 — 소스 없이 만들어진 태스크입니다"
+  },
+  "status": {
+    "Draft": "초안",
+    "Ready": "준비 완료",
+    "Active": "실행 중",
+    "Blocked": "차단됨",
+    "Resolved": "해결됨",
+    "Cancelled": "취소됨"
+  },
+  "outcome": {
+    "Succeeded": "성공",
+    "Waived": "면제",
+    "Replaced": "대체됨",
+    "Failed": "실패"
+  },
+  "visibility": {
+    "Project": "프로젝트",
+    "Mission": "미션"
+  },
+  "sourceKind": {
+    "Native": "네이티브",
+    "GitHub": "GitHub",
+    "GitLab": "GitLab",
+    "Jira": "Jira",
+    "YandexTracker": "얀덱스 트래커"
+  }
+}

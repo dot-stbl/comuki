@@ -87,4 +87,130 @@ public sealed class TranslatorOptions
     /// everything else.
     /// </summary>
     public bool DebugExec { get; init; }
+
+    /// <summary>
+    /// Progress-watchdog threshold (harden-worker-runtime Phase 1, design D1).
+    /// Tracks <c>last_event_age</c> — the time since the last parsed
+    /// stream-event (text delta, tool_use, tool_result, StageStart,
+    /// StageReport, agent_end, system, user, message_end,
+    /// tool_execution_start). Heartbeat is the *liveness* timer; this
+    /// is the *progress* timer — heartbeat without progress = stall.
+    /// Default 60s; range 5s–1h. The escalation path is policy-driven
+    /// (see <see cref="WorkerProgressEscalationPolicy"/>).
+    /// </summary>
+    [Range(typeof(TimeSpan), "00:00:05", "01:00:00")]
+    public TimeSpan WorkerProgressTimeout { get; init; } = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// Escalation policy the <c>WorkerProgressWatchdog</c> walks
+    /// through when <c>last_event_age &gt; WorkerProgressTimeout</c>
+    /// (harden-worker-runtime Phase 1, design D1):
+    /// <list type="bullet">
+    ///   <item><c>Warn</c> — log + journal <c>worker.stall_warn</c>; no action.</item>
+    ///   <item><c>GentleKill</c> — cancel the harness's <c>RunCancellation</c> token; the pump
+    ///   exits with <c>cancelled</c>, the loop skips complete and lets the
+    ///   reaper own the item.</item>
+    ///   <item><c>FailItem</c> — cancel + <c>api.FailAsync(stall_detected)</c>; the run
+    ///   reports a typed reason and the host can re-queue.</item>
+    /// </list>
+    /// Default <c>WarnGentleKillFailItem</c>: the full escalation chain
+    /// fires at <c>WorkerProgressTimeout</c> intervals (warn → gentle-kill
+    /// → fail-item).
+    /// </summary>
+    public WorkerProgressEscalationPolicy WorkerProgressEscalationPolicy { get; init; } =
+        WorkerProgressEscalationPolicy.WarnGentleKillFailItem;
+
+    /// <summary>
+    /// Wall-clock budget on a single harness cycle (one spawn → one
+    /// StageReport; harden-worker-runtime Phase 1, design D2). On
+    /// breach, escalation path is the same as the progress watchdog
+    /// (gentle-kill on first breach; after
+    /// <see cref="ConsecutiveTurnBreachesBeforeFail"/> consecutive
+    /// breaches inside the same run, the item is failed). Default
+    /// 60min; range 5min–8h.
+    /// </summary>
+    [Range(typeof(TimeSpan), "00:05:00", "08:00:00")]
+    public TimeSpan TurnBudget { get; init; } = TimeSpan.FromMinutes(60);
+
+    /// <summary>
+    /// Wall-clock budget on a single worker process lifetime (one or
+    /// more cycles; harden-worker-runtime Phase 1, design D2). On
+    /// breach, fail-item with reason <c>worker.run_budget_exceeded</c>
+    /// and let the host re-queue. Default 480min (8h); range
+    /// 15min–24h.
+    /// </summary>
+    [Range(typeof(TimeSpan), "00:15:00", "1.00:00:00")]
+    public TimeSpan RunBudget { get; init; } = TimeSpan.FromHours(8);
+
+    /// <summary>
+    /// Number of consecutive turn-budget breaches inside one worker
+    /// process before the item is failed (harden-worker-runtime
+    /// Phase 1, design D2). 1 turn-budget breach = gentle-kill
+    /// (idempotent restart); 3 breaches in a row = fail-item.
+    /// Default 3; range 1–10.
+    /// </summary>
+    [Range(1, 10)]
+    public int ConsecutiveTurnBreachesBeforeFail { get; init; } = 3;
+
+    /// <summary>
+    /// Per-line cap on the pi stream-json reader
+    /// (harden-worker-runtime Phase 3, design D4). Lines longer than
+    /// this are dropped (the rest of the line is consumed from the
+    /// stream so the next call sees the start of the next line),
+    /// the reader invokes the pump's
+    /// <see cref="Runtime.WorkerEventsChannel.OnProgressDropped"/>
+    /// callback (which journals <c>worker.events_dropped</c>), and
+    /// the worker keeps reading — one bad line cannot OOM the
+    /// process. Default 1 MB; <c>0</c> disables the cap
+    /// (non-production only — the test fake harness sets 0).
+    /// </summary>
+    [Range(0, 64 * 1024 * 1024)]
+    public int MaxLineLengthBytes { get; init; } = 1 * 1024 * 1024;
+
+    /// <summary>
+    /// Bounded capacity of the harness events channel
+    /// (harden-worker-runtime Phase 3, design D4). The channel drops
+    /// progress-fragments (<c>text_delta</c>) on drop-oldest;
+    /// <c>agent_end</c> (the only mandatory <c>PiEvent</c> on the
+    /// stream-json side) waits for the consumer instead. The
+    /// run-level lifecycle events (<c>StageStart</c>,
+    /// <c>StageReport</c>) are surfaced over the gRPC stream by
+    /// the loop, not through this channel. Default 1024; range
+    /// 16–16384.
+    /// </summary>
+    [Range(16, 16384)]
+    public int EventsChannelCapacity { get; init; } = 1024;
+}
+
+/// <summary>
+/// Tiered escalation the <c>WorkerProgressWatchdog</c> walks
+/// through (harden-worker-runtime Phase 1, design D1). The flag
+/// encodes the highest tier that fires: Warn-only stops at the
+/// journal; GentleKill cancels the harness on the second tick;
+/// FailItem (Warn + GentleKill + FailItem) sets
+/// <c>ShouldFailItem</c> + <c>FailReason = "worker.stall_detected"</c>
+/// on the third; the pump reads both and the loop's existing
+/// <c>api.FailAsync</c> call (in <c>TranslatorLoop</c>) handles
+/// the REST side with the typed reason.
+/// </summary>
+[Flags]
+public enum WorkerProgressEscalationPolicy
+{
+    /// <summary>No escalation; the watchdog is a passive gauge.</summary>
+    None = 0,
+
+    /// <summary>Tier 1 — journal <c>worker.stall_warn</c> on the first tick.</summary>
+    Warn = 1,
+
+    /// <summary>Tier 2 — cancel the harness on the second tick.</summary>
+    GentleKill = 2,
+
+    /// <summary>Tier 3 — set <c>ShouldFailItem = true</c> +
+    /// <c>FailReason = "worker.stall_detected"</c> on the third tick;
+    /// the loop's <c>api.FailAsync</c> call (in <c>TranslatorLoop</c>)
+    /// handles the REST side with the typed reason.</summary>
+    FailItem = 4,
+
+    /// <summary>Default chain — warn, then gentle-kill, then fail-item.</summary>
+    WarnGentleKillFailItem = Warn | GentleKill | FailItem,
 }

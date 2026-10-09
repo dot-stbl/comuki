@@ -138,4 +138,48 @@ public static class RunEventTypes
     /// release trains) does not emit this event.
     /// </summary>
     public const string MergeQueueRunReferenced = "merge_queue.run_referenced";
+
+    /// <summary>
+    /// The Translator's <c>WorkerProgressWatchdog</c> detected that
+    /// <c>last_event_age</c> exceeded <c>WorkerProgressTimeout</c> on
+    /// a running cycle (harden-worker-runtime Phase 1, design D1).
+    /// Tier 1 of the escalation chain — log + journal; the harness
+    /// is still alive and the lease is still held. Payload carries
+    /// <c>{ workItemId, last_event_age_ms, tier }</c> where
+    /// <c>tier</c> is 1 (warn) or 2 (gentle-kill).
+    /// </summary>
+    public const string WorkerStallWarn = "worker.stall_warn";
+
+    /// <summary>
+    /// The Translator's <c>WorkerProgressWatchdog</c> /
+    /// <c>DeadlinePolicy</c> escalated past gentle-kill and set
+    /// <c>ShouldFailItem = true</c> with a typed <c>FailReason</c>
+    /// (<c>worker.stall_detected</c>,
+    /// <c>worker.turn_budget_exceeded</c>,
+    /// <c>worker.run_budget_exceeded</c>) — the pump returns a
+    /// <c>PiOutcome.FailedStatus</c> and the loop's existing
+    /// <c>api.FailAsync</c> call (in <c>TranslatorLoop</c>) carries
+    /// the reason on the wire (harden-worker-runtime Phase 1, design
+    /// D1 + D2). Tier 3 of the chain — the item is failed and the
+    /// host can re-queue. Payload carries <c>{ workItemId,
+    /// last_event_age_ms, turn_elapsed_ms, run_elapsed_ms, tier,
+    /// reason }</c> so the operator can correlate progress-stall
+    /// against wall-clock breaches.
+    /// </summary>
+    public const string WorkerStallDetected = "worker.stall_detected";
+
+    /// <summary>
+    /// The harness events channel dropped a progress-fragment
+    /// (<c>text_delta</c>) because the consumer fell behind the
+    /// producer, or the line reader dropped a stdout line longer
+    /// than <c>TranslatorOptions.MaxLineLengthBytes</c>
+    /// (harden-worker-runtime Phase 3, design D4). The single
+    /// mandatory <c>PiEvent</c> shape on the stream-json side
+    /// (<c>agent_end</c>) never drops — it waits for the consumer.
+    /// The run-level lifecycle events (<c>StageStart</c>,
+    /// <c>StageReport</c>) are surfaced over the gRPC stream by
+    /// the loop and don't flow through this channel. Payload
+    /// carries <c>{ workItemId, kind = "progress" }</c>.
+    /// </summary>
+    public const string WorkerEventsDropped = "worker.events_dropped";
 }

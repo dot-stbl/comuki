@@ -5,9 +5,20 @@ namespace Comuki.TestFakePi;
 /// <c>pi -p PROMPT --mode json --no-session</c> by emitting the pi-native
 /// json event stream — a session header, text deltas, a tool call, the
 /// authoritative message_end, agent_end — read from the bundled Fixtures/
-/// directory, one JSON object per line. Exits 0. Honors
-/// <c>--fixtures-dir=PATH</c> (forwarded via the prompt args) to emit a
-/// custom stream, and <c>--exit-code=N</c> to exercise the failure path.
+/// directory, one JSON object per line. Honors the exit-code contract
+/// from two complementary surfaces: <c>--exit-code=N</c> on the command
+/// line, and the <c>COMUKI_FAKE_PI_EXIT_CODE</c> environment variable.
+/// <c>--exit-code</c> wins when set; the env var is the test-suite's
+/// hook for <c>pi --mode rpc</c> runs (the production <c>PiHarness</c>
+/// only forwards <c>--mode rpc --no-session</c> — no test-only args).
+/// Mirrors the exit-code surface for stderr: when <c>COMUKI_FAKE_PI_STDERR</c>
+/// is set in the environment, the value is written to stderr before the
+/// session completes — the parent (<c>PiRpcSession</c>) captures the
+/// stream, trims to a safe tail, and surfaces it through
+/// <c>IHarnessSession.StderrTail</c>; the <c>PiPump</c> appends it to
+/// the outcome's <c>ErrorText</c> on a non-zero exit so the
+/// worker-runtime spec scenario "outcome is failed carrying the exit
+/// code and stderr" is exercised end-to-end.
 /// When <c>ANTHROPIC_AUTH_TOKEN</c> is set in its environment (the
 /// Translator stamps it per execution — issue #122), also writes
 /// <c>fake-pi-env.json</c> into the working directory reporting the
@@ -19,6 +30,12 @@ namespace Comuki.TestFakePi;
 /// </summary>
 public static class Program
 {
+    /// <summary>Env var name a test sets to force a non-zero exit code from <c>PiHarness</c>-spawned runs.</summary>
+    public const string ExitCodeEnvVar = "COMUKI_FAKE_PI_EXIT_CODE";
+
+    /// <summary>Env var name a test sets to inject stderr on <c>PiHarness</c>-spawned runs (the harness's stderr reader drains and the PiPump appends it to the outcome's ErrorText on a non-zero exit).</summary>
+    public const string StderrEnvVar = "COMUKI_FAKE_PI_STDERR";
+
     public static async Task<int> Main(string[] args)
     {
         var fixturesDir = ExtractOption(args, "--fixtures-dir=") ?? DefaultFixturesDir();
@@ -39,9 +56,44 @@ public static class Program
 
         await Console.Out.WriteLineAsync(/*lang=json,strict*/ """{"type":"agent_end","messages":[]}""");
 
-        return ExtractOption(args, "--exit-code=") is { } exitFlag && int.TryParse(exitFlag, out var forcedExit)
-            ? forcedExit
-            : 0;
+        // stderr surface (mirrors the exit-code contract above): test
+        // sets the env var in its own process, the child inherits it,
+        // writes the value before the session closes, and the harness's
+        // stderr reader captures it for the PiPump's outcome.
+        WriteStderrIfRequested();
+
+        // CLI flag first (existing contract), then env var (the hook the
+        // worker-runtime exit-code harness test uses — PiHarness does
+        // not forward any test-only CLI args, so the test sets the env
+        // var in its own process and the child inherits it).
+        return ResolveExitCode(args);
+    }
+
+    private static int ResolveExitCode(string[] args)
+    {
+        if (ExtractOption(args, "--exit-code=") is { } exitFlag && int.TryParse(exitFlag, out var cliExit))
+        {
+            return cliExit;
+        }
+
+        var envValue = Environment.GetEnvironmentVariable(ExitCodeEnvVar);
+        return int.TryParse(envValue, out var envExit) ? envExit : 0;
+    }
+
+    /// <summary>
+    /// Writes the <c>COMUKI_FAKE_PI_STDERR</c> env value to stderr when
+    /// the test sets it; no-op otherwise. The harness's stderr reader
+    /// captures the write, the PiRpcSession trims it to the safe-size
+    /// tail cap (see <c>PiRpcSession.StderrTailMaxChars</c>), and the
+    /// outcome's <c>ErrorText</c> reflects it on a non-zero exit.
+    /// </summary>
+    private static void WriteStderrIfRequested()
+    {
+        var stderr = Environment.GetEnvironmentVariable(StderrEnvVar);
+        if (!string.IsNullOrEmpty(stderr))
+        {
+            Console.Error.WriteLine(stderr);
+        }
     }
 
     /// <summary>

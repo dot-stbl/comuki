@@ -15,8 +15,8 @@ namespace Comuki.Host.Translator.Execution.Run;
 /// arrives mid-cycle and writes the operator's turn into the
 /// harness's stdin writer.
 /// </summary>
-/// <param name="claimed"></param>
-/// <param name="session"></param>
+/// <param name="claimed">The work item the run executes; surfaced over the worker stream and read by the watchdogs for the journal payload.</param>
+/// <param name="session">The worker bidi stream the run reports over (Start, Activity, Report, Conditions, StallWarn, StallDetected, EventsDropped).</param>
 public sealed class WorkerRun(
     ClaimedWorkItemResponse claimed,
     WorkerSession session) : IAsyncDisposable
@@ -25,6 +25,27 @@ public sealed class WorkerRun(
     /// boundary: linked to the hosted-service stop; cancelled by Stop/LeaseExpired commands
     /// </summary>
     public required CancellationTokenSource RunCancellation { get; init; }
+
+    /// <summary>
+    /// Wall-clock instant the current cycle spawned the harness
+    /// (harden-worker-runtime Phase 1, design D2). The
+    /// <c>DeadlinePolicy</c> reads this to compute
+    /// <c>turn_elapsed_ms</c> against <c>TurnBudget</c>. Set by
+    /// <see cref="Loop.TranslatorLoop"/> right before
+    /// <see cref="Loop.PiPump.PumpAsync"/>.
+    /// </summary>
+    public required DateTimeOffset RunStartedAt { get; init; }
+
+    /// <summary>
+    /// Wall-clock instant the worker process itself started
+    /// (harden-worker-runtime Phase 1, design D2). The
+    /// <c>DeadlinePolicy</c> reads this to compute
+    /// <c>run_elapsed_ms</c> against <c>RunBudget</c>. The
+    /// <see cref="TranslatorHostedService"/> seeds this once at
+    /// startup; the same value is reused across every cycle inside
+    /// the process.
+    /// </summary>
+    public required DateTimeOffset ProcessStartedAt { get; init; }
 
     /// <summary>
     /// The cloned repository root (harden-pi-worker-sandbox 4.3) — the
@@ -57,6 +78,18 @@ public sealed class WorkerRun(
 
     /// <summary>Set when the orchestrator sent a Stop command.</summary>
     public bool StopRequested { get; set; }
+
+    /// <summary>
+    /// Run-scoped artifact accumulator (harden-pi-worker-sandbox 5.2, spec
+    /// D7). The Translator's <c>WorkerCommandHandler</c> calls
+    /// <see cref="ArtifactAccumulator.Add"/> when the worker SDK drops
+    /// a pin / artifact; the loop reads <see cref="ArtifactAccumulator.Snapshot"/>
+    /// and ships it as a <c>StageDrain</c> event right before
+    /// <c>complete</c> / <c>fail</c>. Always allocated on the run — the
+    /// drain path runs even when the list is empty, so the host journals
+    /// a <c>worker.drained</c> entry on every successful cycle.
+    /// </summary>
+    public ArtifactAccumulator ArtifactAccumulator { get; } = new();
 
     /// <summary>
     /// True after the harness has emitted an

@@ -91,4 +91,92 @@ public static class WorkerEventEnvelope
             },
         };
     }
+
+    /// <summary>
+    /// Stall-warning event (harden-worker-runtime Phase 1, design D1).
+    /// The <c>WorkerProgressWatchdog</c> fires this on tier 1 of the
+    /// escalation chain — log + journal <c>worker.stall_warn</c>, no
+    /// action. The host journal reads <c>last_event_age_ms</c> and
+    /// <c>tier</c> off the payload so the dashboard can render the
+    /// stall column without re-parsing the run's timeline.
+    /// </summary>
+    /// <param name="workItemId">Work item the stall is bound to.</param>
+    /// <param name="lastEventAgeMs">Time since the last parsed stream-event, in milliseconds.</param>
+    /// <param name="tier">Escalation tier (1 = warn).</param>
+    public static WorkerEvent ToStallWarnEvent(Guid workItemId, long lastEventAgeMs, int tier)
+    {
+        return new WorkerEvent
+        {
+            StallWarn = new StageStallWarn
+            {
+                WorkItemId = workItemId.ToString(),
+                LastEventAgeMs = lastEventAgeMs,
+                Tier = tier,
+            },
+        };
+    }
+
+    /// <summary>
+    /// Stall-detected event (harden-worker-runtime Phase 1, design D1 + D2).
+    /// The <c>WorkerProgressWatchdog</c> / <c>DeadlinePolicy</c> reached
+    /// tier 3 (fail-item) and set <c>ShouldFailItem = true</c> with a
+    /// typed <c>FailReason</c> (<c>worker.stall_detected</c>,
+    /// <c>worker.turn_budget_exceeded</c>,
+    /// <c>worker.run_budget_exceeded</c>); the worker journals the
+    /// same event for the operator. The host journal reads the
+    /// payload so the dashboard can render stall / wall-clock
+    /// correlation without re-parsing the timeline. The actual
+    /// <c>api.FailAsync</c> REST call is the loop's
+    /// (<c>TranslatorLoop</c>) existing path — the watchdog / policy
+    /// only set the flag and reason, the loop handles the REST.
+    /// </summary>
+    /// <param name="workItemId">Work item the stall is bound to.</param>
+    /// <param name="lastEventAgeMs">Time since the last parsed stream-event, in milliseconds.</param>
+    /// <param name="turnElapsedMs">Time since the current cycle's spawn.</param>
+    /// <param name="runElapsedMs">Time since the worker process started.</param>
+    /// <param name="tier">Escalation tier (3 = fail-item).</param>
+    /// <param name="reason">Reason the watchdog attached to the fail-item call.</param>
+    public static WorkerEvent ToStallDetectedEvent(
+        Guid workItemId,
+        long lastEventAgeMs,
+        long turnElapsedMs,
+        long runElapsedMs,
+        int tier,
+        string reason)
+    {
+        return new WorkerEvent
+        {
+            StallDetected = new StageStallDetected
+            {
+                WorkItemId = workItemId.ToString(),
+                LastEventAgeMs = lastEventAgeMs,
+                TurnElapsedMs = turnElapsedMs,
+                RunElapsedMs = runElapsedMs,
+                Tier = tier,
+                Reason = reason,
+            },
+        };
+    }
+
+    /// <summary>
+    /// Backpressure drop event (harden-worker-runtime Phase 3, design D4).
+    /// The harness events channel dropped a progress-fragment because
+    /// the consumer fell behind the producer. Mandatory events never
+    /// drop — they wait for the consumer. The host journal maps this
+    /// to a <c>worker.events_dropped</c> entry and increments the
+    /// <c>events_dropped_total</c> counter.
+    /// </summary>
+    /// <param name="workItemId">Work item the drop is bound to.</param>
+    /// <param name="kind">Drop reason. The open set today is <c>"progress"</c>.</param>
+    public static WorkerEvent ToEventsDroppedEvent(Guid workItemId, string kind)
+    {
+        return new WorkerEvent
+        {
+            EventsDropped = new StageEventsDropped
+            {
+                WorkItemId = workItemId.ToString(),
+                Kind = kind,
+            },
+        };
+    }
 }

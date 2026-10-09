@@ -23,10 +23,28 @@ internal sealed class PiRpcSession(
     ILogger logger,
     string executable) : IHarnessSession
 {
+    /// <summary>
+    /// Safe cap on the captured stderr tail exposed via
+    /// <see cref="IHarnessSession.StderrTail"/>. The full stderr is
+    /// captured by <c>PiProcessHelpers.DrainStderrAsync</c>; this cap
+    /// keeps the surface area on a non-zero exit small (4 KiB — enough
+    /// for a couple hundred lines of pi diagnostics, well below the
+    /// payload limit of the journal's worker.reported event). The tail
+    /// is the last <see cref="StderrTailMaxChars"/> characters, not the
+    /// head, because the failing line is the one that lands at the end.
+    /// </summary>
+    public const int StderrTailMaxChars = 4096;
+
     private readonly Lock disposeGate = new();
     private bool disposed;
 
     public int ProcessId { get; } = processId;
+
+    /// <inheritdoc />
+    public int? ExitCode { get; private set; }
+
+    /// <inheritdoc />
+    public string? StderrTail { get; private set; }
 
     public IAsyncEnumerable<PiEvent> Events { get; } = events;
 
@@ -107,8 +125,25 @@ internal sealed class PiRpcSession(
             logger.LogDebug(exception, "wait-for-exit on {Executable} (PID {Pid}) ended with an exception", executable, ProcessId);
         }
 
+        // ExitCode is now the authoritative OS-level code (zero on a
+        // clean shutdown via stdin close, non-zero on any crash Test
+        // — pi could be triggered either way). Spec surfaced for a
+        // non-zero value above; capture regardless so callers can read
+        // it (Loop.PiPump consumes this after DisposeAsync returns).
+        // Guarded by HasExited because Process.ExitCode throws
+        // InvalidOperationException on a process that has not exited —
+        // a defensive backstop in case the wait above didn't drain the
+        // child for any reason.
+        ExitCode = process.HasExited ? process.ExitCode : null;
+
+        // Surface the stderr tail to the consumer (PiPump appends it to
+        // the outcome's ErrorText on a non-zero exit). Full stderr is
+        // logged at debug — the tail is the operator-facing slice.
         if (stderr.Length > 0)
         {
+            StderrTail = stderr.Length > StderrTailMaxChars
+                ? stderr[^StderrTailMaxChars..]
+                : stderr;
             logger.LogDebug("{Executable} (PID {Pid}) stderr: {Stderr}", executable, ProcessId, stderr);
         }
 

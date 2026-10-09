@@ -107,19 +107,30 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
         // stream-json on stdout is the same wire shape as the
         // v1.x `--mode json` one-shot — `StreamJsonParser` is the same
         // parser (per the brief, untouched). The reader background task
-        // drains the pipe and pushes parsed events into the channel;
-        // the consumer is `PiPump` on the worker side.
-        var events = System.Threading.Channels.Channel.CreateUnbounded<PiEvent>(
-            new System.Threading.Channels.UnboundedChannelOptions
-            {
-                SingleReader = true,
-                SingleWriter = true,
-            });
+        // drains the pipe and pushes parsed events into the bounded
+        // channel; the consumer is `PiPump` on the worker side.
+        // Harden-worker-runtime Phase 3: capacity defaults to
+        // TranslatorOptions.EventsChannelCapacity (1024); a value of
+        // 0 falls back to the bound default (test-only path; the
+        // production harness always passes a non-zero value via the
+        // pump, but the harness is robust to a missing value).
+        var capacity = request.EventsChannelCapacity > 0
+            ? request.EventsChannelCapacity
+            : options.Value.EventsChannelCapacity;
+        var events = new WorkerEventsChannel(capacity)
+        {
+            OnProgressDropped = request.OnProgressDropped,
+        };
 
         var stderrTask = PiProcessHelpers.DrainStderrAsync(process, cancellationToken);
 
         var readerTask = Task.Run(
-            async () => await PiReader.ReadEventsAsync(process.StandardOutput, events.Writer, cancellationToken),
+            async () => await PiReader.ReadEventsAsync(
+                process.StandardOutput,
+                events,
+                request.MaxLineLengthBytes,
+                onLineDropped: request.OnProgressDropped,
+                cancellationToken: cancellationToken),
             cancellationToken);
 
         var writer = new PiRpcTurnInputWriter(process.StandardInput.BaseStream, logger);
@@ -135,7 +146,7 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
                 "Failed to write initial prompt to {Executable} stdin (PID {Pid})",
                 executable,
                 process.Id);
-            events.Writer.TryComplete();
+            events.Complete();
             try
             {
                 if (!process.HasExited)
@@ -154,7 +165,7 @@ public sealed class PiHarness(IOptions<TranslatorOptions> options, ILogger<PiHar
 
         return Task.FromResult<IHarnessSession>(new PiRpcSession(
             process.Id,
-            events.Reader.ReadAllAsync(cancellationToken),
+            events.ReadAllAsync(cancellationToken),
             writer,
             readerTask,
             stderrTask,
@@ -181,50 +192,5 @@ file static class PiProcessHelpers
                 return buffer.ToString();
             },
             cancellationToken);
-    }
-}
-
-/// <summary>
-/// Pure reader for the harness's <c>stdout</c>: line-by-line drain
-/// into the events channel. File-static so it carries no instance
-/// fields of <see cref="PiHarness"/>.
-/// </summary>
-file static class PiReader
-{
-    /// <summary>
-    /// Drains <paramref name="stdout"/> into <paramref name="writer"/>
-    /// until the stream closes or cancellation trips. Each line is
-    /// parsed by <see cref="StreamJsonParser.ParseLine"/> (the same
-    /// parser the v1.x one-shot path uses); the channel's
-    /// <c>Complete()</c> in the <c>finally</c> below flushes the
-    /// consumer on shutdown.
-    /// </summary>
-    /// <param name="stdout">The harness's stdout.</param>
-    /// <param name="writer">The events channel writer.</param>
-    /// <param name="cancellationToken">Cancels the read.</param>
-    public static async Task ReadEventsAsync(
-        StreamReader stdout,
-        System.Threading.Channels.ChannelWriter<PiEvent> writer,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            while (await stdout.ReadLineAsync(cancellationToken) is { } line)
-            {
-                foreach (var piEvent in StreamJsonParser.ParseLine(line))
-                {
-                    await writer.WriteAsync(piEvent, cancellationToken);
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // expected on session dispose — the channel's Complete() call below
-            // flushes the consumer
-        }
-        finally
-        {
-            writer.TryComplete();
-        }
     }
 }

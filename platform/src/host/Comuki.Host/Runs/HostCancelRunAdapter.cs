@@ -5,6 +5,7 @@ using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
+using Comuki.Host.Workers.Grpc;
 using Comuki.Shared.Contracts.Runs;
 using Comuki.Shared.Kernel.Exceptions;
 using Comuki.Shared.Kernel.Ids;
@@ -32,14 +33,27 @@ namespace Comuki.Host.Runs;
 /// <c>status</c> are left intact — only <c>generation</c> and
 /// <c>updated_at</c> change, so the existing lease reaper still reclaims
 /// the item on its normal TTL/grace schedule.
+/// <para>
+/// After the generation-fence commits, the adapter best-effort fans the
+/// <c>Stop</c> command out to every <see cref="WorkItemStatus.Running"/>
+/// item's worker through <see cref="IWorkerCommandPipe.TrySendStop"/> —
+/// the fence is the source of truth (the worker discovers the cancel on
+/// its next heartbeat), and the stop is an optimisation so the worker
+/// doesn't have to wait for its own TTL. A miss (no live stream) is the
+/// expected case for quiet workers and is never an error.
+/// </para>
 /// </summary>
 /// <param name="db">Scoped orchestration DbContext.</param>
 /// <param name="scopeAccessor">Ambient scope — declare system for the run.</param>
 /// <param name="clock">Time source for the transition stamp and the journal row.</param>
+/// <param name="commandPipe">Outbound worker command surface; used to fan <c>Stop</c> to live workers after the fence commits.</param>
+/// <param name="logger">Structured logger for the post-fence fanout outcome.</param>
 public sealed class HostCancelRunAdapter(
     OrchestrationDbContext db,
     ISubjectScopeAccessor scopeAccessor,
-    TimeProvider clock) : ICancelRunPort
+    TimeProvider clock,
+    IWorkerCommandPipe commandPipe,
+    ILogger<HostCancelRunAdapter> logger) : ICancelRunPort
 {
     /// <inheritdoc />
     public async Task CancelAsync(RunId runId, string? reason, CancellationToken cancellationToken = default)
@@ -66,6 +80,18 @@ public sealed class HostCancelRunAdapter(
             reason,
             candidate,
             now,
+            cancellationToken);
+
+        // Post-fence fanout. The fence above is the source of truth
+        // (every worker holding a pre-cancel lease gets 409 on its next
+        // heartbeat); the stop is the fast-path that lets pi's
+        // command-handler cancel the harness before its next heartbeat.
+        // Misses are expected for quiet workers — log debug and move on.
+        await CancelTransition.FanOutStopToLiveWorkersAsync(
+            db,
+            runId,
+            commandPipe,
+            logger,
             cancellationToken);
     }
 }
@@ -359,3 +385,65 @@ file static class CancelRunReason
 /// <param name="Actor">Operator verb or system consumer name.</param>
 /// <param name="Reason">Optional human note (jsonb <c>null</c> when absent).</param>
 internal sealed record RunStatusChangedPayload(string From, string To, string Actor, string? Reason);
+
+/// <summary>
+/// Post-fence fanout: query <see cref="WorkItemStatus.Running"/> items under
+/// the run and best-effort send <c>Stop</c> to each worker's
+/// <see cref="IWorkerCommandPipe"/>. The generation fence in
+/// <c>RunCancelSql.ApplyWithFencingAsync</c> already invalidated the
+/// workers' lease ownership — this method is the fast-path so workers
+/// don't have to wait for their next heartbeat to discover the cancel.
+/// Misses (no live stream) are the expected case for quiet workers and
+/// never an error — log debug and move on.
+/// </summary>
+internal static class CancelTransition
+{
+    /// <summary>
+    /// Reads every <see cref="WorkItemStatus.Running"/> work item under
+    /// the run and best-effort <see cref="IWorkerCommandPipe.TrySendStop"/>
+    /// on each. Items fenced earlier in the same transaction (their
+    /// <see cref="WorkItem.Generation"/> is now bumped but status /
+    /// leased_by are unchanged) are the same rows this query returns.
+    /// </summary>
+    /// <param name="db">Orchestration context — same scope as the adapter.</param>
+    /// <param name="runId">Run the fence just committed on.</param>
+    /// <param name="commandPipe">Outbound worker command surface.</param>
+    /// <param name="logger">Records misses at Debug; the fanout is best-effort, not a gate.</param>
+    /// <param name="cancellationToken"></param>
+    public static async Task FanOutStopToLiveWorkersAsync(
+        OrchestrationDbContext db,
+        RunId runId,
+        IWorkerCommandPipe commandPipe,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        var workerIds = await db.WorkItems
+            .AsNoTracking()
+            .Where(item => item.RunId == runId
+                && item.Status == WorkItemStatus.Running
+                && item.LeasedBy != null)
+            // boundary: EF's translation of `LeasedBy != null` matches
+            // `WHERE leased_by IS NOT NULL`, so the projected `.Value`
+            // cannot be null at materialisation — `!` is the null-state
+            // annotation for EF LINQ, not an assertion.
+            .Select(item => item.LeasedBy!.Value)
+            .ToListAsync(cancellationToken);
+
+        var stopReason = $"run {runId.Value} cancelled by operator";
+        foreach (var workerId in workerIds)
+        {
+            if (commandPipe.TrySendStop(workerId, stopReason))
+            {
+                continue;
+            }
+
+            // Miss is the expected case for a quiet worker — the
+            // generation fence will surface the cancel on its next
+            // heartbeat anyway, no operator-side escalation needed.
+            logger.LogDebug(
+                "Cancel fanout: worker {WorkerId} for run {RunId} has no live stream — relying on generation fence",
+                workerId.Value,
+                runId.Value);
+        }
+    }
+}

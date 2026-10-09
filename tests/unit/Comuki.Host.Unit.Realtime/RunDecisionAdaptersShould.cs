@@ -1,12 +1,15 @@
 using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Journal;
 using Comuki.Engine.Orchestration.Domain.Runs;
+using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Runs;
+using Comuki.Host.Workers.Grpc;
 using Comuki.Shared.Kernel.Ids;
 using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -73,7 +76,12 @@ public sealed class RunDecisionAdaptersShould
         var now = DateTimeOffset.UtcNow;
         var run = await SeedRunAsync(db, RunStatus.Queued, now);
 
-        var adapter = new HostCancelRunAdapter(db, NewScopeAccessor(), new FixedClock(now));
+        var adapter = new HostCancelRunAdapter(
+            db,
+            NewScopeAccessor(),
+            new FixedClock(now),
+            NewCommandPipeStub(delivered: true),
+            NullLogger<HostCancelRunAdapter>.Instance);
 
         await adapter.CancelAsync(run.Id, "operator out of office", CancellationToken.None);
 
@@ -92,7 +100,12 @@ public sealed class RunDecisionAdaptersShould
         var now = DateTimeOffset.UtcNow;
         var run = await SeedRunAsync(db, RunStatus.Cancelled, now);
 
-        var adapter = new HostCancelRunAdapter(db, NewScopeAccessor(), new FixedClock(now));
+        var adapter = new HostCancelRunAdapter(
+            db,
+            NewScopeAccessor(),
+            new FixedClock(now),
+            NewCommandPipeStub(delivered: true),
+            NullLogger<HostCancelRunAdapter>.Instance);
 
         var exception = await Should.ThrowAsync<RunDecisionConflictException>(
             () => adapter.CancelAsync(run.Id, null, CancellationToken.None));
@@ -101,11 +114,124 @@ public sealed class RunDecisionAdaptersShould
         exception.Decision.ShouldBe("cancel");
     }
 
+    [Fact(DisplayName = "Given a mix of Running and Queued items under a run, when the cancel fanout runs, then TrySendStop is called once per Running item's worker and never for Queued")]
+    public async Task FanOutStopTargetsOnlyLiveWorkersAsync()
+    {
+        var db = await NewDbContextAsync();
+        var now = DateTimeOffset.UtcNow;
+        var run = await SeedRunAsync(db, RunStatus.Queued, now);
+
+        var runningWorker1 = WorkerId.New();
+        var runningWorker2 = WorkerId.New();
+        await SeedItemAsync(db, run.Id, WorkItemStatus.Running, leasedBy: runningWorker1, generation: 1);
+        await SeedItemAsync(db, run.Id, WorkItemStatus.Running, leasedBy: runningWorker2, generation: 1);
+        await SeedItemAsync(db, run.Id, WorkItemStatus.Queued, leasedBy: null, generation: 1);
+        await SeedItemAsync(db, run.Id, WorkItemStatus.Queued, leasedBy: null, generation: 2);
+
+        var commandPipe = Substitute.For<IWorkerCommandPipe>();
+        commandPipe.TrySendStop(Arg.Any<WorkerId>(), Arg.Any<string>()).Returns(true);
+
+        // The InMemory DbContext cannot host the transactional CAS
+        // path that HostCancelRunAdapter.CancelAsync opens first; we
+        // exercise the post-fence fanout seam directly, which is the
+        // load-bearing shape under test. The full adapter integration
+        // is the existing skipped test + the integration suite
+        // (Host.Integration.Runs).
+        await CancelTransition.FanOutStopToLiveWorkersAsync(
+            db,
+            run.Id,
+            commandPipe,
+            NullLogger.Instance,
+            CancellationToken.None);
+
+        commandPipe.Received(1).TrySendStop(
+            Arg.Is<WorkerId>(worker => worker == runningWorker1),
+            Arg.Any<string>());
+        commandPipe.Received(1).TrySendStop(
+            Arg.Is<WorkerId>(worker => worker == runningWorker2),
+            Arg.Any<string>());
+        commandPipe.DidNotReceive().TrySendStop(
+            Arg.Is<WorkerId>(worker => worker != runningWorker1 && worker != runningWorker2),
+            Arg.Any<string>());
+    }
+
+    [Fact(DisplayName = "Given a quiet worker (no live stream), when the cancel fanout runs, then the miss is silent — no exception, the fence on which the worker discovers the cancel later is enough")]
+    public async Task FanOutStopMissIsNotAnErrorAsync()
+    {
+        var db = await NewDbContextAsync();
+        var now = DateTimeOffset.UtcNow;
+        var run = await SeedRunAsync(db, RunStatus.Queued, now);
+        var quietWorker = WorkerId.New();
+        await SeedItemAsync(db, run.Id, WorkItemStatus.Running, leasedBy: quietWorker, generation: 1);
+
+        var commandPipe = Substitute.For<IWorkerCommandPipe>();
+        commandPipe.TrySendStop(Arg.Any<WorkerId>(), Arg.Any<string>()).Returns(false);
+
+        // The miss must not throw — quiet workers discover the cancel
+        // on their next heartbeat via the generation fence.
+        await CancelTransition.FanOutStopToLiveWorkersAsync(
+            db,
+            run.Id,
+            commandPipe,
+            NullLogger.Instance,
+            CancellationToken.None);
+
+        commandPipe.Received(1).TrySendStop(quietWorker, Arg.Any<string>());
+    }
+
     private static ISubjectScopeAccessor NewScopeAccessor()
     {
         var accessor = Substitute.For<ISubjectScopeAccessor>();
         accessor.AsSystem(Arg.Any<string>()).Returns(static _ => new NoOpScope());
         return accessor;
+    }
+
+    private static IWorkerCommandPipe NewCommandPipeStub(bool delivered)
+    {
+        var stub = Substitute.For<IWorkerCommandPipe>();
+        stub.TrySendStop(Arg.Any<WorkerId>(), Arg.Any<string>()).Returns(delivered);
+        return stub;
+    }
+
+    /// <summary>
+    /// Seeds one work item directly under the given run, walking the
+    /// real domain factory: <see cref="WorkItem.Create"/> for the
+    /// Queued seed, then <see cref="WorkItem.AssignLease"/> to move
+    /// the Running variant to its leased state. The cancel tests only
+    /// need rows of the right shape (status + leased_by) to exercise
+    /// the fanout query.
+    /// </summary>
+    private static async Task SeedItemAsync(
+        OrchestrationDbContext db,
+        RunId runId,
+        WorkItemStatus status,
+        WorkerId? leasedBy,
+        int generation)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var item = WorkItem.Create(
+            runId,
+            profileKey: "implement",
+            image: "run-cell",
+            envClass: "net10-sdk-bun",
+            profilesRef: "refs/heads/main",
+            brief: "do the thing",
+            initialStatus: WorkItemStatus.Queued,
+            now: now);
+
+        if (status == WorkItemStatus.Running && leasedBy is { } worker)
+        {
+            item.AssignLease(worker, generation, leaseUntil: now.AddMinutes(2), now: now);
+        }
+        else if (status != WorkItemStatus.Queued)
+        {
+            throw new ArgumentException(
+                $"SeedItemAsync only knows Queued and Running (via AssignLease); got {status}.",
+                nameof(status));
+        }
+
+        db.WorkItems.Add(item);
+        await db.SaveChangesAsync();
     }
 
     private static async Task<OrchestrationDbContext> NewDbContextAsync()

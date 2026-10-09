@@ -18,9 +18,15 @@
          client factory for the OIDC token endpoint. Discovery
          stays on a raw HttpClient — see OidcDiscoveryCache for why
          (Keycloak 26's bool-as-bool discovery fields break strict
-         STJ deserialization of the framework's OpenIdConnectConfiguration). -->
+         STJ deserialization of the framework's OpenIdConnectConfiguration).
+         Refit.Reflection is required by AddRefitClient<T> for any
+         interface whose [Post("")]/[Get("")] template cannot be
+         inlined at source-gen time (here: tokenEndpoint is per-call,
+         not a static segment); without it, runtime throws
+         "This interface needs the reflection request builder". -->
     <PackageReference Include="Refit" />
     <PackageReference Include="Refit.HttpClientFactory" />
+    <PackageReference Include="Refit.Reflection" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
   </ItemGroup>
 

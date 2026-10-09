@@ -24,6 +24,7 @@
          advisory lock); the engine reference stays for the recreate drop
          path in Program.cs. -->
     <ProjectReference Include="..\..\engine\Comuki.Engine.Orchestration\Comuki.Engine.Orchestration.csproj" />
+    <ProjectReference Include="..\..\modules\Work\Comuki.Modules.Work.Infrastructure\Comuki.Modules.Work.Infrastructure.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Bootstrap\Comuki.Shared.Bootstrap.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Migrations\Comuki.Shared.Migrations.csproj" />
   </ItemGroup>

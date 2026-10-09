@@ -1,0 +1,49 @@
+{
+  "detailPage": {
+    "titleFallback": "Tarefa de trabalho",
+    "errorTitle": "Não foi possível carregar esta tarefa de trabalho",
+    "notFoundTitle": "Nenhuma tarefa de trabalho com esse id",
+    "notFoundBody": "Nada nesta plataforma responde a este id. A tarefa pode ter sido cancelada — aqui ou em outra aba — e o grafo de execuções mostra as que ainda existem.",
+    "backToTasks": "Voltar para tarefas",
+    "factsTitle": "o que é esta tarefa de trabalho",
+    "factProject": "projeto",
+    "factStatus": "status",
+    "factOutcome": "resultado",
+    "factAttempt": "número da tentativa",
+    "factActiveAttempt": "tentativa ativa",
+    "factActiveAttemptEmpty": "sem tentativa ativa",
+    "factVisibility": "visibilidade",
+    "factMission": "missão",
+    "factMissionEmpty": "escopo do projeto",
+    "factBriefVersion": "versão do brief",
+    "factCreatedAt": "criada",
+    "factUpdatedAt": "atualizada",
+    "sourceRefsTitle": "quais tickets esta tarefa representa",
+    "sourceRefsEmpty": "sem tickets de origem — esta tarefa foi criada sem um"
+  },
+  "status": {
+    "Draft": "Rascunho",
+    "Ready": "Pronta",
+    "Active": "Ativa",
+    "Blocked": "Bloqueada",
+    "Resolved": "Resolvida",
+    "Cancelled": "Cancelada"
+  },
+  "outcome": {
+    "Succeeded": "Bem-sucedida",
+    "Waived": "Dispensada",
+    "Replaced": "Substituída",
+    "Failed": "Falhou"
+  },
+  "visibility": {
+    "Project": "Projeto",
+    "Mission": "Missão"
+  },
+  "sourceKind": {
+    "Native": "Nativa",
+    "GitHub": "GitHub",
+    "GitLab": "GitLab",
+    "Jira": "Jira",
+    "YandexTracker": "Yandex Tracker"
+  }
+}

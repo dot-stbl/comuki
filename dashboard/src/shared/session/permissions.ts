@@ -46,6 +46,7 @@ export type Permission =
   | "models.view"
   | "models.manage"
   | "observability.view"
+  | "work.view"
 
 /**
  * Which scope answers for a permission.
@@ -85,9 +86,10 @@ const SCOPE: Record<Permission, "project" | "platform"> = {
   "models.view": "platform",
   "models.manage": "platform",
   "observability.view": "platform",
+  "work.view": "project",
 }
 
-const VIEWER: Permission[] = ["runs.view"]
+const VIEWER: Permission[] = ["runs.view", "work.view"]
 
 const MEMBER: Permission[] = [
   ...VIEWER,
@@ -220,3 +222,4 @@ export function needsLabel(permission: Permission, where?: string): string {
     ? i18n.t("denial.needsOn", { ns: "common", list, where })
     : i18n.t("denial.needs", { ns: "common", list })
 }
+

@@ -50,6 +50,41 @@ public sealed class Run
     /// </summary>
     public string? AdmissionMessageId { get; private set; }
 
+    /// <summary>
+    /// The Work <c>WorkTaskId</c> that owns this Run, or null until the
+    /// Work bridge calls <see cref="StampWorkBacklink"/>. The work-bridge
+    /// is the only legal setter of this field — chat / scheduler runs
+    /// leave it null and never call <c>StampWorkBacklink</c>.
+    /// </summary>
+    public Guid? TaskId { get; private set; }
+
+    /// <summary>
+    /// The Work-side attempt ordinal this Run corresponds to. The DB
+    /// column has a <c>DEFAULT 1</c> for chat / scheduler runs that
+    /// never call <see cref="StampWorkBacklink"/>; once the bridge
+    /// stamps the backlink, the field is the bridge's source of truth
+    /// and a re-stamp with a different ordinal is rejected
+    /// (<see cref="OrchestrationErrorCodes.RunWorkBacklinkMismatch"/>).
+    /// </summary>
+    public int AttemptOrdinal { get; private set; } = 1;
+
+    /// <summary>
+    /// The Run id of the previous attempt on the same Task, when this
+    /// Run is an attempt N &gt; 1. Null for the first attempt and for
+    /// runs that never call <see cref="StampWorkBacklink"/>. The
+    /// lineage chain lives in this column; the WS5 cancel/supersede
+    /// logic uses it to fence stale live executions.
+    /// </summary>
+    public Guid? PredecessorRunId { get; private set; }
+
+    /// <summary>
+    /// Identifier of the actor that triggered the dispatch (e.g.
+    /// <c>integrations/github-bot</c>, <c>scheduler/cron-job-3</c>).
+    /// Null until <see cref="StampWorkBacklink"/> stamps it. Bounded
+    /// to 128 chars by the DB column.
+    /// </summary>
+    public string? TriggeringActorId { get; private set; }
+
     /// <summary>Creates a run in <see cref="RunStatus.Queued"/> — the only legal entry status.</summary>
     /// <param name="projectId"></param>
     /// <param name="now"></param>
@@ -137,5 +172,62 @@ public sealed class Run
 
         TrustClass = RunTrustClass.Supervised;
         UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Stamps the Work-side backlink on this Run. The Work bridge is
+    /// the single caller — it announces which <c>WorkTask</c> owns
+    /// this Run and which attempt ordinal it corresponds to. The
+    /// stamp is <strong>idempotent on the <c>(taskId, ordinal)</c>
+    /// pair</strong>: a second call with the same pair leaves all
+    /// four fields untouched and does not advance
+    /// <see cref="UpdatedAt"/> (preserves the original stamp time so
+    /// audit / line-of-flight analytics don't see a phantom edit).
+    /// </summary>
+    /// <param name="taskId">The owning WorkTask id.</param>
+    /// <param name="ordinal">The attempt ordinal on the WorkTask.</param>
+    /// <param name="predecessorRunId">
+    /// The previous attempt's Run id; <c>null</c> for the first attempt.
+    /// </param>
+    /// <param name="triggeringActorId">
+    /// The actor that triggered the dispatch
+    /// (<c>integrations/github-bot</c>, <c>scheduler/cron-job-3</c>,
+    /// …); null/empty is rejected.
+    /// </param>
+    /// <param name="now">The stamp time.</param>
+    /// <exception cref="OrchestrationDomainException">
+    /// A subsequent stamp carries a different <c>(taskId, ordinal)</c>
+    /// pair — code <see cref="OrchestrationErrorCodes.RunWorkBacklinkMismatch"/>.
+    /// </exception>
+    public void StampWorkBacklink(
+        Guid taskId,
+        int ordinal,
+        Guid? predecessorRunId,
+        string? triggeringActorId,
+        DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(triggeringActorId))
+        {
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.RunWorkBacklinkMismatch,
+                $"triggering actor id must be a non-empty string on run {Id}");
+        }
+
+        if (TaskId is { } existingTask && (existingTask != taskId || AttemptOrdinal != ordinal))
+        {
+            throw new OrchestrationDomainException(
+                OrchestrationErrorCodes.RunWorkBacklinkMismatch,
+                $"run {Id} already linked to task {existingTask} attempt {AttemptOrdinal}; " +
+                $"second stamp asked for task {taskId} attempt {ordinal}");
+        }
+
+        if (TaskId is null)
+        {
+            TaskId = taskId;
+            AttemptOrdinal = ordinal;
+            PredecessorRunId = predecessorRunId;
+            TriggeringActorId = triggeringActorId;
+            UpdatedAt = now;
+        }
     }
 }

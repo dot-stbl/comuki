@@ -1,0 +1,49 @@
+{
+  "detailPage": {
+    "titleFallback": "Рабочая задача",
+    "errorTitle": "Не удалось загрузить рабочую задачу",
+    "notFoundTitle": "Нет рабочей задачи с таким id",
+    "notFoundBody": "На платформе нет ничего с этим id. Рабочая задача могла быть отменена — здесь или в другой вкладке, — а граф запусков показывает те, что ещё существуют.",
+    "backToTasks": "Назад к задачам",
+    "factsTitle": "что из себя представляет рабочая задача",
+    "factProject": "проект",
+    "factStatus": "статус",
+    "factOutcome": "результат",
+    "factAttempt": "номер попытки",
+    "factActiveAttempt": "активная попытка",
+    "factActiveAttemptEmpty": "нет активной попытки",
+    "factVisibility": "область",
+    "factMission": "миссия",
+    "factMissionEmpty": "на уровне проекта",
+    "factBriefVersion": "версия брифа",
+    "factCreatedAt": "создано",
+    "factUpdatedAt": "обновлено",
+    "sourceRefsTitle": "какие тикеты представляет задача",
+    "sourceRefsEmpty": "нет связанных тикетов — задача создана без них"
+  },
+  "status": {
+    "Draft": "Черновик",
+    "Ready": "Готова",
+    "Active": "Активна",
+    "Blocked": "Заблокирована",
+    "Resolved": "Завершена",
+    "Cancelled": "Отменена"
+  },
+  "outcome": {
+    "Succeeded": "Успех",
+    "Waived": "Пропущена",
+    "Replaced": "Заменена",
+    "Failed": "Провалена"
+  },
+  "visibility": {
+    "Project": "Проект",
+    "Mission": "Миссия"
+  },
+  "sourceKind": {
+    "Native": "Нативный",
+    "GitHub": "GitHub",
+    "GitLab": "GitLab",
+    "Jira": "Jira",
+    "YandexTracker": "Яндекс Трекер"
+  }
+}

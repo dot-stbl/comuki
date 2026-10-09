@@ -1,0 +1,49 @@
+{
+  "detailPage": {
+    "titleFallback": "工作任务",
+    "errorTitle": "无法加载此工作任务",
+    "notFoundTitle": "没有此 id 的工作任务",
+    "notFoundBody": "本平台没有与此 id 对应的内容。该工作任务可能已在此处或其他标签页被取消，运行图中显示仍然存在的任务。",
+    "backToTasks": "返回任务",
+    "factsTitle": "此工作任务的含义",
+    "factProject": "项目",
+    "factStatus": "状态",
+    "factOutcome": "结果",
+    "factAttempt": "尝试序号",
+    "factActiveAttempt": "活动尝试",
+    "factActiveAttemptEmpty": "无活动尝试",
+    "factVisibility": "可见范围",
+    "factMission": "任务集",
+    "factMissionEmpty": "项目范围",
+    "factBriefVersion": "简报版本",
+    "factCreatedAt": "创建时间",
+    "factUpdatedAt": "更新时间",
+    "sourceRefsTitle": "此任务代表的工单",
+    "sourceRefsEmpty": "无源工单 — 此任务创建时未关联源"
+  },
+  "status": {
+    "Draft": "草稿",
+    "Ready": "就绪",
+    "Active": "执行中",
+    "Blocked": "已阻塞",
+    "Resolved": "已解决",
+    "Cancelled": "已取消"
+  },
+  "outcome": {
+    "Succeeded": "成功",
+    "Waived": "豁免",
+    "Replaced": "已替换",
+    "Failed": "失败"
+  },
+  "visibility": {
+    "Project": "项目",
+    "Mission": "任务集"
+  },
+  "sourceKind": {
+    "Native": "原生",
+    "GitHub": "GitHub",
+    "GitLab": "GitLab",
+    "Jira": "Jira",
+    "YandexTracker": "Yandex Tracker"
+  }
+}

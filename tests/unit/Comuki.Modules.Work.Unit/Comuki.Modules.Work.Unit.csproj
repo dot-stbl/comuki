@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Comuki.Modules.Work.Unit</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\platform\src\modules\Work\Comuki.Modules.Work.Domain\Comuki.Modules.Work.Domain.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Work\Comuki.Modules.Work.Application\Comuki.Modules.Work.Application.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\modules\Work\Comuki.Modules.Work.Infrastructure\Comuki.Modules.Work.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\platform\src\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

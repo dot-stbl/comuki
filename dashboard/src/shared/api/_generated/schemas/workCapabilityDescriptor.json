@@ -1,0 +1,16 @@
+{
+  "required": ["name", "description"],
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Stable dot.case identifier — see `add-mission-cowork/design.md` §\"Capability naming\"."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short human-readable description, surfaced verbatim by the Broker probe."
+    }
+  },
+  "description": "Stable contract identifier for one capability the Work module\nadvertises. The descriptor is immutable; consumers compare\ninstances by string WorkCapabilityDescriptor.Name (case-sensitive, ordinal).",
+  "x-readme-ref-name": "WorkCapabilityDescriptor"
+}

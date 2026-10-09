@@ -216,4 +216,13 @@ public static class ApiRoutes
 
     /// <summary>Revoke one proxy virtual key by fingerprint.</summary>
     public const string ProxyKeyRevoke = "/api/v1/proxy/keys/{keyId}/revoke";
+
+    /// <summary>Work-management surface — read task detail, list capabilities.</summary>
+    public const string WorkTasks = "/api/v1/work/tasks";
+
+    /// <summary>One Work task by id — full detail view (sources, attempts, decisions, completion).</summary>
+    public const string WorkTaskById = "/api/v1/work/tasks/{workTaskId:guid}";
+
+    /// <summary>Work module capability descriptors — names + descriptions for FE permission wiring.</summary>
+    public const string WorkCapabilities = "/api/v1/work/capabilities";
 }

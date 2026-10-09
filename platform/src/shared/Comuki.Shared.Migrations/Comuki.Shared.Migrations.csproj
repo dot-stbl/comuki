@@ -28,6 +28,7 @@
     <ProjectReference Include="..\..\modules\Repositories\Comuki.Modules.Repositories.Infrastructure\Comuki.Modules.Repositories.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Scheduler\Comuki.Modules.Scheduler.Infrastructure\Comuki.Modules.Scheduler.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Verify\Comuki.Modules.Verify.Infrastructure\Comuki.Modules.Verify.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Work\Comuki.Modules.Work.Infrastructure\Comuki.Modules.Work.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

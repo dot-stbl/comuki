@@ -74,4 +74,5 @@ export const NAMESPACES: readonly string[] = [
   "inbox",
   "artifacts",
   "auth",
+  "work",
 ]

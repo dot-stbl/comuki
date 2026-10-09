@@ -110,7 +110,7 @@ describe("locale parity across the shipped set", () => {
     const sourceNamespaces = new Set(
       [...(catalogues.get("en")?.trees.keys() ?? [])].sort()
     )
-    expect([...sourceNamespaces]).toHaveLength(22)
+    expect([...sourceNamespaces]).toHaveLength(23)
 
     for (const locale of LOCALES) {
       if (locale.code === "en") {

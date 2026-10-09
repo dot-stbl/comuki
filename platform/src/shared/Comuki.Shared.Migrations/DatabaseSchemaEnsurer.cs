@@ -11,6 +11,7 @@ using Comuki.Modules.Projects.Infrastructure.Persistence;
 using Comuki.Modules.Repositories.Infrastructure.Persistence;
 using Comuki.Modules.Scheduler.Infrastructure.Persistence;
 using Comuki.Modules.Verify.Infrastructure.Persistence;
+using Comuki.Modules.Work.Infrastructure.Persistence;
 using Npgsql;
 
 namespace Comuki.Shared.Migrations;
@@ -59,6 +60,7 @@ public static class DatabaseSchemaEnsurer
             VerifyDatabase.Schema => CreateVerifySchemaDdl,
             RepositoriesDatabase.Schema => CreateRepositoriesSchemaDdl,
             ProceduresDatabase.Schema => CreateProceduresSchemaDdl,
+            WorkDatabase.Schema => CreateWorkSchemaDdl,
             _ => throw new ArgumentException($"unknown schema: {schema}", nameof(schema)),
         };
 
@@ -84,4 +86,5 @@ public static class DatabaseSchemaEnsurer
     private const string CreateVerifySchemaDdl = "CREATE SCHEMA IF NOT EXISTS verify";
     private const string CreateRepositoriesSchemaDdl = "CREATE SCHEMA IF NOT EXISTS repositories";
     private const string CreateProceduresSchemaDdl = "CREATE SCHEMA IF NOT EXISTS procedures";
+    private const string CreateWorkSchemaDdl = "CREATE SCHEMA IF NOT EXISTS work";
 }

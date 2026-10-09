@@ -1,0 +1,49 @@
+{
+  "detailPage": {
+    "titleFallback": "工作任務",
+    "errorTitle": "無法載入此工作任務",
+    "notFoundTitle": "沒有此 id 的工作任務",
+    "notFoundBody": "本平台沒有與此 id 對應的內容。該工作任務可能已在此處或其他分頁被取消，執行圖中顯示仍然存在的任務。",
+    "backToTasks": "返回任務",
+    "factsTitle": "此工作任務的含義",
+    "factProject": "專案",
+    "factStatus": "狀態",
+    "factOutcome": "結果",
+    "factAttempt": "嘗試序號",
+    "factActiveAttempt": "進行中嘗試",
+    "factActiveAttemptEmpty": "無進行中嘗試",
+    "factVisibility": "可見範圍",
+    "factMission": "任務集",
+    "factMissionEmpty": "專案範圍",
+    "factBriefVersion": "簡報版本",
+    "factCreatedAt": "建立時間",
+    "factUpdatedAt": "更新時間",
+    "sourceRefsTitle": "此任務代表的工單",
+    "sourceRefsEmpty": "無源工單 — 此任務建立時未關聯來源"
+  },
+  "status": {
+    "Draft": "草稿",
+    "Ready": "就緒",
+    "Active": "執行中",
+    "Blocked": "已封鎖",
+    "Resolved": "已解決",
+    "Cancelled": "已取消"
+  },
+  "outcome": {
+    "Succeeded": "成功",
+    "Waived": "豁免",
+    "Replaced": "已替換",
+    "Failed": "失敗"
+  },
+  "visibility": {
+    "Project": "專案",
+    "Mission": "任務集"
+  },
+  "sourceKind": {
+    "Native": "原生",
+    "GitHub": "GitHub",
+    "GitLab": "GitLab",
+    "Jira": "Jira",
+    "YandexTracker": "Yandex Tracker"
+  }
+}

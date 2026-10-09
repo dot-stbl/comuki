@@ -70,6 +70,8 @@
     <ProjectReference Include="..\..\modules\Scheduler\Comuki.Modules.Scheduler.Infrastructure\Comuki.Modules.Scheduler.Infrastructure.csproj" />
     <ProjectReference Include="..\..\modules\Verify\Comuki.Modules.Verify.Application\Comuki.Modules.Verify.Application.csproj" />
     <ProjectReference Include="..\..\modules\Verify\Comuki.Modules.Verify.Infrastructure\Comuki.Modules.Verify.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\modules\Work\Comuki.Modules.Work.Application\Comuki.Modules.Work.Application.csproj" />
+    <ProjectReference Include="..\..\modules\Work\Comuki.Modules.Work.Infrastructure\Comuki.Modules.Work.Infrastructure.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Contracts\Comuki.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Bootstrap\Comuki.Shared.Bootstrap.csproj" />
     <ProjectReference Include="..\..\shared\Comuki.Shared.Migrations\Comuki.Shared.Migrations.csproj" />

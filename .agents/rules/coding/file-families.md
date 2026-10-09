@@ -66,12 +66,19 @@ co-located.
 ```csharp
 // ✅ LEGITIMATE FAMILY
 // File: TenantDetail.cs (≈80 lines)
-public sealed record TenantSummary(string Id, string Name, DateTimeOffset CreatedAt);
+public sealed record TenantSummary
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
+}
 
-public sealed record TenantDetail(
-    TenantSummary Summary,
-    IReadOnlyList<TenantMember> Members,
-    IReadOnlyList<TenantQuota> Quotas);
+public sealed record TenantDetail
+{
+    public required TenantSummary Summary { get; init; }
+    public required IReadOnlyList<TenantMember> Members { get; init; }
+    public required IReadOnlyList<TenantQuota> Quotas { get; init; }
+}
 ```
 
 **Когда:** `Summary` — это проекция для list-view, `Detail` — для

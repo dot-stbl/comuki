@@ -8,6 +8,18 @@ using Microsoft.AspNetCore.SignalR;
 namespace Comuki.Host.Realtime.Broadcasting;
 
 /// <summary>
+/// Paired entry + attention-draft record the attention helper iterates after
+/// filtering. Named instead of an inline <c>(RunEventEntry, AttentionDraft)</c>
+/// tuple so the call sites read <c>draft.Entry</c> / <c>draft.Draft</c>
+/// rather than <c>draft.Item1</c> / <c>draft.Item2</c> and so the type
+/// survives the rename of either side without a cascading parameter-order
+/// change at every call site.
+/// </summary>
+/// <param name="Entry">Source <see cref="RunEventEntry"/> the draft was derived from.</param>
+/// <param name="Draft">Resolved attention target — only set when the entry is attention-worthy.</param>
+file sealed record RunEventAttentionDraft(RunEventEntry Entry, AttentionDraft Draft);
+
+/// <summary>
 /// Default <see cref="IRunEventsBroadcaster"/> over the
 /// <see cref="IHubContext{RunsHub}"/>: one message per entry to its run
 /// group, plus attention signals to the owning project groups. The
@@ -52,13 +64,13 @@ file static class SignalRRunEventsAttention
         IReadOnlyList<RunEventEntry> entries,
         CancellationToken cancellationToken)
     {
-        var drafts = new List<(RunEventEntry Entry, AttentionDraft Draft)>();
+        var drafts = new List<RunEventAttentionDraft>();
 
         foreach (var entry in entries)
         {
             if (AttentionMap.FromEntry(entry) is { } draft)
             {
-                drafts.Add((entry, draft));
+                drafts.Add(new RunEventAttentionDraft(entry, draft));
             }
         }
 
@@ -72,13 +84,13 @@ file static class SignalRRunEventsAttention
             [.. drafts.Select(static draft => draft.Entry.RunId).Distinct()],
             cancellationToken);
 
-        foreach (var (entry, draft) in drafts)
+        foreach (var draft in drafts)
         {
-            if (!projects.TryGetValue(entry.RunId, out var project))
+            if (!projects.TryGetValue(draft.Entry.RunId, out var project))
             {
                 logger.LogWarning(
                     "Skipping attention broadcast for run {RunId}: owning project not found",
-                    entry.RunId.Value);
+                    draft.Entry.RunId.Value);
                 continue;
             }
 
@@ -87,12 +99,12 @@ file static class SignalRRunEventsAttention
                 .SendAsync(
                     RealtimeTransportMethods.Attention,
                     new AttentionView(
-                        entry.RunId.Value,
+                        draft.Entry.RunId.Value,
                         project.Value,
-                        draft.WorkItemId,
-                        draft.Status,
-                        draft.AttentionKind,
-                        entry.OccurredAt.ToUnixTimeMilliseconds()),
+                        draft.Draft.WorkItemId,
+                        draft.Draft.Status,
+                        draft.Draft.AttentionKind,
+                        draft.Entry.OccurredAt.ToUnixTimeMilliseconds()),
                     cancellationToken);
         }
     }

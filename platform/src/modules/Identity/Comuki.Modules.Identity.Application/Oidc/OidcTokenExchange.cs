@@ -49,7 +49,7 @@ public sealed class OidcTokenExchange(IOidcTokenExchangeApi api, ILogger<OidcTok
                 tokenEndpoint,
                 parameters,
                 $"Basic {basic}",
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
 
             return string.IsNullOrWhiteSpace(doc.IdToken)
                 ? throw new InvalidOperationException("oidc token endpoint response is missing id_token")

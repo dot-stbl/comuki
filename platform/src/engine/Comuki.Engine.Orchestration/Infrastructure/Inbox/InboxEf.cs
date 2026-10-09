@@ -2,6 +2,7 @@ using System.Data.Common;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using static Comuki.Shared.Kernel.Persistence.AdoCommandHelpers;
 
 namespace Comuki.Engine.Orchestration.Infrastructure.Inbox;
 
@@ -69,14 +70,5 @@ file static class InboxSql
         AddParameter(command, "@messageId", messageId);
         AddParameter(command, "@receivedAt", receivedAt);
         return command;
-    }
-
-    /// <summary>Adds one typed parameter (Npgsql infers uuid/timestamptz/text from the CLR value).</summary>
-    public static void AddParameter(DbCommand command, string name, object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 }

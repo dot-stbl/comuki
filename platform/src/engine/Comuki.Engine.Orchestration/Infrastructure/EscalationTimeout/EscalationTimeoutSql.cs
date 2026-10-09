@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Comuki.Engine.Orchestration.Domain;
+using static Comuki.Shared.Kernel.Persistence.AdoCommandHelpers;
 
 namespace Comuki.Engine.Orchestration.Infrastructure.EscalationTimeout;
 
@@ -47,14 +48,5 @@ internal static class EscalationTimeoutSql
         AddParameter(command, "@cutoff", cutoff);
         AddParameter(command, "@now", now);
         return command;
-    }
-
-    /// <summary>Adds one typed parameter (Npgsql infers the CLR type from the value).</summary>
-    public static void AddParameter(DbCommand command, string name, object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 }

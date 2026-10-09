@@ -16,6 +16,13 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Comuki.Shared.Kernel.Tests" />
+    <!-- Engine + host reach the shared ADO helpers
+         (AdoCommandHelpers) from their guarded-SQL sites.
+         Comuki.Host.csproj overrides its AssemblyName to `comuki`
+         (issue #54 — the apphost ships as `comuki`), so the grant
+         targets the assembly name, not the project name. -->
+    <InternalsVisibleTo Include="Comuki.Engine.Orchestration" />
+    <InternalsVisibleTo Include="comuki" />
   </ItemGroup>
 
 </Project>

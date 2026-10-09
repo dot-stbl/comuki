@@ -5,6 +5,7 @@ using Comuki.Engine.Orchestration.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
+using static Comuki.Shared.Kernel.Persistence.AdoCommandHelpers;
 
 namespace Comuki.Engine.Orchestration.Infrastructure.OutboxDispatch;
 
@@ -143,14 +144,5 @@ file static class OutboxDispatchSql
         }
 
         return ids;
-    }
-
-    /// <summary>Adds one typed parameter (Npgsql infers uuid/timestamptz/text/int from the CLR value).</summary>
-    public static void AddParameter(DbCommand command, string name, object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 }

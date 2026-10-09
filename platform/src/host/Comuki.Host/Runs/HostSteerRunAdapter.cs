@@ -18,6 +18,7 @@ using Comuki.Shared.Kernel.Scoping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
+using static Comuki.Shared.Kernel.Persistence.AdoCommandHelpers;
 
 namespace Comuki.Host.Runs;
 
@@ -430,18 +431,6 @@ file static class SteerSql
         command.CommandText = LockRunStatusSql;
         AddParameter(command, "@runId", runId.Value);
         return command;
-    }
-
-    /// <summary>Adds one typed parameter (Npgsql infers uuid from the CLR value).</summary>
-    /// <param name="command">Command the parameter is added to.</param>
-    /// <param name="name">Parameter name including the <c>@</c> prefix.</param>
-    /// <param name="value">Parameter value (uuid / text / timestamptz).</param>
-    public static void AddParameter(DbCommand command, string name, object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
     }
 
     /// <summary>Locks the run row and returns its <see cref="RunStatus"/>.</summary>

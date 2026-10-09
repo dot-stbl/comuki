@@ -59,7 +59,7 @@ public sealed class OpenAIEmbeddingClient : IEmbeddingClient
         // TaskCanceledException — the caller couldn't tell a real
         // error from a cancellation. Awaiting the batch directly
         // preserves the exception type.
-        var vectors = await SendAsync([text], cancellationToken).ConfigureAwait(false);
+        var vectors = await SendAsync([text], cancellationToken);
         return vectors[0];
     }
 
@@ -86,7 +86,7 @@ public sealed class OpenAIEmbeddingClient : IEmbeddingClient
 
         var response = await api.CreateAsync(
             new EmbeddingRequest(Model: options.Model, Input: texts),
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
 
         var vectors = new float[response.Data.Count][];
         for (var index = 0; index < response.Data.Count; index++)

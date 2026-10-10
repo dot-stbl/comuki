@@ -184,7 +184,7 @@ public sealed class ProjectHandlersShould
 
         var view = await handler.HandleAsync(
             new UpdateSettingsCommand(projectId, 1, 1, 8, 60, true, true, true, true, 1000, 2000,
-                ProjectDomainType.Custom, """{"code":"implement"}"""),
+                ProjectDomainType.Custom, /*lang=json,strict*/ """{"code":"implement"}"""),
             TestContext.Current.CancellationToken);
 
         view.MinIdle.ShouldBe(1);
@@ -193,7 +193,7 @@ public sealed class ProjectHandlersShould
         view.SoftBudgetUsdMicros.ShouldBe(1000);
         view.HardBudgetUsdMicros.ShouldBe(2000);
         view.DomainType.ShouldBe(ProjectDomainType.Custom);
-        view.CustomDomainTypesJson.ShouldBe("""{"code":"implement"}""");
+        view.CustomDomainTypesJson.ShouldBe(/*lang=json,strict*/ """{"code":"implement"}""");
         view.Version.ShouldBe(2);
         await settings.Received(1).SaveAsync(row, Arg.Any<CancellationToken>());
     }

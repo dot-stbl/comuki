@@ -1,3 +1,4 @@
+using Comuki.Modules.Procedures.Application;
 using Comuki.Modules.Procedures.Application.Compiler;
 using Comuki.Modules.Procedures.Application.Compiler.Model;
 using Comuki.Modules.Procedures.Application.Ports;
@@ -7,6 +8,7 @@ using Comuki.Modules.Procedures.Domain.Definitions.Elements;
 using Comuki.Modules.Procedures.Domain.Editions;
 using Comuki.Modules.Procedures.Domain.Kinds;
 using Comuki.Modules.Procedures.Domain.Kinds.Types;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Shouldly;
 using Xunit;
@@ -76,6 +78,52 @@ public sealed class ProcedureCompilerShould
         exception.Message.ShouldContain("unknown-kind");
     }
 
+    [Fact(DisplayName = "Given an absolute control-plane root, when the compiler runs, then the catalog reader is called with that absolute path")]
+    public async Task PassesAbsoluteControlPlaneRootToCatalogReaderAsync()
+    {
+        // Spec context: the host runs from a bin directory, so a relative
+        // 'control-plane/' lookup misses the folder. The compile gate reads
+        // the absolute path from IOptions and passes it through verbatim
+        // to the catalog reader. We assert the path is absolute and equal
+        // to the bound value — a hard contract the prior compile-gate
+        // hardcoded "control-plane" string violated.
+        var absoluteRoot = Path.Combine(
+            Path.GetTempPath(),
+            $"comuki-procedures-abs-{Guid.NewGuid():N}");
+        var catalogReader = Substitute.For<INodeKindCatalogReader>();
+        catalogReader.LoadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(CreateCatalog());
+        var editionsSource = Substitute.For<IEditionsFeatureSource>();
+        editionsSource.ResolveEffective().Returns(GrantedFeatureKeys.Empty);
+        var options = Options.Create(new ProceduresOptions
+        {
+            ControlPlaneRoot = absoluteRoot,
+        });
+        var compiler = new ProcedureCompiler(catalogReader, editionsSource, options);
+
+        await compiler.CompileAsync(ValidDefinition(), TestContext.Current.CancellationToken);
+
+        await catalogReader.Received(1).LoadAsync(
+            Arg.Is<string>(path => path == absoluteRoot && Path.IsPathRooted(path)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given an empty control-plane root, when the compiler runs, then it refuses loudly before touching the catalog reader")]
+    public async Task RefuseEmptyControlPlaneRootAsync()
+    {
+        var catalogReader = Substitute.For<INodeKindCatalogReader>();
+        var editionsSource = Substitute.For<IEditionsFeatureSource>();
+        editionsSource.ResolveEffective().Returns(GrantedFeatureKeys.Empty);
+        var options = Options.Create(new ProceduresOptions { ControlPlaneRoot = string.Empty });
+        var compiler = new ProcedureCompiler(catalogReader, editionsSource, options);
+
+        var exception = await Should.ThrowAsync<ProcedureCompilerException>(
+            async () => await compiler.CompileAsync(ValidDefinition(), TestContext.Current.CancellationToken));
+
+        exception.Message.ShouldContain("ControlPlaneRoot");
+        await catalogReader.DidNotReceiveWithAnyArgs().LoadAsync(default, TestContext.Current.CancellationToken);
+    }
+
     private static ProcedureCompiler CreateCompiler()
     {
         var catalogReader = Substitute.For<INodeKindCatalogReader>();
@@ -83,7 +131,16 @@ public sealed class ProcedureCompilerShould
             .Returns(CreateCatalog());
         var editionsSource = Substitute.For<IEditionsFeatureSource>();
         editionsSource.ResolveEffective().Returns(GrantedFeatureKeys.Empty);
-        return new ProcedureCompiler(catalogReader, editionsSource);
+        // The absolute path is what the host binds in production; the
+        // compiler passes it through to the catalog reader, so any
+        // absolute path is a fair substitute here. The test asserts on
+        // the value the reader is called with — see the explicit
+        // assertion on the absolute-path shape in the suite below.
+        var options = Options.Create(new ProceduresOptions
+        {
+            ControlPlaneRoot = Path.Combine(Path.GetTempPath(), $"comuki-procedures-test-{Guid.NewGuid():N}"),
+        });
+        return new ProcedureCompiler(catalogReader, editionsSource, options);
     }
 
     private static NodeKindCatalog CreateCatalog()

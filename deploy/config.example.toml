@@ -195,6 +195,18 @@ grpcPort = 17004
 # batchSize = 50
 # maxAttempts = 5
 
+[orchestration.verification]
+# Verification axis master switch (add-orchestra §3 — Coda). When
+# false, the orchestrator never iterates the gate-provider registry
+# and never writes a `verifications` row — the run lands as
+# `Succeeded` with the existing semantics. When true, gates are
+# stamped on every work item; a `Succeeded` run with no `passed` gate
+# verdicts gets the visible "verification pending" annotation
+# through the derived view, not a new run state. The per-project
+# `ProjectSettings.VerifyEnabled` is the secondary switch — this
+# section is the global one.
+enabled = true
+
 [compute]
 # "docker" (default) or "kubernetes" — how worker containers spawn.
 # provider = "docker"
@@ -396,10 +408,13 @@ grpcPort = 17004
 # follow-up container-isolated runner). The worker polls
 # verify.generic_command_runs and launches the configured executable
 # via Process.Start INSIDE the orchestrator host process — no
-# container/sandbox boundary yet. Disabled by default; enable only in
-# an environment that already trusts every executable a verify run can
-# name.
-# enabled = false
+# container/sandbox boundary yet. **Enabled by default since Coda
+# (add-orchestra §3):** the verification axis is the consumer — the
+# GenericCommandGateProvider reads the verdict the worker stamps, so
+# the verifier stays inert until a work item asks for a gate. The
+# safety warning still holds: only enable in an environment that
+# already trusts every executable a verify run can name.
+enabled = true
 # pollInterval = "00:00:30"
 # batchSize = 10
 # runTimeout = "00:02:00"

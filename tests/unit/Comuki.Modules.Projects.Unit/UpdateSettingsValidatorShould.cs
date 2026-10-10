@@ -93,7 +93,7 @@ public sealed class UpdateSettingsValidatorShould
     [Fact(DisplayName = "Given a Custom command with a well-formed JSON map, when validated, then it passes")]
     public void AcceptCustomWithValidJson()
     {
-        var command = BuildCommand(ProjectDomainType.Custom, """{"code":"implement"}""");
+        var command = BuildCommand(ProjectDomainType.Custom, /*lang=json,strict*/ """{"code":"implement"}""");
 
         var result = validator.Validate(command);
 
@@ -103,7 +103,7 @@ public sealed class UpdateSettingsValidatorShould
     [Fact(DisplayName = "Given a Hybrid command with a well-formed JSON map, when validated, then it passes")]
     public void AcceptHybridWithValidJson()
     {
-        var command = BuildCommand(ProjectDomainType.Hybrid, """{"code":"implement"}""");
+        var command = BuildCommand(ProjectDomainType.Hybrid, /*lang=json,strict*/ """{"code":"implement"}""");
 
         var result = validator.Validate(command);
 

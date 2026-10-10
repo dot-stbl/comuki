@@ -378,3 +378,29 @@ timeout; on timeout `reachable=false` with the timeout sentence.
 - **THEN** the response is 200 with `reachable`, `latencyMs`, and a
   provider-specific status sentence based on the stored settings
   and credential
+
+### Requirement: Source secret rotation (issue #46)
+`POST /api/v1/integration/sources/{id}/rotate-secret` SHALL demand
+`source:write`, generate a fresh 256-bit hex secret, persist it on
+the stored connection, and return the plaintext exactly once in the
+response so the operator can configure the tracker. The
+structured log SHALL carry a `source.secret_rotated` event id with
+the connection id and env-var name — never the secret itself. The
+rotation is irreversible from the host's perspective: the previous
+secret is discarded at the moment the new one is persisted, so a
+concurrent `/api/hooks/{provider}/{key}` delivery signed with the
+old secret answers 401 from that point on.
+
+#### Scenario: Rotate the webhook verification secret
+- **WHEN** an operator with `source:write` posts to
+  `/api/v1/integration/sources/{id}/rotate-secret`
+- **THEN** the response is 200 with the plaintext secret in the
+  body — exactly once — and a `SecretRotationResponse` view; the
+  stored `secret_env_ref` resolves to the freshly-rotated value
+  from that point on
+
+#### Scenario: Rotate against an unknown connection
+- **WHEN** an operator posts to
+  `/api/v1/integration/sources/{00000000-0000-0000-0000-000000000000}/rotate-secret`
+- **THEN** the response is 404 ProblemDetails with code
+  `integration.source_not_found`

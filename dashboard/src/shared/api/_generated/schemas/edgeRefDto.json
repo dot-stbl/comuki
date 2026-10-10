@@ -1,0 +1,11 @@
+{
+  "required": ["fromNodeId", "fromPort", "toNodeId"],
+  "type": "object",
+  "properties": {
+    "fromNodeId": { "type": "string", "description": "Source node id." },
+    "fromPort": { "type": "string", "description": "Source outcome port." },
+    "toNodeId": { "type": "string", "description": "Destination node id." }
+  },
+  "description": "Reference to an edge in the diff.",
+  "x-readme-ref-name": "EdgeRefDto"
+}

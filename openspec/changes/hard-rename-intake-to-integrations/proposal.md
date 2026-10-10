@@ -26,8 +26,9 @@ can build on `Comuki.Modules.Integrations.*` from day one instead of
   migration, no data-preserving `ALTER SCHEMA`; development/staging
   databases are reset.
 - Renest public HTTP routes under `/api/v1/integration/*` (`/api/v1/inbox`,
-  `/api/v1/tickets`, `/api/v1/sources`, `/api/v1/admission-rules` and their
-  sub-paths); provider webhook ingress stays `/api/hooks/{provider}/{key}`.
+  `/api/v1/tickets`, `/api/v1/sources`, `/api/v1/sources/{id}/rotate-secret`,
+  `/api/v1/admission-rules` and their sub-paths); provider webhook ingress
+  stays `/api/hooks/{provider}/{key}`.
 - Rename permission keys `intake:read`/`intake:claim` →
   `integration:read`/`integration:claim`; rename `intake.*` problem-detail
   error codes to `integration.*`; rename the `Intake` config section
@@ -61,15 +62,29 @@ those capabilities)
 ## Impact
 
 Touches `platform/src/modules/Intake` (~140 files, moved/renamed),
-`platform/src/host/Comuki.Host/Intake` + `HostComposer.cs`,
+`platform/src/host/Comuki.Host/Intake` + `HostComposer.cs` (DI block at
+lines 289-304 plus the `AddIntakeProblemHandlers()` call at line 506),
+`platform/src/host/Comuki.Host/Errors/Handlers/Intake/`
+(typed problem-handler registry — rename to
+`Errors/Handlers/Integrations/`),
 `platform/src/host/Comuki.Migrator` (design-time factory + migration
-target registry), `platform/src/shared/Comuki.Shared.Migrations`,
-`platform/src/modules/Identity` (permission keys), the
-`Comuki.Modules.Intake.*` test projects and `Comuki.Architecture.Tests`,
-dashboard generated contracts plus `domains/{inbox,sources}` consumers,
-CLI generated contracts, and `deploy/{k8s,helm,compose}` schema bootstrap
-plus `deploy/config.example.toml`. `deploy/hybrid/` has one incidental
-`intake` string match (a comment/label) with no schema or route coupling.
+target registry), `platform/src/shared/Comuki.Shared.Migrations`
+(registry entry + schema DDL),
+`platform/src/modules/Identity` (permission keys + RoleMatrix grants),
+the `Comuki.Modules.Intake.*` test projects,
+`tests/unit/Comuki.Host.Unit.Errors/IntakeProblemHandlersShould.cs`
+(rename + move), `Comuki.Architecture.Tests` (layer-boundary
+assertions, plus `ProjectsModuleLayerTests.SiblingModules` constant),
+`Comuki.EndToEnd.AgentLoop` (`AgentLoopHost`, `RealPiFakeModelHost`,
+`CrownScenarioHost` — all hard-code the pre-rename `/api/v1/sources`
+and `/api/v1/admission-rules` paths), dashboard generated contracts
+plus `domains/{inbox,sources,tasks}` consumers and
+`app/layout/{nav,nav-sections,nav-active-section,*shell,*pane-sidebar}`
+(nav section id + labelKey + the i18n `nav.intake` key in 13 locale
+files), CLI generated contracts, and `deploy/{k8s,helm,compose}`
+schema bootstrap plus `deploy/config.example.toml`. `deploy/hybrid/`
+has one incidental `intake` string match (a comment/label) with no
+schema or route coupling.
 
 ## Non-goals
 

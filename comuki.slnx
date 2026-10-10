@@ -54,6 +54,9 @@
     <Project Path="platform/src/modules/Verify/Comuki.Modules.Verify.Domain/Comuki.Modules.Verify.Domain.csproj" />
     <Project Path="platform/src/modules/Verify/Comuki.Modules.Verify.Application/Comuki.Modules.Verify.Application.csproj" />
     <Project Path="platform/src/modules/Verify/Comuki.Modules.Verify.Infrastructure/Comuki.Modules.Verify.Infrastructure.csproj" />
+    <Project Path="platform/src/modules/Work/Comuki.Modules.Work.Domain/Comuki.Modules.Work.Domain.csproj" />
+    <Project Path="platform/src/modules/Work/Comuki.Modules.Work.Application/Comuki.Modules.Work.Application.csproj" />
+    <Project Path="platform/src/modules/Work/Comuki.Modules.Work.Infrastructure/Comuki.Modules.Work.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/platform/src/" />
   <Folder Name="/platform/src/engine/">
@@ -68,6 +71,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Comuki.Architecture.Tests/Comuki.Architecture.Tests.csproj" />
+    <Project Path="tests/architecture/Comuki.Work.ArchitectureTests/Comuki.Work.ArchitectureTests.csproj" />
   </Folder>
   <Folder Name="/tests/unit/">
     <Project Path="tests/unit/Comuki.Host.Translator.Unit.StreamJson/Comuki.Host.Translator.Unit.StreamJson.csproj" />
@@ -101,6 +105,7 @@
     <Project Path="tests/unit/Comuki.Modules.Chat.Unit/Comuki.Modules.Chat.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Costs.Unit/Comuki.Modules.Costs.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Proxy.Unit/Comuki.Modules.Proxy.Unit.csproj" />
+    <Project Path="tests/unit/Comuki.Modules.Work.Unit/Comuki.Modules.Work.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Intake.Unit/Comuki.Modules.Intake.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Modules.Artifacts.Unit/Comuki.Modules.Artifacts.Unit.csproj" />
     <Project Path="tests/unit/Comuki.Host.Unit.Realtime/Comuki.Host.Unit.Realtime.csproj" />

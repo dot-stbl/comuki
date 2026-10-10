@@ -98,4 +98,7 @@ public static class Permissions
 
     /// <summary>Platform-level administration (everything else is scoped below it).</summary>
     public static readonly PermissionKey PlatformAdmin = new("platform:admin");
+
+    /// <summary>Read observability surfaces (traces, metrics, dashboards).</summary>
+    public static readonly PermissionKey ObservabilityRead = new("observability:read");
 }

@@ -1,0 +1,18 @@
+{
+  "required": ["id", "kindKey", "parameters"],
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "description": "Graph-local identifier." },
+    "kindKey": {
+      "type": "string",
+      "description": "Catalog kind the node instances."
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Per-kind parameter overrides."
+    }
+  },
+  "description": "One node inserted by the patch.",
+  "x-readme-ref-name": "AddedNodeDto"
+}

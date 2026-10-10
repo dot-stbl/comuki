@@ -4,6 +4,14 @@
 
 Defines how ephemeral workers execute work items: the bidirectional gRPC stream between the worker container (Translator) and the orchestrator, the worker REST claim/heartbeat/complete/fail surface, the Translator's claim → pi spawn → stream → report → complete loop, its environment contract, the worker container image, and the TestFakePi test harness.
 
+## MODIFIED Requirements
+
+### Requirement: Agent invocation and stream parsing
+
+The Translator SHALL spawn the configured executable (`pi` in production, a fake in tests) with `-p <brief> --mode json` (no `--no-session` — pi runs in **session mode** with the in-process session transport; `TurnInput` commands arrive over the bidi channel), streaming stdout line by line. The stream-json parser SHALL be tolerant: blank lines yield nothing; malformed JSON yields an `unparseable` event; unmodelled event types yield an `unknown` event preserving the raw JSON; a single bad line never kills a running task. Modelled events: `system`, `user`, `assistant` (text / tool_use blocks), `result`, plus the pi-native `session` header, `message_update` (text_delta / toolcall_start), `message_end` and `tool_execution_start` and `agent_end`. Session headers, results and unmodelled events are not forwarded as Activity.
+
+> **Coordination note (2026-10-04).** This change replaces the v1.x `pi -p <brief> --mode json --no-session` invocation with session-mode pi (`pi -p <brief> --mode json`). The `--no-session` flag is removed — the in-process session transport carries `TurnInput` commands over the bidi channel (`session` capability, Phase 1 of `add-orchestra`). `TranslatorOptions` carries no session flag; the decision lives in `IHarness.Capabilities.LiveSession` (`harness-spi` capability, Phase 8).
+
 ## Requirements
 
 ### Requirement: Code-first gRPC bidi contract
@@ -111,10 +119,6 @@ Failures propagate and stop the host — an ephemeral worker is meant to die and
 #### Scenario: Soft stop
 - **WHEN** the orchestrator sends Stop with a reason
 - **THEN** the agent process tree is killed and the StageReport status is `cancelled`
-
-### Requirement: Agent invocation and stream parsing
-
-The Translator SHALL spawn the configured executable (`pi` in production, a fake in tests) with `-p <brief> --mode json --no-session`, streaming stdout line by line. The stream-json parser SHALL be tolerant: blank lines yield nothing; malformed JSON yields an `unparseable` event; unmodelled event types yield an `unknown` event preserving the raw JSON; a single bad line never kills a running task. Modelled events: `system`, `user`, `assistant` (text / tool_use blocks), `result`, plus the pi-native `session` header, `message_update` (text_delta / toolcall_start), `message_end` and `tool_execution_start` and `agent_end`. Session headers, results and unmodelled events are not forwarded as Activity.
 
 #### Scenario: One garbage line survives
 - **WHEN** the agent emits a non-JSON line mid-stream

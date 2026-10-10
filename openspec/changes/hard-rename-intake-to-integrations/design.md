@@ -80,9 +80,17 @@ Route renames:
 | `/api/v1/sources` (GET/POST/PUT/DELETE) | `/api/v1/integration/sources` |
 | `POST /api/v1/sources/probe` | `POST /api/v1/integration/sources/probe` |
 | `POST /api/v1/sources/{id}/probe` | `/api/v1/integration/sources/{id}/probe` |
+| `POST /api/v1/sources/{id}/rotate-secret` | `POST /api/v1/integration/sources/{id}/rotate-secret` |
 | `PUT /api/v1/sources/{sourceId}/rules/{ruleId}` | `PUT /api/v1/integration/sources/{sourceId}/rules/{ruleId}` |
 | `/api/v1/admission-rules` (+ `/{ruleId}`) | `/api/v1/integration/admission-rules` (+ `/{ruleId}`) |
 | `POST /api/hooks/{provider}/{key}` | **unchanged** (already anonymous, routing-key-addressed) |
+
+The `SourceRotateSecret` route (issue #46) was added to `ApiRoutes` after
+this change was first drafted; the rename table above includes it for
+completeness — without the entry, the rotate-secret endpoint would land
+as `/api/v1/integration/sources/{id}/rotate-secret` only by a separate
+patch. Same controller action, same response shape (`SecretRotationResponse`),
+same `source:write` permission; identifier rename only.
 
 Not renamed (epic does not name them — kept to minimize blast radius):
 
@@ -172,7 +180,9 @@ to the minimum that task 3.0's literal mandate requires:
 ### 4. Touch-point inventory
 
 Counts (case-insensitive `intake` match unless noted) over the branch
-tip at `gitlab/feature/mission-cowork-index`:
+tip at `gitlab/feature/mission-cowork-index` (verified against the
+`e57f0bf4` master tip that this change is rebased onto — see Drift
+section below for the small deltas since the original draft):
 
 - `platform/src` — 157 files. Categories:
   - The whole `Intake` module tree
@@ -181,19 +191,51 @@ tip at `gitlab/feature/mission-cowork-index`:
   - `platform/src/host/Comuki.Host/Intake/**` (controllers + request
     models, ~13 files — namespace + route rename).
   - `platform/src/host/Comuki.Host/HostComposer.cs` (DI registration
-    block, lines ~244-265 — `AddIntakeApplication()` /
+    block, lines **289-304** — `AddIntakeApplication()` /
     `AddIntakePersistence()` / `AddIntakeProviders()` calls +
     `IntakeOptions` / `IntakeWorkerDefaults` binding +
-    `IIntakeProfileRouter` / `IntakeProfileRouter` DI).
+    `IIntakeProfileRouter` / `IntakeProfileRouter` DI). The line
+    numbers in the first draft of this change (244-265) drifted
+    because of the post-`#88` Procedures module composition
+    (`AddProceduresPersistence`, `AddProceduresApplication`, etc.)
+    that now sits between line 240 and the Intake block.
+  - `platform/src/host/Comuki.Host/HostComposer.cs` line **506** —
+    `builder.Services.AddIntakeProblemHandlers();` (the typed
+    problem-handler registry for the five `intake.*` error codes).
+    The matching source is at
+    `platform/src/host/Comuki.Host/Errors/Handlers/Intake/{IntakeProblemHandlerRegistration,IntakeProblemHandlers}.cs`
+    (not under `Host/Intake/`). The directory rename target is
+    `Errors/Handlers/Integrations/`.
   - `platform/src/host/Comuki.Migrator/Factories/Intake/IntakeDesignTimeFactory.cs`
   - `platform/src/shared/Comuki.Shared.Migrations/Targets/MigrationTargets.cs`
-    (registry entry).
+    (registry entry) and
+    `platform/src/shared/Comuki.Shared.Migrations/DatabaseSchemaEnsurer.cs`
+    (the `IntakeDatabase.Schema => CreateIntakeSchemaDdl` switch arm
+    and the `CREATE SCHEMA IF NOT EXISTS intake` literal — both
+    rename to `integrations` / `CREATE SCHEMA IF NOT EXISTS integrations`).
   - `platform/src/modules/Identity/.../Permissions.cs`
     (`IntakeRead` / `IntakeClaim` permission key constants).
   - `platform/src/modules/Identity/.../RoleMatrix.cs` (role→permission
-    grants referencing those keys).
+    grants referencing those keys, lines 24, 44, 62, 93, 109).
   - `platform/src/shared/Comuki.Shared.Contracts/Runs/RunStatuses.cs`
-    (one doc-comment mention only — cosmetic).
+    (one doc-comment mention only — cosmetic, in
+    `/// representation modules that must not reference the engine (Intake's`).
+  - `platform/src/host/Comuki.Host/Runs/SteeringWorkerDefaults.cs`
+    and `Scheduler/SchedulerWorkerDefaults.cs` carry a doc-comment
+    mention of `IntakeWorkerDefaults` as a sibling class — cosmetic
+    only.
+  - `platform/src/host/Comuki.Host/Intake/IntakeProfileRouter` /
+    `IIntakeProfileRouter` is split across two locations: the
+    **interface** `IIntakeProfileRouter` lives at
+    `platform/src/modules/Intake/Comuki.Modules.Intake.Application/Ports/Admission/IIntakeProfileRouter.cs`,
+    the **concrete** `IntakeProfileRouter` lives at
+    `platform/src/modules/Intake/Comuki.Modules.Intake.Infrastructure/Admission/IntakeProfileRouter.cs`
+    and exposes a `string IssueDefaultProfileKey` constructor argument
+    bound by the host from `IOptions<IntakeWorkerDefaults>.Value.IssueDefaultProfileKey`.
+    Both files rename to the `Integrations` namespace; the
+    interface's host binding line in `HostComposer.cs` (302-304) also
+    rewrites the fully-qualified type names. (The first draft
+    summarised the pair as one file — they are two.)
   - Two files
     (`platform/src/modules/Projects/**/DomainTypeAdmission.cs`,
     `.../DomainTypeAdmissionService.cs`) are **false positives** — they
@@ -202,27 +244,52 @@ tip at `gitlab/feature/mission-cowork-index`:
     targeted read before touching anything there.
 - `tests` — 58 files. `tests/unit/Comuki.Modules.Intake.Unit/**` (whole
   project, rename dir + csproj + namespace),
-  `tests/integration/Comuki.Host.Integration.Intake/**` (whole project),
+  `tests/integration/Comuki.Host.Integration.Intake/**` (whole project,
+  with one extra unit test outside the Intake project tree:
+  `tests/unit/Comuki.Host.Unit.Errors/IntakeProblemHandlersShould.cs` —
+  this one specifically exercises the new `Host/Errors/Handlers/Intake/`
+  pair and must be renamed to `IntegrationsProblemHandlersShould.cs` and
+  moved under the same `Host.Unit.Errors` folder),
   `tests/integration/Comuki.Modules.Intake.Integration.Migrations/**`
   (whole project — this one especially needs the squashed-migration
-  rewrite, not just a rename), `tests/Comuki.Architecture.Tests/{IntakeModuleLayerTests.cs,
-  ScopeGuardTests.cs, SharedContractsModuleBoundaryTests.cs}` (layer-
-  boundary assertions naming `Comuki.Modules.Intake.*` — rename to
-  `Comuki.Modules.Integrations.*`), plus incidental references in
-  `Comuki.EndToEnd.AgentLoop` and `Comuki.AgentTest.Runner`
-  fixtures/scenario YAML that construct native tickets against the old
-  routes.
+  rewrite, not just a rename; the existing
+  `CreateIntakeTablesAlongsideOrchestrationAsync` test asserts the
+  current 4-migration baseline and must be rewritten for the new
+  one-migration baseline), `tests/Comuki.Architecture.Tests/{IntakeModuleLayerTests.cs,
+  ScopeGuardTests.cs, ProjectsModuleLayerTests.cs,
+  SharedContractsModuleBoundaryTests.cs}` (layer-boundary assertions
+  naming `Comuki.Modules.Intake.*` — rename to
+  `Comuki.Modules.Integrations.*`; the `ProjectsModuleLayerTests.cs`
+  also declares `SiblingModules = "Comuki.Modules.Intake"` to assert
+  Projects has no Intake reference, so that constant rewrites too),
+  plus incidental references in `Comuki.EndToEnd.AgentLoop`
+  (`AgentLoopHost.cs` lines 273/287, `RealPi/RealPiFakeModelHost.cs`
+  lines 238/252, `CrownScenarioHost.cs` lines 179/193) and
+  `Comuki.AgentTest.Runner` fixtures/scenario YAML that construct
+  native tickets against the old routes.
 - `dashboard/src` — 81 files. Generated contracts under
   `dashboard/src/shared/api/_generated/**` (types/schemas named
   `IntakeTicketView`, `PostApiV1Tickets`, `PostApiV1InboxClaim`,
-  `GetApiV1Inbox`, `GetApiV1InboxCatalog`, etc. — regenerate via
+  `GetApiV1Inbox`, `GetApiV1InboxCatalog`, plus
+  `PostApiV1SourcesSourceidRotateSecret` etc. — regenerate via
   `dashboard`'s `generate-api` script, do not hand-edit) plus
   hand-written consumers in `dashboard/src/domains/{inbox,sources}/**`
-  (api queries/mutations/mappers that reference the generated type/route
-  names) and `dashboard/src/app/layout/{nav.ts,nav-sections.ts}` (a
-  cosmetic nav section `id: "intake"` / `label: "Intake"` grouping
-  Inbox/Sources/Tasks — optional rename to `"integrations"` /
-  `"Integrations"`, low risk, does not block the gate).
+  (`api/queries.ts`, `api/mutations.ts`, `api/mappers.ts`,
+  `api/mappers.test.ts`, `model/types.ts`, `index.ts`,
+  `tasks/{ui/tasks-badges.tsx, ui/tasks-badges.test.tsx,
+  ui/tasks-badges.stories.tsx, ui/tasks-columns.tsx, ui/tasks-gate.test.tsx,
+  pages/tasks-page.tsx, pages/tasks-page.test.tsx,
+  pages/create-task-page.tsx, model/types.ts, api/queries.ts,
+  api/mappers.ts}`) that reference the generated type/route names,
+  the dashboard's `domains/tasks/AGENTS.md`, and
+  `dashboard/src/app/layout/{nav.ts,nav-sections.ts,nav-active-section.test.ts,nav.test.tsx,nav-sections.test.tsx,app-shell.test.tsx,app-shell-two-pane-sidebar.test.tsx}`
+  (a nav section `id: "intake"` / `label: "Intake"` / `labelKey: "nav.intake"`
+  grouping Inbox/Sources/Tasks — rename to `"integrations"` /
+  `"Integrations"` / `"nav.integrations"`; the i18n key
+  `"nav.intake": "Intake"/"Приём"` in
+  `dashboard/src/shared/i18n/locales/{en,de,es,fr,it,ja,ko,pl,pt-BR,ru,tr,zh-CN,zh-TW}/shell.json`
+  renames in lockstep; otherwise the FE will ship with a missing
+  translation in some locales).
 - `cli/src` — 6 files, all generated contracts under
   `cli/src/contracts/_generated/**` (regenerate via cli's
   `generate:contracts` script; architecture.md notes the CLI itself is
@@ -246,6 +313,11 @@ directory, distinct from the open-source `deploy/` bullets above:
   contains the word "intake" only in a comment/label with no schema or
   route coupling; confirm at implementation time whether it needs
   updating for consistency, but it is not a functional dependency.
+  (Note: this branch is the open-source mirror; the `deploy/hybrid/`
+  tree itself lives in the GitLab side and is not part of the
+  `e57f0bf4` source-of-truth tree — out of scope for this PR's diff,
+  but verify before merging the deploy roll-out so the GitLab overlay
+  picks up the rename at the same time.)
 
 ### 5. Contracts regeneration — regenerate, don't hand-edit
 
@@ -283,6 +355,77 @@ zero remaining `Intake`/`intake:` identifiers.
   "admission" matches).**
   `Mitigation:` those files do not reference the Intake module —
   targeted read before touching confirms they stay as-is.
+- **`[Risk]` Identity specs read by `add-configurable-roles-and-platform-config`
+  (#95) and `add-minimal-missions` (#93) touch the same `intake:read` /
+  `intake:claim` permission constants this change renames.**
+  `Mitigation:` both #93 and #95 declare dependency on #88; their
+  permission catalog (per decomposition.md row) is `MODIFY` of
+  `identity` only, not `integrations`. The post-rename `Permissions.IntegrationRead` /
+  `IntegrationClaim` keys and `integration:read` / `integration:claim`
+  strings are the contract they read; no collision.
+- **`[Risk]` `add-domain-user-intake` change (sibling, #163-wave) declares
+  a non-goal "Real-domain-type classification in intake (chat/tracker) —
+  slice 2." A future slice 2 of that change will sit on top of
+  `IIntakeProfileRouter` / `IIntegrationProfileRouter`.**
+  `Mitigation:` confirmed in the sibling change's proposal.md
+  (`openspec/changes/add-domain-user-intake/proposal.md`) and
+  decomposition.md — slice 1 is purely additive to `ProjectSettings`
+  and touches no Intake/Integrations file; slice 2 will be authored
+  against the post-`#88` `Integrations` namespace. Owner decision:
+  `#88` lands first, then `add-domain-user-intake` rebases. The
+  sibling change's `non-goals` is preserved by this change.
+
+## Drift since first draft (vs `e57f0bf4` master tip)
+
+The change was first drafted against an older intake of the Intake
+module. The following master-tip changes have landed without touching
+the Intake shape this change targets — verified by file-level read,
+no Intake refactor implied:
+
+- **Procedures module** (post-`#104` wave, in `Comuki.Modules.Procedures.*`):
+  the new `AddProceduresApplication` / `AddProceduresPersistence`
+  composition is what shifted the Intake DI block from `HostComposer.cs`
+  lines ~244-265 to the actual 289-304. Mentioned in §4 above.
+- **Memory module** (`#177`/`#181`, `Comuki.Modules.Memory.*`):
+  the digest/sweep wiring sits above the Intake block in
+  `HostComposer.cs`. Zero references to Intake beyond the
+  `intake` keyword in the
+  `Intake:Worker:BridgeInterval` config comment that is itself
+  in the Intake-owned `IntakeOptions` class. No change to rename.
+- **Observability module** (`Comuki.Modules.Observability.*`):
+  zero Intake references — different bounded context.
+- **Execution spine** (`#87`): the work this change builds on
+  (`add-execution-spine-orchestration`) is **explicitly** a
+  dependency of `#88` per decomposition.md, but it does not add
+  Intake references — it adds `WorkItem` / `Generation` /
+  outbox-fencing in the orchestration engine. Verified.
+- **`add-work-management` (#89, sibling change, in
+  `openspec/changes/add-work-management/`):** this is the change
+  that lands *after* `#88` and consumes the post-rename target
+  shape. It refers to `integration.inbound.admitted.v1`,
+  `IIntegrationProfileRouter`, and the `Integrations` namespace —
+  all post-rename identifiers. **The `#89` workstream uses these
+  as the contract; it does NOT change them.** Pre-`#88` reading
+  of `#89` would show a `Intake`-prefixed citation that
+  `add-work-management` will rebase onto the post-`#88` shape.
+  This change does not need to pre-empt that rebase — it is
+  `#89`'s job.
+- **`add-domain-user-intake` (sibling, in
+  `openspec/changes/add-domain-user-intake/`):** its slice 1 is
+  `ProjectSettings` / `ProjectDomainTypeResolver`-only and touches
+  the Projects module; its Non-goals explicitly defer "Real-domain-
+  type classification in intake (chat/tracker) — slice 2." See
+  Risks / Trade-offs § above for the rebase note.
+
+The drift is **all mechanical** (HostComposer line numbers, an extra
+`SourceRotateSecret` route, the `Errors/Handlers/Intake/` directory
+that landed with the typed problem-handler registry, the
+`IntakeProblemHandlersShould` unit test that landed under
+`tests/unit/Comuki.Host.Unit.Errors/`, and the i18n nav key surface
+in the dashboard that needs lockstep rename). **Zero of it is a
+behavioural change in Intake** — the design decisions, the naming
+table, the route renames, the migration-squash strategy, and the
+non-goals are all still valid.
 
 ## Migration Plan
 

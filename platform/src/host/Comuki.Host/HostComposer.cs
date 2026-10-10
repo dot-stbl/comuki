@@ -221,7 +221,7 @@ internal static class HostComposer
         builder.Services.AddProjectsApplication();
         builder.Services.AddProjectsPersistence(database.ConnectionString);
 
-        builder.Services.AddProceduresApplication();
+        builder.Services.AddProceduresApplication(builder.Configuration);
         builder.Services.AddProceduresInfrastructure(database.ConnectionString);
         builder.Services.AddSingleton<IValidator<Procedures.Models.ProposePatchRequest>, Procedures.Models.ProposePatchRequestValidator>();
         builder.Services.AddSingleton<Shared.Contracts.IOutbox, Procedures.ProceduresOutboxAdapter>();
@@ -318,6 +318,26 @@ internal static class HostComposer
         builder.Services.AddKnowledgeApplication();
         builder.Services.AddKnowledgePersistence(database.ConnectionString);
         builder.Services.AddKnowledgeInfrastructure(builder.Configuration);
+
+        // Observability module (add-orchestra wave 1): the typed VictoriaLogs
+        // + VictoriaMetrics query clients behind the four
+        // observability.* MCP tools. The application layer registers the
+        // IValidatable + IValidatableObject endpoint; the infrastructure
+        // layer registers the singleton endpoint resolver + the two
+        // query clients (each holding a private HttpClient bound to the
+        // resolver's base URL at construction). Validate-on-start is the
+        // host's job — typed options are bound in the host so a missing
+        // [observability.victoria] section fails the boot, not the first
+        // /api/v1/mcp dispatch. The typed endpoint binds only if the
+        // section is present; an absent section leaves the validator
+        // disabled and the MCP tools return VictoriaUnavailable.
+        builder.Services.AddObservabilityApplication();
+        builder.Services.AddObservabilityInfrastructure();
+        builder.Services
+            .AddOptions<ObservabilityOptions>()
+            .Bind(configuration.GetSection(ObservabilityOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // MCP server (S10 #9): JSON-RPC 2.0 over /api/v1/mcp. The
         // dispatcher and its tool handlers are Scoped — resolved once

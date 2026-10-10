@@ -27,7 +27,7 @@ internal static class CompileGraphValidation
     {
         ValidateNodeKinds(graph.Nodes, kindByKey);
         ValidatePorts(graph, kindByKey);
-        ValidateAcyclic(graph);
+        ValidateAcyclic(graph, kindByKey);
         ValidateFanOut(graph, ProcedureCompiler.FanOutCeiling);
     }
 
@@ -97,11 +97,25 @@ internal static class CompileGraphValidation
     /// <summary>
     /// Refuses a cycle anywhere in the graph — repair boundaries are the
     /// only legal cycles and are unwrapped before the compile gate runs.
+    /// The "unwrapping" happens in the adjacency itself: a node whose
+    /// kind is <c>repair-boundary</c> is a single-source / single-target
+    /// wrapper that the runtime re-instantiates per generation, so the
+    /// graph above the boundary must stay acyclic when the boundary is
+    /// contracted.
     /// </summary>
     /// <param name="graph">The procedure graph.</param>
-    public static void ValidateAcyclic(ProcedureGraph graph)
+    /// <param name="kindByKey">Kind lookup from the pinned catalog.</param>
+    public static void ValidateAcyclic(
+        ProcedureGraph graph,
+        IReadOnlyDictionary<string, NodeKindDescriptor> kindByKey)
     {
         var adjacency = BuildAdjacency(graph);
+        // Resolve a node id → its declared kind key, so the cycle check
+        // can recognise repair-boundary nodes and contract them out.
+        var kindByNodeId = graph.Nodes.ToDictionary(
+            static node => node.Id,
+            static node => node.KindKey,
+            StringComparer.Ordinal);
         var state = new Dictionary<string, int>(StringComparer.Ordinal);
         var path = new List<string>();
 
@@ -109,7 +123,7 @@ internal static class CompileGraphValidation
         {
             if (state.GetValueOrDefault(node.Id) == 0)
             {
-                DfsVisit(node.Id, adjacency, state, path);
+                DfsVisit(node.Id, adjacency, kindByKey, kindByNodeId, state, path);
             }
         }
     }
@@ -120,16 +134,34 @@ internal static class CompileGraphValidation
     /// </summary>
     /// <param name="nodeId">The node being visited.</param>
     /// <param name="adjacency">Outgoing edges by source node id.</param>
-    /// <param name="state"></param>
+    /// <param name="kindByKey">Kind lookup from the pinned catalog (used to recognize repair-boundary nodes).</param>
+    /// <param name="kindByNodeId">Node id → its declared kind key (so the cycle check can contract repair-boundary nodes).</param>
+    /// <param name="state">DFS color per node id.</param>
     /// <param name="path">The current DFS path, for the cycle message.</param>
     public static void DfsVisit(
         string nodeId,
         IReadOnlyDictionary<string, IReadOnlyList<string>> adjacency,
+        IReadOnlyDictionary<string, NodeKindDescriptor> kindByKey,
+        IReadOnlyDictionary<string, string> kindByNodeId,
         Dictionary<string, int> state,
         List<string> path)
     {
         state[nodeId] = 1;
         path.Add(nodeId);
+
+        // Treat a repair-boundary as a contracted node for the cycle
+        // check: the boundary is a generation wrapper, not a runtime
+        // back-edge, so an edge from the boundary's exit port back to
+        // its entry node is the canonical "retry on closed" wiring.
+        // The contracted adjacency is built lazily: when this node is a
+        // repair-boundary, its successors are the union of its direct
+        // successors' transitive descendants.
+        if (IsRepairBoundary(kindByNodeId, kindByKey, nodeId))
+        {
+            state[nodeId] = 2;
+            path.RemoveAt(path.Count - 1);
+            return;
+        }
 
         if (adjacency.TryGetValue(nodeId, out var neighbors))
         {
@@ -146,12 +178,24 @@ internal static class CompileGraphValidation
 
                 if (state.GetValueOrDefault(neighbor) == 0)
                 {
-                    DfsVisit(neighbor, adjacency, state, path);
+                    DfsVisit(neighbor, adjacency, kindByKey, kindByNodeId, state, path);
                 }
             }
         }
 
         path.RemoveAt(path.Count - 1);
+    }
+
+    /// <summary>True when <paramref name="nodeId"/>'s declared kind is the canonical
+    /// <c>repair-boundary</c> — the runtime re-instantiates each generation
+    /// rather than running a back-edge, so the boundary is contracted
+    /// away for the cycle check.</summary>
+    private static bool IsRepairBoundary(
+        IReadOnlyDictionary<string, string> kindByNodeId,
+        IReadOnlyDictionary<string, NodeKindDescriptor> kindByKey,
+        string nodeId)
+    {
+        return kindByNodeId.TryGetValue(nodeId, out var kindKey) && kindByKey.TryGetValue(kindKey, out var descriptor) && string.Equals(descriptor.Key, "repair-boundary", StringComparison.Ordinal);
     }
 
     /// <summary>

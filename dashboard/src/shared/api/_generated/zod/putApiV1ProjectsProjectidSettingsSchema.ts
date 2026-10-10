@@ -3,7 +3,6 @@
  * Do not edit manually.
  */
 
-import { projectSettingsViewSchema } from "./projectSettingsViewSchema"
 import { updateSettingsRequestSchema } from "./updateSettingsRequestSchema"
 import { z } from "zod/v4"
 

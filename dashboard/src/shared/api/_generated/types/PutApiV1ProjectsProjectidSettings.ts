@@ -3,7 +3,6 @@
  * Do not edit manually.
  */
 
-import type { ProjectSettingsView } from "./ProjectSettingsView"
 import type { UpdateSettingsRequest } from "./UpdateSettingsRequest"
 
 export type PutApiV1ProjectsProjectidSettingsPathParams = {
@@ -16,7 +15,7 @@ export type PutApiV1ProjectsProjectidSettingsPathParams = {
 /**
  * @description OK
  */
-export type PutApiV1ProjectsProjectidSettings200 = ProjectSettingsView
+export type PutApiV1ProjectsProjectidSettings200 = any
 
 export type PutApiV1ProjectsProjectidSettingsMutationRequest =
   UpdateSettingsRequest

@@ -28,7 +28,7 @@ public sealed class ProjectHandlersShould
     private readonly DateTimeOffset now = new(2026, 9, 1, 12, 0, 0, TimeSpan.Zero);
     private readonly IProjectStore projects = Substitute.For<IProjectStore>();
     private readonly IProjectSettingsStore settings = Substitute.For<IProjectSettingsStore>();
-    private readonly IEdition edition = Substitute.For<IEdition>();
+    private readonly IProjectsMapper mapper = new ProjectsMapper();
     private readonly FakeTime clock;
 
     public ProjectHandlersShould()
@@ -40,11 +40,7 @@ public sealed class ProjectHandlersShould
     public async Task CreatePersistsProjectAndDefaultsAsync()
     {
         projects.FindBySlugAsync("acme", Arg.Any<CancellationToken>()).Returns((Project?)null);
-        edition.Limit(Arg.Any<Limit>()).Returns(5);
-        projects
-            .TryInsertWithProjectLimitAsync(Arg.Any<Project>(), Arg.Any<ProjectSettings>(), 5, Arg.Any<CancellationToken>())
-            .Returns(true);
-        var handler = new CreateProjectHandler(projects, edition, clock, new ProjectsMapper());
+        var handler = new CreateProjectHandler(projects, clock, mapper);
 
         var view = await handler.HandleAsync(
             new CreateProjectCommand("Acme", "Acme", "d", "git://x", "main"),
@@ -84,7 +80,7 @@ public sealed class ProjectHandlersShould
     {
         var existing = Project.Create("Taken", "taken", null, null, null, now);
         projects.FindBySlugAsync("taken", Arg.Any<CancellationToken>()).Returns(existing);
-        var handler = new CreateProjectHandler(projects, edition, clock, new ProjectsMapper());
+        var handler = new CreateProjectHandler(projects, clock, mapper);
 
         await Should.ThrowAsync<ProjectConflictException>(
             () => handler.HandleAsync(new CreateProjectCommand("X", "Taken", null, null, null), TestContext.Current.CancellationToken));
@@ -95,7 +91,7 @@ public sealed class ProjectHandlersShould
     {
         var project = Project.Create("Old", "old", "a", null, null, now);
         projects.FindByIdAsync(project.Id, Arg.Any<CancellationToken>()).Returns(project);
-        var handler = new UpdateProjectHandler(projects, clock, new ProjectsMapper());
+        var handler = new UpdateProjectHandler(projects, clock, mapper);
 
         var view = await handler.HandleAsync(
             new UpdateProjectCommand(project.Id, "New", null, "git://n", "n"),
@@ -111,11 +107,62 @@ public sealed class ProjectHandlersShould
     {
         var id = ProjectId.New();
         projects.FindByIdAsync(id, Arg.Any<CancellationToken>()).Returns((Project?)null);
-        var handler = new UpdateProjectHandler(projects, clock, new ProjectsMapper());
+        var handler = new UpdateProjectHandler(projects, clock, mapper);
 
         var exception = await Should.ThrowAsync<ProjectNotFoundException>(
             () => handler.HandleAsync(new UpdateProjectCommand(id, "n", null, null, null), TestContext.Current.CancellationToken));
         exception.ProjectId.ShouldBe(id);
+    }
+
+    [Fact(DisplayName = "Given identity fields on create, when the handler runs, then the view returns the normalized identity")]
+    public async Task CreateNormalizesIdentityAsync()
+    {
+        projects.FindBySlugAsync("acme", Arg.Any<CancellationToken>()).Returns((Project?)null);
+        var handler = new CreateProjectHandler(projects, clock, mapper);
+
+        var view = await handler.HandleAsync(
+            new CreateProjectCommand("Acme", "Acme", null, null, null,
+                Icon: "🛰️", Color: "#3C5A86", Tags: [" Web ", "web", "Billing"]),
+            TestContext.Current.CancellationToken);
+
+        view.Icon.ShouldBe("🛰️");
+        view.Color.ShouldBe("#3c5a86");
+        view.Tags.ShouldBe(["web", "billing"]);
+    }
+
+    [Fact(DisplayName = "Given a stored identity, when Update patches tags only, then nothing else changes")]
+    public async Task PatchTagsOnlyChangesNothingElseAsync()
+    {
+        var project = Project.Create("Old", "old", "desc", "git://old", "v1", now,
+            icon: "🛰️", color: "#112233", tags: ["web"]);
+        projects.FindByIdAsync(project.Id, Arg.Any<CancellationToken>()).Returns(project);
+        var handler = new UpdateProjectHandler(projects, clock, mapper);
+
+        var view = await handler.HandleAsync(
+            new UpdateProjectCommand(project.Id, null, null, null, null, Icon: null, Color: null, Tags: ["Billing", "infra"]),
+            TestContext.Current.CancellationToken);
+
+        view.Name.ShouldBe("Old");
+        view.Description.ShouldBe("desc");
+        view.Icon.ShouldBe("🛰️");
+        view.Color.ShouldBe("#112233");
+        view.Tags.ShouldBe(["billing", "infra"]);
+        await projects.Received(1).SaveAsync(project, Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Given stored tags, when Update omits the tags field, then the list survives the patch")]
+    public async Task PatchWithoutTagsKeepsListAsync()
+    {
+        var project = Project.Create("Old", "old", null, null, null, now, tags: ["web", "billing"]);
+        projects.FindByIdAsync(project.Id, Arg.Any<CancellationToken>()).Returns(project);
+        var handler = new UpdateProjectHandler(projects, clock, mapper);
+
+        var view = await handler.HandleAsync(
+            new UpdateProjectCommand(project.Id, "Renamed", null, null, null),
+            TestContext.Current.CancellationToken);
+
+        view.Name.ShouldBe("Renamed");
+        view.Tags.ShouldBe(["web", "billing"]);
     }
 
     [Fact(DisplayName = "Given an existing project, when Archive runs, then the project is archived and saved")]
@@ -123,7 +170,7 @@ public sealed class ProjectHandlersShould
     {
         var project = Project.Create("P", "p", null, null, null, now);
         projects.FindByIdAsync(project.Id, Arg.Any<CancellationToken>()).Returns(project);
-        var handler = new ArchiveProjectHandler(projects, clock, new ProjectsMapper());
+        var handler = new ArchiveProjectHandler(projects, clock, mapper);
 
         var view = await handler.HandleAsync(new ArchiveProjectCommand(project.Id), TestContext.Current.CancellationToken);
 
@@ -137,7 +184,7 @@ public sealed class ProjectHandlersShould
         var first = Project.Create("A", "a", null, null, null, now);
         var second = Project.Create("B", "b", null, null, null, now);
         projects.ListAsync(false, Arg.Any<CancellationToken>()).Returns([first, second]);
-        var handler = new ListProjectsHandler(projects, new ProjectsMapper());
+        var handler = new ListProjectsHandler(projects, mapper);
 
         var views = await handler.HandleAsync(false, TestContext.Current.CancellationToken);
 
@@ -151,7 +198,7 @@ public sealed class ProjectHandlersShould
     {
         var project = Project.Create("A", "a", null, null, null, now);
         projects.FindByIdAsync(project.Id, Arg.Any<CancellationToken>()).Returns(project);
-        var handler = new GetProjectHandler(projects, new ProjectsMapper());
+        var handler = new GetProjectHandler(projects, mapper);
 
         var view = await handler.HandleAsync(project.Id, TestContext.Current.CancellationToken);
 
@@ -165,7 +212,7 @@ public sealed class ProjectHandlersShould
         var projectId = ProjectId.New();
         var row = ProjectSettings.CreateDefaults(projectId, now);
         settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);
-        var handler = new GetProjectSettingsHandler(settings, new ProjectsMapper());
+        var handler = new GetProjectSettingsHandler(settings, mapper);
 
         var view = await handler.HandleAsync(projectId, TestContext.Current.CancellationToken);
 
@@ -180,11 +227,11 @@ public sealed class ProjectHandlersShould
         var row = ProjectSettings.CreateDefaults(projectId, now);
         settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);
         settings.SaveAsync(row, Arg.Any<CancellationToken>()).Returns(static callInfo => callInfo.Arg<ProjectSettings>());
-        var handler = new UpdateSettingsHandler(settings, clock, new ProjectsMapper());
+        var handler = new UpdateSettingsHandler(settings, clock, mapper);
 
         var view = await handler.HandleAsync(
             new UpdateSettingsCommand(projectId, 1, 1, 8, 60, true, true, true, true, 1000, 2000,
-                ProjectDomainType.Custom, """{"code":"implement"}"""),
+                ProjectDomainType.Standard, null),
             TestContext.Current.CancellationToken);
 
         view.MinIdle.ShouldBe(1);
@@ -204,7 +251,7 @@ public sealed class ProjectHandlersShould
         var projectId = ProjectId.New();
         var row = ProjectSettings.CreateDefaults(projectId, now);
         settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);
-        var handler = new UpdateSettingsHandler(settings, clock, new ProjectsMapper());
+        var handler = new UpdateSettingsHandler(settings, clock, mapper);
 
         var exception = await Should.ThrowAsync<ProjectSettingsConflictException>(
             () => handler.HandleAsync(
@@ -222,7 +269,7 @@ public sealed class ProjectHandlersShould
     {
         var projectId = ProjectId.New();
         settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns((ProjectSettings?)null);
-        var handler = new GetProjectSettingsHandler(settings, new ProjectsMapper());
+        var handler = new GetProjectSettingsHandler(settings, mapper);
 
         await Should.ThrowAsync<ProjectNotFoundException>(
             () => handler.HandleAsync(projectId, TestContext.Current.CancellationToken));

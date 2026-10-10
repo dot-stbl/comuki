@@ -3,7 +3,6 @@
  * Do not edit manually.
  */
 
-import { projectViewSchema } from "./projectViewSchema"
 import { updateProjectRequestSchema } from "./updateProjectRequestSchema"
 import { z } from "zod/v4"
 

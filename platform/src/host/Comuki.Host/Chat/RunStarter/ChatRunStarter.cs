@@ -4,8 +4,6 @@ using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Persistence;
-using Comuki.Host.Projects;
-using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Plans;
 using Comuki.Shared.Kernel.Ids;
@@ -30,8 +28,7 @@ public sealed class ChatRunStarter(
     OrchestrationDbContext db,
     IOptions<ChatWorkerDefaults> defaults,
     ComukiBuildInformation buildInformation,
-    TimeProvider clock,
-    IProjectStore projects)
+    TimeProvider clock)
 {
     /// <summary>Applies the plan; returns the created run id.</summary>
     /// <param name="projectId">Project scope of the run.</param>
@@ -56,17 +53,6 @@ public sealed class ChatRunStarter(
         // same function or no worker ever matches (release contract,
         // see WorkerImagePinning).
         var image = WorkerImagePinning.Resolve(defaults.Value.Image, buildInformation);
-        var envClass = await EnvClassResolver.ResolveAsync(projects, projectId, "chat plan apply", cancellationToken);
-
-        // Nodes that appear as a `To` in the DAG have >=1 prerequisite and
-        // must start Blocked; nodes that never appear as a `To` have zero
-        // prerequisites and start Queued. Matching the id comparer used by
-        // `itemsById` keeps the lookup and the membership check coherent.
-        var blockedNodeIds = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var edge in plan.Edges)
-        {
-            blockedNodeIds.Add(edge.To);
-        }
 
         foreach (var node in plan.Nodes)
         {
@@ -74,7 +60,6 @@ public sealed class ChatRunStarter(
                 run.Id,
                 node.ProfileKey,
                 image,
-                envClass,
                 defaults.Value.ProfilesRef,
                 ChatItemBrief.ToJson(node.Brief),
                 blockedNodeIds.Contains(node.Id) ? WorkItemStatus.Blocked : WorkItemStatus.Queued,

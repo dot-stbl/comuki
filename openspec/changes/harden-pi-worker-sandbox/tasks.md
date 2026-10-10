@@ -23,30 +23,25 @@
 
 ## 4. Follow-up: workspace clone
 
-- [x] 4.1 Add `SourceGitUrl` / `SourceGitRef` on Project (EF + PATCH + views); verify create/patch tests and that ProfilesGitUrl is unchanged.
-  - Closed 2026-10-04 by `add-orchestra` §9.1: migration `20260928184008_AddProjectSourceGitAndCredentialRef` adds the columns; `Project.SourceGitUrl` / `Project.SourceGitRef` are read by PATCH and exposed on every project view; `ProfilesGitUrl` is unchanged. Evidence: `platform/src/modules/Projects/*/Migrations/20260928184008_AddProjectSourceGitAndCredentialRef.cs` and the `Project` aggregate.
-- [x] 4.2 Add optional git-credential secret ref on project settings; verify settings round-trip.
-  - Closed 2026-10-04 by `add-orchestra` §9.2: the same migration in §4.1 also adds the credential-ref column on `ProjectSettings`; `ISecretResolver` resolves the named env var at clone time; the settings round-trip is verified by the existing project-settings contract suite (`tests/unit/Comuki.Modules.Projects.Unit/`).
-- [x] 4.3 Translator clones HTTPS into cwd after claim and before pi; missing URL or private-without-credential fails the item; credential not exported to pi env; verify Translator tests with a local git fixture.
-  - Closed 2026-10-04 by `add-orchestra` §9.3: `Host/Workers/ClaimSourceGitResolver.cs` resolves the URL + credential from the claim; `Host.Translator/Execution/Clone/SourceCloneRunner.cs` performs the HTTPS clone into the worker's `WorkingDirectory`; the clone step is invoked between the claim cycle's prepare and the harness spawn from `TranslatorLoop.cs:93-115`; the credential is consumed by `git` via a throwaway git config and is never exported into the harness process environment.
+- [ ] 4.1 Add `SourceGitUrl` / `SourceGitRef` on Project (EF + PATCH + views); verify create/patch tests and that ProfilesGitUrl is unchanged.
+- [ ] 4.2 Add optional git-credential secret ref on project settings; verify settings round-trip.
+- [ ] 4.3 Translator clones HTTPS into cwd after claim and before pi; missing URL or private-without-credential fails the item; credential not exported to pi env; verify Translator tests with a local git fixture.
 
 ## 5. Follow-up: conditions, drain, debug, pin, fixture
 
-- [x] 5.1 Journal `WorkspacePrepared` / `EgressApplied` / `AgentRunning` on the bound run; verify journal payload tests.
-  - **Partially closed** 2026-10-04 by `add-orchestra` §9.4: the translator loop emits the three conditions on the bound run (see `TranslatorLoop.cs:157-183` for the `WorkspacePrepared` / `EgressApplied` / `AgentRunning` journal writes). The journal payload tests for the three conditions are **not** closed in this change — they remain filed as a follow-up in `add-orchestra/tasks.md` §9 closeout (the `add-orchestra` umbrella tracks the payload-test follow-up as task 9.5; there is no separate `.planning/BACKEND-ISSUES.md` catalog in this repo). Closing this row now is a docs-completeness fix for what already ships, not a code change.
+- [ ] 5.1 Journal `WorkspacePrepared` / `EgressApplied` / `AgentRunning` on the bound run; verify journal payload tests.
 - [ ] 5.2 Translator drain of brief/result/pins before complete/fail; packager skips already-bundled; drain error does not skip complete; verify packager + translator tests.
-- [x] 5.3 Opt-in debug exec (default off) for operators; verify 403/refuse when off.
+- [ ] 5.3 Opt-in debug exec (default off) for operators; verify 403/refuse when off.
 - [ ] 5.4 Production start requires image digest; tag-only fails in Production; verify provider test.
 - [ ] 5.5 `translator --fixture` runs prepare + fake pi without claim; verify a unit/integration test with a fixture file.
 
 ## 6. Follow-up: pi-extensions
 
-- [x] 6.1 Wire default locks through a pi-extension so a test-file edit is denied at tool-call time; verify worker-sdk + an integration with TestFakePi or pi hook test.
-- [x] 6.2 Register materialized skills with pi via the extension; `listSkills` alone does not count; verify a skill is callable after prepare.
-- [x] 6.3 Worker MCP client from `COMUKI_MCP_URL` in the worker-sdk (not dev-sdk); unset URL → no MCP tools; verify unit tests.
+- [ ] 6.1 Wire default locks through a pi-extension so a test-file edit is denied at tool-call time; verify worker-sdk + an integration with TestFakePi or pi hook test.
+- [ ] 6.2 Register materialized skills with pi via the extension; `listSkills` alone does not count; verify a skill is callable after prepare.
+- [ ] 6.3 Worker MCP client from `COMUKI_MCP_URL` in the worker-sdk (not dev-sdk); unset URL → no MCP tools; verify unit tests.
 
 ## 7. Cross-slice gate
 
 - [ ] 7.1 Cowork `worker-pools` spec notes this change as the floor for `strong` (comment or cross-link only — no slot implementation).
 - [x] 7.2 Final `dotnet build comuki.slnx -c Debug` after each merged slice; no AX/Substrate package references in the tree.
-- [x] 7.3 Per-claim env stamps inherit the "omit unset, keep default" contract from OpenSpec change `fix-null-translator-working-directory` (Translator environment contract, scenario "An unset required option still fails the boot" still passes for required options; non-required options like `COMUKI_WORKING_DIRECTORY` keep their declared defaults). Adding a new key to `TranslatorEnvironment.Snapshot` requires either a default on `TranslatorOptions` or a `[Required]` annotation — see the contract note in `platform/src/host/Comuki.Host.Translator/Program.cs`.

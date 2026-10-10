@@ -5,7 +5,6 @@ using Comuki.Engine.Orchestration.Domain;
 using Comuki.Engine.Orchestration.Domain.Runs;
 using Comuki.Engine.Orchestration.Domain.WorkItems;
 using Comuki.Engine.Orchestration.Infrastructure.Leases;
-using Comuki.Engine.Orchestration.Infrastructure.Persistence;
 using Comuki.Host.Testing.Fixtures;
 using Comuki.Shared.Contracts.Journal;
 using Comuki.Shared.Contracts.Queue;
@@ -198,8 +197,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
-        claimed.ShouldNotBeNull();
+        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
 
         var stranger = await queue.HeartbeatAsync(seeded.Id, WorkerId.New(), claimed.Generation, claimAt.AddMinutes(4), claimAt.AddSeconds(30), cancellationToken);
 
@@ -214,8 +212,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
-        claimed.ShouldNotBeNull();
+        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
 
         clock.Advance(TimeSpan.FromMinutes(3));
         var late = await queue.HeartbeatAsync(seeded.Id, workerId, claimed.Generation, clock.GetUtcNow().AddMinutes(2), clock.GetUtcNow(), cancellationToken);
@@ -288,8 +285,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         using var scope = CreateScope();
         var queue = scope.ServiceProvider.GetRequiredService<IWorkItemQueue>();
         var workerId = WorkerId.New();
-        var claimed = await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
-        claimed.ShouldNotBeNull();
+        await queue.ClaimAsync(workerId, ImplementLabels, claimAt.AddMinutes(2), claimAt, cancellationToken);
 
         var failed = await queue.FailAsync(seeded.Id, workerId, claimed.Generation, "OOM killed", claimAt.AddSeconds(30), cancellationToken);
 
@@ -347,7 +343,7 @@ public sealed class WorkItemQueueShould(PostgresCollectionFixture postgres) : Qu
         claimed.LeaseUntil.ShouldBe(clock.GetUtcNow().AddMinutes(2));
 
         await Should.ThrowAsync<ValidationException>(
-            () => handler.HandleAsync(new ClaimWorkItemCommand(workerId, new WorkItemLabels("", ProfilesRef, "implement", "net10-sdk-bun")), cancellationToken));
+            () => handler.HandleAsync(new ClaimWorkItemCommand(workerId, new WorkItemLabels("", ProfilesRef, "implement")), cancellationToken));
     }
 
     [Fact(DisplayName = "Given a claimed item, when the journal is read through the port, then the claim transition is on the timeline")]

@@ -23,9 +23,7 @@ internal static class DockerComputeMapping
     /// and the <see cref="DockerComputeProvider.WorkerIdLabel"/> stamp derive from the
     /// worker id; the network is the verified fenced one, or
     /// <see cref="Options.DockerComputeOptions.NetworkMode"/> under the unfenced dev
-    /// override. The provider passes the catalog-resolved image through
-    /// <see cref="ComputeStartRequest.Image"/>; the mapping carries both it and
-    /// the env class as labels + env.
+    /// override.
     /// </summary>
     public static CreateContainerParameters ToCreateParameters(
         ComputeStartRequest request,

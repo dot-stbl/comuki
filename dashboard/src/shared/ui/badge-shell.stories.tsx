@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react"
-import type { Meta, StoryObj } from "@storybook/react-vite"
+import type { Meta, StoryObj } from "@storybook/react"
 import { Check, Hourglass, TriangleAlert } from "lucide-react"
 
 import { badgeShell, type BadgeShellSize } from "./badge-shell"

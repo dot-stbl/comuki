@@ -45,13 +45,6 @@ export interface ProjectRow {
    * view; a project with no tags carries `[]`, not `null`.
    */
   readonly tags: readonly string[]
-  /**
-   * Environment-class id the scalar source repository binds to (catalog id,
-   * e.g. `"net10-sdk-bun"`); `null` when the project has no confirmed class.
-   * Mirrors `Project.EnvClass` (add-worker-environments 2.2): an empty
-   * binding means implement work items for the project are not claimable.
-   */
-  readonly envClass: string | null
 }
 
 export interface CreateProjectInput {

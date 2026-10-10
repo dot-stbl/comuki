@@ -176,25 +176,12 @@ export function CommandPalette({
 
           {/* The three keys, said once, where they are needed. Everything the
               palette does is a keyboard gesture, and a control whose whole
-              interface is invisible has to name it somewhere.
-
-              Previously `<footer aria-hidden>`. Two axe complaints:
-              1) `<footer>` implies `role="contentinfo"` which is a top-level
-                 landmark and cannot nest inside `role="dialog"`.
-              2) `aria-hidden` removes content the operator is asking about
-                 (keyboard layout) from the AT tree that does want it on
-                 first open.
-
-              A bare `<div>` lifts the content out of the landmark map and
-                 into the dialog's accessible name area; the band renders
-                 the same. `role="note"` was rejected — a "note" promises
-                 a separate advisory paragraph an AT user is meant to read
-                 out of band, and a three-key hint is not that. */}
-          <div className={styles.hints}>
+              interface is invisible has to name it somewhere. */}
+          <footer className={styles.hints} aria-hidden="true">
             <span>{t("search.keys.move")}</span>
             <span>{t("search.keys.open")}</span>
             <span>{t("search.keys.close")}</span>
-          </div>
+          </footer>
         </Dialog>
       </Modal>
     </ModalOverlay>

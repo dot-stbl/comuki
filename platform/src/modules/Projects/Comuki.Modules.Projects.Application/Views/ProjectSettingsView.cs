@@ -35,9 +35,6 @@ public sealed record ProjectSettingsView
     /// <summary>Per-project JSON map of <c>domain-type → profile-key</c>.</summary>
     public required string? CustomDomainTypesJson { get; init; }
 
-    /// <summary>Secret reference for the source-repo HTTPS credential; null = public repo.</summary>
-    public required string? GitCredentialRef { get; init; }
-
     public required DateTimeOffset UpdatedAt { get; init; }
 
     public required int Version { get; init; }

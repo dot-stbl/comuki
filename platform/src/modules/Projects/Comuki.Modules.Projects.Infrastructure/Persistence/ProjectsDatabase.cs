@@ -22,7 +22,4 @@ public static class ProjectsDatabase
 
     /// <summary>Per-project domain-type admission policies.</summary>
     public const string DomainTypeAdmissions = "domain_type_admissions";
-
-    /// <summary>Per-project repository attachments.</summary>
-    public const string ProjectRepositoryAttachments = "project_repository_attachments";
 }

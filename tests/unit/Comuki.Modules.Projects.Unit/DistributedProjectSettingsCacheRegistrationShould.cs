@@ -1,9 +1,7 @@
 using Comuki.Modules.Projects.Application;
-using Comuki.Modules.Projects.Application.Attachments;
 using Comuki.Modules.Projects.Application.Ports;
 using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Application.Settings.DistributedCache;
-using Comuki.Shared.Editions.Edition;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,9 +57,9 @@ public sealed class DistributedProjectSettingsCacheRegistrationShould
     }
 
     /// <summary>
-    /// Fakes the four ports <c>AddProjectsApplication</c>'s handlers
-    /// depend on — Infrastructure's own registrations and the runtime
-    /// <c>IEdition</c> are out of scope for this DI-shape test.
+    /// Fakes the three persistence ports <c>AddProjectsApplication</c>'s
+    /// handlers depend on — Infrastructure's own registrations are out of
+    /// scope for this DI-shape test.
     /// </summary>
     private static IServiceCollection NewServicesWithFakePorts()
     {
@@ -69,8 +67,6 @@ public sealed class DistributedProjectSettingsCacheRegistrationShould
         services.AddSingleton(Substitute.For<IProjectStore>());
         services.AddSingleton(Substitute.For<IProjectSettingsStore>());
         services.AddSingleton(Substitute.For<IDomainTypeAdmissionStore>());
-        services.AddSingleton(Substitute.For<IProjectRepositoryAttachmentStore>());
-        services.AddSingleton(Substitute.For<IEdition>());
         return services;
     }
 }

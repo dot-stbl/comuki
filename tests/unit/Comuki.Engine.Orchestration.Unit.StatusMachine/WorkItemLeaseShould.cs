@@ -145,7 +145,7 @@ public sealed class WorkItemLeaseShould
         item.TransitionTo(WorkItemStatus.Running, now);
         item.TransitionTo(WorkItemStatus.Succeeded, now.AddMinutes(1));
 
-        Should.Throw<InvalidOperationException>(() => item.AssignLease(WorkerId.New(), 1, now.AddMinutes(2), now));
+        Should.Throw<InvalidOperationException>(() => item.AssignLease(WorkerId.New(), now.AddMinutes(2), now));
         Should.Throw<InvalidOperationException>(() => item.Heartbeat(now.AddMinutes(2), now));
         Should.Throw<InvalidOperationException>(() => item.ReleaseLease(now));
     }

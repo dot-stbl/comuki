@@ -32,7 +32,6 @@ public static class RoleMatrix
                 ProjectRead, ProjectAdmin,
                 IdentityRead, IdentityWrite,
                 SchedulerRead, SchedulerWrite,
-                ProcedureRead, ProcedureWrite,
                 PlatformAdmin,
             ],
             [Role.Operator] =
@@ -50,7 +49,6 @@ public static class RoleMatrix
                 CostRead,
                 ProjectRead,
                 SchedulerRead, SchedulerWrite,
-                ProcedureRead, ProcedureWrite,
             ],
             [Role.ProjectAdmin] =
             [
@@ -68,7 +66,6 @@ public static class RoleMatrix
                 ProjectRead,
                 IdentityRead,
                 SchedulerRead, SchedulerWrite,
-                ProcedureRead, ProcedureWrite,
             ],
             [Role.Approver] =
             [
@@ -80,7 +77,6 @@ public static class RoleMatrix
                 CostRead,
                 ProjectRead,
                 SchedulerRead,
-                ProcedureRead,
             ],
             [Role.Member] =
             [
@@ -95,7 +91,6 @@ public static class RoleMatrix
                 VerifyRead,
                 ProjectRead,
                 SchedulerRead,
-                ProcedureRead,
             ],
             [Role.Viewer] =
             [
@@ -110,7 +105,6 @@ public static class RoleMatrix
                 CostRead,
                 ProjectRead,
                 SchedulerRead,
-                ProcedureRead,
             ],
         }
         .ToFrozenDictionary(static pair => pair.Key, static pair => pair.Value.ToFrozenSet());

@@ -54,7 +54,6 @@ public static class ProjectsModuleEndpoints
     }
 
     [RequiresPermission("project:admin")]
-    [EnforceLimit("projects")]
     private static async Task<IResult> CreateAsync(
         CreateProjectRequest request,
         CreateProjectHandler handler,
@@ -148,10 +147,7 @@ file static class ProjectsEndpointMapper
             request.ProfilesGitRef,
             request.Icon,
             request.Color,
-            request.Tags,
-            EnvClass: null,
-            request.SourceGitUrl,
-            request.SourceGitRef);
+            request.Tags);
     }
 
     public static UpdateProjectCommand ToCommand(Guid projectId, UpdateProjectRequest request)
@@ -164,10 +160,7 @@ file static class ProjectsEndpointMapper
             request.ProfilesGitRef,
             request.Icon,
             request.Color,
-            request.Tags,
-            EnvClass: null,
-            request.SourceGitUrl,
-            request.SourceGitRef);
+            request.Tags);
     }
 
     public static UpdateSettingsCommand ToCommand(Guid projectId, UpdateSettingsRequest request)
@@ -185,7 +178,6 @@ file static class ProjectsEndpointMapper
             request.SoftBudgetUsdMicros,
             request.HardBudgetUsdMicros,
             request.DomainType,
-            request.CustomDomainTypesJson,
-            request.GitCredentialRef);
+            request.CustomDomainTypesJson);
     }
 }

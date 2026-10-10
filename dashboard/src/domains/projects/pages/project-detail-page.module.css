@@ -86,18 +86,6 @@
   );
 }
 
-/* The environment class chip on the facts list. Same recipe as the
-   registry's cell (the box from `badgeShell()` in the kit, the colour and
-   weight from this sheet) so a project's class is one shape in both places
-   it appears. The accent stays at the row's stored colour, not the
-   project's identity — the env class is a runtime id, and the muted ink
-   reads as data rather than as identity decoration. */
-.envClassChip {
-  color: var(--text);
-  background: color-mix(in oklab, var(--text-faint) 18%, transparent);
-  font-weight: var(--fw-medium);
-}
-
 /* The bar the edit affordance sits on: an act under the facts it edits, not a
    control inside them — the fact list is a data surface and stays one. */
 .identityBar {

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react"
-import type { Meta, StoryObj } from "@storybook/react-vite"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import { DatePickerField, DateRangePickerField, todayIso } from "./date-picker"
 

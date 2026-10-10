@@ -51,7 +51,6 @@ export type UpdateSettingsRequest = {
   hardBudgetUsdMicros: (number | string) | null
   /**
    * @description Per-project routing mode for user-facing domain types\r\n(`code`, `data`, `infra`, `research`, …).\r\nA Standard project sends every domain through the fixed default\r\nprofile. A Custom project routes only via the\r\nstring? ProjectSettings.CustomDomainTypesJson map. A Hybrid\r\nproject tries the default first, falls back to the JSON map.
-   * @type integer
    */
   domainType: ProjectDomainType
   /**
@@ -59,9 +58,4 @@ export type UpdateSettingsRequest = {
    * @type null,string
    */
   customDomainTypesJson: string | null
-  /**
-   * @description Secret reference for the source-repo HTTPS credential; null = public repo.
-   * @type null,string
-   */
-  gitCredentialRef?: string | null
 }

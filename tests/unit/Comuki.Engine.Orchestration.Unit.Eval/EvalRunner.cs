@@ -104,7 +104,7 @@ public static class EvalRunner
                     item = WorkItem.Create(
                         runId,
                         profileKey: "implement",
-                        image: "ghcr.io/test/worker:latest", "net10-sdk-bun",
+                        image: "ghcr.io/test/worker:latest",
                         profilesRef: "abc1234",
                         brief: /*lang=json,strict*/ "{\"goal\":\"eval\"}",
                         initialStatus: initial,
@@ -117,7 +117,7 @@ public static class EvalRunner
                         return;
                     }
 
-                    item.AssignLease(WorkerId.New(), 1, now.AddMinutes(5), now);
+                    item.AssignLease(WorkerId.New(), now.AddMinutes(5), now);
                     log.Add(item.Status.ToString());
                     break;
                 case EvalAction.Heartbeat:

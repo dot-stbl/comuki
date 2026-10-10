@@ -95,24 +95,8 @@ internal static class TranslatorEnvironment
             ["Translator:ProfilesGitUrl"] = Environment.GetEnvironmentVariable("COMUKI_PROFILES_GIT_URL"),
             ["Translator:PiExecutable"] = Environment.GetEnvironmentVariable("COMUKI_PI_EXECUTABLE"),
             ["Translator:WorkingDirectory"] = Environment.GetEnvironmentVariable("COMUKI_WORKING_DIRECTORY"),
-            ["Translator:DebugExec"] = ReadDebugExec(),
         }
             .Where(static pair => pair.Value is not null)
             .ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal);
-
-        // COMUKI_DEBUG_EXEC normalizes to a strict true/false string so the
-        // Microsoft.Extensions.Configuration binder round-trips it
-        // deterministically regardless of casing (the default
-        // BooleanConverter accepts "true"/"false" only; common dev
-        // typos like "yes"/"1" silently map to false). Anything we don't
-        // recognize maps to false (the documented safe default). An
-        // unset env var OMIT the entry, and the option's default wins.
-        static string? ReadDebugExec()
-        {
-            var raw = Environment.GetEnvironmentVariable("COMUKI_DEBUG_EXEC");
-            return raw is null
-                ? null
-                : string.Equals(raw, "true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
-        }
     }
 }

@@ -53,45 +53,17 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 // empty comuki layer, no error: the build-time OpenAPI pass below
 // depends on booting without one.
 builder.Configuration.UseComukiConfiguration();
-
-// REST/SPA + worker-gRPC listener resolution (issue #152). The REST
-// host/port keep the exact precedence [server] host/port already had
-// via TryResolveServerUrl — resolved explicitly now (see
-// HostTlsInstaller's remarks on why: adding the dedicated gRPC listener
-// below makes Kestrel ignore UseUrls entirely, for every endpoint)
-// through HostTlsInstaller's own helpers, which
-// HostTlsInstaller.AddComukiTls (called below) also reuses for its
-// HTTPS listener when Host:Tls is enabled.
-var restListenHost = HostTlsInstaller.ResolveListenHost(builder.Configuration);
-var restPort = HostTlsInstaller.ResolveHttpPort(builder.Configuration);
-var workerGrpcPort = builder.Configuration.GetValue(WorkerGrpcListener.ConfigKey, WorkerGrpcListener.DefaultPort);
-
-builder.WebHost.ConfigureKestrel(server =>
+builder.WebHost.ConfigureKestrel(static server =>
 {
     server.AddServerHeader = false;
-    // Public REST/SPA listener — HTTP/1.1 (+ HTTP/2 once TLS/ALPN is on;
-    // harmless without it). The worker gRPC bidi stream no longer shares
-    // this listener (issue #152) — it gets its own, below.
-    if (restListenHost == "*")
-    {
-        server.ListenAnyIP(restPort, static listen => listen.Protocols = HttpProtocols.Http1AndHttp2);
-    }
-    else
-    {
-        server.Listen(System.Net.IPAddress.Parse(restListenHost), restPort, static listen => listen.Protocols = HttpProtocols.Http1AndHttp2);
-    }
-
-    // Dedicated HTTP/2-only listener for the worker gRPC bidi stream
-    // (issue #152 root cause: Kestrel does not negotiate HTTP/2 on a
-    // shared, cleartext Http1AndHttp2 endpoint without TLS — it silently
-    // serves HTTP/1.1 only there, so every worker.reported journal entry
-    // the stream carries was lost, confirmed by direct reproduction). A
-    // protocol-pure Http2 endpoint negotiates h2c prior-knowledge
-    // correctly regardless of TLS. Port pool 17000-17200 (ports.md —
-    // 17185); overridable via Host:WorkerGrpcPort /
-    // COMUKI_HOST_WORKERGRPCPORT.
-    server.ListenAnyIP(workerGrpcPort, static listen => listen.Protocols = HttpProtocols.Http2);
+    // h2c prior-knowledge for the worker gRPC runtime; HTTP/1.1 keeps
+    // serving the public REST/SPA through the same listener.
+    server.ConfigureEndpointDefaults(static listen => listen.Protocols = HttpProtocols.Http1AndHttp2);
 });
+if (builder.Configuration.TryResolveServerUrl() is { } serverUrl)
+{
+    builder.WebHost.UseUrls(serverUrl);
+}
 
 // TLS ([Host:Tls] / COMUKI_HOST_TLS_*): adds the HTTPS listener next to
 // the plain-HTTP one and registers the HTTP→HTTPS redirect. No-op while
@@ -149,6 +121,10 @@ if (OpenApiBuildTimeExtensions.IsOpenApiDocumentGeneration)
 }
 
 var app = await HostComposer.ComposeAsync(builder, database);
+
+// Build banner (issue #56): the version line is the first comuki-format
+// log record of the starting host.
+ComukiStartupBanner.Emit(app.Services.GetRequiredService<ILoggerFactory>(), "comuki", ComukiBuildInfo.Read());
 
 // Build banner (issue #56): the version line is the first comuki-format
 // log record of the starting host.

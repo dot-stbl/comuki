@@ -1,6 +1,6 @@
 import { useState } from "react"
-import type { Meta, StoryObj } from "@storybook/react-vite"
-import { expect, userEvent } from "storybook/test"
+import type { Meta, StoryObj } from "@storybook/react"
+import { expect, userEvent } from "@storybook/test"
 
 import { toRunSummary } from "@/domains/runs/api/mappers"
 import { buildProfileFlow } from "@/domains/runs/model/profile-flow"

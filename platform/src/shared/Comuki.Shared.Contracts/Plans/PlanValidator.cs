@@ -57,7 +57,6 @@ public static class PlanValidator
             }
         }
 
-        var seenEdges = new HashSet<PlanEdge>();
         foreach (var edge in plan.Edges ?? [])
         {
             if (!ids.Contains(edge.From))

@@ -37,12 +37,6 @@ export const updateSettingsRequestSchema = z
         .string()
         .describe("Per-project JSON map of `domain-type → profile-key`.")
     ),
-    gitCredentialRef: z
-      .string()
-      .describe(
-        "Secret reference for the source-repo HTTPS credential; null = public repo."
-      )
-      .nullish(),
   })
   .describe(
     "Wire body of PUT /api/v1/projects/{projectId}/settings.\r\nint UpdateSettingsRequest.Version is the version the client read — a stale version\r\nis refused with 409."

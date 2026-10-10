@@ -61,18 +61,18 @@ public sealed class ComputeSnapshotEndpointShould(PostgresCollectionFixture post
             orchestrationDb.Runs.AddRange(runA, runB);
 
             // projectA / implement: two queued, one running.
-            var queuedOne = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "net10-sdk-bun", "main", /*lang=json,strict*/ """{"step":"one"}""", WorkItemStatus.Queued, now);
-            var queuedTwo = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "net10-sdk-bun", "main", /*lang=json,strict*/ """{"step":"two"}""", WorkItemStatus.Queued, now);
-            var running = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "net10-sdk-bun", "main", /*lang=json,strict*/ """{"step":"three"}""", WorkItemStatus.Queued, now);
-            running.AssignLease(WorkerId.New(), 1, now.AddMinutes(5), now);
+            var queuedOne = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"one"}""", WorkItemStatus.Queued, now);
+            var queuedTwo = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"two"}""", WorkItemStatus.Queued, now);
+            var running = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"three"}""", WorkItemStatus.Queued, now);
+            running.AssignLease(WorkerId.New(), now.AddMinutes(5), now);
 
             // A completed item — excluded from every count (neither Queued nor Running).
-            var done = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "net10-sdk-bun", "main", /*lang=json,strict*/ """{"step":"four"}""", WorkItemStatus.Queued, now);
-            done.AssignLease(WorkerId.New(), 1, now.AddMinutes(5), now);
+            var done = WorkItem.Create(runA.Id, "implement", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"four"}""", WorkItemStatus.Queued, now);
+            done.AssignLease(WorkerId.New(), now.AddMinutes(5), now);
             done.TransitionTo(WorkItemStatus.Succeeded, now);
 
             // projectB / review: one queued.
-            var reviewQueued = WorkItem.Create(runB.Id, "review", "ghcr.io/comuki/worker:test", "net10-sdk-bun", "main", /*lang=json,strict*/ """{"step":"one"}""", WorkItemStatus.Queued, now);
+            var reviewQueued = WorkItem.Create(runB.Id, "review", "ghcr.io/comuki/worker:test", "main", /*lang=json,strict*/ """{"step":"one"}""", WorkItemStatus.Queued, now);
 
             orchestrationDb.WorkItems.AddRange(queuedOne, queuedTwo, running, done, reviewQueued);
             await orchestrationDb.SaveChangesAsync(cancellationToken);

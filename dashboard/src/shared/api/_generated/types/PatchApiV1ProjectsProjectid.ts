@@ -3,7 +3,6 @@
  * Do not edit manually.
  */
 
-import type { ProjectView } from "./ProjectView"
 import type { UpdateProjectRequest } from "./UpdateProjectRequest"
 
 export type PatchApiV1ProjectsProjectidPathParams = {
@@ -16,7 +15,7 @@ export type PatchApiV1ProjectsProjectidPathParams = {
 /**
  * @description OK
  */
-export type PatchApiV1ProjectsProjectid200 = ProjectView
+export type PatchApiV1ProjectsProjectid200 = any
 
 export type PatchApiV1ProjectsProjectidMutationRequest = UpdateProjectRequest
 

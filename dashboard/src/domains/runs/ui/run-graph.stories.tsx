@@ -1,6 +1,6 @@
 import { useState } from "react"
-import type { Meta, StoryObj } from "@storybook/react-vite"
-import { expect, userEvent } from "storybook/test"
+import type { Meta, StoryObj } from "@storybook/react"
+import { expect, userEvent } from "@storybook/test"
 
 import type { RunStatus, WorkItem } from "@/domains/runs/model/types"
 import { orderedItems } from "@/domains/runs/model/work-items"

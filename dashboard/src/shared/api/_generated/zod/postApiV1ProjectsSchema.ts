@@ -4,17 +4,11 @@
  */
 
 import { createProjectRequestSchema } from "./createProjectRequestSchema"
-import { projectViewSchema } from "./projectViewSchema"
 import { z } from "zod/v4"
 
 /**
- * @description Created
+ * @description OK
  */
-export const postApiV1Projects201Schema = z
-  .lazy(() => projectViewSchema)
-  .describe(
-    "Read model of a project — everything the operational UI needs, nothing\r\ninternal. Identity fields arrive display-ready: the colour is lower-case\r\n`#rrggbb`, tags are trimmed/lower-cased/deduplicated, the icon is an\r\nopaque string (emoji or URL) to render verbatim."
-  )
 
 export const postApiV1ProjectsMutationRequestSchema = z
   .lazy(() => createProjectRequestSchema)
@@ -23,5 +17,5 @@ export const postApiV1ProjectsMutationRequestSchema = z
   )
 
 export const postApiV1ProjectsMutationResponseSchema = z.lazy(
-  () => postApiV1Projects201Schema
+  () => postApiV1Projects200Schema
 )

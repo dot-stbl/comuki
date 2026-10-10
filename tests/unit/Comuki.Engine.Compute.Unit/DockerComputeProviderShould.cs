@@ -1,5 +1,4 @@
 using System.Net;
-using Comuki.Engine.Compute.Environments.Catalog;
 using Comuki.Engine.Compute.Exceptions;
 using Comuki.Engine.Compute.Options;
 using Comuki.Engine.Compute.Providers;
@@ -7,7 +6,6 @@ using Comuki.Shared.Contracts.Compute;
 using Comuki.Shared.Kernel.Ids;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -26,7 +24,9 @@ namespace Comuki.Engine.Compute.Unit;
 public sealed class DockerComputeProviderShould
 {
     private const string FencedNetwork = "comuki-worker-net";
-    private const string DefaultEnvClass = DefaultEnvironmentCatalog.Net10SdkBunId;
+
+    private readonly IContainerOperations containers = Substitute.For<IContainerOperations>();
+    private readonly INetworkOperations networks = Substitute.For<INetworkOperations>();
 
     private readonly IContainerOperations containers = Substitute.For<IContainerOperations>();
     private readonly INetworkOperations networks = Substitute.For<INetworkOperations>();
@@ -52,7 +52,7 @@ public sealed class DockerComputeProviderShould
         };
     }
 
-    private DockerComputeProvider CreateProvider(int maxWorkers = 4, bool allowUnfencedEgress = false, bool isProduction = false)
+    private DockerComputeProvider CreateProvider(int maxWorkers = 4, bool allowUnfencedEgress = false)
     {
         var computeOptions = new DockerComputeOptions
         {
@@ -62,24 +62,9 @@ public sealed class DockerComputeProviderShould
             WaitBeforeKillSeconds = 7,
         };
         var fence = new DockerEgressFence(networks, NullLogger<DockerEgressFence>.Instance);
-        hostEnvironment.EnvironmentName.Returns(isProduction ? "Production" : "Development");
-        catalog.IsAllowed(Arg.Any<string>()).Returns(true);
-        catalog.TryGet(DefaultEnvClass, out _).Returns(static callInfo =>
-            {
-                callInfo[1] = new Environments.EnvironmentBundle(
-                    Id: DefaultEnvClass,
-                    Image: "ghcr.io/comuki/env/net10-sdk-bun@sha256:prod-digest",
-                    Runtime: Environments.Shape.EnvironmentRuntime.Linux,
-                    Publisher: Environments.Shape.EnvironmentPublisher.Comuki,
-                    RestoreOpcodes: ["dotnet", "bun"],
-                    ResourceShape: new Environments.Shape.EnvironmentResourceShape(Cpus: null, Memory: null, Gpu: false));
-                return true;
-            });
         return new DockerComputeProvider(
             fence,
             containers,
-            catalog,
-            hostEnvironment,
             Microsoft.Extensions.Options.Options.Create(new ComputeOptions { AllowUnfencedEgress = allowUnfencedEgress }),
             Microsoft.Extensions.Options.Options.Create(computeOptions));
     }
@@ -97,13 +82,7 @@ public sealed class DockerComputeProviderShould
         ProjectId projectId)
     {
         var grpcUrl = request.OrchestratorGrpcUrl.ToString();
-        // The provider resolves Image through the catalog — the container
-        // image is the bundle's digest, not the caller-supplied string.
-        // Both env COMUKI_WORKER_IMAGE and the actual container image carry
-        // the catalog-resolved reference; the test class stubs the catalog
-        // to return @sha256:prod-digest, so assert against that.
-        const string CatalogResolvedImage = "ghcr.io/comuki/env/net10-sdk-bun@sha256:prod-digest";
-        return string.Equals(parameters.Image, CatalogResolvedImage, StringComparison.Ordinal)
+        return string.Equals(parameters.Image, request.Image, StringComparison.Ordinal)
             && parameters.Name is not null
             && parameters.Name.StartsWith($"comuki-{projectId.Value:N}-", StringComparison.Ordinal)
             && parameters.Env.Contains("COMUKI_WORKER_TOKEN=secret-token")
@@ -117,8 +96,7 @@ public sealed class DockerComputeProviderShould
             && parameters.Labels is not null
             && string.Equals(parameters.Labels[ComputeLabels.Project], projectId.Value.ToString(), StringComparison.Ordinal)
             && string.Equals(parameters.Labels[ComputeLabels.Profile], "implement", StringComparison.Ordinal)
-            && string.Equals(parameters.Labels[ComputeLabels.EnvClass], request.EnvClass, StringComparison.Ordinal)
-            && string.Equals(parameters.Labels[ComputeLabels.Image], ComputeLabels.Sanitize(CatalogResolvedImage), StringComparison.Ordinal)
+            && string.Equals(parameters.Labels[ComputeLabels.Image], "ghcr.io_comuki_worker_sha256_abc", StringComparison.Ordinal)
             && string.Equals(parameters.Labels[ComputeLabels.ProfilesRef], "refs_tags_v1.2", StringComparison.Ordinal)
             && string.Equals(parameters.Labels[DockerComputeProvider.WorkerIdLabel], handle.Id.Value.ToString(), StringComparison.Ordinal)
             && parameters.HostConfig is not null
@@ -194,25 +172,9 @@ public sealed class DockerComputeProviderShould
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var computeOptions = new DockerComputeOptions { NetworkMode = "bridge" };
-        hostEnvironment.EnvironmentName.Returns("Development");
-        catalog.IsAllowed(Arg.Any<string>()).Returns(true);
-        catalog.TryGet(DefaultEnvClass, out _)
-            .Returns(callInfo =>
-            {
-                callInfo[1] = new Environments.EnvironmentBundle(
-                    Id: DefaultEnvClass,
-                    Image: "ghcr.io/comuki/env/net10-sdk-bun@sha256:prod-digest",
-                    Runtime: Environments.Shape.EnvironmentRuntime.Linux,
-                    Publisher: Environments.Shape.EnvironmentPublisher.Comuki,
-                    RestoreOpcodes: ["dotnet", "bun"],
-                    ResourceShape: new Environments.Shape.EnvironmentResourceShape(Cpus: null, Memory: null, Gpu: false));
-                return true;
-            });
         var provider = new DockerComputeProvider(
             new DockerEgressFence(networks, NullLogger<DockerEgressFence>.Instance),
             containers,
-            catalog,
-            hostEnvironment,
             Microsoft.Extensions.Options.Options.Create(new ComputeOptions()),
             Microsoft.Extensions.Options.Options.Create(computeOptions));
 

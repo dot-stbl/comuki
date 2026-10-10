@@ -110,13 +110,6 @@ public sealed class WorkItem
                 "image must not be empty");
         }
 
-        if (string.IsNullOrWhiteSpace(envClass))
-        {
-            throw new OrchestrationDomainException(
-                OrchestrationErrorCodes.WorkItemEnvClassEmpty,
-                "env class must not be empty");
-        }
-
         if (string.IsNullOrWhiteSpace(profilesRef))
         {
             throw new OrchestrationDomainException(

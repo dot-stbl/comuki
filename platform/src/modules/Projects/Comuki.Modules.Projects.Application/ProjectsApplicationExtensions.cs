@@ -1,7 +1,5 @@
 using Comuki.Modules.Projects.Application.Admission;
-using Comuki.Modules.Projects.Application.Attachments;
 using Comuki.Modules.Projects.Application.DomainTypes;
-using Comuki.Modules.Projects.Application.Editions;
 using Comuki.Modules.Projects.Application.Projects.Archive;
 using Comuki.Modules.Projects.Application.Projects.Create;
 using Comuki.Modules.Projects.Application.Projects.Queries;
@@ -11,7 +9,6 @@ using Comuki.Modules.Projects.Application.Settings.Cache;
 using Comuki.Modules.Projects.Application.Settings.DistributedCache;
 using Comuki.Modules.Projects.Application.Settings.Update;
 using Comuki.Modules.Projects.Application.Views;
-using Comuki.Shared.Editions.Gating;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +44,8 @@ public static class ProjectsApplicationExtensions
     /// snapshot-cache factory below only does once it has confirmed
     /// <see cref="IDistributedCache"/> is present.
     /// </summary>
+    /// <param name="services"></param>
+    /// <returns></returns>
     public static IServiceCollection AddProjectsApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
@@ -60,7 +59,6 @@ public static class ProjectsApplicationExtensions
                 ? serviceProvider.GetRequiredService<DistributedProjectSettingsCache>()
                 : serviceProvider.GetRequiredService<ProjectSettingsCache>());
         services.AddSingleton<IProjectDomainTypeResolver, ProjectDomainTypeResolver>();
-        // Mapperly projection, stateless — singleton per the mapping convention.
         services.AddSingleton<IProjectsMapper, ProjectsMapper>();
 
         services.AddScoped<CreateProjectHandler>();
@@ -70,11 +68,6 @@ public static class ProjectsApplicationExtensions
         services.AddScoped<ListProjectsHandler>();
         services.AddScoped<UpdateSettingsHandler>();
         services.AddScoped<GetProjectSettingsHandler>();
-
-        services.AddScoped<AttachRepositoryHandler>();
-        services.AddScoped<DetachRepositoryHandler>();
-        services.AddScoped<ListProjectAttachmentsHandler>();
-        services.AddScoped<ListRepositoryAttachmentsHandler>();
 
         // Scoped: it reads the scoped admission store (one EF context per
         // unit of work) on top of the singleton settings store + resolver.

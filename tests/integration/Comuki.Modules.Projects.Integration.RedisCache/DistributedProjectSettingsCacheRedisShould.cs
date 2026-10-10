@@ -78,7 +78,7 @@ public sealed class DistributedProjectSettingsCacheRedisShould(RedisFixture fixt
         var projectId = ProjectId.New();
 
         var updated = ProjectSettings.CreateDefaults(projectId, DateTimeOffset.UtcNow);
-        updated.Apply(2, 16, 900, true, false, false, false, 10_000_000, 50_000_000, ProjectDomainType.Hybrid, /*lang=json,strict*/ "{\"gl-mt\":\"glang\"}", null, DateTimeOffset.UtcNow);
+        updated.Apply(2, 16, 900, true, false, false, false, 10_000_000, 50_000_000, ProjectDomainType.Hybrid, /*lang=json,strict*/ "{\"gl-mt\":\"glang\"}", DateTimeOffset.UtcNow);
 
         writer.Refresh(updated);
 

@@ -31,7 +31,7 @@
   font-size: var(--t-micro);
   font-weight: var(--fw-semibold);
   letter-spacing: var(--tracking-data);
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 .kv dd {
@@ -52,14 +52,14 @@
 .tokensMuted {
   font-family: var(--font-data);
   font-size: var(--t-micro);
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 .rule {
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--t-xs);
-  color: var(--text-on-tinted);
+  color: var(--text-muted);
 }
 
 .footerLine {

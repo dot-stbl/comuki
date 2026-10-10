@@ -18,8 +18,6 @@ export const createProjectRequestSchema = z
     icon: z.string().nullish(),
     color: z.string().nullish(),
     tags: z.array(z.string()).nullish(),
-    sourceGitUrl: z.string().nullish(),
-    sourceGitRef: z.string().nullish(),
   })
   .describe(
     "Wire body of POST /api/v1/projects. The slug is lower-case kebab-case\r\n(3–64 chars) and becomes the immutable URL key — a duplicate gets HTTP\r\n409. Icon is an opaque emoji or image URL (≤ 200 chars); color is a\r\n`#rrggbb` hex value stored lower-case; each tag is lower-case\r\nkebab (1–39 chars), at most 20 distinct."

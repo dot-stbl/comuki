@@ -1,9 +1,6 @@
-import path from "node:path"
 import { defineConfig } from "vitest/config"
 import react from "@vitejs/plugin-react"
-import { playwright } from "@vitest/browser-playwright"
-
-import { storybookTest } from "@storybook/addon-vitest/vitest-plugin"
+import path from "path"
 
 // https://vitest.dev/config/
 //

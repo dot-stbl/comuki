@@ -8,9 +8,7 @@
     "profilesGitRef": { "type": ["null", "string"] },
     "icon": { "type": ["null", "string"] },
     "color": { "type": ["null", "string"] },
-    "tags": { "type": ["null", "array"], "items": { "type": "string" } },
-    "sourceGitUrl": { "type": ["null", "string"] },
-    "sourceGitRef": { "type": ["null", "string"] }
+    "tags": { "type": ["null", "array"], "items": { "type": "string" } }
   },
   "description": "Wire body of PATCH /api/v1/projects/{projectId} — null fields are left\r\nuntouched; an empty tags array clears the list. Icon and color follow\r\nthe same shapes as on create (≤ 200 chars / `#rrggbb`).",
   "x-readme-ref-name": "UpdateProjectRequest"

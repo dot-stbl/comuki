@@ -1,7 +1,7 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { render } from "@testing-library/react"
-import { beforeAll, describe, expect, it, vi } from "vitest"
+import { cleanup, render } from "@testing-library/react"
+import { beforeAll, describe, expect, it } from "vitest"
 
+import { i18n, loadLocale } from "@/shared/i18n"
 import { toSettingsSnapshot } from "@/domains/settings/api/mappers"
 import { AppsPanel } from "@/domains/settings/ui/apps-panel"
 import {
@@ -285,5 +285,28 @@ describe("the filters a column declares match the fields they advertise", () => 
         (key) => key.provider
       )
     ).toEqual(["proxy"])
+  })
+})
+
+describe("the read-only sections in russian", () => {
+  it("says where the registries live, in russian", async () => {
+    await loadLocale("ru")
+    await i18n.changeLanguage("ru")
+
+    try {
+      render(<AppsPanel apps={snapshot.apps} />)
+      expect(says("только чтение · реестр объявлен в гите клиента")).toBe(true)
+      cleanup()
+
+      render(<RulesPanel rules={snapshot.rules} />)
+      expect(
+        says("только чтение · правила живут в гите клиента и меняются коммитом")
+      ).toBe(true)
+      expect(find("rules-conflicts")?.textContent).toContain(
+        `${snapshot.rules.length} активных правил`
+      )
+    } finally {
+      await i18n.changeLanguage("en")
+    }
   })
 })

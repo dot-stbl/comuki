@@ -6,19 +6,14 @@
 import { z } from "zod/v4"
 
 /**
- * @description Claim request body: the labels the worker presents (from its\r\n`COMUKI_*` environment). The claiming worker\'s id comes from its\r\nbearer token — never from the body.\r\nstring ClaimWorkItemRequest.EnvClass is REQUIRED (task 3.2): missing or empty is a\r\n`400 worker.env_class.required`; the queue SQL filters\r\n`env_class = @envClass`, so omitting it would silently miss\r\nevery claim. string? ClaimWorkItemRequest.Image is now OPTIONAL in the wire shape —\r\nthe item\'s image is pinned by the host at WorkItem.Create from the\r\nproject default, and the worker doesn\'t need to know it. Older workers\r\nstill post image; we keep accepting it and ignore it for the match.
+ * @description Claim request body: the labels the worker presents (from its\r\n`COMUKI_*` environment). The claiming worker\'s id comes from its\r\nbearer token — never from the body.
  */
 export const claimWorkItemRequestSchema = z
   .object({
-    image: z.nullable(
-      z
-        .string()
-        .describe("Present for backward compatibility; ignored on the match.")
-    ),
+    image: z.string(),
     profilesRef: z.string(),
     profileKey: z.string(),
-    envClass: z.string(),
   })
   .describe(
-    "Claim request body: the labels the worker presents (from its\r\n`COMUKI_*` environment). The claiming worker's id comes from its\r\nbearer token — never from the body.\r\nstring ClaimWorkItemRequest.EnvClass is REQUIRED (task 3.2): missing or empty is a\r\n`400 worker.env_class.required`; the queue SQL filters\r\n`env_class = @envClass`, so omitting it would silently miss\r\nevery claim. string? ClaimWorkItemRequest.Image is now OPTIONAL in the wire shape —\r\nthe item's image is pinned by the host at WorkItem.Create from the\r\nproject default, and the worker doesn't need to know it. Older workers\r\nstill post image; we keep accepting it and ignore it for the match."
+    "Claim request body: the labels the worker presents (from its\r\n`COMUKI_*` environment). The claiming worker's id comes from its\r\nbearer token — never from the body."
   )

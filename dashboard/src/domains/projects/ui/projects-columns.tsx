@@ -5,8 +5,7 @@ import type { ProjectRow } from "@/domains/projects/model/types"
 import { ProjectMark } from "@/domains/projects/ui/project-mark"
 import { projectAccentStyle } from "@/domains/projects/ui/project-accent"
 import { i18n } from "@/shared/i18n"
-import { badgeShell, numericSort, type DataColumn } from "@/shared/ui"
-import { cn } from "@/shared/lib/utils"
+import { numericSort, type DataColumn } from "@/shared/ui"
 
 import styles from "./projects-table.module.css"
 
@@ -140,51 +139,6 @@ export function createProjectColumns(
         )
       },
       meta: { width: 168, label: t("column.tags") },
-    },
-    {
-      accessorKey: "envClass",
-      header: t("column.envClass"),
-      // The class the project's repository binds to — drawn as a chip when
-      // present, said out loud when not. The chip uses the kit's `badgeShell`
-      // (the only shape every badge in this product agrees on) and the local
-      // `envClassChip` rule for the one colour the kit deliberately leaves
-      // for the caller (`badge-shell.module.css` — colour, background and
-      // font-weight). A bound class is a catalog id, not a project attribute,
-      // so the chip wears the surface's muted ink rather than the project's
-      // accent (the row's colour is its identity, not its runtime).
-      cell: ({ row }) => {
-        const envClass = row.original.envClass
-        if (envClass === null) {
-          // Not missing — a project without a class is a project whose
-          // implement items are not claimable (add-worker-environments 2.2).
-          // The text is the muted "no class" indicator, the same voice every
-          // other absent fact on this row uses.
-          return (
-            <span
-              className={styles.envClassNone}
-              data-test="project-env-class"
-              data-env-class="none"
-            >
-              {t("list.envClass.none")}
-            </span>
-          )
-        }
-        return (
-          <span
-            className={cn(badgeShell(), styles.envClassChip)}
-            data-test="project-env-class"
-            data-env-class={envClass}
-            title={envClass}
-          >
-            {envClass}
-          </span>
-        )
-      },
-      // An absent class sorts last — like every other not-measured column on
-      // this list. The DataTable's string sort would put a bound class before
-      // the dash text, but it would also pin the dash last, so this matches
-      // what an operator expects.
-      meta: { width: 144, label: t("column.envClass") },
     },
     {
       accessorKey: "activeRuns",

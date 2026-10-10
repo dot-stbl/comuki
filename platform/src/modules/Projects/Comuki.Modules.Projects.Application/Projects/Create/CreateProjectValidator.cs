@@ -49,10 +49,5 @@ public sealed class CreateProjectValidator : AbstractValidator<CreateProjectComm
             .Must(static tags => tags is null || ProjectIdentityRules.TagsAreWellFormed(tags))
             .WithMessage(
                 $"tags must match '{Project.TagPattern}' after trimming and number at most {Project.MaxTags} distinct");
-
-        RuleFor(static command => command.EnvClass)
-            .MaximumLength(Project.MaxEnvClassLength)
-            .Must(static envClass => envClass is null || ProjectIdentityRules.EnvClassIsWellFormed(envClass))
-            .WithMessage($"envClass, when provided, must match '{Project.EnvClassPattern}'");
     }
 }

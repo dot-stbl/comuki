@@ -14,7 +14,6 @@ import type {
   QueryClient,
 } from "@tanstack/react-query"
 import type {
-  PostWorkersWorkitemidHeartbeatMutationRequest,
   PostWorkersWorkitemidHeartbeatMutationResponse,
   PostWorkersWorkitemidHeartbeatPathParams,
 } from "../types/PostWorkersWorkitemidHeartbeat"
@@ -30,24 +29,17 @@ export type PostWorkersWorkitemidHeartbeatMutationKey = ReturnType<
 
 export function postWorkersWorkitemidHeartbeatMutationOptions<
   TContext = unknown,
->(
-  config: Partial<
-    RequestConfig<PostWorkersWorkitemidHeartbeatMutationRequest>
-  > & { client?: Client } = {}
-) {
+>(config: Partial<RequestConfig> & { client?: Client } = {}) {
   const mutationKey = postWorkersWorkitemidHeartbeatMutationKey()
   return mutationOptions<
     PostWorkersWorkitemidHeartbeatMutationResponse,
     ResponseErrorConfig<Error>,
-    {
-      workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"]
-      data?: PostWorkersWorkitemidHeartbeatMutationRequest
-    },
+    { workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"] },
     TContext
   >({
     mutationKey,
-    mutationFn: async ({ workItemId, data }) => {
-      return postWorkersWorkitemidHeartbeat(workItemId, data, config)
+    mutationFn: async ({ workItemId }) => {
+      return postWorkersWorkitemidHeartbeat(workItemId, config)
     },
   })
 }
@@ -60,15 +52,10 @@ export function usePostWorkersWorkitemidHeartbeat<TContext>(
     mutation?: UseMutationOptions<
       PostWorkersWorkitemidHeartbeatMutationResponse,
       ResponseErrorConfig<Error>,
-      {
-        workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"]
-        data?: PostWorkersWorkitemidHeartbeatMutationRequest
-      },
+      { workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"] },
       TContext
     > & { client?: QueryClient }
-    client?: Partial<
-      RequestConfig<PostWorkersWorkitemidHeartbeatMutationRequest>
-    > & { client?: Client }
+    client?: Partial<RequestConfig> & { client?: Client }
   } = {}
 ) {
   const { mutation = {}, client: config = {} } = options ?? {}
@@ -81,20 +68,14 @@ export function usePostWorkersWorkitemidHeartbeat<TContext>(
   ) as UseMutationOptions<
     PostWorkersWorkitemidHeartbeatMutationResponse,
     ResponseErrorConfig<Error>,
-    {
-      workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"]
-      data?: PostWorkersWorkitemidHeartbeatMutationRequest
-    },
+    { workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"] },
     TContext
   >
 
   return useMutation<
     PostWorkersWorkitemidHeartbeatMutationResponse,
     ResponseErrorConfig<Error>,
-    {
-      workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"]
-      data?: PostWorkersWorkitemidHeartbeatMutationRequest
-    },
+    { workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"] },
     TContext
   >(
     {
@@ -106,10 +87,7 @@ export function usePostWorkersWorkitemidHeartbeat<TContext>(
   ) as UseMutationResult<
     PostWorkersWorkitemidHeartbeatMutationResponse,
     ResponseErrorConfig<Error>,
-    {
-      workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"]
-      data?: PostWorkersWorkitemidHeartbeatMutationRequest
-    },
+    { workItemId: PostWorkersWorkitemidHeartbeatPathParams["workItemId"] },
     TContext
   >
 }

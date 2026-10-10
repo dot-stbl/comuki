@@ -187,4 +187,3 @@ export {
   type TabProps,
   type TabsProps,
 } from "./tabs"
-export { FeatureGate, type FeatureGateProps } from "./feature-gate"

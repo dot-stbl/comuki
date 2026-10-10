@@ -339,31 +339,42 @@ The endpoint SHALL answer:
 
 ### Requirement: Run cancellation endpoint
 
-`POST /api/v1/runs/{runId:guid}/cancel` (route constant `ApiRoutes.RunCancel`) SHALL tear down a run that's still in flight. The transition is legal from every non-terminal status (`Queued`, `Waiting`, `Running`, `Escalated`) into `Cancelled`; terminal runs (`Succeeded`, `Failed`, `Cancelled`) answer 409. Cancelling SHALL atomically bump the Run's execution generation and fence every currently `Running` WorkItem under it (see "Execution generation fencing on cancel and supersede") in the same transaction as the status change and journal append. When the request body carries an optional `reason`, the journal entry's jsonb payload carries it as a `reason` field. The same `run:read` permission gates the endpoint; an empty body (`CancelRunRequest` with `reason: null`) is accepted.
-
-#### Scenario: Cancel fences live executions before a replacement can activate
-- **WHEN** an authorized caller cancels a `Running` Run that has live WorkItem executions
-- **THEN** the Run's generation increments and every live WorkItem is fenced in the same transaction, before the response returns
-
-#### Scenario: Late worker after replacement is rejected, not authoritative
-- **WHEN** a worker completes a WorkItem using a generation from before the Run's cancellation or supersession
-- **THEN** the completion is rejected (409) and the Task's replacement attempt is unaffected — the late result MAY be retained as non-authoritative evidence but SHALL NOT change Run or Task outcome
+`POST /api/v1/runs/{runId:guid}/cancel` (route constant
+`ApiRoutes.RunCancel`) SHALL tear down a run that's still in flight.
+The transition is legal from every non-terminal status (`Queued`,
+`Waiting`, `Running`, `Escalated`) into `Cancelled`; terminal runs
+(`Succeeded`, `Cancelled`) answer 409. The handler SHALL append a
+`run.status_changed` journal event in the same transaction; when the
+request body carries an optional `reason`, the entry's jsonb payload
+carries it as a `reason` field — the operator's note that survives the
+run timeline. The same `run:read` permission gates the endpoint; an
+empty body (`CancelRunRequest` with `reason: null`) is accepted.
 
 #### Scenario: Cancel an in-flight run with a reason
-- **WHEN** an authorized caller cancels a Running Run with a reason
-- **THEN** the Run and live execution generation are cancelled and the audit entry carries the reason
+- **WHEN** an authenticated caller posts to `/cancel` with
+  `{ "reason": "operator closed the run" }` for a run in `Running
+- **THEN** the response is 204; the run's status transitions to
+  `Cancelled`; the journal carries a `run.status_changed` entry whose
+  payload names from `Running` to `Cancelled` with the supplied
+  `reason` in the jsonb
 
 #### Scenario: Cancel an in-flight run without a reason
-- **WHEN** an authorized caller cancels a Waiting Run without a reason
-- **THEN** the Run is Cancelled and the audit entry omits the reason
+- **WHEN** an authenticated caller posts `/cancel` with an empty body
+  for a run in `Waiting`
+- **THEN** the response is 204; the journal entry's payload does not
+  carry a `reason` field
 
 #### Scenario: Cancel a terminal run returns 409
-- **WHEN** an authorized caller cancels a Succeeded, Failed, or Cancelled Run
-- **THEN** the response is 409 and the Run is unchanged
+- **WHEN** an authenticated caller posts to `/cancel` for a run in
+  `Succeeded` (or `Cancelled`)
+- **THEN** the response is 409 `application/problem+json` with
+  `code: run.terminal_state` and `currentStatus` naming the run's
+  status
 
 #### Scenario: Cancel an unknown run returns 404
-- **WHEN** an authorized caller cancels a Run that is unknown or outside object scope
-- **THEN** the response is 404 without disclosing foreign state
+- **WHEN** an authenticated caller posts to `/cancel` for a run id that
+  does not exist
+- **THEN** the response is 404 `application/problem+json`
 
 ### Requirement: Decision journal event payload
 
@@ -436,13 +447,6 @@ SHOULD not retry `replay`, `duplicate`, `skipped`, `filtered`,
 - **WHEN** the provider normalizes the delivery to null (ping, unrelated
   event kind)
 - **THEN** the answer is 200 with outcome `skipped`
-
-### Requirement: Restore journal events
-The `run_events` journal SHALL record `worker.restore_started` when Translator begins class restore opcodes and `worker.restore_failed` when an opcode exits non-zero (payload: opcode name, exit code; no secret values). Successful restore MAY be implied by `worker.reported` StageStart and SHALL NOT require a third type.
-
-#### Scenario: Restore failure is on the timeline
-- **WHEN** `dotnet restore` exits non-zero
-- **THEN** the run journal contains `worker.restore_failed` and pi is not started
 
 ## ADAPTER Notes
 

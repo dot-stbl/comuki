@@ -8,7 +8,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router"
-import { expect, userEvent } from "storybook/test"
+import { expect, userEvent } from "@storybook/test"
 
 import { ProjectDetailPage } from "@/domains/projects/pages/project-detail-page"
 import { SessionProvider } from "@/shared/session"

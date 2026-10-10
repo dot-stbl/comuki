@@ -66,7 +66,6 @@ public abstract class QueueDatabase(PostgresCollectionFixture postgres) : IAsync
 
         var services = new ServiceCollection();
         services.AddSingleton<TimeProvider>(clock);
-        services.AddLogging();
         services.AddOrchestrationPersistence(postgres.ConnectionString);
         services.AddOrchestrationQueue(configuration);
         services.AddOrchestrationApplication();

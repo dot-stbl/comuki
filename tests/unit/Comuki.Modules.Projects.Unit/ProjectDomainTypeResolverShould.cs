@@ -51,7 +51,6 @@ public sealed class ProjectDomainTypeResolverShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Standard,
             customDomainTypesJson: /*lang=json,strict*/ """{"code":"docs-writer"}""",
-            gitCredentialRef: null,
             now: new DateTimeOffset(2026, 9, 7, 1, 0, 0, TimeSpan.Zero));
 
         resolver.ResolveProfileKey(settings, "code").ShouldBe(ProjectSettings.DefaultDomainProfileKey);
@@ -73,7 +72,6 @@ public sealed class ProjectDomainTypeResolverShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Custom,
             customDomainTypesJson: /*lang=json,strict*/ """{"code":"docs-writer","data":"data-pipeline"}""",
-            gitCredentialRef: null,
             now: new DateTimeOffset(2026, 9, 7, 1, 0, 0, TimeSpan.Zero));
 
         resolver.ResolveProfileKey(settings, "code").ShouldBe("docs-writer");
@@ -96,7 +94,6 @@ public sealed class ProjectDomainTypeResolverShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Custom,
             customDomainTypesJson: /*lang=json,strict*/ """{"code":"docs-writer"}""",
-            gitCredentialRef: null,
             now: new DateTimeOffset(2026, 9, 7, 1, 0, 0, TimeSpan.Zero));
 
         var exception = Should.Throw<ProjectDomainTypeNotMappedException>(
@@ -122,7 +119,6 @@ public sealed class ProjectDomainTypeResolverShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Custom,
             customDomainTypesJson: "  ",
-            gitCredentialRef: null,
             now: new DateTimeOffset(2026, 9, 7, 1, 0, 0, TimeSpan.Zero));
 
         var exception = Should.Throw<ProjectDomainTypeNotMappedException>(
@@ -146,7 +142,6 @@ public sealed class ProjectDomainTypeResolverShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Custom,
             customDomainTypesJson: """{"code":}""",
-            gitCredentialRef: null,
             now: new DateTimeOffset(2026, 9, 7, 1, 0, 0, TimeSpan.Zero));
 
         var exception = Should.Throw<ProjectDomainTypeNotMappedException>(
@@ -170,7 +165,6 @@ public sealed class ProjectDomainTypeResolverShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Hybrid,
             customDomainTypesJson: /*lang=json,strict*/ """{"data":"data-pipeline"}""",
-            gitCredentialRef: null,
             now: new DateTimeOffset(2026, 9, 7, 1, 0, 0, TimeSpan.Zero));
 
         resolver.ResolveProfileKey(settings, "data").ShouldBe("data-pipeline");
@@ -192,7 +186,6 @@ public sealed class ProjectDomainTypeResolverShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Hybrid,
             customDomainTypesJson: /*lang=json,strict*/ """{"data":"data-pipeline"}""",
-            gitCredentialRef: null,
             now: new DateTimeOffset(2026, 9, 7, 1, 0, 0, TimeSpan.Zero));
 
         // code is not in the map → fallback to the default.
@@ -218,7 +211,6 @@ public sealed class ProjectDomainTypeResolverShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Hybrid,
             customDomainTypesJson: null,
-            gitCredentialRef: null,
             now: new DateTimeOffset(2026, 9, 7, 1, 0, 0, TimeSpan.Zero));
 
         resolver.ResolveProfileKey(settings, "anything").ShouldBe(ProjectSettings.DefaultDomainProfileKey);

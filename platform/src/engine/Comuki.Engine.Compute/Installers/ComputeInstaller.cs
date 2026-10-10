@@ -1,5 +1,3 @@
-using Comuki.Engine.Compute.Admission;
-using Comuki.Engine.Compute.Environments.Catalog;
 using Comuki.Engine.Compute.Exceptions;
 using Comuki.Engine.Compute.Options;
 using Comuki.Engine.Compute.Pool;
@@ -11,7 +9,6 @@ using Comuki.Engine.Compute.Settings;
 using Comuki.Engine.Compute.Supervisor;
 using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Bootstrap.Workers;
-using Comuki.Shared.Contracts.Admission;
 using Comuki.Shared.Contracts.Compute;
 using Docker.DotNet;
 using k8s;
@@ -107,14 +104,14 @@ public static class ComputeInstaller
                 .CreateLogger("Comuki.Compute.KubernetesClient");
             var options = serviceProvider.GetRequiredService<IOptions<KubernetesComputeOptions>>().Value;
             var kubeconfigPath = options.KubeconfigPath;
+            var factory = serviceProvider.GetRequiredService<IKubernetesClientConfigurationFactory>();
             var mode = string.IsNullOrWhiteSpace(kubeconfigPath)
                 ? (options.SkipKubernetesConfig ? "skip" : "in-cluster")
                 : kubeconfigPath;
             KubernetesClientConfiguration? config;
             try
             {
-                config = serviceProvider.GetRequiredService<IKubernetesClientConfigurationFactory>()
-                    .Build(kubeconfigPath, options.SkipKubernetesConfig);
+                config = factory.Build(kubeconfigPath, options.SkipKubernetesConfig);
             }
             catch (KubernetesConfigUnavailableException exception)
             {
@@ -170,26 +167,6 @@ public static class ComputeInstaller
         services.AddSingleton<IWorkerPoolState>(static serviceProvider => serviceProvider.GetRequiredService<WorkerPoolState>());
         services.AddSingleton<ScaleSupervisorCycle>();
         services.AddSingleton<IComukiWorker, ScaleSupervisorComukiWorker>();
-
-        // Environment-class catalog (add-worker-environments task 2.1): the
-        // operator-facing read-only surface of the Comuki shelf plus any
-        // future organisation/community bundles the fleet allowlists. A
-        // singleton — immutable for the process lifetime. Registered via a
-        // FACTORY on purpose: the class has two constructors and MS DI picks
-        // the one with the most resolvable parameters — the primary ctor's
-        // IEnumerable<EnvironmentBundle> resolves as empty, so a type-based
-        // registration would hand every caller an EMPTY catalog.
-        services.AddSingleton<IEnvironmentCatalog>(static _ => new DefaultEnvironmentCatalog());
-
-        // Slot admission evaluator (add-worker-admission task 1.3): the
-        // ordered six-check gate the Translator calls before any pi spawn
-        // and the compute provider calls before any container start. The
-        // v1 implementation reads the catalog already registered above and
-        // leaves the four sibling hooks (capacity / isolation / edition /
-        // secrets) as virtual overrides landed by their own changes; the
-        // base returns pass-by-default for the unbuilt hooks so this
-        // registration stays usable until those slices wire in.
-        services.AddSingleton<ISlotAdmissionEvaluator, DefaultSlotAdmissionEvaluator>();
 
         return services;
     }

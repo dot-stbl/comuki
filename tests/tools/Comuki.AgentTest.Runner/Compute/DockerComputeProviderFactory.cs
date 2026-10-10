@@ -1,4 +1,3 @@
-using Comuki.Engine.Compute.Environments.Catalog;
 using Comuki.Engine.Compute.Options;
 using Comuki.Engine.Compute.Providers;
 using Docker.DotNet;
@@ -111,12 +110,6 @@ public static class DockerComputeProviderFactory
         });
         var fence = new DockerEgressFence(client.Networks, NullLogger<DockerEgressFence>.Instance);
 
-        return new DockerComputeProvider(
-            fence,
-            client.Containers,
-            new DefaultEnvironmentCatalog(),
-            new Microsoft.Extensions.Hosting.Internal.HostingEnvironment { EnvironmentName = "Development" },
-            providerOptions,
-            dockerOptions);
+        return new DockerComputeProvider(fence, client.Containers, providerOptions, dockerOptions);
     }
 }

@@ -6,17 +6,10 @@
 import { z } from "zod/v4"
 
 /**
- * @description Failure body: human-readable reason text plus the claimed generation.
+ * @description Failure body: human-readable reason text.
  */
 export const failWorkItemRequestSchema = z
   .object({
     reason: z.string(),
-    generation: z
-      .union([z.int(), z.string().regex(/^-?(?:0|[1-9]\d*)$/)])
-      .describe(
-        "The generation the caller claimed this item under — a mismatch is treated as an ownership miss."
-      ),
   })
-  .describe(
-    "Failure body: human-readable reason text plus the claimed generation."
-  )
+  .describe("Failure body: human-readable reason text.")

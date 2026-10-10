@@ -12,6 +12,4 @@ public sealed record UpdateProjectRequest(
     string? ProfilesGitRef,
     string? Icon = null,
     string? Color = null,
-    IReadOnlyList<string>? Tags = null,
-    string? SourceGitUrl = null,
-    string? SourceGitRef = null);
+    IReadOnlyList<string>? Tags = null);

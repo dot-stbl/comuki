@@ -4,19 +4,18 @@
  */
 
 import type { CreateProjectRequest } from "./CreateProjectRequest"
-import type { ProjectView } from "./ProjectView"
 
 /**
- * @description Created
+ * @description OK
  */
-export type PostApiV1Projects201 = ProjectView
+export type PostApiV1Projects200 = any
 
 export type PostApiV1ProjectsMutationRequest = CreateProjectRequest
 
-export type PostApiV1ProjectsMutationResponse = PostApiV1Projects201
+export type PostApiV1ProjectsMutationResponse = PostApiV1Projects200
 
 export type PostApiV1ProjectsMutation = {
-  Response: PostApiV1Projects201
+  Response: PostApiV1Projects200
   Request: PostApiV1ProjectsMutationRequest
   Errors: any
 }

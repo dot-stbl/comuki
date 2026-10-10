@@ -183,20 +183,67 @@ file static class WorkItemOwnedTransition
                 detail),
             now));
 
-        // A succeeded item may unblock dependents whose full prerequisite set
-        // has now reached Succeeded; a failed completion must not (WS1
-        // acceptance: prerequisite failure does not auto-unblock — see
-        // UnblockDependentsSql's doc comment).
-        if (completing)
-        {
-            await RunProgression.UnblockDependentsAsync(transaction, workItemId, now, cancellationToken);
-        }
-
         // A terminal item may have been the run's last open one — finalize
         // the run (Succeeded when nothing failed, Failed otherwise).
-        await RunProgression.FinalizeAsync(db, outbox, transaction, owner, now, cancellationToken);
+        await RunProgression.FinalizeAsync(db, transaction, owner, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return true;
+    }
+}
+
+/// <summary>
+/// Run-status progression driven by work-item transitions: activation on the
+/// first claim, finalization when the last item lands terminal. Both run as
+/// guarded <c>UPDATE ... RETURNING</c> statements inside the caller's item
+/// transaction — status guards make them no-ops under concurrency, and a
+/// returned row journals a <c>run.status_changed</c> event.
+/// </summary>
+file static class RunProgression
+{
+    public static async Task ActivateAsync(
+        OrchestrationDbContext db,
+        IDbContextTransaction transaction,
+        RunId runId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await using var command = WorkItemQueueSql.CreateRunActivationCommand(transaction.GetDbTransaction(), runId, now);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            db.RunEvents.Add(RunEvent.Create(
+                runId,
+                RunEventTypes.RunStatusChanged,
+                RunStatusPayload(nameof(RunStatus.Queued), reader.GetString(0), "worker"),
+                now));
+        }
+    }
+
+    public static async Task FinalizeAsync(
+        OrchestrationDbContext db,
+        IDbContextTransaction transaction,
+        RunId runId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await using var command = WorkItemQueueSql.CreateRunFinalizationCommand(transaction.GetDbTransaction(), runId, now);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (await reader.ReadAsync(cancellationToken))
+        {
+            db.RunEvents.Add(RunEvent.Create(
+                runId,
+                RunEventTypes.RunStatusChanged,
+                RunStatusPayload(nameof(RunStatus.Running), reader.GetString(0), "worker"),
+                now));
+        }
+    }
+
+    /// <summary>Journal payload shape of a run transition — the same camelCase
+    /// record the host adapters journal (from/to/actor).</summary>
+    private static string RunStatusPayload(string from, string to, string actor)
+    {
+        return JsonSerializer.Serialize(
+            new { from, to, actor }, JsonSerializerOptions.Web);
     }
 }

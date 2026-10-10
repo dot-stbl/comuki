@@ -3,7 +3,6 @@
  * Do not edit manually.
  */
 
-import { projectViewSchema } from "./projectViewSchema"
 import { z } from "zod/v4"
 
 export const getApiV1ProjectsProjectidPathParamsSchema = z.object({

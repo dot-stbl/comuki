@@ -3,6 +3,7 @@ using Comuki.Engine.Compute.Pool;
 using Comuki.Engine.Compute.Ports;
 using Comuki.Engine.Compute.Scaling;
 using Comuki.Engine.Compute.Security;
+using Comuki.Shared.Bootstrap.Versioning;
 using Comuki.Shared.Contracts.Compute;
 using Comuki.Shared.Kernel.Ids;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,7 @@ namespace Comuki.Engine.Compute.Supervisor;
 /// ports — unit tests drive it with fakes.
 /// </summary>
 /// <param name="scaleOptions"></param>
+/// <param name="buildInformation"></param>
 /// <param name="backlogReader"></param>
 /// <param name="pool"></param>
 /// <param name="tokenIssuer"></param>
@@ -31,6 +33,7 @@ namespace Comuki.Engine.Compute.Supervisor;
 /// <param name="logger"></param>
 public sealed class ScaleSupervisorCycle(
     IOptions<ScaleSupervisorOptions> scaleOptions,
+    ComukiBuildInformation buildInformation,
     IBacklogReader backlogReader,
     WorkerPoolState pool,
     WorkerTokenIssuer tokenIssuer,
@@ -56,12 +59,20 @@ public sealed class ScaleSupervisorCycle(
 
             var settings = projectScaleSettings.Get(projectId);
 
-            // Per-project env class binding (add-worker-environments task 3.4):
-            // null means "use the supervisor's default class" — the bridge
-            // returns null when the project has no binding, and the supervisor
-            // (not the provider) owns the fallback so the policy inputs and
-            // the started stamp agree.
-            var effectiveEnvClass = settings.EnvClass ?? options.DefaultEnvClass;
+            // Release contract: an untagged worker image is pinned to the
+            // running build's version (WorkerImagePinning) — covers both the
+            // options default and the per-project override, at the single
+            // spawn resolution site.
+            var configuredImage = settings.WorkerImage ?? options.WorkerImage;
+            var effectiveImage = WorkerImagePinning.Resolve(configuredImage, buildInformation);
+            if (!string.Equals(effectiveImage, configuredImage, StringComparison.Ordinal))
+            {
+                logger.LogInformation(
+                    "Pinned untagged worker image {ConfiguredImage} to {EffectiveImage} from build version {BuildVersion}",
+                    configuredImage,
+                    effectiveImage,
+                    buildInformation.Version);
+            }
 
             foreach (var profileKey in options.ProfileKeys)
             {
@@ -119,11 +130,7 @@ public sealed class ScaleSupervisorCycle(
                         PreIssuedWorkerId = tokenId,
                         ProfileKey = profileKey,
                         ProfilesGitRef = settings.ProfilesGitRef ?? options.ProfilesGitRef,
-                        EnvClass = effectiveEnvClass,
-                        // Image is a placeholder — the provider resolves the actual image
-                        // from the catalog bundle for the class (add-worker-environments
-                        // spec §"class resolves to digest at start").
-                        Image = "resolved-by-catalog",
+                        Image = effectiveImage,
                         WorkerToken = tokenIssuer.Issue(tokenId),
                         OrchestratorGrpcUrl = options.OrchestratorGrpcUrl,
                     };

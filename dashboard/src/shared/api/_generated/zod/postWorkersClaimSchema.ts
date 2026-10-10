@@ -14,7 +14,7 @@ export const postWorkersClaim200Schema = z.any()
 export const postWorkersClaimMutationRequestSchema = z
   .lazy(() => claimWorkItemRequestSchema)
   .describe(
-    "Claim request body: the labels the worker presents (from its\r\n`COMUKI_*` environment). The claiming worker's id comes from its\r\nbearer token — never from the body.\r\nstring ClaimWorkItemRequest.EnvClass is REQUIRED (task 3.2): missing or empty is a\r\n`400 worker.env_class.required`; the queue SQL filters\r\n`env_class = @envClass`, so omitting it would silently miss\r\nevery claim. string? ClaimWorkItemRequest.Image is now OPTIONAL in the wire shape —\r\nthe item's image is pinned by the host at WorkItem.Create from the\r\nproject default, and the worker doesn't need to know it. Older workers\r\nstill post image; we keep accepting it and ignore it for the match."
+    "Claim request body: the labels the worker presents (from its\r\n`COMUKI_*` environment). The claiming worker's id comes from its\r\nbearer token — never from the body."
   )
 
 export const postWorkersClaimMutationResponseSchema = z.lazy(

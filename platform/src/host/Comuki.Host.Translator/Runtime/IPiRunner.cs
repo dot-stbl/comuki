@@ -20,15 +20,9 @@ public interface IPiRunner
     /// never into container-level config. <c>null</c> spawns the child
     /// with the inherited environment untouched.
     /// </param>
-    /// <param name="workingDirectory">
-    /// Directory the agent runs in — the cloned repository root
-    /// (harden-pi-worker-sandbox 4.3). <c>null</c> falls back to the
-    /// configured <c>Translator:WorkingDirectory</c>.
-    /// </param>
     /// <param name="cancellationToken"></param>
     public IAsyncEnumerable<string> RunAsync(
         string brief,
         IReadOnlyDictionary<string, string>? environment = null,
-        string? workingDirectory = null,
         CancellationToken cancellationToken = default);
 }

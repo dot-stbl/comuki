@@ -34,7 +34,6 @@ public static class ProjectsPersistenceExtensions
 
         services.AddScoped<IProjectStore, ProjectStore>();
         services.AddScoped<IDomainTypeAdmissionStore, DbDomainTypeAdmissionStore>();
-        services.AddScoped<IProjectRepositoryAttachmentStore, DbProjectRepositoryAttachmentStore>();
         services.AddSingleton<IProjectSettingsStore, DbProjectSettingsStore>();
         services.AddSingleton<IComukiWorker, ProjectSettingsCacheRefresherComukiWorker>();
 

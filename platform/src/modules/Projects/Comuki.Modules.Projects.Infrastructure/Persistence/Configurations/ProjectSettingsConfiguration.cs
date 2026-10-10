@@ -66,10 +66,6 @@ public sealed class ProjectSettingsConfiguration : IEntityTypeConfiguration<Proj
             .HasColumnName("custom_domain_types_json")
             .HasColumnType("text");
 
-        builder.Property(static settings => settings.GitCredentialRef)
-            .HasColumnName("git_credential_ref")
-            .HasMaxLength(256);
-
         builder.Property(static settings => settings.UpdatedAt)
             .HasColumnName("updated_at");
 

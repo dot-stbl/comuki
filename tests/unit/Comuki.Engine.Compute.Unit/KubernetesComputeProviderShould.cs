@@ -1,5 +1,4 @@
 using System.Net;
-using Comuki.Engine.Compute.Environments.Catalog;
 using Comuki.Engine.Compute.Exceptions;
 using Comuki.Engine.Compute.Options;
 using Comuki.Engine.Compute.Providers.Kubernetes;
@@ -8,7 +7,6 @@ using Comuki.Shared.Kernel.Ids;
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -36,8 +34,6 @@ public sealed class KubernetesComputeProviderShould
     private readonly IBatchV1Operations batchV1 = Substitute.For<IBatchV1Operations>();
     private readonly ICoreV1Operations coreV1 = Substitute.For<ICoreV1Operations>();
     private readonly INetworkingV1Operations networkingV1 = Substitute.For<INetworkingV1Operations>();
-    private readonly IEnvironmentCatalog catalog = Substitute.For<IEnvironmentCatalog>();
-    private readonly IHostEnvironment hostEnvironment = Substitute.For<IHostEnvironment>();
     private readonly KubernetesComputeOptions options = new()
     {
         Namespace = "comuki",
@@ -53,26 +49,12 @@ public sealed class KubernetesComputeProviderShould
     {
         EchoCreatedPolicy();
         EchoDeletedPolicy();
-        hostEnvironment.EnvironmentName.Returns("Development");
-        catalog.IsAllowed(Arg.Any<string>()).Returns(true);
-        catalog.TryGet(DefaultEnvClass, out _)
-            .Returns(static callInfo =>
-            {
-                callInfo[1] = new Environments.EnvironmentBundle(
-                    Id: DefaultEnvClass,
-                    Image: "ghcr.io/comuki/env/net10-sdk-bun@sha256:prod-digest",
-                    Runtime: Environments.Shape.EnvironmentRuntime.Linux,
-                    Publisher: Environments.Shape.EnvironmentPublisher.Comuki,
-                    RestoreOpcodes: ["dotnet", "bun"],
-                    ResourceShape: new Environments.Shape.EnvironmentResourceShape(Cpus: null, Memory: null, Gpu: false));
-                return true;
-            });
         Provider = CreateProvider();
     }
 
     private KubernetesComputeProvider Provider { get; }
 
-    private KubernetesComputeProvider CreateProvider(bool allowUnfencedEgress = false, bool isProduction = false)
+    private KubernetesComputeProvider CreateProvider(bool allowUnfencedEgress = false)
     {
         var kubernetes = Substitute.For<IKubernetes>();
         kubernetes.BatchV1.Returns(batchV1);
@@ -80,11 +62,8 @@ public sealed class KubernetesComputeProviderShould
         kubernetes.NetworkingV1.Returns(networkingV1);
         var services = Substitute.For<IServiceProvider>();
         services.GetService(typeof(IKubernetes)).Returns(kubernetes);
-        hostEnvironment.EnvironmentName.Returns(isProduction ? "Production" : "Development");
         return new KubernetesComputeProvider(
             services,
-            catalog,
-            hostEnvironment,
             Microsoft.Extensions.Options.Options.Create(new ComputeOptions { AllowUnfencedEgress = allowUnfencedEgress }),
             Microsoft.Extensions.Options.Options.Create(options),
             NullLogger<KubernetesComputeProvider>.Instance);

@@ -119,20 +119,20 @@ public sealed class WorkItemStatusMachineShould
     public void RejectInvalidInitialStatus()
     {
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), "implement", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Running, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Running, DateTimeOffset.UtcNow));
     }
 
     [Fact(DisplayName = "Given an empty profile key, image, profiles ref or brief, when Create is called, then it throws")]
     public void RejectEmptyLabelsAndBrief()
     {
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), " ", Image, "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), " ", Image, ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), "implement", "", "net10-sdk-bun", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", "", ProfilesRef, /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), "implement", Image, "net10-sdk-bun", " ", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", Image, " ", /*lang=json,strict*/ """{"goal":"x"}""", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
         Should.Throw<OrchestrationDomainException>(
-            static () => WorkItem.Create(RunId.New(), "implement", Image, "net10-sdk-bun", ProfilesRef, "", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
+            static () => WorkItem.Create(RunId.New(), "implement", Image, ProfilesRef, "", WorkItemStatus.Queued, DateTimeOffset.UtcNow));
     }
 
     [Fact(DisplayName = "Given a running item, when the lease expires and is requeued, then TransitionTo queued succeeds")]

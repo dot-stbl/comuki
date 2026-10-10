@@ -1,6 +1,2 @@
 export * from "./locks"
 export * from "./skills/loader"
-export * from "./pi-extensions/api"
-export * from "./pi-extensions/locks"
-export * from "./pi-extensions/mcp"
-export * from "./pi-extensions/skills"

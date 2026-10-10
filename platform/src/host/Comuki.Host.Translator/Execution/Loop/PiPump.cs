@@ -39,7 +39,6 @@ public static class PiPump
             await foreach (var line in runner.RunAsync(
                  run.Claimed.Brief,
                  piEnvironment.Environment,
-                 run.RepositoryDirectory,
                  run.RunCancellation.Token))
             {
                 foreach (var piEvent in StreamJsonParser.ParseLine(line))

@@ -17,9 +17,7 @@ export const postWorkersWorkitemidFail200Schema = z.any()
 
 export const postWorkersWorkitemidFailMutationRequestSchema = z
   .lazy(() => failWorkItemRequestSchema)
-  .describe(
-    "Failure body: human-readable reason text plus the claimed generation."
-  )
+  .describe("Failure body: human-readable reason text.")
 
 export const postWorkersWorkitemidFailMutationResponseSchema = z.lazy(
   () => postWorkersWorkitemidFail200Schema

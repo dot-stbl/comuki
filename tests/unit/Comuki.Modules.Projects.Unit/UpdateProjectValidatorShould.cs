@@ -111,26 +111,4 @@ public sealed class UpdateProjectValidatorShould
 
         result.IsValid.ShouldBeTrue();
     }
-
-    [Fact(DisplayName = "Given an empty env class on a patch, when validated, then it passes (clearing, not malformed)")]
-    public void AcceptEmptyEnvClassToClear()
-    {
-        var command = new UpdateProjectCommand(ProjectId.New(), null, null, null, null, EnvClass: "");
-
-        var result = validator.Validate(command);
-
-        result.IsValid.ShouldBeTrue();
-    }
-
-    [Fact(DisplayName = "Given a malformed env class on a patch, when validated, then it fails on EnvClass")]
-    public void RefuseMalformedEnvClass()
-    {
-        var command = new UpdateProjectCommand(ProjectId.New(), null, null, null, null,
-            EnvClass: "Net10_SDK");
-
-        var result = validator.Validate(command);
-
-        result.IsValid.ShouldBeFalse();
-        result.Errors.ShouldContain(static failure => failure.PropertyName == "EnvClass");
-    }
 }

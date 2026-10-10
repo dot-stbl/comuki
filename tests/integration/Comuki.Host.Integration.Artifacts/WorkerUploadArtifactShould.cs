@@ -402,13 +402,13 @@ public sealed class WorkerUploadArtifactShould(PostgresCollectionFixture postgre
         var workItem = WorkItem.Create(
             run.Id,
             "implementer",
-            "image:latest", "net10-sdk-bun",
+            "image:latest",
             "refs/heads/main",
                                  /*lang=json,strict*/
                                  """{"goal":"build a thing"}""",
             WorkItemStatus.Queued,
             now);
-        workItem.AssignLease(workerId, 1, now + TimeSpan.FromMinutes(15), now);
+        workItem.AssignLease(workerId, now + TimeSpan.FromMinutes(15), now);
         orchestrationDb.WorkItems.Add(workItem);
 
         await orchestrationDb.SaveChangesAsync(cancellationToken);

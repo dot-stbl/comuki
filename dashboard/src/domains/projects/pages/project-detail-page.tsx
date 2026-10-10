@@ -499,29 +499,6 @@ export function ProjectDetailPage({ projectId }: ProjectDetailPageProps) {
                     {t("detail.fact.tagsAbsent")}
                   </Fact>
                 )}
-                {/* The bound environment class — a catalog id, drawn as a chip
-                    when present, said out loud when not. Same shape as the
-                    registry's cell: `badgeShell()` from the kit plus a
-                    caller-side colour/weight rule, and a separate "no class"
-                    indicator using the same faint voice every other absent
-                    fact wears. A bound class reads at full strength; an
-                    absent class is a fact about the project, not a missing
-                    row — its claimable items are silently blocked (D2.2). */}
-                {project.envClass !== null ? (
-                  <Fact name={t("detail.envClass")}>
-                    <span
-                      className={cn(badgeShell(), styles.envClassChip)}
-                      data-test="project-fact-env-class"
-                      data-env-class={project.envClass}
-                    >
-                      {project.envClass}
-                    </span>
-                  </Fact>
-                ) : (
-                  <Fact name={t("detail.envClass")} absent>
-                    {t("list.envClass.none")}
-                  </Fact>
-                )}
                 {project.gitProfileRepo ? (
                   /* The one fact on this page somebody copies out of it, so it
                       is selected as a unit rather than as part of a sentence —

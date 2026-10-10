@@ -3,7 +3,6 @@
  * Do not edit manually.
  */
 
-import { heartbeatWorkItemRequestSchema } from "./heartbeatWorkItemRequestSchema"
 import { z } from "zod/v4"
 
 export const postWorkersWorkitemidHeartbeatPathParamsSchema = z.object({
@@ -14,11 +13,6 @@ export const postWorkersWorkitemidHeartbeatPathParamsSchema = z.object({
  * @description OK
  */
 export const postWorkersWorkitemidHeartbeat200Schema = z.any()
-
-export const postWorkersWorkitemidHeartbeatMutationRequestSchema = z.union([
-  z.lazy(() => heartbeatWorkItemRequestSchema),
-  z.null(),
-])
 
 export const postWorkersWorkitemidHeartbeatMutationResponseSchema = z.lazy(
   () => postWorkersWorkitemidHeartbeat200Schema

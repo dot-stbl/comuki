@@ -22,7 +22,6 @@ spec:
         app.kubernetes.io/component: host
     spec:
       serviceAccountName: comuki-host
-      automountServiceAccountToken: true
       securityContext:
         runAsNonRoot: true
         runAsUser: 1654
@@ -96,7 +95,6 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
-          automountServiceAccountToken: true
           volumeMounts:
             - name: tmp
               mountPath: /tmp

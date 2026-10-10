@@ -4,7 +4,6 @@ using Comuki.Engine.Orchestration.Application.Models;
 using Comuki.Engine.Orchestration.Options;
 using Comuki.Shared.Contracts.Queue;
 using Comuki.Shared.Kernel.Scoping;
-using FluentValidation;
 using Microsoft.Extensions.Options;
 
 namespace Comuki.Host.Workers.Api;
@@ -38,7 +37,6 @@ public static class WorkerEndpoints
         WorkerTokenAuthenticator authenticator,
         ISubjectScopeAccessor scopeAccessor,
         ClaimWorkItemHandler claimHandler,
-        ClaimSourceGitResolver sourceGitResolver,
         IWorkerPoolState pool,
         VirtualKeys.MintedVirtualKeyService virtualKeys,
         CancellationToken cancellationToken)
@@ -54,50 +52,33 @@ public static class WorkerEndpoints
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         var command = new ClaimWorkItemCommand(
             workerId,
-            new WorkItemLabels(request.Image ?? "diagnostics-only", request.ProfilesRef, request.ProfileKey, request.EnvClass));
-        try
-        {
-            var claimed = await claimHandler.HandleAsync(command, cancellationToken);
-            if (claimed is null)
-            {
-                return Results.NoContent();
-            }
+            new WorkItemLabels(request.Image, request.ProfilesRef, request.ProfileKey));
 
-            // Busy from the claim until the terminal complete/fail call —
-            // the idle reaper must not collect a worker mid-run.
-            pool.MarkBusy(workerId);
-
-            // Mint after the claim transaction: the queue's journal event
-            // mirrors the transition only, and the raw token appears
-            // exactly once — in this response body. The source-git
-            // enrichment (4.3) rides the same contract: URL/ref/credential
-            // appear only here; the credential is never journaled or logged.
-            var minted = await virtualKeys.MintAsync(
-                claimed.ProjectId, claimed.WorkItemId, claimed.LeaseUntil, cancellationToken);
-            var sourceGit = await sourceGitResolver.ResolveAsync(claimed.ProjectId, cancellationToken);
-            return Results.Ok(new ClaimedWorkItemResponse(
-                claimed.WorkItemId,
-                claimed.RunId.Value,
-                claimed.ProjectId,
-                claimed.ProfileKey,
-                claimed.EnvClass,
-                claimed.Brief,
-                claimed.LeaseUntil.ToUnixTimeMilliseconds(),
-                claimed.Attempt,
-                claimed.Generation,
-                ProxyBaseUrl: minted?.ProxyBaseUrl,
-                VirtualKey: minted?.Token,
-                SourceGitUrl: sourceGit.SourceGitUrl,
-                SourceGitRef: sourceGit.SourceGitRef,
-                GitCredential: sourceGit.GitCredential));
-        }
-        catch (ValidationException exception)
+        var claimed = await claimHandler.HandleAsync(command, cancellationToken);
+        if (claimed is null)
         {
-            return TypedResults.ValidationProblem(
-                exception.Errors.ToDictionary(
-                    static error => error.PropertyName,
-                    static error => new[] { error.ErrorMessage }));
+            return Results.NoContent();
         }
+
+        // Busy from the claim until the terminal complete/fail call —
+        // the idle reaper must not collect a worker mid-run.
+        pool.MarkBusy(workerId);
+
+        // Mint after the claim transaction: the queue's journal event
+        // mirrors the transition only, and the raw token appears
+        // exactly once — in this response body.
+        var minted = await virtualKeys.MintAsync(
+            claimed.ProjectId, claimed.WorkItemId, claimed.LeaseUntil, cancellationToken);
+        return Results.Ok(new ClaimedWorkItemResponse(
+            claimed.WorkItemId,
+            claimed.RunId.Value,
+            claimed.ProjectId,
+            claimed.ProfileKey,
+            claimed.Brief,
+            claimed.LeaseUntil.ToUnixTimeMilliseconds(),
+            claimed.Attempt,
+            ProxyBaseUrl: minted?.ProxyBaseUrl,
+            VirtualKey: minted?.Token));
     }
 
     private static async Task<IResult> HeartbeatAsync(
@@ -126,7 +107,7 @@ public static class WorkerEndpoints
         // rejects it as an ownership miss like any other stale generation.
         var generation = request?.Generation ?? 0;
         var extended = await queue.HeartbeatAsync(
-            workItemId, workerId, generation, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
+            workItemId, workerId, now.Add(leaseOptions.Value.LeaseTtl), now, cancellationToken);
         if (extended)
         {
             pool.Touch(workerId);
@@ -156,7 +137,7 @@ public static class WorkerEndpoints
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
         var completed = await queue.CompleteAsync(
-            workItemId, workerId, request.Generation, request.ResultJson, clock.GetUtcNow(), cancellationToken);
+            workItemId, workerId, request.ResultJson, clock.GetUtcNow(), cancellationToken);
         if (completed)
         {
             pool.MarkIdle(workerId);
@@ -186,7 +167,7 @@ public static class WorkerEndpoints
         using var systemScope = scopeAccessor.AsSystem("worker-runtime");
         await virtualKeys.RevokeAsync(workItemId, cancellationToken);
         var failed = await queue.FailAsync(
-            workItemId, workerId, request.Generation, request.Reason, clock.GetUtcNow(), cancellationToken);
+            workItemId, workerId, request.Reason, clock.GetUtcNow(), cancellationToken);
         if (failed)
         {
             pool.MarkIdle(workerId);

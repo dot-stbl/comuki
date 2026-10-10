@@ -70,10 +70,6 @@ Failures propagate and stop the host — an ephemeral worker is meant to die and
 - **WHEN** the agent streams text deltas and later a message-end assistant text
 - **THEN** the summary replaces accumulated deltas with the authoritative final wording
 
-#### Scenario: Restore runs before pi
-- **WHEN** the claimed item's class declares `[restore] dotnet = "comuki.slnx"`
-- **THEN** `dotnet restore comuki.slnx` completes before pi is started
-
 #### Scenario: Prepare failure skips spawn
 - **WHEN** the source repository cannot be cloned
 - **THEN** pi is not started and the item is failed

@@ -168,7 +168,7 @@ worker profile key; the host composes the implementation. The default
 implementation SHALL honor an explicit `profileKey` from the
 connection's settings jsonb when present, SHALL fall back to
 `pr-review` for `PullRequest`-kind tickets, and SHALL fall back to
-`Intake:Worker:IssueDefaultProfileKey` (default `implement`) for
+`Intake:Worker:IssueDefaultProfileKey` (default `general`) for
 `Issue`-kind tickets. The router SHALL never throw — broken JSON,
 missing fields, and non-string values silently use the fallback.
 Admitted PR tickets SHALL NOT claim on the `implement` profile. The
@@ -187,7 +187,7 @@ implementation.
 - **WHEN** an admitted `Issue`-kind ticket has no per-connection
   override
 - **THEN** the router returns `Intake:Worker:IssueDefaultProfileKey`
-  (default `implement`)
+  (default `general`)
 
 #### Scenario: Broken settings json falls back silently
 - **WHEN** the connection's settings jsonb is malformed or the

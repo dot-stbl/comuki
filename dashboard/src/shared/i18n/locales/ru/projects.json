@@ -16,16 +16,10 @@
       "none": "пока нет проектов"
     }
   },
-  "list": {
-    "envClass": {
-      "none": "класс не назначен"
-    }
-  },
   "column": {
     "slug": "слаг",
     "name": "имя",
     "tags": "теги",
-    "envClass": "класс окружения",
     "inFlight": "в полёте",
     "runs": "запуски",
     "costToday": "расход сегодня",
@@ -98,7 +92,6 @@
     "factsSection": "сам проект",
     "editIdentity": "править знак",
     "editIdentityFailure": "знак не сохранён.",
-    "envClass": "класс окружения",
     "rolesSection": "роли в этом проекте",
     "rolesForbiddenSubject": "роли в этом проекте",
     "rolesHeld": {

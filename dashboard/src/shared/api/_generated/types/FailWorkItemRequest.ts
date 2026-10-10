@@ -4,16 +4,11 @@
  */
 
 /**
- * @description Failure body: human-readable reason text plus the claimed generation.
+ * @description Failure body: human-readable reason text.
  */
 export type FailWorkItemRequest = {
   /**
    * @type string
    */
   reason: string
-  /**
-   * @description The generation the caller claimed this item under — a mismatch is treated as an ownership miss.
-   * @type integer,string, int32
-   */
-  generation: number | string
 }

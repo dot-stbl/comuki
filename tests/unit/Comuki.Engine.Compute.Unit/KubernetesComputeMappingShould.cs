@@ -43,7 +43,6 @@ public sealed class KubernetesComputeMappingShould
         var labels = metadata.Labels.ShouldNotBeNull();
         labels[ComputeLabels.Project].ShouldBe(projectId.Value.ToString());
         labels[ComputeLabels.Profile].ShouldBe("implement");
-        labels[ComputeLabels.EnvClass].ShouldBe("net10-sdk-bun");
         labels[ComputeLabels.Image].ShouldBe("ghcr.io_comuki_worker_sha256_abc");
         labels[ComputeLabels.ProfilesRef].ShouldBe("refs_tags_v1.2");
         metadata.Annotations.ShouldNotBeNull()[KubernetesComputeProvider.WorkerIdAnnotation]

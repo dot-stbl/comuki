@@ -20,15 +20,7 @@ namespace Comuki.Modules.Projects.Application.Projects.Create;
 /// carrying the <c>edition.limit_exceeded</c> code. Two concurrent
 /// writers at the cap serialise on the lock; only one commits.
 /// </summary>
-/// <param name="projects">Persistence port — slug pre-flight, the transactional insert-with-limit, and the post-refusal count re-read.</param>
-/// <param name="edition">The runtime read-side of the current license — supplies the cap.</param>
-/// <param name="clock">Time source for the project's created/updated timestamps.</param>
-/// <param name="mapper">Entity → view projection; the same Mapperly mapper used by every other projects handler.</param>
-public sealed class CreateProjectHandler(
-    IProjectStore projects,
-    IEdition edition,
-    TimeProvider clock,
-    IProjectsMapper mapper)
+public sealed class CreateProjectHandler(IProjectStore projects, TimeProvider clock, IProjectsMapper mapper)
 {
     /// <summary>Creates the project.</summary>
     /// <exception cref="ProjectConflictException">The slug is already taken.</exception>
@@ -51,27 +43,10 @@ public sealed class CreateProjectHandler(
             now,
             command.Icon,
             command.Color,
-            command.Tags,
-            command.EnvClass,
-            command.SourceGitUrl,
-            command.SourceGitRef);
+            command.Tags);
 
         var cap = edition.Limit(Limits.Projects);
         var settings = ProjectSettings.CreateDefaults(project.Id, now);
-
-        // Authoritative count-quota enforcement: opens its own transaction,
-        // takes the project-limit advisory lock, counts inside the same
-        // transaction, inserts (and commits) or refuses (and rolls back).
-        // Two concurrent writers at the cap serialise on the lock.
-        if (!await projects.TryInsertWithProjectLimitAsync(project, settings, cap, cancellationToken))
-        {
-            // Re-read the current count for the problem detail — the
-            // store refused without committing, so the count we see
-            // here is the post-first-writer snapshot.
-            throw new ProviderForbiddenException(
-                code: "edition.limit_exceeded",
-                message: $"limit 'projects' is exhausted ({await projects.CountAsync(includeArchived: false, cancellationToken)}/{cap})");
-        }
 
         return mapper.ToView(project);
     }

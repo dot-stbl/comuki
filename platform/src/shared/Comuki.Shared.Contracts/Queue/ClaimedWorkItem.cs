@@ -7,8 +7,7 @@ namespace Comuki.Shared.Contracts.Queue;
 /// JSON the plan applied; <see cref="LeaseUntil"/> is when the worker loses
 /// the item unless it heartbeats. <see cref="ProjectId"/> is the parent run's
 /// project — the scope every project-bound worker call (memory, knowledge)
-/// is confined to. <see cref="EnvClass"/> echoes back the class bound at
-/// enqueue (the <c>add-worker-environments</c> task 3.2 contract).
+/// is confined to.
 /// </summary>
 /// <param name="WorkItemId"></param>
 /// <param name="RunId"></param>

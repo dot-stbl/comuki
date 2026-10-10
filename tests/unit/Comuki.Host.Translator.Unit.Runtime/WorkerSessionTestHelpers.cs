@@ -53,11 +53,9 @@ internal static class WorkerSessionTestHelpers
             RunId: Guid.NewGuid(),
             ProjectId: Guid.NewGuid(),
             ProfileKey: "test-profile",
-            EnvClass: "net10-sdk-bun",
             Brief: "test-brief",
             LeaseUntilUnixMs: 0,
-            Attempt: 1,
-            Generation: 1);
+            Attempt: 1);
         var session = WorkerSession.Open(service, "test-token");
         return new WorkerRun(claimed, session) { RunCancellation = runCancellation };
     }

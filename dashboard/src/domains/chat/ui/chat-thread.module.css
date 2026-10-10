@@ -208,7 +208,7 @@
   font-family: var(--font-ui);
   font-size: var(--t-sm);
   font-style: italic;
-  color: var(--text-on-tinted);
+  color: var(--text-muted);
 }
 
 /* The announcement. Off screen but not `display: none` — a hidden live region

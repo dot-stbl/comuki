@@ -36,7 +36,7 @@ public sealed class PiRunnerShould
             NullLogger<PiRunner>.Instance);
 
         var events = new List<PiEvent>();
-        await foreach (var line in runner.RunAsync("ignored prompt", environment: null, workingDirectory: null, TestContext.Current.CancellationToken))
+        await foreach (var line in runner.RunAsync("ignored prompt", environment: null, TestContext.Current.CancellationToken))
         {
             events.AddRange(StreamJsonParser.ParseLine(line));
         }
@@ -67,7 +67,7 @@ public sealed class PiRunnerShould
 
         await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
-            await foreach (var line in runner.RunAsync("prompt", environment: null, workingDirectory: null, TestContext.Current.CancellationToken))
+            await foreach (var line in runner.RunAsync("prompt", environment: null, TestContext.Current.CancellationToken))
             {
             }
         });
@@ -86,7 +86,6 @@ public sealed class PiRunnerShould
                  ["ANTHROPIC_BASE_URL"] = "http://comuki-proxy:17080",
                  ["ANTHROPIC_AUTH_TOKEN"] = "minted_runner_token",
              },
-             workingDirectory: null,
              TestContext.Current.CancellationToken))
         {
         }
@@ -132,10 +131,9 @@ public sealed class PiRunnerShould
             };
 
             await foreach (var _ in runner.RunAsync(
-                  "ignored prompt",
-                  environment,
-                  workingDirectory: null,
-                  TestContext.Current.CancellationToken))
+                 "ignored prompt",
+                 environment,
+                 TestContext.Current.CancellationToken))
             {
             }
 
@@ -168,8 +166,7 @@ public sealed class PiRunnerShould
                  ["ANTHROPIC_BASE_URL"] = string.Empty,
                  ["ANTHROPIC_AUTH_TOKEN"] = string.Empty,
              },
-              workingDirectory: null,
-              TestContext.Current.CancellationToken))
+             TestContext.Current.CancellationToken))
         {
         }
 

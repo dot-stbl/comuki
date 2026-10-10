@@ -14,16 +14,10 @@
       "none": "pas encore de projets"
     }
   },
-  "list": {
-    "envClass": {
-      "none": "aucune classe liée"
-    }
-  },
   "column": {
     "slug": "slug",
     "name": "nom",
     "tags": "tags",
-    "envClass": "classe d'environnement",
     "inFlight": "en vol",
     "runs": "runs",
     "costToday": "coût aujourd'hui",
@@ -35,7 +29,7 @@
     "icon": "icône",
     "accentColour": "couleur d'accent",
     "tags": "tags",
-        "repo": "dépôt de profils git",
+    "repo": "dépôt de profils git",
     "iconPlaceholder": "🛰️ ou https://example.com/mark.png",
     "platformDefaults": "profils de la plateforme"
   },
@@ -96,7 +90,6 @@
     "factsSection": "le projet lui-même",
     "editIdentity": "modifier l'identité",
     "editIdentityFailure": "L'identité n'a pas été enregistrée.",
-    "envClass": "classe d'environnement",
     "rolesSection": "rôles sur ce projet",
     "rolesForbiddenSubject": "Rôles sur ce projet",
     "rolesHeld": {

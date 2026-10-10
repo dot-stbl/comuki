@@ -27,26 +27,20 @@ public sealed class StatusLiteralSqlShould
         WorkItemQueueSql.ClaimSql.ShouldBe(
             "UPDATE orchestration.work_items "
             + "SET status = 'Running', leased_by = @workerId, lease_until = @leaseUntil, "
-            + "    heartbeat_at = @now, attempt = attempt + 1, updated_at = @now, "
-            + "    generation = (SELECT r.generation FROM orchestration.runs r WHERE r.id = work_items.run_id) "
+            + "    heartbeat_at = @now, attempt = attempt + 1, updated_at = @now "
             + "WHERE id IN ( "
             + "    SELECT id FROM orchestration.work_items "
             + "    WHERE status = 'Queued' "
             + "      AND profile_key = @profileKey "
-            + "      AND env_class = @envClass "
+            + "      AND image = @image "
             + "      AND profiles_ref = @profilesRef "
-            + "      AND EXISTS ( "
-            + "          SELECT 1 FROM orchestration.runs r "
-            + "          WHERE r.id = orchestration.work_items.run_id "
-            + "            AND r.status NOT IN ('Cancelled', 'Failed', 'Succeeded') "
-            + "      ) "
             + "    ORDER BY created_at "
             + "    LIMIT 1 "
             + "    FOR UPDATE SKIP LOCKED "
             + ") "
             + "RETURNING id, run_id, "
             + "(SELECT r.project_id FROM orchestration.runs r WHERE r.id = work_items.run_id), "
-            + "profile_key, env_class, brief, lease_until, attempt, generation");
+            + "profile_key, brief, lease_until, attempt");
     }
 
     [Fact(DisplayName = "Given the heartbeat SQL, when composed, then it matches the historical text byte-for-byte")]
@@ -56,8 +50,7 @@ public sealed class StatusLiteralSqlShould
             "UPDATE orchestration.work_items "
             + "SET lease_until = @leaseUntil, heartbeat_at = @now, updated_at = @now "
             + "WHERE id = @workItemId AND leased_by = @workerId "
-            + "  AND status = 'Running' AND lease_until > @now "
-            + "  AND generation = @generation");
+            + "  AND status = 'Running' AND lease_until > @now");
     }
 
     [Fact(DisplayName = "Given the complete SQL, when composed, then it matches the historical text byte-for-byte")]
@@ -67,7 +60,6 @@ public sealed class StatusLiteralSqlShould
             "UPDATE orchestration.work_items "
             + "SET status = 'Succeeded', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
             + "WHERE id = @workItemId AND leased_by = @workerId AND status = 'Running' "
-            + "  AND generation = @generation "
             + "RETURNING run_id");
     }
 
@@ -78,7 +70,6 @@ public sealed class StatusLiteralSqlShould
             "UPDATE orchestration.work_items "
             + "SET status = 'Failed', leased_by = NULL, lease_until = NULL, heartbeat_at = NULL, updated_at = @now "
             + "WHERE id = @workItemId AND leased_by = @workerId AND status = 'Running' "
-            + "  AND generation = @generation "
             + "RETURNING run_id");
     }
 

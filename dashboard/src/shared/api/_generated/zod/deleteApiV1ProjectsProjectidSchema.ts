@@ -15,5 +15,5 @@ export const deleteApiV1ProjectsProjectidPathParamsSchema = z.object({
 export const deleteApiV1ProjectsProjectid204Schema = z.any()
 
 export const deleteApiV1ProjectsProjectidMutationResponseSchema = z.lazy(
-  () => deleteApiV1ProjectsProjectid204Schema
+  () => deleteApiV1ProjectsProjectid200Schema
 )

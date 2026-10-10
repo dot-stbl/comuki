@@ -22,55 +22,6 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Comuki.Modules.Projects.Domain.Attachments.ProjectRepositoryAttachment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Access")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("access");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("CredentialOverrideRef")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("credential_override_ref");
-
-                    b.Property<Guid>("ProjectId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("project_id");
-
-                    b.Property<Guid>("RepositoryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("repository_id");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("role");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_project_repository_attachments");
-
-                    b.HasIndex("ProjectId", "RepositoryId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_project_repository_attachments_project_repository");
-
-                    b.ToTable("project_repository_attachments", "projects");
-                });
-
             modelBuilder.Entity("Comuki.Modules.Projects.Domain.DomainTypes.DomainTypeAdmission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -147,11 +98,6 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("description");
 
-                    b.Property<string>("EnvClass")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("env_class");
-
                     b.Property<string>("Icon")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
@@ -178,16 +124,6 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("slug");
-
-                    b.Property<string>("SourceGitRef")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("source_git_ref");
-
-                    b.Property<string>("SourceGitUrl")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)")
-                        .HasColumnName("source_git_url");
 
                     b.PrimitiveCollection<string[]>("Tags")
                         .IsRequired()
@@ -229,11 +165,6 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)")
                         .HasColumnName("domain_type");
-
-                    b.Property<string>("GitCredentialRef")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("git_credential_ref");
 
                     b.Property<long?>("HardBudgetUsdMicros")
                         .HasColumnType("bigint")
@@ -280,16 +211,6 @@ namespace Comuki.Modules.Projects.Infrastructure.Migrations
                         .HasName("pk_project_settings");
 
                     b.ToTable("project_settings", "projects");
-                });
-
-            modelBuilder.Entity("Comuki.Modules.Projects.Domain.Attachments.ProjectRepositoryAttachment", b =>
-                {
-                    b.HasOne("Comuki.Modules.Projects.Domain.Projects.Project", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_project_repository_attachments_projects_project_id");
                 });
 
             modelBuilder.Entity("Comuki.Modules.Projects.Domain.DomainTypes.DomainTypeAdmission", b =>

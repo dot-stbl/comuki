@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react-vite"
+import type { Meta, StoryObj } from "@storybook/react"
 
 import type { VirtualKey } from "@/domains/models/model/types"
 import type { Session } from "@/shared/session"

@@ -155,42 +155,4 @@ public sealed class CreateProjectValidatorShould
         result.IsValid.ShouldBeFalse();
         result.Errors.ShouldContain(static failure => failure.PropertyName == "Icon");
     }
-
-    [Fact(DisplayName = "Given a catalog-shaped env class, when validated, then the command passes")]
-    public void AcceptWellFormedEnvClass()
-    {
-        var command = new CreateProjectCommand("Web Platform", "web-platform", null, null, null,
-            EnvClass: "net10-sdk-bun");
-
-        var result = validator.Validate(command);
-
-        result.IsValid.ShouldBeTrue();
-    }
-
-    [Theory(DisplayName = "Given a malformed env class, when validated, then it fails on EnvClass")]
-    [InlineData("Bad_Class")]
-    [InlineData("net10 sdk")]
-    [InlineData("-net10")]
-    public void RefuseMalformedEnvClass(string envClass)
-    {
-        var command = new CreateProjectCommand("Web Platform", "web-platform", null, null, null,
-            EnvClass: envClass);
-
-        var result = validator.Validate(command);
-
-        result.IsValid.ShouldBeFalse();
-        result.Errors.ShouldContain(static failure => failure.PropertyName == "EnvClass");
-    }
-
-    [Fact(DisplayName = "Given an env class over the column bound, when validated, then it fails on EnvClass")]
-    public void RefuseOversizedEnvClass()
-    {
-        var command = new CreateProjectCommand("Web Platform", "web-platform", null, null, null,
-            EnvClass: new string('a', Project.MaxEnvClassLength + 1));
-
-        var result = validator.Validate(command);
-
-        result.IsValid.ShouldBeFalse();
-        result.Errors.ShouldContain(static failure => failure.PropertyName == "EnvClass");
-    }
 }

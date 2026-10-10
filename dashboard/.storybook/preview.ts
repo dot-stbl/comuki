@@ -8,20 +8,6 @@ import "../src/index.css"
    words rather than key paths. */
 import "../src/shared/i18n"
 
-import knownIssuesJson from "../storybook-tests/a11y-known-issues.json"
-
-interface KnownIssue {
-  readonly storyId: string
-  readonly theme: string
-  readonly ruleId: string
-}
-
-const KNOWN_A11Y_ISSUES: ReadonlySet<string> = new Set(
-  (knownIssuesJson as readonly KnownIssue[]).map(
-    (issue) => `${issue.storyId}|${issue.theme}|${issue.ruleId}`,
-  ),
-)
-
 const preview: Preview = {
   parameters: {
     controls: {

@@ -199,55 +199,6 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
                     b.ToTable("merge_queue", "orchestration");
                 });
 
-            modelBuilder.Entity("Comuki.Engine.Orchestration.Domain.Outbox.OutboxMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<int>("Attempts")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("attempts");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTimeOffset?>("DeadLetteredAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("dead_lettered_at");
-
-                    b.Property<DateTimeOffset?>("DispatchedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("dispatched_at");
-
-                    b.Property<string>("LastError")
-                        .HasColumnType("text")
-                        .HasColumnName("last_error");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("payload");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("type");
-
-                    b.HasKey("Id")
-                        .HasName("pk_outbox_messages");
-
-                    b.HasIndex("DispatchedAt", "CreatedAt")
-                        .HasDatabaseName("ix_outbox_messages_undispatched")
-                        .HasFilter("dispatched_at IS NULL");
-
-                    b.ToTable("outbox_messages", "orchestration");
-                });
-
             modelBuilder.Entity("Comuki.Engine.Orchestration.Domain.Runs.Run", b =>
                 {
                     b.Property<Guid>("Id")
@@ -293,11 +244,6 @@ namespace Comuki.Engine.Orchestration.Infrastructure.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_runs");
-
-                    b.HasIndex("AdmissionMessageId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_runs_admission_message_id")
-                        .HasFilter("admission_message_id IS NOT NULL");
 
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("ix_runs_updated_at");

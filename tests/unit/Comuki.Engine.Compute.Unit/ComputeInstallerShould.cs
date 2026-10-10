@@ -215,7 +215,6 @@ public sealed class ComputeInstallerShould
                     ProjectId = Shared.Kernel.Ids.ProjectId.New(),
                     ProfileKey = "implement",
                     ProfilesGitRef = "refs/tags/v1",
-                    EnvClass = "net10-sdk-bun",
                     Image = "ghcr.io/comuki/worker:latest",
                     WorkerToken = "secret",
                     OrchestratorGrpcUrl = new Uri("http://orch:5051"),
@@ -250,7 +249,6 @@ public sealed class ComputeInstallerShould
         // rethrow path is exercised.
         services.AddSingleton(Substitute.For<IContainerOperations>());
         services.AddSingleton(Substitute.For<INetworkOperations>());
-        services.AddSingleton(Substitute.For<Microsoft.Extensions.Hosting.IHostEnvironment>());
         if (kubernetesClientConfigurationFactory is null)
         {
             services.AddSingleton(Substitute.For<IKubernetes>());

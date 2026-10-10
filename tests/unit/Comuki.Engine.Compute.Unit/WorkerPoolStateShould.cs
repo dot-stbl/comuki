@@ -126,7 +126,7 @@ public sealed class WorkerPoolStateShould
         var state = CreateState();
         var cancellationToken = TestContext.Current.CancellationToken;
         computeProvider.ListAsync(projectId, cancellationToken)
-            .Returns([new WorkerInfo(workerId, "container-1", "implement", "net10-sdk-bun", "img:1", "refs/tags/v1")]);
+            .Returns([new WorkerInfo(workerId, "container-1", "implement", "img:1", "refs/tags/v1")]);
 
         await state.SyncFromProviderAsync(projectId, cancellationToken);
 
@@ -164,7 +164,7 @@ public sealed class WorkerPoolStateShould
         var registeredAt = state.List(projectId).ShouldHaveSingleItem().LastActiveAt;
         var cancellationToken = TestContext.Current.CancellationToken;
         computeProvider.ListAsync(projectId, cancellationToken)
-            .Returns([new WorkerInfo(handle.Id, handle.ProviderRef, "implement", "net10-sdk-bun", "img:1", "refs/tags/v1")]);
+            .Returns([new WorkerInfo(handle.Id, handle.ProviderRef, "implement", "img:1", "refs/tags/v1")]);
 
         clock.Advance(TimeSpan.FromMinutes(30));
         await state.SyncFromProviderAsync(projectId, cancellationToken);

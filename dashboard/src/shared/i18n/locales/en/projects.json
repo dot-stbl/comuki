@@ -14,16 +14,10 @@
       "none": "no projects yet"
     }
   },
-  "list": {
-    "envClass": {
-      "none": "no class bound"
-    }
-  },
   "column": {
     "slug": "slug",
     "name": "name",
     "tags": "tags",
-    "envClass": "env class",
     "inFlight": "in flight",
     "runs": "runs",
     "costToday": "cost today",
@@ -96,7 +90,6 @@
     "factsSection": "the project itself",
     "editIdentity": "edit identity",
     "editIdentityFailure": "The identity was not saved.",
-    "envClass": "env class",
     "rolesSection": "roles on this project",
     "rolesForbiddenSubject": "Roles on this project",
     "rolesHeld": {

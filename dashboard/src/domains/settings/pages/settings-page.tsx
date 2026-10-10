@@ -264,10 +264,7 @@ export function SettingsPage({ tab, onTabChange }: SettingsPageProps) {
             the host has no PUT, and the panel's first sentence says where
             changes actually go. */}
         {!env.useMock && platform.data ? (
-          <>
-            <PlatformSettingsPanel settings={platform.data} />
-            <EditionPanel />
-          </>
+          <PlatformSettingsPanel settings={platform.data} />
         ) : null}
 
         {data ? (

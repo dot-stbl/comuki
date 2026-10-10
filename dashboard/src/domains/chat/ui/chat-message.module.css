@@ -68,17 +68,17 @@
   text-transform: uppercase;
   padding: 0 var(--s2);
   border-radius: var(--r-sm);
-  color: var(--text-on-tinted);
+  color: var(--st-running);
   background: var(--st-running-tint);
 }
 
 .phase[data-phase="done"] {
-  color: var(--text-on-tinted);
+  color: var(--st-success);
   background: var(--st-success-tint);
 }
 
 .phase[data-phase="plan"] {
-  color: var(--text-on-tinted);
+  color: var(--st-escalated);
   background: var(--st-escalated-tint);
 }
 
@@ -89,7 +89,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 .clock {
@@ -199,6 +199,16 @@
   color: var(--text-on-tinted);
 }
 
+/* How long it took. A figure that stands in a column of them when several
+   calls stack, so tabular — and never wider than the number needs. */
+.toolClock {
+  flex: 0 0 auto;
+  font-family: var(--font-data);
+  font-size: var(--t-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
 .toolResult {
   margin: 0;
   min-inline-size: 0;
@@ -206,7 +216,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   line-height: var(--lh-body);
-  color: var(--text-on-tinted);
+  color: var(--text-muted);
 }
 
 /* Proposal ---------------------------------------------------------------- */
@@ -503,7 +513,7 @@
 }
 
 .mdItem::marker {
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 .mdStrong {
@@ -511,7 +521,7 @@
 }
 
 .mdDeleted {
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 /* Quoted, not boxed. A left rule is how this product marks every aside it
@@ -524,7 +534,7 @@
   min-inline-size: 0;
   padding-inline-start: var(--s4);
   border-inline-start: 2px solid var(--rule-strong);
-  color: var(--text-on-tinted);
+  color: var(--text-muted);
 }
 
 .mdRule {
@@ -578,7 +588,7 @@
   letter-spacing: var(--tracking-data);
   text-align: start;
   white-space: nowrap;
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 /* Cells are values, so the data voice and tabular figures — a column of
@@ -590,7 +600,7 @@
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
   vertical-align: baseline;
-  color: var(--text-on-tinted);
+  color: var(--text-muted);
 }
 
 /* An identifier inside a sentence, quoted rather than referenced — see
@@ -658,7 +668,7 @@
   cursor: pointer;
   list-style: none;
   min-inline-size: 0;
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 .thinkingSummary::-webkit-details-marker {
@@ -687,7 +697,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 /* Steps ---------------------------------------------------------------------
@@ -726,7 +736,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   line-height: var(--lh-body);
-  color: var(--text-on-tinted);
+  color: var(--text-muted);
 }
 
 /* The mark: a check on a line the brain moved past, the spinner on the line
@@ -768,7 +778,7 @@
 .stepTail {
   min-inline-size: 0;
   overflow-wrap: anywhere;
-  color: var(--text-on-tinted);
+  color: var(--text-muted);
 }
 
 /* The tail of the line the brain is on right now, in the running hue with a
@@ -814,7 +824,7 @@
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 .metricSegment {
@@ -863,14 +873,14 @@
   font-size: var(--t-micro);
   letter-spacing: var(--tracking-data);
   text-transform: uppercase;
-  color: var(--text-on-tinted);
+  color: var(--st-waiting);
 }
 
 .memoryCount {
   font-family: var(--font-data);
   font-size: var(--t-micro);
   font-variant-numeric: tabular-nums;
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 .memoryBody {
@@ -882,7 +892,7 @@
   font-family: var(--font-ui);
   font-size: var(--t-xs);
   line-height: var(--lh-body);
-  color: var(--text-on-tinted);
+  color: var(--text-muted);
 }
 
 /* Diagram -------------------------------------------------------------------
@@ -901,7 +911,7 @@
   min-inline-size: 0;
   font-family: var(--font-ui);
   font-size: var(--t-micro);
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 /* Plan ----------------------------------------------------------------------
@@ -933,7 +943,7 @@
 .planProfile {
   font-family: var(--font-data);
   font-size: var(--t-micro);
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 .planLabel {
@@ -941,13 +951,13 @@
   overflow-wrap: anywhere;
   font-family: var(--font-ui);
   font-size: var(--t-xs);
-  color: var(--text-on-tinted);
+  color: var(--text-muted);
 }
 
 /* The dependency, said on the node that waits for it. Quieter than the label,
    because it is a fact about the plan rather than a step in it. */
 .planAfter {
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }
 
 /* The empty turn ------------------------------------------------------------
@@ -961,5 +971,5 @@
   min-inline-size: 0;
   font-family: var(--font-ui);
   font-size: var(--t-micro);
-  color: var(--text-on-tinted);
+  color: var(--text-faint);
 }

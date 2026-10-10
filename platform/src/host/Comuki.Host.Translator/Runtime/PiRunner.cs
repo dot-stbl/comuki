@@ -22,7 +22,6 @@ public sealed class PiRunner(
     public async IAsyncEnumerable<string> RunAsync(
         string brief,
         IReadOnlyDictionary<string, string>? environment = null,
-        string? workingDirectory = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var executable = options.Value.PiExecutable;

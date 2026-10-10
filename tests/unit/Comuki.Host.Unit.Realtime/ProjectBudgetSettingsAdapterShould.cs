@@ -29,7 +29,6 @@ public sealed class ProjectBudgetSettingsAdapterShould
             hardBudgetUsdMicros: 200,
             domainType: ProjectDomainType.Standard,
             customDomainTypesJson: null,
-            gitCredentialRef: null,
             now: DateTimeOffset.UtcNow);
         settings.GetCached(projectId).Returns(row);
 
@@ -60,7 +59,6 @@ public sealed class ProjectBudgetSettingsAdapterShould
             hardBudgetUsdMicros: null,
             domainType: ProjectDomainType.Standard,
             customDomainTypesJson: null,
-            gitCredentialRef: null,
             now: DateTimeOffset.UtcNow);
         settings.GetCached(projectId).Returns((ProjectSettings?)null);
         settings.FindAsync(projectId, Arg.Any<CancellationToken>()).Returns(row);
